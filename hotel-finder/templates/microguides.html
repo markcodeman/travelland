@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Backpacker Microguides</title>
+  <link rel="stylesheet" href="/static/micro_styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Backpacker Microguides</h1>
+      <p>Lightweight list of cheap eats, hostels and budget picks — no external APIs.</p>
+    </header>
+
+    <section class="controls">
+      <label>City:
+        <input id="city" value="NYC" />
+      </label>
+      <label style="margin-left:12px">
+        <input type="checkbox" id="usePoi" /> Use live POI (Overpass + OpenTripMap)
+      </label>
+      <label>Filter:
+        <select id="budget">
+          <option value="any">Any</option>
+          <option value="cheap">Cheap</option>
+          <option value="mid">Mid</option>
+          <option value="expensive">Expensive</option>
+        </select>
+      </label>
+      <label>Search:
+        <input id="q" placeholder="search name, tag or description" />
+      </label>
+      <button id="searchBtn">Search</button>
+    </section>
+
+    <section id="resultsHeader" class="results-header">
+      <div id="resultsCount"></div>
+    </section>
+    <section id="results" class="results"></section>
+
+    <footer>
+      <small>Local dataset: `data/venues.json`</small>
+    </footer>
+  </div>
+  <script src="/static/micro_main.js"></script>
+</body>
+</html>
