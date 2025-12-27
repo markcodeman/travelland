@@ -28,4 +28,5 @@ if __name__ == '__main__':
     # Support deployment platforms that use PORT env variable
     import os
     port = int(os.getenv('PORT', 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    # Use debug=False for production deployment
+    app.run(debug=False, host='0.0.0.0', port=port)
