@@ -171,7 +171,7 @@ def search_and_reason(query, city=None, mode='explorer'):
             results = search_provider.searx_search(query, max_results=5)
         if not results:
             # Extract dish keyword from query
-            dish_keyword = next((word for word in query.lower().split() if word in ['escargot', 'tacos', 'pizza', 'sushi', 'burger', 'pasta']), None)
+            dish_keyword = next((word for word in query.lower().split() if word in ['escargot', 'tacos', 'pizza', 'sushi', 'burger', 'pasta', 'crepe', 'crepes']), None)
             if dish_keyword:
                 return f"I couldn't find specific search results for '{dish_keyword}'. As an explorer, I can still share some general tips about {dish_keyword} - it's a popular dish known for its unique flavors and preparation. Try looking for authentic restaurants specializing in {dish_keyword} in your area!"
             else:

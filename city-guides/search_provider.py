@@ -265,7 +265,7 @@ def searx_search(query, max_results=10, city=None):
         query = f"{query} in {city}"
     
     # For food-related queries, try Overpass first for real local data
-    food_keywords = ['taco', 'pizza', 'burger', 'sushi', 'asian', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'restaurant', 'food', 'eat']
+    food_keywords = ['taco', 'pizza', 'burger', 'sushi', 'asian', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'restaurant', 'food', 'eat', 'crepe', 'crepes', 'bakery', 'pastry']
     cuisine = None
     query_lower = query.lower()
     if 'taco' in query_lower or 'mexican' in query_lower:
@@ -282,7 +282,7 @@ def searx_search(query, max_results=10, city=None):
         cuisine = 'asian'
     elif 'burger' in query_lower:
         cuisine = 'american'
-    elif 'french' in query_lower:
+    elif 'french' in query_lower or 'crepe' in query_lower or 'crepes' in query_lower:
         cuisine = 'french'
     
     if any(kw in query_lower for kw in food_keywords) and city:
