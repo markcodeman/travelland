@@ -41,3 +41,7 @@ Thumbs.db
 *.json
 !package.json
 last_search_response.json
+
+# Environment variables
+.env
+*/.env

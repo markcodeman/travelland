@@ -11,10 +11,6 @@ import overpass_provider
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
-DATA_PATH = os.path.join(os.path.dirname(__file__), 'data', 'venues.json')
-with open(DATA_PATH, 'r', encoding='utf-8') as f:
-    VENUES = json.load(f)
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -30,33 +26,30 @@ def search():
     if city:
         try:
             # Use real-time data from Overpass API
-            pois = overpass_provider.discover_restaurants(city)
+            # If q is a known food keyword, pass it as cuisine to Overpass for better results
+            food_keywords = ['taco', 'pizza', 'burger', 'sushi', 'asian', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'restaurant', 'food', 'eat']
+            cuisine_param = q if q in food_keywords else None
+            pois = overpass_provider.discover_restaurants(city, cuisine=cuisine_param)
             for poi in pois:
                 # Filter by query if provided
                 if q:
                     combined = ' '.join([str(poi.get(k,'')) for k in ('name','tags')]).lower()
-                    # For food queries, also check cuisine
-                    food_keywords = ['taco', 'pizza', 'burger', 'sushi', 'asian', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'restaurant', 'food', 'eat']
-                    is_food_query = any(kw in q.lower() for kw in food_keywords)
-                    if is_food_query:
-                        # For food queries, match cuisine or name/tags
-                        cuisine_match = 'cuisine' in combined and any(c in combined for c in [q.lower(), 'mexican' if 'taco' in q.lower() else ''])
-                        if not (q.lower() in combined or cuisine_match):
-                            continue
-                    else:
-                        if q not in combined:
-                            continue
+                    if q not in combined:
+                        continue
+                
                 # Map POI to venue format
                 amenity = poi.get('amenity', '')
+                v_budget = 'mid'
+                price_range = '$$'
                 if amenity in ['fast_food', 'cafe', 'food_court']:
-                    budget = 'cheap'
+                    v_budget = 'cheap'
                     price_range = '$'
                 elif amenity in ['bar', 'pub']:
-                    budget = 'mid'
+                    v_budget = 'mid'
                     price_range = '$$'
-                else:  # restaurant
-                    budget = 'mid'
-                    price_range = '$$'
+                
+                if budget and budget != 'any' and v_budget != budget:
+                    continue
                 
                 # Parse tags for better description
                 tags_dict = dict(tag.split('=', 1) for tag in poi.get('tags', '').split(', ') if '=' in tag)
@@ -80,7 +73,7 @@ def search():
                     'id': poi.get('osm_id', ''),
                     'city': city,
                     'name': poi.get('name', 'Unknown'),
-                    'budget': budget,
+                    'budget': v_budget,
                     'price_range': price_range,
                     'description': desc,
                     'tags': poi.get('tags', ''),
@@ -94,16 +87,6 @@ def search():
                 results.append(venue)
         except Exception as e:
             print(f"Error fetching real-time data: {e}")
-            # Fallback to static data if real-time fails
-            for v in VENUES:
-                if city.lower() == v.get('city','').lower():
-                    if budget and budget != 'any' and v.get('budget','').lower() != budget:
-                        continue
-                    if q:
-                        combined = ' '.join([str(v.get(k,'')) for k in ('name','description','tags')]).lower()
-                        if q not in combined:
-                            continue
-                    results.append(v)
 
     return jsonify({'count': len(results), 'venues': results})
 

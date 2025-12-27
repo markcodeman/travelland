@@ -80,9 +80,10 @@ def discover_restaurants(city, limit=50, cuisine=None):
                 continue
         # Build address
         address = tags.get('addr:full') or f"{tags.get('addr:housenumber','')} {tags.get('addr:street','')} {tags.get('addr:city','')} {tags.get('addr:postcode','')}".strip()
-        if not address and lat and lon:
-            address = reverse_geocode(lat, lon)
-            time.sleep(0.5)  # Rate limit for Nominatim
+        # Skip slow reverse geocoding for now to keep it dynamic and fast
+        if not address:
+            address = f"{lat}, {lon}"
+        
         # Skip known chains for more authentic local recommendations
         name_lower = name.lower()
         if any(chain.lower() in name_lower for chain in chain_keywords):
