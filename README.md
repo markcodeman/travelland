@@ -18,7 +18,24 @@ Budget-friendly city venue discovery with real-time data.
 
 ## Testing on iPhone 📱
 
-### Option 1: Instant Testing (30 seconds) ⚡
+### 🎯 If You're ON iPhone Right Now
+
+**You can't run terminal commands on iPhone.** Instead:
+
+1. **Deploy to free hosting** (no terminal needed!)
+   - Open **Render.com** in Safari and deploy via GitHub
+   - Or use **Railway.app** for one-click deployment
+   - See **[IPHONE_TESTING_GUIDE.md](IPHONE_TESTING_GUIDE.md)** for step-by-step browser-only instructions
+
+2. **Get permanent URLs** to test:
+   - `https://your-app.onrender.com` (works immediately on iPhone)
+   - Full guide: [DEPLOY_GUIDE.md](DEPLOY_GUIDE.md)
+
+### 💻 If You Have a Computer
+
+#### Option 1: Instant Testing (30 seconds) ⚡
+**Requires:** Mac/Windows/Linux computer with terminal
+
 Get a public URL immediately with localtunnel:
 ```bash
 cd city-guides
@@ -28,7 +45,9 @@ npx localtunnel --port 5010
 # Open this URL on your iPhone Safari!
 ```
 
-### Option 2: Local Network (Same WiFi)
+#### Option 2: Local Network (Same WiFi)
+**Requires:** Computer and iPhone on same WiFi
+
 Both apps can be tested on your iPhone when on the same WiFi:
 
 1. **Ensure same WiFi network**: Your iPhone and computer must be on the same WiFi network
@@ -37,10 +56,12 @@ Both apps can be tested on your iPhone when on the same WiFi:
    - City Guides: `http://[YOUR-IP]:5010`
    - Hotel Finder: `http://[YOUR-IP]:5000`
 
-### Option 3: Deploy for Free (Access Anywhere) 🌍
+#### Option 3: Deploy for Free (Access Anywhere) 🌍
+**Requires:** Web browser only (works from iPhone!)
+
 Deploy to a free hosting service for permanent access:
 
-- **Render.com** (Recommended): Free forever, see [DEPLOY_GUIDE.md](DEPLOY_GUIDE.md)
+- **Render.com** (Recommended): Free forever, browser-based deployment
 - **Railway.app**: $5 credit/month, auto-deploys from GitHub
 - **PythonAnywhere**: Free tier, Python-specific
 
