@@ -5,7 +5,9 @@
 ### City Guides App
 
 1. **Go to** https://render.com and sign up with GitHub
-2. **Click** "New +" → "Web Service"
+2. **Click** "New +" → **"Web Service"** (NOT "Static Site")
+   - ✅ **Choose "Web Service"** - for Flask apps with Python backend
+   - ❌ Don't choose "Static Site" - that's for HTML/CSS/JS only
 3. **Connect** your `markcodeman/travelland` repository
 4. **Configure:**
    - Name: `travelland-city-guides`
@@ -22,6 +24,7 @@
 ### Hotel Finder App
 
 Repeat the same steps with:
+   - **Choose "Web Service"** (NOT "Static Site")
    - Name: `travelland-hotel-finder`
    - Root Directory: `hotel-finder`
    - Build Command: `pip install -r requirements.txt`

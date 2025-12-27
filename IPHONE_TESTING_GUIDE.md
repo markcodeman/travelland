@@ -14,7 +14,9 @@ Since you can't run commands on iPhone, the best approach is to **deploy the app
 1. **Open Safari** on your iPhone
 2. **Go to** https://render.com
 3. **Sign up** with your GitHub account
-4. **Tap** "New +" → "Web Service"
+4. **Tap** "New +" → **"Web Service"**
+   - ✅ **Important: Choose "Web Service"** (for dynamic Flask apps)
+   - ❌ Don't choose "Static Site" (that's for HTML-only sites)
 5. **Select** your `markcodeman/travelland` repository
 6. **Configure City Guides:**
    - Name: `travelland-city-guides`
@@ -28,6 +30,7 @@ Since you can't run commands on iPhone, the best approach is to **deploy the app
 **Done!** Your app will be live at: `https://travelland-city-guides.onrender.com`
 
 8. **Repeat for Hotel Finder** with:
+   - **Choose "Web Service"** again (NOT "Static Site")
    - Name: `travelland-hotel-finder`
    - Root Directory: `hotel-finder`
 
