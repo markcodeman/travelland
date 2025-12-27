@@ -18,8 +18,17 @@ Budget-friendly city venue discovery with real-time data.
 
 ## Testing on iPhone 📱
 
-### Option 1: Local Network (Same WiFi)
+### Option 1: Instant Testing (30 seconds) ⚡
+Get a public URL immediately with localtunnel:
+```bash
+cd city-guides
+python app.py &
+npx localtunnel --port 5010
+# Opens URL like: https://random-word-123.loca.lt
+# Open this URL on your iPhone Safari!
+```
 
+### Option 2: Local Network (Same WiFi)
 Both apps can be tested on your iPhone when on the same WiFi:
 
 1. **Ensure same WiFi network**: Your iPhone and computer must be on the same WiFi network
@@ -28,15 +37,14 @@ Both apps can be tested on your iPhone when on the same WiFi:
    - City Guides: `http://[YOUR-IP]:5010`
    - Hotel Finder: `http://[YOUR-IP]:5000`
 
-### Option 2: Deploy Online (Access Anywhere)
+### Option 3: Deploy for Free (Access Anywhere) 🌍
+Deploy to a free hosting service for permanent access:
 
-Deploy to a free hosting service for access from anywhere:
+- **Render.com** (Recommended): Free forever, see [DEPLOY_GUIDE.md](DEPLOY_GUIDE.md)
+- **Railway.app**: $5 credit/month, auto-deploys from GitHub
+- **PythonAnywhere**: Free tier, Python-specific
 
-- **Render.com** (Recommended): See [DEPLOY_GUIDE.md](DEPLOY_GUIDE.md) for step-by-step instructions
-- **Railway.app**: Connect GitHub repo and auto-deploy
-- **Instant Testing**: Use `npx localtunnel --port 5010` to create public URL
-
-See [HOSTING_OPTIONS.md](HOSTING_OPTIONS.md) for all deployment options.
+**See [FREE_HOSTING.md](FREE_HOSTING.md) for complete comparison of all free options.**
 
 ## Quick Start
 
