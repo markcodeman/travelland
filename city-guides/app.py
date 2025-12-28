@@ -8,6 +8,7 @@ load_dotenv()
 
 import semantic
 import overpass_provider
+import places_provider
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
@@ -21,70 +22,86 @@ def search():
     city = (payload.get('city') or '').strip()
     budget = (payload.get('budget') or '').strip().lower()
     q = (payload.get('q') or '').strip().lower()
+    provider = (payload.get('provider') or 'osm').strip().lower()  # 'osm' or 'google'
 
     results = []
     if city:
         try:
-            # Use real-time data from Overpass API
-            # If q is a known food keyword, pass it as cuisine to Overpass for better results
-            food_keywords = ['taco', 'pizza', 'burger', 'sushi', 'asian', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'restaurant', 'food', 'eat']
-            cuisine_param = q if q in food_keywords else None
-            pois = overpass_provider.discover_restaurants(city, cuisine=cuisine_param)
-            for poi in pois:
-                # Filter by query if provided
-                if q:
-                    combined = ' '.join([str(poi.get(k,'')) for k in ('name','tags')]).lower()
-                    if q not in combined:
+            # Choose provider: Google Places or OpenStreetMap (Overpass)
+            if provider == 'google':
+                # Use Google Places API
+                food_keywords = ['taco', 'pizza', 'burger', 'sushi', 'asian', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'restaurant', 'food', 'eat']
+                cuisine_param = q if q in food_keywords else None
+                pois = places_provider.discover_restaurants_places(city, cuisine=cuisine_param, limit=50)
+                # Filter by budget and query
+                for poi in pois:
+                    if budget and budget != 'any' and poi.get('budget') != budget:
                         continue
-                
-                # Map POI to venue format
-                amenity = poi.get('amenity', '')
-                v_budget = 'mid'
-                price_range = '$$'
-                if amenity in ['fast_food', 'cafe', 'food_court']:
-                    v_budget = 'cheap'
-                    price_range = '$'
-                elif amenity in ['bar', 'pub']:
+                    if q:
+                        combined = ' '.join([str(poi.get(k,'')) for k in ('name','tags','description')]).lower()
+                        if q not in combined:
+                            continue
+                    results.append(poi)
+            else:
+                # Use OpenStreetMap (Overpass API) - default
+                food_keywords = ['taco', 'pizza', 'burger', 'sushi', 'asian', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'restaurant', 'food', 'eat']
+                cuisine_param = q if q in food_keywords else None
+                pois = overpass_provider.discover_restaurants(city, cuisine=cuisine_param)
+                for poi in pois:
+                    # Filter by query if provided
+                    if q:
+                        combined = ' '.join([str(poi.get(k,'')) for k in ('name','tags')]).lower()
+                        if q not in combined:
+                            continue
+                    
+                    # Map POI to venue format
+                    amenity = poi.get('amenity', '')
                     v_budget = 'mid'
                     price_range = '$$'
-                
-                if budget and budget != 'any' and v_budget != budget:
-                    continue
-                
-                # Parse tags for better description
-                tags_dict = dict(tag.split('=', 1) for tag in poi.get('tags', '').split(', ') if '=' in tag)
-                cuisine = tags_dict.get('cuisine', '').replace(';', ', ')
-                brand = tags_dict.get('brand', '')
-                
-                if cuisine:
-                    desc = f"{cuisine.title()} restaurant"
-                    if brand:
-                        desc = f"{brand} - {desc}"
-                else:
-                    desc = f"Restaurant ({amenity})"
-                    if brand:
-                        desc = f"{brand} - {desc}"
-                
-                address = poi.get('address', '').strip()
-                if not address:
-                    address = None
-                
-                venue = {
-                    'id': poi.get('osm_id', ''),
-                    'city': city,
-                    'name': poi.get('name', 'Unknown'),
-                    'budget': v_budget,
-                    'price_range': price_range,
-                    'description': desc,
-                    'tags': poi.get('tags', ''),
-                    'address': address,
-                    'latitude': poi.get('lat', 0),
-                    'longitude': poi.get('lon', 0),
-                    'website': poi.get('website', ''),
-                    'osm_url': poi.get('osm_url', ''),
-                    'amenity': amenity
-                }
-                results.append(venue)
+                    if amenity in ['fast_food', 'cafe', 'food_court']:
+                        v_budget = 'cheap'
+                        price_range = '$'
+                    elif amenity in ['bar', 'pub']:
+                        v_budget = 'mid'
+                        price_range = '$$'
+                    
+                    if budget and budget != 'any' and v_budget != budget:
+                        continue
+                    
+                    # Parse tags for better description
+                    tags_dict = dict(tag.split('=', 1) for tag in poi.get('tags', '').split(', ') if '=' in tag)
+                    cuisine = tags_dict.get('cuisine', '').replace(';', ', ')
+                    brand = tags_dict.get('brand', '')
+                    
+                    if cuisine:
+                        desc = f"{cuisine.title()} restaurant"
+                        if brand:
+                            desc = f"{brand} - {desc}"
+                    else:
+                        desc = f"Restaurant ({amenity})"
+                        if brand:
+                            desc = f"{brand} - {desc}"
+                    
+                    address = poi.get('address', '').strip()
+                    if not address:
+                        address = None
+                    
+                    venue = {
+                        'id': poi.get('osm_id', ''),
+                        'city': city,
+                        'name': poi.get('name', 'Unknown'),
+                        'budget': v_budget,
+                        'price_range': price_range,
+                        'description': desc,
+                        'tags': poi.get('tags', ''),
+                        'address': address,
+                        'latitude': poi.get('lat', 0),
+                        'longitude': poi.get('lon', 0),
+                        'website': poi.get('website', ''),
+                        'osm_url': poi.get('osm_url', ''),
+                        'amenity': amenity
+                    }
+                    results.append(venue)
         except Exception as e:
             print(f"Error fetching real-time data: {e}")
 

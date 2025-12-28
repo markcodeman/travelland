@@ -2,13 +2,15 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
   const city = document.getElementById('city').value;
   const budget = document.getElementById('budget').value;
   const q = document.getElementById('q').value;
+  const useGooglePlaces = document.getElementById('useGooglePlaces')?.checked || false;
+  const provider = useGooglePlaces ? 'google' : 'osm';
   const resEl = document.getElementById('results');
   resEl.innerHTML = '<div class="loading">Searching…</div>';
   try {
     const resp = await fetch('/search', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({city, budget, q})
+      body: JSON.stringify({city, budget, q, provider})
     });
     const j = await resp.json();
     if (!j || !j.venues) {
@@ -24,8 +26,10 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
         <h3>${v.name} <span class="tag">${v.price_range}</span></h3>
         ${v.address ? `<p class="meta">${v.address}</p>` : ''}
         <p>${v.description}</p>
+        ${v.rating ? `<p class="meta">⭐ ${v.rating}/5 (${v.user_ratings_total || 0} reviews)</p>` : ''}
         ${v.website ? `<p><a href="${v.website}" target="_blank" rel="noopener">Visit Website</a></p>` : ''}
         ${!v.website && v.osm_url ? `<p><a href="${v.osm_url}" target="_blank" rel="noopener">View on Map</a></p>` : ''}
+        ${v.phone ? `<p>📞 ${v.phone}</p>` : ''}
       </div>
     `).join('');
   } catch (e) {
