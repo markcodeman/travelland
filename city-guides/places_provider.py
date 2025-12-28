@@ -8,8 +8,12 @@ from typing import List, Dict, Optional
 
 GOOGLE_PLACES_API_KEY = os.getenv('GOOGLE_PLACES_API_KEY')
 
+# Configuration constants
+API_TIMEOUT = 10  # seconds
+DEFAULT_SEARCH_RADIUS = 5000  # meters (5km)
 
-def discover_restaurants_places(city: str, cuisine: Optional[str] = None, limit: int = 20) -> List[Dict]:
+
+def discover_restaurants_places(city: str, cuisine: Optional[str] = None, limit: int = 20, radius: int = DEFAULT_SEARCH_RADIUS) -> List[Dict]:
     """
     Discover restaurants using Google Places API.
     
@@ -17,6 +21,7 @@ def discover_restaurants_places(city: str, cuisine: Optional[str] = None, limit:
         city: City name to search in
         cuisine: Optional cuisine type filter
         limit: Maximum number of results to return
+        radius: Search radius in meters (default: 5000m/5km)
         
     Returns:
         List of restaurant dictionaries with standardized format
@@ -32,7 +37,7 @@ def discover_restaurants_places(city: str, cuisine: Optional[str] = None, limit:
     }
     
     try:
-        geocode_resp = requests.get(geocode_url, params=geocode_params, timeout=10)
+        geocode_resp = requests.get(geocode_url, params=geocode_params, timeout=API_TIMEOUT)
         geocode_resp.raise_for_status()
         geocode_data = geocode_resp.json()
         
@@ -55,14 +60,14 @@ def discover_restaurants_places(city: str, cuisine: Optional[str] = None, limit:
     
     places_params = {
         'location': f"{lat},{lng}",
-        'radius': 5000,  # 5km radius
+        'radius': radius,
         'type': search_type,
         'keyword': keyword,
         'key': GOOGLE_PLACES_API_KEY
     }
     
     try:
-        places_resp = requests.get(places_url, params=places_params, timeout=10)
+        places_resp = requests.get(places_url, params=places_params, timeout=API_TIMEOUT)
         places_resp.raise_for_status()
         places_data = places_resp.json()
         
@@ -146,7 +151,7 @@ def _get_place_details(place_id: str) -> Dict:
     }
     
     try:
-        resp = requests.get(details_url, params=details_params, timeout=10)
+        resp = requests.get(details_url, params=details_params, timeout=API_TIMEOUT)
         resp.raise_for_status()
         data = resp.json()
         

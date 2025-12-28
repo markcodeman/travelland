@@ -2,7 +2,8 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
   const city = document.getElementById('city').value;
   const budget = document.getElementById('budget').value;
   const q = document.getElementById('q').value;
-  const useGooglePlaces = document.getElementById('useGooglePlaces')?.checked || false;
+  const googlePlacesCheckbox = document.getElementById('useGooglePlaces');
+  const useGooglePlaces = googlePlacesCheckbox ? googlePlacesCheckbox.checked : false;
   const provider = useGooglePlaces ? 'google' : 'osm';
   const resEl = document.getElementById('results');
   resEl.innerHTML = '<div class="loading">Searching…</div>';
