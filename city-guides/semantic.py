@@ -164,7 +164,7 @@ def search_and_reason(query, city=None, mode='explorer'):
                 return "Unable to parse currency conversion request. Please use format like 'convert 100 USD to EUR'."
     
     search_query = query  # use the full query as is
-    results = search_provider.searx_search(search_query, max_results=3, city=city)
+    results = search_provider.searx_search(search_query, max_results=5, city=city)
     if not results:
         # Fallback: try without city if it was appended
         if city and city.lower() in search_query.lower():
