@@ -171,4 +171,7 @@ def convert_currency():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5010)
+    # Use PORT from environment for Render.com compatibility, fallback to 5010 for local dev
+    port = int(os.getenv('PORT', 5010))
+    # Bind to 0.0.0.0 to accept external connections (required for Render.com)
+    app.run(host='0.0.0.0', port=port, debug=os.getenv('FLASK_ENV') != 'production')
