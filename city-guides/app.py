@@ -8,6 +8,7 @@ load_dotenv()
 
 import semantic
 import overpass_provider
+import search_provider
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
@@ -37,16 +38,28 @@ def search():
                     if q not in combined:
                         continue
                 
-                # Map POI to venue format
+                # Get Google Places data if available
+                lat = poi.get('lat')
+                lon = poi.get('lon')
+                name = poi.get('name', 'Unknown')
+                google_data = search_provider.get_google_places_details(name, lat, lon, city)
+                
+                # Map POI to venue format with Google Places data or fallback
                 amenity = poi.get('amenity', '')
-                v_budget = 'mid'
-                price_range = '$$'
-                if amenity in ['fast_food', 'cafe', 'food_court']:
-                    v_budget = 'cheap'
-                    price_range = '$'
-                elif amenity in ['bar', 'pub']:
+                if google_data and google_data.get('price_level') is not None:
+                    # Use Google Places price data
+                    v_budget = search_provider.map_price_level_to_budget(google_data['price_level'])
+                    price_range = google_data['price_range']
+                else:
+                    # Fallback to amenity-based pricing
                     v_budget = 'mid'
                     price_range = '$$'
+                    if amenity in ['fast_food', 'cafe', 'food_court']:
+                        v_budget = 'cheap'
+                        price_range = '$'
+                    elif amenity in ['bar', 'pub']:
+                        v_budget = 'mid'
+                        price_range = '$$'
                 
                 if budget and budget != 'any' and v_budget != budget:
                     continue
@@ -72,14 +85,14 @@ def search():
                 venue = {
                     'id': poi.get('osm_id', ''),
                     'city': city,
-                    'name': poi.get('name', 'Unknown'),
+                    'name': name,
                     'budget': v_budget,
                     'price_range': price_range,
                     'description': desc,
                     'tags': poi.get('tags', ''),
                     'address': address,
-                    'latitude': poi.get('lat', 0),
-                    'longitude': poi.get('lon', 0),
+                    'latitude': lat,
+                    'longitude': lon,
                     'website': poi.get('website', ''),
                     'osm_url': poi.get('osm_url', ''),
                     'amenity': amenity
@@ -121,7 +134,7 @@ def poi_discover():
         return jsonify({'error': 'city required'}), 400
     # discover via Overpass (OSM)
     try:
-        candidates = overpass_provider.discover_restaurants(city, limit=50)
+        candidates = overpass_provider.discover_restaurants(city, limit=200)
     except Exception as e:
         return jsonify({'error': 'discover_failed', 'details': str(e)}), 500
     return jsonify({'count': len(candidates), 'candidates': candidates})
@@ -154,4 +167,5 @@ def convert_currency():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5010)
+    port = int(os.environ.get('PORT', 5010))
+    app.run(host='0.0.0.0', debug=False, port=port)

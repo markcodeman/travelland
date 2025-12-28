@@ -6,7 +6,100 @@ import random
 from datetime import datetime
 from urllib.parse import quote
 
+try:
+    import googlemaps
+    GOOGLE_PLACES_AVAILABLE = True
+except ImportError:
+    GOOGLE_PLACES_AVAILABLE = False
+
 OPENTRIPMAP_KEY = os.getenv('OPENTRIPMAP_KEY')
+GOOGLE_PLACES_API_KEY = os.getenv('GOOGLE_PLACES_API_KEY')
+
+# Initialize Google Maps client if available
+gmaps_client = None
+if GOOGLE_PLACES_AVAILABLE and GOOGLE_PLACES_API_KEY:
+    try:
+        gmaps_client = googlemaps.Client(key=GOOGLE_PLACES_API_KEY)
+    except Exception:
+        gmaps_client = None
+
+
+def get_google_places_details(name, lat, lon, city):
+    """Get venue details from Google Places API including price, rating, and reviews.
+    
+    Returns dict with keys: price_level, rating, user_ratings_total, price_range
+    Returns None if API is unavailable or fails.
+    """
+    if not gmaps_client:
+        return None
+    
+    try:
+        # Search for the place by name and location
+        query = f"{name}, {city}"
+        places_result = gmaps_client.places(query=query, location=(lat, lon), radius=100)
+        
+        if not places_result.get('results'):
+            return None
+        
+        # Get the first result (most relevant)
+        place = places_result['results'][0]
+        place_id = place.get('place_id')
+        
+        if not place_id:
+            return None
+        
+        # Get detailed information including price level
+        details = gmaps_client.place(place_id=place_id, fields=[
+            'price_level', 'rating', 'user_ratings_total'
+        ])
+        
+        if not details.get('result'):
+            return None
+        
+        result = details['result']
+        price_level = result.get('price_level')  # 0-4 scale
+        rating = result.get('rating')  # 0-5 scale
+        user_ratings_total = result.get('user_ratings_total', 0)
+        
+        # Map price_level to price range symbols
+        price_range = '-'
+        if price_level == 1:
+            price_range = '$'
+        elif price_level == 2:
+            price_range = '$$'
+        elif price_level == 3:
+            price_range = '$$$'
+        elif price_level == 4:
+            price_range = '$$$$'
+        
+        return {
+            'price_level': price_level,
+            'rating': rating,
+            'user_ratings_total': user_ratings_total,
+            'price_range': price_range
+        }
+    except Exception as e:
+        print(f"Error fetching Google Places details: {e}")
+        return None
+
+
+def map_price_level_to_budget(price_level):
+    """Map Google Places price_level (1-4) to budget category.
+    
+    Price level 1 ($) → "cheap" (under $15)
+    Price level 2 ($$) → "mid" ($15-30)
+    Price level 3-4 ($$$/$$$) → "expensive" ($30+)
+    """
+    if price_level is None:
+        return 'mid'  # Default to mid if unknown
+    
+    if price_level == 1:
+        return 'cheap'
+    elif price_level == 2:
+        return 'mid'
+    else:  # 3 or 4
+        return 'expensive'
+
 
 def get_restaurant_rating(name, city):
     """Get rating using Groq AI for restaurant recommendations."""
@@ -293,13 +386,24 @@ def searx_search(query, max_results=10, city=None):
             for r in restaurants:
                 title = r['name']
                 url = r['website'] or r['osm_url']
-                # rating = get_restaurant_rating(title, city)  # Skip for speed
-                rating = "Rating unavailable"
                 address = r.get('address', '')
-                cost = r.get('cost', '')
+                lat = r.get('lat')
+                lon = r.get('lon')
+                
+                # Try to get real data from Google Places API
+                google_data = get_google_places_details(title, lat, lon, city)
+                
+                if google_data:
+                    # Use Google Places data
+                    cost = google_data['price_range']
+                    rating = f"{google_data['rating']}/5 ({google_data['user_ratings_total']} reviews)" if google_data['rating'] else "Rating unavailable"
+                else:
+                    # Fallback to OSM data
+                    cost = r.get('cost', '-')
+                    rating = "Rating unavailable"
+                
                 maps_link = f"https://maps.google.com/maps?q={quote(r['name'] + ' ' + city)}&ll={r['lat']},{r['lon']}"
-                maps_md = f"[Google Maps]({maps_link})"
-                snippet = f"{r['amenity']} - Address: {address} - Price: {cost} - Rating: {rating} - Google Maps: {maps_md} - {r['tags']}"
+                snippet = f"{r['amenity']} - Address: {address} - Price: {cost} - Rating: {rating} - Google Maps: {maps_link} - {r['tags']}"
                 results.append({
                     'title': title,
                     'url': url,
@@ -307,7 +411,8 @@ def searx_search(query, max_results=10, city=None):
                 })
             if results:
                 return results
-        except Exception:
+        except Exception as e:
+            print(f"Error in food search: {e}")
             pass  # Fall back to web search
     
     instances = _get_instances_from_env()[:5]  # try more instances
