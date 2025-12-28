@@ -170,12 +170,23 @@ def search_and_reason(query, city=None, mode='explorer'):
         if city and city.lower() in search_query.lower():
             results = search_provider.searx_search(query, max_results=5)
         if not results:
-            # Extract dish keyword from query
-            dish_keyword = next((word for word in query.lower().split() if word in ['escargot', 'tacos', 'pizza', 'sushi', 'burger', 'pasta', 'crepe', 'crepes']), None)
-            if dish_keyword:
-                return f"I couldn't find specific search results for '{dish_keyword}'. As an explorer, I can still share some general tips about {dish_keyword} - it's a popular dish known for its unique flavors and preparation. Try looking for authentic restaurants specializing in {dish_keyword} in your area!"
+            # Extract cuisine or dish keywords from query for better fallback message
+            cuisine_keywords = ['irish', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'french', 'indian', 'thai', 'vietnamese', 'greek', 'spanish', 'german', 'british']
+            dish_keywords = ['escargot', 'tacos', 'pizza', 'sushi', 'burger', 'pasta', 'crepe', 'crepes', 'curry', 'ramen', 'pho', 'kebab']
+            
+            # Check for cuisine type
+            found_cuisine = next((word for word in query.lower().split() if word in cuisine_keywords), None)
+            found_dish = next((word for word in query.lower().split() if word in dish_keywords), None)
+            
+            if found_cuisine:
+                location_hint = f" in {city}" if city else ""
+                return f"🗺️ Ahoy, fellow explorer! While I couldn't find specific search results for {found_cuisine.title()} food{location_hint}, I recommend exploring local restaurant directories, review sites, or asking locals for their favorite {found_cuisine.title()} spots. {found_cuisine.title()} cuisine is known for its rich flavors and unique dishes - a true culinary adventure awaits! Safe travels and happy exploring! - Marco"
+            elif found_dish:
+                location_hint = f" in {city}" if city else ""
+                return f"I couldn't find specific search results for '{found_dish}'{location_hint}. As an explorer, I can still share some general tips about {found_dish} - it's a popular dish known for its unique flavors and preparation. Try looking for authentic restaurants specializing in {found_dish} in your area! Safe travels! - Marco"
             else:
-                return "I couldn't find specific search results for that query. Try refining your search or exploring local restaurants for unique dishes!"
+                location_hint = f" in {city}" if city else ""
+                return f"I couldn't find specific search results for that query{location_hint}. Try refining your search or exploring local restaurants for unique dishes! For food recommendations, try asking about specific cuisines (e.g., 'Best Italian food') or dishes. Safe travels! - Marco"
     
     context = "\n\n".join([f"Title: {r['title']}\nURL: {r['url']}\nSnippet: {r['snippet']}" for r in results])
     
