@@ -57,13 +57,15 @@ def get_google_places_details(name, lat, lon, city):
             return None
         
         result = details['result']
-        price_level = result.get('price_level')  # 0-4 scale
+        price_level = result.get('price_level')  # None or 1-4 scale (0 is rare, for free)
         rating = result.get('rating')  # 0-5 scale
         user_ratings_total = result.get('user_ratings_total', 0)
         
         # Map price_level to price range symbols
         price_range = '-'
-        if price_level == 1:
+        if price_level == 0:
+            price_range = 'Free'
+        elif price_level == 1:
             price_range = '$'
         elif price_level == 2:
             price_range = '$$'
@@ -84,8 +86,9 @@ def get_google_places_details(name, lat, lon, city):
 
 
 def map_price_level_to_budget(price_level):
-    """Map Google Places price_level (1-4) to budget category.
+    """Map Google Places price_level (0-4) to budget category.
     
+    Price level 0 (Free) → "cheap"
     Price level 1 ($) → "cheap" (under $15)
     Price level 2 ($$) → "mid" ($15-30)
     Price level 3-4 ($$$/$$$) → "expensive" ($30+)
@@ -93,7 +96,7 @@ def map_price_level_to_budget(price_level):
     if price_level is None:
         return 'mid'  # Default to mid if unknown
     
-    if price_level == 1:
+    if price_level <= 1:  # 0 or 1
         return 'cheap'
     elif price_level == 2:
         return 'mid'
