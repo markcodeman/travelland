@@ -68,13 +68,46 @@ fetch('/search', {
 })
 ```
 
-### Testing
+### Testing Your API Key
 
-Run the test script to verify your Google Places API integration:
+See [TESTING_API_KEYS.md](TESTING_API_KEYS.md) for comprehensive testing guide.
 
+#### Quick Test Options
+
+**Option 1: Interactive Testing (Recommended)**
+```bash
+python test_api_key_interactive.py
+```
+
+This will guide you through:
+- Checking if your API key is set
+- Testing the Geocoding API
+- Testing the Places API
+- Running the full integration
+
+**Option 2: Basic Test**
 ```bash
 python test_google_places.py
 ```
+
+**Option 3: Quick Command Line Test**
+```bash
+# Test a specific city
+python test_api_key_interactive.py "New York"
+
+# Test with cuisine filter
+python test_api_key_interactive.py "Paris" "italian"
+```
+
+**Option 4: Test in Python Console**
+```python
+from places_provider import discover_restaurants_places
+results = discover_restaurants_places("Tokyo", cuisine="sushi", limit=5)
+for r in results:
+    print(f"{r['name']}: {r['rating']}/5 stars")
+```
+
+For troubleshooting and detailed testing scenarios, see [TESTING_API_KEYS.md](TESTING_API_KEYS.md).
 
 ## Data Sources
 
