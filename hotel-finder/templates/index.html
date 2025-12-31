@@ -301,6 +301,20 @@
             background: #667eea;
         }
         
+        .search-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .search-actions label {
+            font-size: 14px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
         /* Mobile Responsive Styles */
         @media (max-width: 768px) {
             body {
@@ -334,8 +348,8 @@
             }
             
             .search-actions {
-                flex-direction: column !important;
-                align-items: stretch !important;
+                flex-direction: column;
+                align-items: stretch;
             }
             
             .search-actions label {
@@ -343,7 +357,8 @@
                 justify-content: center;
             }
             
-            button {
+            .search-box button,
+            .search-actions button {
                 width: 100%;
                 padding: 12px 20px;
             }
@@ -435,8 +450,8 @@
                 </div>
             </div>
             
-            <div class="search-actions" style="display:flex; gap:12px; align-items:center;">
-                <label style="font-size:14px; color:#555; display:flex; align-items:center; gap:8px;"><input type="checkbox" id="webSearchToggle"> Use web search (free)</label>
+            <div class="search-actions">
+                <label><input type="checkbox" id="webSearchToggle"> Use web search (free)</label>
                 <button onclick="searchHotels()" id="searchBtn">Search Hotels</button>
             </div>
         </div>
