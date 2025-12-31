@@ -225,7 +225,7 @@ body {
   .search-bar select,
   .search-bar button {
     width: 100%;
-    min-width: unset;
+    min-width: 0;
   }
   
   .results {
