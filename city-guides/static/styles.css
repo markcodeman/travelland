@@ -203,15 +203,63 @@ body {
   .hero h1 {
     font-size: 2rem;
   }
+  
+  .hero p {
+    font-size: 1rem;
+  }
+  
+  .wrap {
+    padding: 15px;
+  }
+  
+  .search-section {
+    padding: 20px;
+  }
+  
   .search-bar {
     flex-direction: column;
+    align-items: stretch;
   }
+  
   .search-bar input,
-  .search-bar select {
+  .search-bar select,
+  .search-bar button {
     width: 100%;
+    min-width: unset;
   }
+  
   .results {
     grid-template-columns: 1fr;
+  }
+  
+  .currency-input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .currency-input-group input[type="number"],
+  .currency-input-group select,
+  .currency-input-group button {
+    width: 100%;
+  }
+  
+  .currency-input-group span {
+    text-align: center;
+    padding: 5px 0;
+  }
+  
+  .chat-input-group {
+    flex-direction: column;
+  }
+  
+  .chat-input-group input,
+  .chat-input-group button {
+    width: 100%;
+  }
+  
+  .ai-panel,
+  .currency-panel {
+    padding: 15px;
   }
 }
 
