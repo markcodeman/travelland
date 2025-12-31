@@ -300,6 +300,94 @@
             font-size: 14px;
             background: #667eea;
         }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            header {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .tagline {
+                font-size: 14px;
+            }
+            
+            .honest-badge {
+                display: block;
+                margin-left: 0;
+                margin-top: 10px;
+            }
+            
+            .search-box {
+                padding: 20px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-actions {
+                flex-direction: column !important;
+                align-items: stretch !important;
+            }
+            
+            .search-actions label {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            button {
+                width: 100%;
+                padding: 12px 20px;
+            }
+            
+            .hotel-card {
+                padding: 15px;
+            }
+            
+            .hotel-name {
+                font-size: 20px;
+            }
+            
+            .hotel-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .chat-input-group {
+                flex-direction: column;
+            }
+            
+            .chat-input-group input {
+                width: 100%;
+            }
+            
+            .ai-buttons {
+                flex-direction: column;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.25rem;
+            }
+            
+            .search-box {
+                padding: 15px;
+            }
+            
+            .price-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -347,7 +435,7 @@
                 </div>
             </div>
             
-            <div style="display:flex; gap:12px; align-items:center;">
+            <div class="search-actions" style="display:flex; gap:12px; align-items:center;">
                 <label style="font-size:14px; color:#555; display:flex; align-items:center; gap:8px;"><input type="checkbox" id="webSearchToggle"> Use web search (free)</label>
                 <button onclick="searchHotels()" id="searchBtn">Search Hotels</button>
             </div>

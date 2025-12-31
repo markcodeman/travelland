@@ -203,15 +203,42 @@ body {
   .hero h1 {
     font-size: 2rem;
   }
+  .hero p {
+    font-size: 1rem;
+  }
   .search-bar {
     flex-direction: column;
   }
   .search-bar input,
-  .search-bar select {
+  .search-bar select,
+  .search-bar button {
     width: 100%;
+    min-width: auto;
   }
   .results {
     grid-template-columns: 1fr;
+  }
+  .chat-input-group {
+    flex-direction: column;
+  }
+  .chat-input-group input,
+  .chat-input-group button {
+    width: 100%;
+  }
+  .currency-input-group {
+    flex-wrap: wrap;
+  }
+  .currency-input-group input[type="number"],
+  .currency-input-group select {
+    flex: 1;
+    min-width: 80px;
+  }
+  .currency-input-group button {
+    width: 100%;
+    margin-top: 10px;
+  }
+  .currency-input-group span {
+    flex: 0 0 auto;
   }
 }
 
