@@ -68,8 +68,12 @@ function markdownToHtml(text) {
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   // Italics
   html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  // Links
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  // Links - handle markdown format and prevent double-processing
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+    // Clean up any leftover HTML attributes
+    const cleanUrl = url.replace(/["'>].*$/, '');
+    return `<a href="${cleanUrl}" target="_blank" rel="noopener">${text}</a>`;
+  });
   // Simple table conversion
   if (html.includes('|') && html.includes('---')) {
     const lines = html.split('\n');

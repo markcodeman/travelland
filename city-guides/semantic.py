@@ -238,7 +238,13 @@ Provide practical recommendations with addresses, hours if available, and useful
                 if mode == 'explorer':
                     response = "Ahoy there, fellow adventurer! 🗺️🍽️ As Marco the Explorer, I've scoured the culinary seas and found some great options. Here are some recommendations based on my search:\n\n"
                     for r in results[:3]:
-                        response += f"- **{r['title']}**: {r['snippet'][:100]}... [Link]({r['url']})\n"
+                        # Clean up title and snippet
+                        title = r['title'].replace('...', '').strip()
+                        snippet = r['snippet'][:150].replace('...', '').strip()
+                        url = r['url']
+                        
+                        # Format as clean bullet points with proper links
+                        response += f"- **{title}**: {snippet}... [View on map]({url})\n\n"
                     response += "\nSafe travels and happy exploring! - Marco"
                     return response
                 else:
@@ -258,7 +264,13 @@ Provide practical recommendations with addresses, hours if available, and useful
             if mode == 'explorer':
                 response = "Greetings, intrepid traveler! 🌟🍲 Marco here, your guide to gastronomic wonders. Based on my search, here are some options:\n\n"
                 for r in results[:3]:
-                    response += f"- **{r['title']}**: {r['snippet'][:100]}... [Link]({r['url']})\n"
+                    # Clean up title and snippet
+                    title = r['title'].replace('...', '').strip()
+                    snippet = r['snippet'][:150].replace('...', '').strip()
+                    url = r['url']
+                    
+                    # Format as clean bullet points with proper links
+                    response += f"- **{title}**: {snippet}... [View on map]({url})\n\n"
                 response += "\nBon appétit and keep adventuring! - Marco"
                 return response
             else:
