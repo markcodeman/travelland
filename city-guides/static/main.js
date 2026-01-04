@@ -2,13 +2,15 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
   const city = document.getElementById('city').value;
   const budget = document.getElementById('budget').value;
   const q = document.getElementById('q').value;
+  const useGooglePlaces = document.getElementById('useGooglePlaces').checked;
+  const provider = useGooglePlaces ? 'google_places' : 'osm';
   const resEl = document.getElementById('results');
   resEl.innerHTML = '<div class="loading">Searching…</div>';
   try {
     const resp = await fetch('/search', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({city, budget, q})
+      body: JSON.stringify({city, budget, q, provider})
     });
     const j = await resp.json();
     if (!j || !j.venues) {
@@ -19,15 +21,38 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
       resEl.innerHTML = '<div class="error">No venues found. Try a different city or budget.</div>';
       return;
     }
-    resEl.innerHTML = j.venues.map(v => `
-      <div class="card">
-        <h3>${v.name} <span class="tag">${v.price_range}</span></h3>
-        ${v.address ? `<p class="meta">${v.address}</p>` : ''}
-        <p>${v.description}</p>
-        ${v.website ? `<p><a href="${v.website}" target="_blank" rel="noopener">Visit Website</a></p>` : ''}
-        ${!v.website && v.osm_url ? `<p><a href="${v.osm_url}" target="_blank" rel="noopener">View on Map</a></p>` : ''}
-      </div>
-    `).join('');
+    resEl.innerHTML = j.venues.map(v => {
+      let card = `<div class="card">`;
+      card += `<h3>${v.name} <span class="tag">${v.price_range}</span></h3>`;
+      
+      // Add rating if available (Google Places)
+      if (v.rating) {
+        const roundedRating = Math.round(v.rating);
+        const starCount = Math.max(1, roundedRating); // Ensure at least 1 star for any positive rating
+        const stars = '⭐'.repeat(starCount);
+        card += `<p class="meta">${stars} ${v.rating}/5 (${v.user_ratings_total} reviews)</p>`;
+      }
+      
+      if (v.address) {
+        card += `<p class="meta">${v.address}</p>`;
+      }
+      
+      card += `<p>${v.description}</p>`;
+      
+      // Add phone if available (Google Places)
+      if (v.phone) {
+        card += `<p><strong>Phone:</strong> ${v.phone}</p>`;
+      }
+      
+      if (v.website) {
+        card += `<p><a href="${v.website}" target="_blank" rel="noopener">Visit Website</a></p>`;
+      } else if (v.osm_url) {
+        card += `<p><a href="${v.osm_url}" target="_blank" rel="noopener">View on Map</a></p>`;
+      }
+      
+      card += `</div>`;
+      return card;
+    }).join('');
   } catch (e) {
     resEl.innerHTML = `<div class="error">Error: ${e.message}</div>`;
   }

@@ -36,7 +36,7 @@ def geocode_city(city):
     return None
 
 
-def discover_restaurants(city, limit=50, cuisine=None):
+def discover_restaurants(city, limit=200, cuisine=None):
     """Discover restaurant POIs for a city using Nominatim + Overpass. Returns list of candidates with possible website or OSM url."""
     bbox = geocode_city(city)
     if not bbox:
@@ -47,10 +47,10 @@ def discover_restaurants(city, limit=50, cuisine=None):
     # query nodes/ways/rels with amenity=restaurant, fast_food, cafe, etc. (budget-friendly options)
     amenity_filter = "[\"amenity\"~\"restaurant|fast_food|cafe|bar|pub|food_court\"]"
     cuisine_filter = f"[\"cuisine\"~\"{cuisine}\"]" if cuisine else ""
-    q = f"[out:json][timeout:25];(node{amenity_filter}{cuisine_filter}({bbox_str});way{amenity_filter}{cuisine_filter}({bbox_str});relation{amenity_filter}{cuisine_filter}({bbox_str}););out center;"
+    q = f"[out:json][timeout:60];(node{amenity_filter}{cuisine_filter}({bbox_str});way{amenity_filter}{cuisine_filter}({bbox_str});relation{amenity_filter}{cuisine_filter}({bbox_str}););out center;"
     headers = {'User-Agent': 'CityGuides/1.0'}
     try:
-        r = requests.post(OVERPASS_URL, data={'data': q}, headers=headers, timeout=30)
+        r = requests.post(OVERPASS_URL, data={'data': q}, headers=headers, timeout=60)
         r.raise_for_status()
         j = r.json()
     except Exception:
