@@ -164,16 +164,27 @@ def search_and_reason(query, city=None, mode='explorer'):
                 return "Unable to parse currency conversion request. Please use format like 'convert 100 USD to EUR'."
     
     search_query = query  # use the full query as is
-    results = search_provider.searx_search(search_query, max_results=3, city=city)
+    results = search_provider.searx_search(search_query, max_results=5, city=city)
     if not results:
         # Fallback: try without city if it was appended
         if city and city.lower() in search_query.lower():
             results = search_provider.searx_search(query, max_results=5)
         if not results:
-            # Extract dish keyword from query
-            dish_keyword = next((word for word in query.lower().split() if word in ['escargot', 'tacos', 'pizza', 'sushi', 'burger', 'pasta', 'crepe', 'crepes']), None)
+            # Extract dish keyword from query for better fallback messages
+            dish_keyword = next((word for word in query.lower().split() if word in ['escargot', 'tacos', 'pizza', 'sushi', 'burger', 'pasta', 'crepe', 'crepes', 'irish', 'indian', 'thai', 'vietnamese', 'greek', 'spanish', 'german', 'british']), None)
             if dish_keyword:
-                return f"I couldn't find specific search results for '{dish_keyword}'. As an explorer, I can still share some general tips about {dish_keyword} - it's a popular dish known for its unique flavors and preparation. Try looking for authentic restaurants specializing in {dish_keyword} in your area!"
+                cuisine_tips = {
+                    'irish': 'traditional dishes like Irish stew, fish and chips, and soda bread',
+                    'indian': 'curries, biryanis, naan bread, and tandoori specialties',
+                    'thai': 'pad thai, green curry, tom yum soup, and mango sticky rice',
+                    'vietnamese': 'pho, banh mi, spring rolls, and bun cha',
+                    'greek': 'souvlaki, moussaka, gyros, and fresh Mediterranean salads',
+                    'spanish': 'tapas, paella, gazpacho, and jamón ibérico',
+                    'german': 'bratwurst, schnitzel, pretzels, and hearty beer hall fare',
+                    'british': 'fish and chips, shepherd\'s pie, roast dinners, and pub classics'
+                }
+                tips = cuisine_tips.get(dish_keyword, f'{dish_keyword} specialties')
+                return f"I couldn't find specific search results for '{dish_keyword}' cuisine. As an explorer, I can share that {dish_keyword.capitalize()} food is known for {tips}. Try looking for authentic {dish_keyword.capitalize()} restaurants in your area!"
             else:
                 return "I couldn't find specific search results for that query. Try refining your search or exploring local restaurants for unique dishes!"
     

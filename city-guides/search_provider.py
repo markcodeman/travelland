@@ -265,7 +265,7 @@ def searx_search(query, max_results=10, city=None):
         query = f"{query} in {city}"
     
     # For food-related queries, try Overpass first for real local data
-    food_keywords = ['taco', 'pizza', 'burger', 'sushi', 'asian', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'restaurant', 'food', 'eat', 'crepe', 'crepes', 'bakery', 'pastry']
+    food_keywords = ['taco', 'pizza', 'burger', 'sushi', 'asian', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'restaurant', 'food', 'eat', 'crepe', 'crepes', 'bakery', 'pastry', 'irish', 'indian', 'thai', 'vietnamese', 'greek', 'spanish', 'german', 'british']
     cuisine = None
     query_lower = query.lower()
     if 'taco' in query_lower or 'mexican' in query_lower:
@@ -284,6 +284,22 @@ def searx_search(query, max_results=10, city=None):
         cuisine = 'american'
     elif 'french' in query_lower or 'crepe' in query_lower or 'crepes' in query_lower:
         cuisine = 'french'
+    elif 'irish' in query_lower:
+        cuisine = 'irish'
+    elif 'indian' in query_lower:
+        cuisine = 'indian'
+    elif 'thai' in query_lower:
+        cuisine = 'thai'
+    elif 'vietnamese' in query_lower:
+        cuisine = 'vietnamese'
+    elif 'greek' in query_lower:
+        cuisine = 'greek'
+    elif 'spanish' in query_lower:
+        cuisine = 'spanish'
+    elif 'german' in query_lower:
+        cuisine = 'german'
+    elif 'british' in query_lower:
+        cuisine = 'british'
     
     if any(kw in query_lower for kw in food_keywords) and city:
         try:
@@ -298,8 +314,8 @@ def searx_search(query, max_results=10, city=None):
                 address = r.get('address', '')
                 cost = r.get('cost', '')
                 maps_link = f"https://maps.google.com/maps?q={quote(r['name'] + ' ' + city)}&ll={r['lat']},{r['lon']}"
-                maps_md = f"[Google Maps]({maps_link})"
-                snippet = f"{r['amenity']} - Address: {address} - Price: {cost} - Rating: {rating} - Google Maps: {maps_md} - {r['tags']}"
+                # Return plain URL instead of markdown to avoid double-processing
+                snippet = f"{r['amenity']} - Address: {address} - Price: {cost} - Rating: {rating} - Google Maps: {maps_link} - {r['tags']}"
                 results.append({
                     'title': title,
                     'url': url,
