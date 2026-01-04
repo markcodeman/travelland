@@ -10,3 +10,13 @@ button{background:#2563eb;color:#fff;padding:8px 12px;border-radius:8px;border:n
 .tag{background:#eef2ff;color:#1e3a8a;padding:3px 8px;border-radius:999px;font-size:12px;margin-left:8px}
 .loading{padding:20px;text-align:center}
 .error{padding:12px;background:#ffefef;color:#7f1d1d;border-radius:6px}
+
+@media (max-width: 768px) {
+  body{padding:10px}
+  .wrap{padding:0}
+  header{padding:12px}
+  .controls{flex-direction:column;gap:8px}
+  .controls label{width:100%}
+  .controls input,.controls select{width:100%}
+  button{width:100%;padding:12px;font-size:14px}
+}

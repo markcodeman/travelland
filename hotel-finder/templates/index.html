@@ -300,6 +300,70 @@
             font-size: 14px;
             background: #667eea;
         }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            header {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .honest-badge {
+                display: block;
+                margin: 10px 0 0 0;
+            }
+            
+            .search-box {
+                padding: 20px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-group {
+                width: 100%;
+            }
+            
+            button {
+                width: 100%;
+                padding: 15px;
+            }
+            
+            .search-box > div[style*="display:flex"] {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .search-box > div[style*="display:flex"] label {
+                margin: 0;
+                justify-content: center;
+            }
+            
+            .chat-input-group {
+                flex-direction: column;
+            }
+            
+            .chat-input-group input,
+            .chat-input-group button {
+                width: 100%;
+            }
+            
+            .ai-buttons {
+                flex-direction: column;
+            }
+            
+            .hotel-details {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
