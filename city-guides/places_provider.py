@@ -4,8 +4,12 @@ Provides rich data including ratings, reviews, price levels, and contact informa
 """
 
 import os
+import time
 import googlemaps
 from typing import List, Dict, Optional
+
+# Constants
+VALID_PLACE_STATUSES = ['OK', 'ZERO_RESULTS']
 
 # Initialize Google Maps client
 GOOGLE_PLACES_API_KEY = os.getenv('GOOGLE_PLACES_API_KEY')
@@ -95,7 +99,7 @@ def discover_restaurants(city: str, limit: int = 200, cuisine: Optional[str] = N
         # Perform text search (returns up to 60 results per call)
         search_results = gmaps.places(query=query)
         
-        if not search_results or search_results.get('status') not in ['OK', 'ZERO_RESULTS']:
+        if not search_results or search_results.get('status') not in VALID_PLACE_STATUSES:
             return []
         
         places = search_results.get('results', [])
@@ -156,11 +160,10 @@ def discover_restaurants(city: str, limit: int = 200, cuisine: Optional[str] = N
         next_page_token = search_results.get('next_page_token')
         while next_page_token and len(results) < limit:
             try:
-                import time
                 time.sleep(2)  # Required delay for next_page_token to become valid
                 
                 next_results = gmaps.places(page_token=next_page_token)
-                if not next_results or next_results.get('status') != 'OK':
+                if not next_results or next_results.get('status') not in VALID_PLACE_STATUSES:
                     break
                 
                 next_places = next_results.get('results', [])

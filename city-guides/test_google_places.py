@@ -41,7 +41,11 @@ def test_api_key_environment():
         if places_provider.GOOGLE_PLACES_API_KEY:
             print("  ✓ GOOGLE_PLACES_API_KEY is set")
             # Mask the key for security
-            masked = places_provider.GOOGLE_PLACES_API_KEY[:10] + "..." + places_provider.GOOGLE_PLACES_API_KEY[-4:]
+            key = places_provider.GOOGLE_PLACES_API_KEY
+            if len(key) > 14:
+                masked = key[:10] + "..." + key[-4:]
+            else:
+                masked = key[:4] + "..." if len(key) > 4 else "****"
             print(f"  → Key: {masked}")
             return True
         else:

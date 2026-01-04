@@ -27,7 +27,9 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
       
       // Add rating if available (Google Places)
       if (v.rating) {
-        const stars = '⭐'.repeat(Math.round(v.rating));
+        const roundedRating = Math.round(v.rating);
+        const starCount = Math.max(1, roundedRating); // Ensure at least 1 star for any positive rating
+        const stars = '⭐'.repeat(starCount);
         card += `<p class="meta">${stars} ${v.rating}/5 (${v.user_ratings_total} reviews)</p>`;
       }
       
