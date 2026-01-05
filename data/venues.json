@@ -1,0 +1,79 @@
+[
+  {
+    "id": "nyc-1",
+    "city": "NYC",
+    "name": "Joe's Classic Diner",
+    "budget": "cheap",
+    "price_range": "$",
+    "description": "Retro diner with burgers and coffee. Local favorite for quick budget meals.",
+    "tags": "diner,american,breakfast,cheap",
+    "address": "123 East 5th St, New York, NY",
+    "latitude": 40.723, "longitude": -73.994
+  },
+  {
+    "id": "nyc-2",
+    "city": "NYC",
+    "name": "Parkside Bistro",
+    "budget": "mid",
+    "price_range": "$$",
+    "description": "Cozy bistro near the park offering seasonal dishes and great brunch.",
+    "tags": "bistro,brunch,mid",
+    "address": "10 Park Ave, New York, NY",
+    "latitude": 40.730, "longitude": -73.981
+  },
+  {
+    "id": "nyc-3",
+    "city": "NYC",
+    "name": "Rooftop Luxe",
+    "budget": "expensive",
+    "price_range": "$$$$",
+    "description": "Fine dining with skyline views — special occasion restaurant.",
+    "tags": "fine dining,rooftop,expensive",
+    "address": "200 Skyline Dr, New York, NY",
+    "latitude": 40.752, "longitude": -73.977
+  },
+  {
+    "id": "nyc-4",
+    "city": "NYC",
+    "name": "Budget Sushi Bar",
+    "budget": "cheap",
+    "price_range": "$",
+    "description": "Casual sushi counter with lunch specials and takeaway options.",
+    "tags": "sushi,cheap,japanese",
+    "address": "45 Canal St, New York, NY",
+    "latitude": 40.717, "longitude": -73.999
+  },
+  {
+    "id": "nyc-5",
+    "city": "NYC",
+    "name": "Comfort Rooms Hostel",
+    "budget": "cheap",
+    "price_range": "$",
+    "description": "Clean, central hostel with private and shared rooms; ideal for backpackers.",
+    "tags": "hostel,accommodation,cheap",
+    "address": "2 Traveler Ln, New York, NY",
+    "latitude": 40.741, "longitude": -73.989
+  },
+  {
+    "id": "nyc-6",
+    "city": "NYC",
+    "name": "Midtown Boutique Hotel",
+    "budget": "mid",
+    "price_range": "$$",
+    "description": "Stylish small hotel with complimentary breakfast.",
+    "tags": "hotel,mid,accommodation",
+    "address": "88 Midtown Rd, New York, NY",
+    "latitude": 40.754, "longitude": -73.984
+  },
+  {
+    "id": "nyc-7",
+    "city": "NYC",
+    "name": "Gourmet Lane",
+    "budget": "expensive",
+    "price_range": "$$$",
+    "description": "High-end tasting-menu restaurant with chef's counter.",
+    "tags": "tasting,expensive,fine dining",
+    "address": "300 Gourmet St, New York, NY",
+    "latitude": 40.760, "longitude": -73.975
+  }
+]
