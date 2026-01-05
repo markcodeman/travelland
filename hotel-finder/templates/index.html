@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Honest Hotel Finder - No Hidden Fees</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .tagline {
+            color: #28a745;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .search-box {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+        
+        input, select {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .results {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .hotel-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .hotel-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .hotel-name {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        
+        .pricing {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+        }
+        
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .price-label {
+            color: #666;
+        }
+        
+        .price-value {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .total-price {
+            border-top: 2px solid #ddd;
+            padding-top: 10px;
+            font-size: 20px;
+            color: #28a745;
+        }
+        
+        .total-price .price-value {
+            color: #28a745;
+            font-size: 24px;
+        }
+        
+        .hotel-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .honest-badge {
+            background: #28a745;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 15px;
+        }
+        
+        .ai-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-top: 30px;
+            border: 2px solid #667eea;
+        }
+        
+        .ai-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chat-messages {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            min-height: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            line-height: 1.6;
+        }
+        
+        .message.user {
+            background: #e7f1ff;
+            color: #003d99;
+            text-align: right;
+        }
+        
+        .message.ai {
+            background: #f0f7e8;
+            color: #155724;
+            text-align: left;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+        
+        .chat-input-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input-group input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .chat-input-group button {
+            padding: 12px 20px;
+        }
+        
+        .ai-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .ai-buttons button {
+            flex: 1;
+            padding: 10px 15px;
+            font-size: 14px;
+            background: #667eea;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            header {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .honest-badge {
+                display: block;
+                margin: 10px 0 0 0;
+            }
+            
+            .search-box {
+                padding: 20px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-group {
+                width: 100%;
+            }
+            
+            button {
+                width: 100%;
+                padding: 15px;
+            }
+            
+            .search-box > div[style*="display:flex"] {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .search-box > div[style*="display:flex"] label {
+                margin: 0;
+                justify-content: center;
+            }
+            
+            .chat-input-group {
+                flex-direction: column;
+            }
+            
+            .chat-input-group input,
+            .chat-input-group button {
+                width: 100%;
+            }
+            
+            .ai-buttons {
+                flex-direction: column;
+            }
+            
+            .hotel-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏨 Honest Hotel Finder <span class="honest-badge">✓ No Hidden Fees</span></h1>
+            <p class="tagline">Transparent pricing. Real availability. Fair deals. Alpha prototype.</p>
+        </header>
+        
+        <div class="search-box">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="city">City Code (e.g., NYC, LON, PAR)</label>
+                    <input type="text" id="city" value="NYC" placeholder="NYC">
+                </div>
+                
+                <div class="form-group">
+                    <label for="checkin">Check-in</label>
+                    <input type="date" id="checkin">
+                </div>
+                
+                <div class="form-group">
+                    <label for="checkout">Check-out</label>
+                    <input type="date" id="checkout">
+                </div>
+                
+                <div class="form-group">
+                    <label for="adults">Adults</label>
+                    <select id="adults">
+                        <option value="1">1 Adult</option>
+                        <option value="2">2 Adults</option>
+                        <option value="3">3 Adults</option>
+                        <option value="4">4 Adults</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="currency">Currency</label>
+                    <select id="currency">
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="GBP">GBP</option>
+                        <option value="AUD">AUD</option>
+                        <option value="JPY">JPY</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="display:flex; gap:12px; align-items:center;">
+                <label style="font-size:14px; color:#555; display:flex; align-items:center; gap:8px;"><input type="checkbox" id="webSearchToggle"> Use web search (free)</label>
+                <button onclick="searchHotels()" id="searchBtn">Search Hotels</button>
+            </div>
+        </div>
+        
+        <div id="results" class="results"></div>
+        
+        <!-- AI Deal Slasher removed for backpacker-only app -->
+    </div>
+    
+    <script>
+        // Global state for current search
+        let currentHotels = [];
+        
+        // Set default dates (tomorrow and 7 days from tomorrow)
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const weekLater = new Date();
+        weekLater.setDate(weekLater.getDate() + 8);
+        
+        document.getElementById('checkin').value = tomorrow.toISOString().split('T')[0];
+        document.getElementById('checkout').value = weekLater.toISOString().split('T')[0];
+        
+        async function searchHotels() {
+            const btn = document.getElementById('searchBtn');
+            const results = document.getElementById('results');
+            const aiPanel = document.getElementById('aiPanel');
+            
+            btn.disabled = true;
+            btn.textContent = 'Searching...';
+            results.innerHTML = '<div class="loading">🔍 Finding honest deals...</div>';
+            aiPanel.style.display = 'none';
+            
+            const useWeb = document.getElementById('webSearchToggle').checked;
+            const data = {
+                city_code: document.getElementById('city').value.toUpperCase(),
+                check_in: document.getElementById('checkin').value,
+                check_out: document.getElementById('checkout').value,
+                adults: parseInt(document.getElementById('adults').value),
+                currency: document.getElementById('currency').value
+            };
+            
+            try {
+                const response = await fetch(useWeb ? '/web-search' : '/search', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                
+                if (result.error) {
+                    results.innerHTML = `<div class="error">❌ ${result.error}<br><small>${result.details || ''}</small></div>`;
+                } else {
+                        displayResults(result.hotels);
+                }
+            } catch (error) {
+                results.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Search Hotels';
+            }
+        }
+        
+        function displayResults(hotels) {
+            const results = document.getElementById('results');
+            if (!hotels || hotels.length === 0) {
+                results.innerHTML = '<div class="error">No hotels found. Try a different city or dates.</div>';
+                aiPanel.style.display = 'none';
+                currentHotels = [];
+                return;
+            }
+            
+            results.innerHTML = hotels.map(hotel => `
+                <div class="hotel-card">
+                    <div class="hotel-name">${hotel.name}</div>
+                    
+                    <div class="pricing">
+                        <div class="price-row">
+                            <span class="price-label">Base Price (per night):</span>
+                            <span class="price-value">${hotel.currency} ${hotel.base_price.toFixed(2)}</span>
+                        </div>
+                        <div class="price-row">
+                            <span class="price-label">Taxes & Fees (per night):</span>
+                            <span class="price-value">${hotel.currency} ${hotel.taxes.toFixed(2)}</span>
+                        </div>
+                        <div class="price-row">
+                            <span class="price-label">Total (per night):</span>
+                            <span class="price-value">${hotel.currency} ${hotel.total_per_night.toFixed(2)}</span>
+                        </div>
+                        <div class="price-row total-price">
+                            <span class="price-label">Total Price (all-in for ${hotel.nights} night${hotel.nights>1?'s':''}):</span>
+                            <span class="price-value">${hotel.currency} ${hotel.total_price.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="hotel-details">
+                        <div class="detail-item">
+                            🛏️ ${hotel.description}
+                        </div>
+                        <div class="detail-item">
+                            📅 ${hotel.check_in} → ${hotel.check_out}
+                        </div>
+                        <div class="detail-item">
+                            <span class="badge ${hotel.cancellation === 'Refundable' ? 'badge-success' : 'badge-warning'}">
+                                ${hotel.cancellation}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // backpacker view: no AI panel in this simplified app
+            currentHotels = hotels;
+        }
+        
+        function appendMessage(sender, text) {
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = sender === 'You' ? 'message user' : 'message bot';
+            // Basic safe formatting: escape HTML, then apply minimal markdown (**bold**) and newlines
+            const escaped = String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            const withBold = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            const withBreaks = withBold.replace(/\n/g, '<br>');
+            div.innerHTML = `<strong>${sender}:</strong> ${withBreaks}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        // AI chat and analysis removed for backpacker-only app
+    </script>
+</body>
+</html>

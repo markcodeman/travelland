@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>City Microguides — Budget Picks</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="hero">
+    <h1>Find Budget-Friendly Eats & Spots</h1>
+    <p>Discover affordable restaurants and places under $15 per person. Real-time data from OpenStreetMap.</p>
+  </div>
+
+    <!-- AI Panel (moved to top) -->
+    <div class="wrap">
+    <details class="ai-panel" open>
+      <summary>👨‍🦱 Marco's Explorer Tools</summary>
+      <div>
+        <div class="ai-title">🧭 Ask Marco the Explorer</div>
+        <div id="chatMessages" class="chat-messages"></div>
+        <div class="chat-input-group">
+          <input id="chatCity" placeholder="City (e.g., London UK)" />
+          <input id="chatInput" placeholder="Ask Marco about the city (e.g., 'best museums')" />
+          <button id="chatSend">🧭 Ask Marco</button>
+          <button id="clearChat" class="btn-clear-chat">Clear Chat</button>
+        </div>
+      </div>
+    </details>
+    </div>
+
+    <!-- Currency Converter Panel -->
+    <div class="wrap">
+    <details class="currency-panel" open>
+      <summary>🪙 Currency Converter</summary>
+      <div>
+        <div class="currency-input-group">
+          <input id="amount" type="number" placeholder="Amount" />
+          <select id="fromCurr" title="Convert from currency">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="JPY">JPY</option>
+            <option value="CAD">CAD</option>
+            <option value="AUD">AUD</option>
+            <option value="MXN">MXN</option>
+          </select>
+          <span>to</span>
+          <select id="toCurr" title="Convert to currency">
+            <option value="GBP">GBP</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="JPY">JPY</option>
+            <option value="CAD">CAD</option>
+            <option value="AUD">AUD</option>
+            <option value="MXN">MXN</option>
+          </select>
+          <button id="convertBtn">Convert</button>
+        </div>
+        <div id="convertResult"></div>
+      </div>
+    </details>
+    </div>
+
+  <div class="wrap hidden">
+    <section class="search-section">
+      <div class="search-bar">
+        <input id="city" placeholder="Enter city (e.g., NYC)" />
+        <select id="budget" title="Select budget">
+          <option value="any">Any Budget</option>
+          <option value="cheap" selected>Cheap (Under $15)</option>
+          <option value="mid">Mid ($15-30)</option>
+        </select>
+        <input id="q" placeholder="Search name, tag, or description" />
+        <label class="inline-label">
+          <input type="checkbox" id="useGooglePlaces" />
+          <span>Use Google Places</span>
+        </label>
+        <button id="searchBtn">🔍 Search</button>
+      </div>
+    </section>
+
+    <section id="results" class="results"></section>
+  </div>
+
+  <script src="/static/main.js"></script>
+</body>
+</html>
