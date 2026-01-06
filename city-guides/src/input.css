@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Project-specific small overrides to preserve existing look while using Tailwind */
+/* You can move original rules from static/styles.css into Tailwind components here */
