@@ -5,16 +5,41 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>City Microguides — Budget Picks</title>
   <link rel="stylesheet" href="/static/styles.css?v=2">
+  <!-- Tailwind Play CDN (for rapid prototyping, replace with built CSS for production) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Optional: DaisyUI base styles via CDN (useful for components) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@2.51.6/dist/full.css">
+  <!-- Flowbite JS (UI components that require JS) -->
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@1.6.5/dist/flowbite.min.js"></script>
 </head>
 <body>
+  <!-- Search moved to top for better mobile UX -->
+  <div class="wrap">
+    <section class="search-section">
+      <div class="search-bar">
+        <input id="city" placeholder="City, State or Zip (e.g., Chesapeake VA or 23320)" />
+        <select id="budget" title="Select budget">
+          <option value="any" selected>Any Budget</option>
+          <option value="cheap">Budget (Under $20)</option>
+          <option value="mid">Moderate ($20-$50)</option>
+        </select>
+        <input id="q" placeholder="Search sushi, burger, etc." />
+        <label class="inline-label">
+          <input type="checkbox" id="localOnly" checked />
+          <span>Local Gems Only</span>
+        </label>
+        <button id="searchBtn">🔍 Search</button>
+        <div class="hint"><strong>Pro Tip:</strong> Use a <b>Zip Code</b> or <b>State</b> (e.g., <i>VA</i>) for more accurate results in ambiguous areas.</div>
+      </div>
+    </section>
+
   <div class="hero">
     <h1>City Microguides</h1>
     <p>Discover real local gems, affordable eats, and hidden spots—powered by live data.</p>
   </div>
 
-    <!-- Currency Converter Panel -->
-    <div class="wrap">
-    <details class="currency-panel" open>
+    <!-- Currency Converter Panel (collapsed by default) -->
+    <details class="currency-panel">
       <summary>🪙 Currency Converter</summary>
       <div>
         <div class="currency-input-group">
@@ -43,26 +68,6 @@
         <div id="convertResult"></div>
       </div>
     </details>
-    </div>
-
-  <div class="wrap">
-    <section class="search-section">
-      <div class="search-bar">
-        <input id="city" placeholder="City, State or Zip (e.g., Chesapeake VA or 23320)" />
-        <select id="budget" title="Select budget">
-          <option value="any" selected>Any Budget</option>
-          <option value="cheap">Budget (Under $20)</option>
-          <option value="mid">Moderate ($20-$50)</option>
-        </select>
-        <input id="q" placeholder="Search sushi, burger, etc." />
-        <label class="inline-label">
-          <input type="checkbox" id="localOnly" checked />
-          <span>Local Gems Only</span>
-        </label>
-        <button id="searchBtn">🔍 Search</button>
-        <div class="hint"><strong>Pro Tip:</strong> Use a <b>Zip Code</b> or <b>State</b> (e.g., <i>VA</i>) for more accurate results in ambiguous areas.</div>
-      </div>
-    </section>
 
     <section id="results" class="results"></section>
   </div>
