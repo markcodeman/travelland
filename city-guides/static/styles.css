@@ -58,14 +58,12 @@ body {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+
 }
 
 .search-section {
   padding: 30px;
   margin-bottom: 40px;
-  position: sticky;
-  top: 20px;
-  z-index: 1000;
 }
 
 .search-bar {
@@ -136,9 +134,9 @@ body {
 }
 
 .card:hover {
-  transform: translateY(-12px) scale(1.02);
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  transform: translateY(-6px) scale(1.01);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
 }
 
 .card h3 {
@@ -461,7 +459,23 @@ body {
 @media (max-width: 768px) {
   .hero { padding: 40px 20px; }
   .hero h1 { font-size: 2.5rem; }
-  .search-section { position: static; padding: 20px; }
+  .search-section { position: static; padding: 12px 12px 18px; margin-bottom: 18px; }
   .search-bar { flex-direction: column; gap: 10px; }
   .search-bar input, .search-bar select, .search-bar button { width: 100%; }
+
+  /* Reduce floating UI clutter on small screens */
+  .marco-nudge { display: none; }
+  .marco-chat-container { right: 10px; left: 10px; width: auto; }
+
+  /* Compact cards for mobile */
+  .card { padding: 16px; }
+  .card h3 { font-size: 1.1rem; }
+  .card p { margin-bottom: 14px; }
+  .results { gap: 16px; }
+  .marco-fab { width: 52px; height: 52px; font-size: 22px; bottom: 18px; right: 14px; }
+}
+
+/* Sticky search on larger screens only */
+@media (min-width: 769px) {
+  .search-section { position: sticky; top: 20px; z-index: 1000; }
 }
