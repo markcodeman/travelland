@@ -473,6 +473,19 @@ body {
   .card p { margin-bottom: 14px; }
   .results { gap: 16px; }
   .marco-fab { width: 52px; height: 52px; font-size: 22px; bottom: 18px; right: 14px; }
+
+  /* Compact search inputs for narrow viewports */
+  .search-bar input, .search-bar select { padding: 10px 12px; font-size: 14px; border-radius: 10px; }
+  .search-bar button { padding: 10px 16px; font-size: 15px; border-radius: 12px; }
+  .search-bar .hint { font-size: 0.85rem; }
+
+  /* Hide currency panel on very small screens to reduce clutter */
+  .currency-panel { display: none; }
+
+  /* Tighter hero on mobile */
+  .hero { padding: 24px 12px; }
+  .hero h1 { font-size: 1.8rem; }
+  .hero p { font-size: 1rem; max-width: 380px; margin: 0 auto; }
 }
 
 /* Sticky search on larger screens only */
