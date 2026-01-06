@@ -51,7 +51,40 @@ def _singularize(word: str) -> str:
     return w
 
 
-def discover_restaurants(city, limit=200, cuisine=None):
+# Expanded list of known chain restaurants to exclude for "Local Only" filter
+CHAIN_KEYWORDS = [
+    'chipotle', 'qdoba', 'taco bell', 'moe\'s', 'baja fresh', 'del taco', 
+    'rubio\'s', 'mexican grill', 'taco time', 'jack in the box', 'mcdonald\'s', 
+    'burger king', 'wendy\'s', 'subway', 'starbucks', 'dunkin\'', 'kfc', 
+    'pizza hut', 'domino\'s', 'papa john\'s', 'little caesars', 'applebee\'s',
+    'chili\'s', 'tgif', 'olive garden', 'red lobster', 'outback', 'panera',
+    'five guys', 'smashburger', 'shake shack', 'culver\'s', 'in-n-out',
+    'sonic', 'arbys', 'hardee\'s', 'carl\'s jr', 'white castle', 'steak n shake',
+    'buffalo wild wings', 'denny\'s', 'ihop', 'waffle house', 'cracker barrel',
+    'cheesecake factory', 'panda express', 'pf changs', 'pei wei', 'jason\'s deli',
+    'firehouse subs', 'jersey mike\'s', 'jimmy john\'s', 'potbelly', 'quiznos',
+    'mcallister\'s', 'zaxby\'s', 'canes', 'raising cane\'s', 'popeyes', 'church\'s',
+    'wingstop', 'dairy queen', 'a&w', 'fuddruckers', 'johnny rockets', 'red robin',
+    'ruby tuesday', 'bj\'s', 'yard house', 'cheddar\'s', 'bob evans', 'perkins',
+    'hooters', 'texas roadhouse', 'longhorn', 'maggiano\'s', 'carrabba\'s', 
+    'bonefish', 'p.f. chang\'s', 'papa murphy\'s', 'cicis', 'chuck e. cheese',
+    'mod pizza', 'blaze pizza', 'marcos pizza', 'hungry howies', 'round table pizza',
+    'jet\'s pizza', 'village inn', 'steak\'n shake', 'portillo\'s', 'whataburger',
+    'bojangles', 'biscuitville', 'bob evans', 'friendly\'s', 'perkins', 'huddle house',
+    'taco bueno', 'taco john\'s', 'fazoli\'s', 'captain d\'s', 'long john silver\'s',
+    'boston market', 'sweetgreen', 'dig inn', 'chopt', 'salata', 'tropical smoothie',
+    'smoothie king', 'jamba juice', 'cold stone', 'baskin robbins', 'ben & jerry\'s',
+    'dq grill', 'freddy\'s', 'jollibee', 'habit burger', 'bubba\'s 33', 'steak \'n shake',
+    'twin peaks', 'hooters', 'logans roadhouse', 'golden corral', 'old country buffet', 
+    'shoney\'s', 'jolly bee', 'habit grill', 'elevation burger', 'bgr the burger joint',
+    'fatburger', 'steak n shake', 'bobby\'s burger palace', 'burgerfi', 'wayback burgers',
+    'mooyah', 'cheaphard', 'mcdonalds', 'burgerking', 'wendys', 'popeye\'s', 'kiddie',
+    'pf chang\'s', 'magnolia', 'cheesecake', 'pf changs', 'magento', 'cava', 
+    'honeygrow', 'sweetgreen', 'mezza', 'zoes kitchen', 'tazikis', 'garbanzo',
+    'pita pit', 'hummus', 'falafel'
+]
+
+def discover_restaurants(city, limit=200, cuisine=None, local_only=False):
     """Discover restaurant POIs for a city using Nominatim + Overpass.
     We no longer force a cuisine= filter into the Overpass query because many
     POIs don't set cuisine tags. Instead we fetch amenities and perform
@@ -155,17 +188,11 @@ def discover_restaurants(city, limit=200, cuisine=None):
                 return []
     elements = j.get('elements', [])
     out = []
-    # Known chain restaurants to exclude for more authentic recommendations
-    chain_keywords = [
-        'chipotle', 'qdoba', 'taco bell', 'moe\'s', 'baja fresh', 'del taco', 
-        'rubio\'s', 'mexican grill', 'taco time', 'jack in the box', 'mcdonald\'s', 
-        'burger king', 'wendy\'s', 'subway', 'starbucks', 'dunkin\'', 'kfc', 
-        'pizza hut', 'domino\'s', 'papa john\'s', 'little caesars'
-    ]
     # prepare cuisine matching token (singularized)
     cuisine_token = _singularize(cuisine) if cuisine else None
 
-    for el in elements[:limit]:
+    # Process all elements, not just the first 'limit' because filtering will reduce count
+    for el in elements:
         tags = el.get('tags') or {}
         name = tags.get('name') or tags.get('operator') or 'Unnamed'
         # Get lat/lon
@@ -185,9 +212,9 @@ def discover_restaurants(city, limit=200, cuisine=None):
         if not address:
             address = f"{lat}, {lon}"
         
-        # Skip known chains for more authentic local recommendations
+        # Filter chains if "Local Only" is requested
         name_lower = name.lower()
-        if any(chain.lower() in name_lower for chain in chain_keywords):
+        if local_only and any(chain.lower() in name_lower for chain in CHAIN_KEYWORDS):
             continue
 
         # Post-filter by cuisine/name/tag matching when requested.
@@ -197,7 +224,12 @@ def discover_restaurants(city, limit=200, cuisine=None):
         if cuisine_token:
             # also check cuisine tag specifically
             cuisine_tag = (tags.get('cuisine') or '').lower()
-            if cuisine_token not in cuisine_tag and cuisine_token not in searchable and _singularize(cuisine_tag) not in cuisine_token:
+            # Ensure we don't match empty strings
+            match_in_tags = cuisine_token in searchable
+            match_in_cuisine = cuisine_token in cuisine_tag
+            match_reverse = cuisine_tag and _singularize(cuisine_tag) in cuisine_token
+            
+            if not (match_in_tags or match_in_cuisine or match_reverse):
                 # no match for requested cuisine, skip
                 continue
         website = tags.get('website') or tags.get('contact:website')

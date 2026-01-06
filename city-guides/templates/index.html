@@ -9,7 +9,7 @@
 <body>
   <div class="hero">
     <h1>Find Budget-Friendly Eats & Spots</h1>
-    <p>Discover affordable restaurants and places under $15 per person. Real-time data from OpenStreetMap.</p>
+    <p>Discover affordable restaurants and local favorites. Real-time data from OpenStreetMap & more.</p>
   </div>
 
     <!-- AI Panel (moved to top) -->
@@ -67,14 +67,14 @@
       <div class="search-bar">
         <input id="city" placeholder="Enter city (e.g., NYC)" />
         <select id="budget" title="Select budget">
-          <option value="any">Any Budget</option>
-          <option value="cheap" selected>Cheap (Under $15)</option>
-          <option value="mid">Mid ($15-30)</option>
+          <option value="any" selected>Any Budget</option>
+          <option value="cheap">Budget (Under $20)</option>
+          <option value="mid">Moderate ($20-$50)</option>
         </select>
         <input id="q" placeholder="Search name, tag, or description" />
         <label class="inline-label">
-          <input type="checkbox" id="useGooglePlaces" />
-          <span>Use Google Places</span>
+          <input type="checkbox" id="localOnly" checked />
+          <span>Local Gems Only</span>
         </label>
         <button id="searchBtn">🔍 Search</button>
       </div>

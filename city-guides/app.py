@@ -11,7 +11,6 @@ load_dotenv(dotenv_path=os.path.join(_here, '.env'))
 import semantic
 import overpass_provider
 from overpass_provider import _singularize
-import places_provider
 import multi_provider
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
@@ -26,7 +25,7 @@ def search():
     city = (payload.get('city') or '').strip()
     budget = (payload.get('budget') or '').strip().lower()
     q = (payload.get('q') or '').strip().lower()
-    provider = (payload.get('provider') or 'osm').strip().lower()  # 'osm' or 'google_places'
+    local_only = payload.get('localOnly', False)
 
     # normalized singular form of query for plural handling
     try:
@@ -37,129 +36,80 @@ def search():
     results = []
     if city:
         try:
-            # Choose data provider based on user selection
-            if provider == 'google_places' and places_provider.gmaps:
-                # Use Google Places API
-                food_keywords = ['taco', 'pizza', 'burger', 'sushi', 'asian', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'restaurant', 'food', 'eat', 'irish', 'indian', 'thai', 'vietnamese', 'greek', 'spanish', 'german', 'british']
-                # normalize query and handle simple plurals (e.g., 'burgers' -> 'burger')
-                try:
-                    from overpass_provider import _singularize
-                    q_norm = _singularize(q)
-                except Exception:
-                    q_norm = q
-                # pass the query through to the provider as a hint so provider can
-                # match against name/tags. We still singularize for better matching.
-                cuisine_param = q_norm if q_norm else None
-                pois = places_provider.discover_restaurants(city, limit=200, cuisine=cuisine_param)
-                
-                for poi in pois:
-                    # Filter by query if provided
-                    if q:
-                        combined = ' '.join([str(poi.get(k,'')) for k in ('name','tags','description')]).lower()
-                        if q not in combined:
-                            continue
-                    
-                    # Filter by budget if provided
-                    if budget and budget != 'any' and poi.get('budget') != budget:
+            # Orchestrate providers (OSM, OpenTripMap) and merge results
+            cuisine_param = q_norm if q_norm else None
+            pois = multi_provider.discover_restaurants(city, cuisine=cuisine_param or '', limit=200, local_only=local_only)
+            
+            # Apply optional substring filtering only when we didn't pass a cuisine hint
+            matched_pois = []
+            for poi in pois:
+                # If we passed the query through to the provider as a cuisine/name hint,
+                # the provider already applied name/tag matching. Only apply the extra
+                # substring filter when we didn't pass a cuisine hint.
+                if q and not cuisine_param:
+                    combined = ' '.join([str(poi.get(k,'')) for k in ('name','tags')]).lower()
+                    # match either the raw query or a normalized singular form
+                    try:
+                        q_sing = overpass_provider._singularize(q)
+                    except Exception:
+                        q_sing = q
+                    if (q not in combined) and (q_sing not in combined):
                         continue
-                    
-                    # Format venue for response
-                    venue = {
-                        'id': poi.get('id', ''),
-                        'city': city,
-                        'name': poi.get('name', 'Unknown'),
-                        'budget': poi.get('budget', 'mid'),
-                        'price_range': poi.get('price_range', '$$'),
-                        'rating': poi.get('rating'),
-                        'user_ratings_total': poi.get('user_ratings_total', 0),
-                        'description': poi.get('description', ''),
-                        'tags': poi.get('tags', ''),
-                        'address': poi.get('address'),
-                        'latitude': poi.get('latitude', 0),
-                        'longitude': poi.get('longitude', 0),
-                        'website': poi.get('website', ''),
-                        'phone': poi.get('phone', ''),
-                        'osm_url': poi.get('osm_url', ''),
-                        'amenity': poi.get('amenity', 'restaurant'),
-                        'provider': 'google_places'
-                    }
-                    results.append(venue)
-            else:
-                # Orchestrate multiple providers (OSM + Places) and merge results
-                food_keywords = ['taco', 'pizza', 'burger', 'sushi', 'asian', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'restaurant', 'food', 'eat']
-                cuisine_param = q_norm if q_norm else None
-                pois = multi_provider.discover_restaurants(city, cuisine=cuisine_param or '', limit=200)
+                matched_pois.append(poi)
+
+            # Now map matched_pois to venues
+            for poi in matched_pois:
+                amenity = poi.get('amenity', '')
+                v_budget = poi.get('budget')
+                price_range = poi.get('price_range')
                 
-
-                # Apply optional substring filtering only when we didn't pass a cuisine hint
-                matched_pois = []
-                for poi in pois:
-                    # If we passed the query through to the provider as a cuisine/name hint,
-                    # the provider already applied name/tag matching. Only apply the extra
-                    # substring filter when we didn't pass a cuisine hint.
-                    if q and not cuisine_param:
-                        combined = ' '.join([str(poi.get(k,'')) for k in ('name','tags')]).lower()
-                        # match either the raw query or a normalized singular form
-                        try:
-                            q_sing = overpass_provider._singularize(q)
-                        except Exception:
-                            q_sing = q
-                        if (q not in combined) and (q_sing not in combined):
-                            continue
-                    matched_pois.append(poi)
-
-                
-
-                # Now map matched_pois to venues
-                for poi in matched_pois:
-                    amenity = poi.get('amenity', '')
+                if not v_budget:
                     v_budget = 'mid'
                     price_range = '$$'
-                    if amenity in ['fast_food', 'cafe', 'food_court']:
+                    # heuristic for OSM
+                    tags_lower = poi.get('tags','').lower()
+                    if amenity in ['fast_food', 'cafe', 'food_court'] or 'cuisine=fast_food' in tags_lower or 'cost=cheap' in tags_lower:
                         v_budget = 'cheap'
                         price_range = '$'
-                    elif amenity in ['bar', 'pub']:
-                        v_budget = 'mid'
-                        price_range = '$$'
 
-                    if budget and budget != 'any' and v_budget != budget:
-                        continue
+                if budget and budget != 'any' and v_budget != budget:
+                    continue
 
-                    # Parse tags for better description
-                    tags_dict = dict(tag.split('=', 1) for tag in poi.get('tags', '').split(', ') if '=' in tag)
-                    cuisine = tags_dict.get('cuisine', '').replace(';', ', ')
-                    brand = tags_dict.get('brand', '')
+                # Parse tags for better description
+                tags_dict = dict(tag.split('=', 1) for tag in poi.get('tags', '').split(', ') if '=' in tag)
+                cuisine = tags_dict.get('cuisine', '').replace(';', ', ')
+                brand = tags_dict.get('brand', '')
 
-                    if cuisine:
-                        desc = f"{cuisine.title()} restaurant"
-                        if brand:
-                            desc = f"{brand} - {desc}"
-                    else:
-                        desc = f"Restaurant ({amenity})"
-                        if brand:
-                            desc = f"{brand} - {desc}"
+                if cuisine:
+                    desc = f"{cuisine.title()} restaurant"
+                    if brand:
+                        desc = f"{brand} - {desc}"
+                else:
+                    desc = f"Restaurant ({amenity})"
+                    if brand:
+                        desc = f"{brand} - {desc}"
 
-                    address = poi.get('address', '').strip()
-                    if not address:
-                        address = None
+                address = poi.get('address', '').strip()
+                if not address:
+                    address = None
 
-                    venue = {
-                        'id': poi.get('osm_id', ''),
-                        'city': city,
-                        'name': poi.get('name', 'Unknown'),
-                        'budget': v_budget,
-                        'price_range': price_range,
-                        'description': desc,
-                        'tags': poi.get('tags', ''),
-                        'address': address,
-                        'latitude': poi.get('lat', 0),
-                        'longitude': poi.get('lon', 0),
-                        'website': poi.get('website', ''),
-                        'osm_url': poi.get('osm_url', ''),
-                        'amenity': amenity,
-                        'provider': 'osm'
-                    }
-                    results.append(venue)
+                venue = {
+                    'id': poi.get('osm_id', poi.get('id', '')),
+                    'city': city,
+                    'name': poi.get('name', 'Unknown'),
+                    'budget': v_budget,
+                    'price_range': price_range,
+                    'description': desc,
+                    'tags': poi.get('tags', ''),
+                    'address': address,
+                    'latitude': poi.get('lat', 0),
+                    'longitude': poi.get('lon', 0),
+                    'website': poi.get('website', ''),
+                    'osm_url': poi.get('osm_url', ''),
+                    'amenity': amenity,
+                    'provider': poi.get('provider', 'osm')
+                }
+                results.append(venue)
         except Exception as e:
             print(f"Error fetching real-time data: {e}")
 

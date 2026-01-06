@@ -9,7 +9,7 @@ Discover affordable restaurants and places with real-time data from OpenStreetMa
 - **Real Ratings & Reviews**: ⭐ Star ratings and user review counts from Google Places
 - **Price Level Mapping**: Clear price indicators ($, $$, $$$, $$$$) from Google Places API
 - **Expanded Cuisines**: Support for Irish, Indian, Thai, Vietnamese, Greek, Spanish, German, British, and more
-- **Budget Filtering**: Find places under $15 (cheap), $15-30 (mid), or explore all options
+- **Budget Filtering**: Find affordable gems (under $20), moderate favorites ($20-50), or explore all options.
 - **5 Result Optimization**: Based on Miller's Law for optimal cognitive load (7±2 items)
 - **Production Ready**: Dynamic PORT binding, host='0.0.0.0', and production mode
 - **Enhanced Data**: Phone numbers, websites, and accurate addresses from Google Places

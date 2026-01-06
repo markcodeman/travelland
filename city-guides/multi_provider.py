@@ -5,7 +5,14 @@ import re
 from typing import List, Dict
 
 import overpass_provider
-import places_provider
+try:
+    import opentripmap_provider
+except Exception:
+    opentripmap_provider = None
+try:
+    import duckduckgo_provider
+except Exception:
+    duckduckgo_provider = None
 
 
 def _norm_name(name: str) -> str:
@@ -34,35 +41,39 @@ def _normalize_osm_entry(e: Dict) -> Dict:
     # e expected from overpass_provider.discover_restaurants
     return {
         'id': e.get('osm_id') or e.get('id') or '',
-        'name': e.get('name') or e.get('tags','').split('=')[-1] if e.get('tags') else 'Unknown',
+        'name': e.get('name') or (e.get('tags','').split('=')[-1] if e.get('tags') else 'Unknown'),
         'lat': float(e.get('lat') or e.get('latitude') or 0),
         'lon': float(e.get('lon') or e.get('longitude') or 0),
         'osm_url': e.get('osm_url',''),
         'tags': e.get('tags',''),
         'website': e.get('website',''),
-        'provider': 'osm',
+        'amenity': e.get('amenity',''),
+        'provider': e.get('provider') or 'osm',
         'raw': e,
     }
 
 
-def _normalize_places_entry(e: Dict) -> Dict:
-    # places_provider returns different keys
+def _normalize_generic_entry(e: Dict) -> Dict:
+    """Handle entries from web or other mixed sources."""
     return {
-        'id': e.get('place_id') or e.get('id') or '',
+        'id': e.get('id') or e.get('osm_id') or e.get('place_id') or '',
         'name': e.get('name') or 'Unknown',
-        'lat': float(e.get('latitude') or e.get('lat') or 0),
-        'lon': float(e.get('longitude') or e.get('lon') or 0),
+        'lat': float(e.get('lat') or e.get('latitude') or 0),
+        'lon': float(e.get('lon') or e.get('longitude') or 0),
         'osm_url': e.get('osm_url',''),
         'tags': e.get('tags',''),
         'website': e.get('website',''),
-        'provider': 'google_places' if places_provider.gmaps else 'places',
+        'description': e.get('description',''),
+        'amenity': e.get('amenity', 'restaurant'),
         'rating': e.get('rating'),
-        'user_ratings_total': e.get('user_ratings_total', 0),
+        'budget': e.get('budget'),
+        'price_range': e.get('price_range'),
+        'provider': e.get('provider') or 'web',
         'raw': e,
     }
 
 
-def discover_restaurants(city: str, cuisine: str = None, limit: int = 100) -> List[Dict]:
+def discover_restaurants(city: str, cuisine: str = None, limit: int = 100, local_only: bool = False) -> List[Dict]:
     """Orchestrate multiple providers concurrently, normalize, dedupe, and rank results.
 
     Returns list of unified entries with at least keys: id,name,lat,lon,osm_url,provider,raw
@@ -72,12 +83,19 @@ def discover_restaurants(city: str, cuisine: str = None, limit: int = 100) -> Li
     calls = []
     with ThreadPoolExecutor(max_workers=3) as ex:
         # Overpass (OSM)
-        calls.append(ex.submit(overpass_provider.discover_restaurants, city, limit, cuisine))
-        # Google Places / places_provider (if available)
-        try:
-            calls.append(ex.submit(places_provider.discover_restaurants, city, limit, cuisine))
-        except Exception:
-            pass
+        calls.append(ex.submit(overpass_provider.discover_restaurants, city, limit, cuisine, local_only))
+        # OpenTripMap (optional)
+        if opentripmap_provider:
+            try:
+                calls.append(ex.submit(opentripmap_provider.discover_restaurants, city, limit, cuisine))
+            except Exception:
+                pass
+        # DuckDuckGo (optional)
+        if duckduckgo_provider:
+            try:
+                calls.append(ex.submit(duckduckgo_provider.discover_restaurants, city, limit, cuisine))
+            except Exception:
+                pass
 
         # gather
         for fut in as_completed(calls):
@@ -85,61 +103,70 @@ def discover_restaurants(city: str, cuisine: str = None, limit: int = 100) -> Li
                 r = fut.result()
                 if not r:
                     continue
-                # detect source by inspecting elements
-                if isinstance(r, list) and r and (r[0].get('place_id') or r[0].get('rating')):
-                    # likely places_provider
-                    for e in r:
-                        results.append(_normalize_places_entry(e))
-                else:
-                    for e in r:
-                        # overpass entries may already be normalized or raw mapping
-                        # ensure fields exist
-                        if 'osm_url' in e or 'tags' in e:
-                            results.append(_normalize_osm_entry(e))
-                        else:
-                            results.append(_normalize_places_entry(e))
+                
+                for e in r:
+                    # check if already a provider and use generic if so
+                    if e.get('provider') in ['web', 'opentripmap', 'google_places']:
+                        entry = _normalize_generic_entry(e)
+                    elif 'osm_url' in e or 'tags' in e:
+                        entry = _normalize_osm_entry(e)
+                    else:
+                        entry = _normalize_generic_entry(e)
+
+                    if local_only:
+                        name_lower = entry['name'].lower()
+                        if any(chain.lower() in name_lower for chain in overpass_provider.CHAIN_KEYWORDS):
+                            continue
+                    results.append(entry)
             except Exception:
                 continue
 
-    # Deduplicate by osm_url, then by name+proximity
+    # Deduplicate by osm_url first, then by name+proximity
     deduped = []
     seen_urls = set()
     for entry in results:
-        url = (entry.get('osm_url') or '').strip()
-        if url:
+        url = (entry.get('website') or entry.get('osm_url') or '').strip()
+        if url and 'openstreetmap.org' not in url: # use real website for deduping if possible
             if url in seen_urls:
                 continue
             seen_urls.add(url)
-            deduped.append(entry)
-            continue
-        # otherwise compare by normalized name and proximity
+        
+        # compare by normalized name
         name_norm = _norm_name(entry.get('name',''))
         merged = False
         for e2 in deduped:
             if _norm_name(e2.get('name','')) == name_norm:
-                d = _haversine_meters(entry.get('lat',0), entry.get('lon',0), e2.get('lat',0), e2.get('lon',0))
-                if d < 100:  # within 100 meters
-                    # prefer entry with rating or from google_places
-                    pref = e2
-                    if entry.get('provider') == 'google_places' or (entry.get('rating') or 0) > (e2.get('rating') or 0):
-                        # replace
-                        deduped.remove(e2)
-                        deduped.append(entry)
+                # If both have valid lat/lon, check proximity
+                lat1, lon1 = entry.get('lat'), entry.get('lon')
+                lat2, lon2 = e2.get('lat'), e2.get('lon')
+                
+                if lat1 and lon1 and lat2 and lon2:
+                    d = _haversine_meters(lat1, lon1, lat2, lon2)
+                    if d < 1000: # increased to 1km for web results
+                        merged = True
+                        break
+                else: 
+                    # If one or both lack spatial data, we only merge if the website matches too
+                    # Or if the name is identical and we are willing to risk it.
+                    # For web-only results, if URLs are different, keep them.
+                    u1 = (entry.get('website') or entry.get('osm_url') or '').strip()
+                    u2 = (e2.get('website') or e2.get('osm_url') or '').strip()
+                    if u1 and u2 and u1 != u2:
+                        continue # Different websites, likely different places
+                    
                     merged = True
                     break
         if not merged:
             deduped.append(entry)
 
-    # Simple ranking: prefer entries with rating, then google_places, then by presence of website
+    # Ranking: prefer entries with webpage, then OSM (usually better data), then web
     def _score(e):
         score = 0
-        score += (e.get('rating') or 0) * 10
-        if e.get('provider') == 'google_places':
-            score += 5
-        if e.get('website'):
-            score += 2
+        if e.get('rating'): score += float(e['rating']) * 2
+        if e.get('website'): score += 5
+        if e.get('provider') == 'osm': score += 10
+        if e.get('provider') == 'web': score += 2 # web results as backfill
         return score
 
     deduped.sort(key=_score, reverse=True)
-    # limit
     return deduped[:limit]

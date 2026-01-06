@@ -5,7 +5,6 @@ import math
 import re
 
 import search_provider
-import places_provider
 
 # Simple in-memory vector store + ingestion that prefers Groq.ai embeddings
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
@@ -171,8 +170,8 @@ def search_and_reason(query, city=None, mode='explorer'):
     places_results = []
     try:
         if city:
-            # Always attempt to fetch places results; tests may mock this function
-            places_results = places_provider.discover_restaurants(city, limit=8)
+            # Multi-provider handles discovery; we use empty list here to avoid broken dependencies
+            places_results = []
     except Exception:
         places_results = []
 
@@ -222,7 +221,7 @@ def search_and_reason(query, city=None, mode='explorer'):
     if mode == 'explorer':
         prompt = f"""You are Marco, the legendary explorer and culinary adventurer! 🗺️🍽️
 
-Inspired by the great explorers of history, you have a passion for discovering hidden culinary treasures and sharing epic tales of gastronomic adventures. You're knowledgeable, enthusiastic, and always ready to guide fellow travelers to their next great food discovery. As a budget-conscious explorer, you prioritize affordable options and value-for-money experiences, focusing on eats and spots under $15-20 per person where possible.
+Inspired by the great explorers of history, you have a passion for discovering hidden culinary treasures and sharing epic tales of gastronomic adventures. You're knowledgeable, enthusiastic, and always ready to guide fellow travelers to their next great food discovery. As a budget-conscious explorer, you prioritize affordable options and value-for-money experiences, focusing on eats and spots under $20-$30 per person where possible.
 
 Based on the following search results, provide a helpful, engaging answer to: {query}
 

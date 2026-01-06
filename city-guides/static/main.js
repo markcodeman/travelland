@@ -2,15 +2,14 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
   const city = document.getElementById('city').value;
   const budget = document.getElementById('budget').value;
   const q = document.getElementById('q').value;
-  const useGooglePlaces = document.getElementById('useGooglePlaces').checked;
-  const provider = useGooglePlaces ? 'google_places' : 'osm';
+  const localOnly = document.getElementById('localOnly').checked;
   const resEl = document.getElementById('results');
   resEl.innerHTML = '<div class="loading">Searching…</div>';
   try {
     const resp = await fetch('/search', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({city, budget, q, provider})
+      body: JSON.stringify({city, budget, q, localOnly})
     });
     const j = await resp.json();
     if (!j || !j.venues) {
