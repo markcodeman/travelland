@@ -13,12 +13,16 @@
   <script src="https://cdn.jsdelivr.net/npm/flowbite@1.6.5/dist/flowbite.min.js"></script>
 </head>
 <body>
-  <!-- Search moved to top for better mobile UX -->
   <div class="wrap">
+    <div class="page-hero">
+      <h1>City Microguides</h1>
+      <p>Discover real local gems, affordable eats, and hidden spots—powered by live data.</p>
+    </div>
+
     <section class="search-section">
       <div class="max-w-xl mx-auto bg-white/70 backdrop-blur-md border border-white/30 rounded-2xl p-4 sm:p-6 shadow">
         <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-3 sm:space-y-0">
-          <input id="city" class="flex-1 p-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-300" placeholder="City, State or Zip (e.g., Chesapeake VA or 23320)" />
+          <input id="city" class="w-full flex-1 p-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-300" placeholder="City, State or Zip (e.g., Chesapeake VA or 23320)" />
           <select id="budget" class="w-full sm:w-44 p-3 rounded-xl border border-gray-200">
             <option value="any" selected>Any Budget</option>
             <option value="cheap">Budget (Under $20)</option>
@@ -27,24 +31,19 @@
         </div>
 
         <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-3 sm:space-y-0">
-          <input id="q" class="flex-1 p-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-300" placeholder="Search sushi, burger, etc." />
-          <div class="flex items-center sm:ml-2 w-full sm:w-auto justify-between sm:justify-end">
-            <label class="flex items-center space-x-2 text-sm text-gray-700">
-              <input type="checkbox" id="localOnly" checked class="w-4 h-4 rounded" />
-              <span>Local Gems Only</span>
-            </label>
-            <button id="searchBtn" aria-label="Search venues" class="ml-0 sm:ml-4 mt-2 sm:mt-0 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg sm:text-base py-4 sm:py-3 px-6 rounded-xl shadow-lg cta-pulse w-full sm:w-auto">🔍 Search</button>
-          </div>
+          <input id="q" class="w-full flex-1 p-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-300" placeholder="Search sushi, burger, etc." />
+          <label class="flex items-center space-x-2 text-sm text-gray-700 whitespace-nowrap">
+            <input type="checkbox" id="localOnly" checked class="w-4 h-4 rounded" />
+            <span>Local Gems Only</span>
+          </label>
+          <button id="searchBtn" aria-label="Search venues" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 whitespace-nowrap">
+            🔍 Search
+          </button>
         </div>
 
         <p class="text-sm text-gray-600 mt-3"><strong>Pro Tip:</strong> Use a <b>Zip Code</b> or <b>State</b> (e.g., <i>VA</i>) for more accurate results in ambiguous areas.</p>
       </div>
     </section>
-
-  <div class="hero">
-    <h1>City Microguides</h1>
-    <p>Discover real local gems, affordable eats, and hidden spots—powered by live data.</p>
-  </div>
 
     <!-- Currency Converter Panel (collapsed by default) -->
     <details class="currency-panel">

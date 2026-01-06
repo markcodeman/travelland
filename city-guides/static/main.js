@@ -35,7 +35,16 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
     }
     resEl.innerHTML = j.venues.map(v => {
       let card = `<div class="card">`;
-      card += `<h3>${v.name} <span class="tag">${v.price_range}</span></h3>`;
+      // open/closed badge
+      let badgeHtml = '';
+      if (v.open_now === true) {
+        badgeHtml = `<span class="open-badge" title="Open now">Open</span>`;
+      } else if (v.open_now === false) {
+        badgeHtml = `<span class="closed-badge" title="Closed now">Closed</span>`;
+      } else {
+        badgeHtml = `<span class="unknown-badge" title="Hours unknown">Hours</span>`;
+      }
+      card += `<h3>${v.name} ${badgeHtml} <span class="tag">${v.price_range}</span></h3>`;
       
       // Add rating if available
       if (v.rating) {
@@ -63,6 +72,15 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
         card += `<p><a href="${v.website}" target="_blank" rel="noopener">Visit Website</a></p>`;
       } else if (v.osm_url) {
         card += `<p><a href="${v.osm_url}" target="_blank" rel="noopener">View on Map</a></p>`;
+      }
+      // show next change time if available
+      if (v.next_change) {
+        try {
+          const when = new Date(v.next_change).toLocaleString();
+          card += `<p class="meta"><em>Next change:</em> ${when}</p>`;
+        } catch (e) {
+          card += `<p class="meta"><em>Next change:</em> ${v.next_change}</p>`;
+        }
       }
       
       card += `</div>`;

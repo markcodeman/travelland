@@ -15,6 +15,112 @@ import multi_provider
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
+
+def _compute_open_now(lat, lon, opening_hours_str):
+    """Best-effort server-side opening_hours check.
+    - Tries to resolve timezone from lat/lon using timezonefinder if available.
+    - Supports simple OSM opening_hours patterns like '24/7' and 'Mo-Sa 09:00-18:00; Su 10:00-16:00'.
+    Returns (is_open: bool|None, next_change_iso: str|None)
+    """
+    if not opening_hours_str:
+        return (None, None)
+
+    s = opening_hours_str.strip()
+    if not s:
+        return (None, None)
+
+    # Quick common check
+    if '24/7' in s or '24h' in s or '24 hr' in s.lower():
+        return (True, None)
+
+    # Determine timezone (best-effort)
+    tzname = None
+    try:
+        from timezonefinder import TimezoneFinder
+        tf = TimezoneFinder()
+        tzname = tf.timezone_at(lat=float(lat), lng=float(lon)) if lat and lon else None
+    except Exception:
+        tzname = None
+
+    from datetime import datetime, time, timedelta
+    try:
+        from zoneinfo import ZoneInfo
+    except Exception:
+        ZoneInfo = None
+
+    if tzname and ZoneInfo:
+        try:
+            now = datetime.now(ZoneInfo(tzname))
+        except Exception:
+            now = datetime.now()
+    else:
+        now = datetime.now()
+
+    # Map short day names to weekday numbers
+    days_map = {'mo':0,'tu':1,'we':2,'th':3,'fr':4,'sa':5,'su':6}
+
+    # Split alternatives by ';'
+    parts = [p.strip() for p in s.split(';') if p.strip()]
+
+    def parse_time(tstr):
+        try:
+            hh, mm = tstr.split(':')
+            return time(int(hh), int(mm))
+        except Exception:
+            return None
+
+    todays_matches = []
+    for p in parts:
+        # Example: 'Mo-Sa 09:00-18:00' or 'Su 10:00-16:00' or '09:00-18:00'
+        tok = p.split()
+        if len(tok) == 1 and '-' in tok[0] and ':' in tok[0]:
+            # time only, applies every day
+            days = list(range(0,7))
+            times = tok[0]
+        elif len(tok) >= 2:
+            daypart = tok[0]
+            times = tok[1]
+            days = []
+            if '-' in daypart:
+                a,b = daypart.split('-')
+                a = a.lower()[:2]
+                b = b.lower()[:2]
+                if a in days_map and b in days_map:
+                    ra = days_map[a]
+                    rb = days_map[b]
+                    if ra <= rb:
+                        days = list(range(ra, rb+1))
+                    else:
+                        days = list(range(ra,7)) + list(range(0,rb+1))
+            else:
+                # single day or comma-separated
+                for d in daypart.split(','):
+                    d = d.strip().lower()[:2]
+                    if d in days_map:
+                        days.append(days_map[d])
+        else:
+            continue
+
+        if isinstance(times, str) and '-' in times:
+            t1s,t2s = times.split('-',1)
+            t1 = parse_time(t1s)
+            t2 = parse_time(t2s)
+            if t1 and t2:
+                if now.weekday() in days:
+                    todays_matches.append((t1,t2))
+
+    # Check if current time falls in any range
+    for (t1,t2) in todays_matches:
+        dt = now.time()
+        if t1 <= dt <= t2:
+            return (True, None)
+
+    # If we had matches but none matched, return False
+    if todays_matches:
+        return (False, None)
+
+    return (None, None)
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -115,7 +221,12 @@ def search():
                 tags_dict = dict(tag.split('=', 1) for tag in poi.get('tags', '').split(', ') if '=' in tag)
                 phone = tags_dict.get('phone') or tags_dict.get('contact:phone')
                 rating = poi.get('rating')
-                
+                hours = tags_dict.get('opening_hours') or tags_dict.get('hours') or ''
+                try:
+                    is_open, next_change = _compute_open_now(poi.get('lat'), poi.get('lon'), hours)
+                except Exception:
+                    is_open, next_change = (None, None)
+
                 venue = {
                     'id': poi.get('osm_id', poi.get('id', '')),
                     'city': city,
@@ -132,7 +243,10 @@ def search():
                     'amenity': amenity,
                     'provider': poi.get('provider', 'osm'),
                     'phone': phone,
-                    'rating': rating
+                    'rating': rating,
+                    'opening_hours': hours,
+                    'open_now': is_open,
+                    'next_change': next_change
                 }
                 results.append(venue)
         except Exception as e:
