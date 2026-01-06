@@ -12,25 +12,6 @@
     <p>Discover real local gems, affordable eats, and hidden spots—powered by live data.</p>
   </div>
 
-    <!-- AI Panel (moved to top) -->
-    <div class="wrap">
-    <details class="ai-panel" open>
-      <summary>👨‍🦱 Marco's Explorer Tools</summary>
-      <div>
-        <div class="ai-title">🧭 Ask Marco the Explorer</div>
-        <div id="chatMessages" class="chat-messages"></div>
-        <div class="chat-input-group">
-          <div style="width: 100%; display: flex; gap: 10px; flex-wrap: wrap;">
-            <input id="chatCity" placeholder="City, State or Zip (e.g., NYC or 23320)" style="flex: 1;" />
-            <input id="chatInput" placeholder="Ask Marco about the city (e.g., 'best museums')" style="flex: 2;" />
-          </div>
-          <button id="chatSend">🧭 Ask Marco</button>
-          <button id="clearChat" class="btn-clear-chat">Clear Chat</button>
-        </div>
-      </div>
-    </details>
-    </div>
-
     <!-- Currency Converter Panel -->
     <div class="wrap">
     <details class="currency-panel" open>
@@ -85,6 +66,27 @@
 
     <section id="results" class="results"></section>
   </div>
+
+  <!-- Marco Floating Chat -->
+  <div id="marcoChat" class="marco-chat-container">
+    <div class="marco-chat-header">
+      <span>🧭 Marco the Explorer</span>
+      <button id="closeChat" class="close-chat">&times;</button>
+    </div>
+    <div id="chatMessages" class="chat-messages">
+      <div class="message bot">Hello! I'm Marco. Ask me anything about the city you're exploring!</div>
+    </div>
+    <div id="chatChips" class="chat-chips"></div>
+    <div class="chat-input-group">
+      <input id="chatInput" placeholder="Ask Marco... (e.g. 'romantic spots')" />
+      <button id="chatSend">Send</button>
+    </div>
+  </div>
+
+  <button id="marcoFab" class="marco-fab" title="Ask Marco">
+    <div class="marco-nudge">🧭 Ask Marco for local tips!</div>
+    <span>M</span>
+  </button>
 
   <script src="/static/main.js?v=2"></script>
 </body>

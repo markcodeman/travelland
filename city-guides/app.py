@@ -79,17 +79,27 @@ def search():
 
                 # Use provided description if available, else derive from tags
                 desc = poi.get('description')
+                tags_str = poi.get('tags', '').lower()
                 if not desc:
                     tags_dict = dict(tag.split('=', 1) for tag in poi.get('tags', '').split(', ') if '=' in tag)
                     cuisine = tags_dict.get('cuisine', '').replace(';', ', ')
                     brand = tags_dict.get('brand', '')
 
+                    features = []
+                    if 'outdoor_seating=yes' in tags_str: features.append("outdoor seating")
+                    if 'wheelchair=yes' in tags_str: features.append("accessible")
+                    if 'takeaway=yes' in tags_str: features.append("takeaway available")
+                    if 'delivery=yes' in tags_str: features.append("delivery")
+                    if 'opening_hours' in tags_dict: features.append("listed hours")
+                    
+                    feature_text = f" with {', '.join(features)}" if features else ""
+
                     if cuisine:
-                        desc = f"{cuisine.title()} restaurant"
+                        desc = f"{cuisine.title()} restaurant{feature_text}"
                         if brand:
                             desc = f"{brand} - {desc}"
                     else:
-                        desc = f"Restaurant ({amenity})" if amenity else "Restaurant"
+                        desc = f"Restaurant ({amenity}){feature_text}" if amenity else f"Local venue{feature_text}"
                         if brand:
                             desc = f"{brand} - {desc}"
 
@@ -163,10 +173,11 @@ def ai_reason():
     q = payload.get('q', '').strip()
     city = payload.get('city', '').strip()  # optional
     mode = payload.get('mode', 'explorer')  # default to explorer
+    venues = payload.get('venues', [])      #venues from UI context
     if not q:
         return jsonify({'error': 'query required'}), 400
     try:
-        answer = semantic.search_and_reason(q, city if city else None, mode)
+        answer = semantic.search_and_reason(q, city if city else None, mode, context_venues=venues)
         return jsonify({'answer': answer})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -185,4 +196,5 @@ def convert_currency():
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5010))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    # Explicitly enable threading and set a longer timeout
+    app.run(host='0.0.0.0', port=port, debug=False, threaded=True)

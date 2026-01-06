@@ -1,3 +1,5 @@
+let currentVenues = [];
+
 document.getElementById('searchBtn').addEventListener('click', async () => {
   const city = document.getElementById('city').value;
   const budget = document.getElementById('budget').value;
@@ -16,6 +18,17 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
       resEl.innerHTML = '<div class="error">No results.</div>';
       return;
     }
+    currentVenues = j.venues; // Store globally for Marco context
+    
+    // Marco Chimes in when search results appear
+    const nudge = document.querySelector('.marco-nudge');
+    if (nudge) {
+      nudge.textContent = `🧭 Found ${j.venues.length} spots! Ask me which is best!`;
+      nudge.style.background = '#4CAF50';
+      nudge.style.color = 'white';
+      nudge.style.display = 'block';
+    }
+
     if (j.venues.length === 0) {
       resEl.innerHTML = '<div class="error">No venues found. Try a different city or budget.</div>';
       return;
@@ -62,10 +75,59 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
   }
 });
 
-// Chat/query UI
-const chatSend = document.getElementById('chatSend');
+// Marco Chat Toggle Logic
+const marcoFab = document.getElementById('marcoFab');
+const marcoChat = document.getElementById('marcoChat');
+const closeChat = document.getElementById('closeChat');
 const chatInput = document.getElementById('chatInput');
+const chatSend = document.getElementById('chatSend');
 const chatMessages = document.getElementById('chatMessages');
+const chatChips = document.getElementById('chatChips');
+
+const DEFAULT_CHIPS = [
+  "Kid friendly?",
+  "Best view?",
+  "Romantic?",
+  "Open late?"
+];
+
+function renderChips(chips = DEFAULT_CHIPS) {
+  if (!chatChips) return;
+  chatChips.innerHTML = '';
+  chips.forEach(text => {
+    const btn = document.createElement('div');
+    btn.className = 'chat-chip';
+    btn.textContent = text;
+    btn.onclick = () => {
+      chatInput.value = `Of these results, which is ${text.toLowerCase().replace('?','')}`;
+      chatSend.click();
+    };
+    chatChips.appendChild(btn);
+  });
+}
+
+// Initial chips
+renderChips();
+
+if (marcoFab) {
+  marcoFab.addEventListener('click', () => {
+    marcoChat.classList.toggle('open');
+    // Hide nudge once clicked
+    const nudge = document.querySelector('.marco-nudge');
+    if (nudge) nudge.style.display = 'none';
+    
+    if (marcoChat.classList.contains('open')) {
+      chatInput.focus();
+    }
+  });
+}
+
+if (closeChat) {
+  closeChat.addEventListener('click', () => {
+    marcoChat.classList.remove('open');
+  });
+}
+
 function markdownToHtml(text) {
   let html = text;
   // Bold
@@ -74,26 +136,6 @@ function markdownToHtml(text) {
   html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
   // Links
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-  // Simple table conversion
-  if (html.includes('|') && html.includes('---')) {
-    const lines = html.split('\n');
-    let inTable = false;
-    let tableHtml = '<table class="chat-table">';
-    for (let line of lines) {
-      if (line.trim().startsWith('|') && !line.includes('---')) {
-        const cells = line.split('|').slice(1, -1).map(c => c.trim());
-        tableHtml += '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
-        inTable = true;
-      } else if (inTable && !line.trim()) {
-        break;
-      }
-    }
-    tableHtml += '</table>';
-    // Replace the table part
-    const tableStart = html.indexOf('|');
-    const tableEnd = html.lastIndexOf('|') + 1;
-    html = html.substring(0, tableStart) + tableHtml + html.substring(tableEnd);
-  }
   // URLs
   html = html.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
   return html.replace(/\n/g, '<br>');
@@ -101,10 +143,9 @@ function markdownToHtml(text) {
 
 function appendChat(sender, text) {
   const div = document.createElement('div');
-  div.className = sender === 'You' ? 'message user' : 'message ai';
-  const displayName = sender === 'AI' ? 'Marco' : sender;
+  div.className = sender === 'You' ? 'message user' : 'message bot';
   const processedText = markdownToHtml(String(text));
-  div.innerHTML = `<strong>${displayName}:</strong> ${processedText}`;
+  div.innerHTML = processedText;
   chatMessages.appendChild(div);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
@@ -113,54 +154,54 @@ if (chatSend && chatInput) {
   chatSend.addEventListener('click', async () => {
     const q = chatInput.value.trim();
     if (!q) return;
-    const city = document.getElementById('chatCity').value.trim();  // get city
+
+    // Try to get current city from the main search bar to provide context to Marco
+    const currentCity = document.getElementById('city').value.trim();
+    
     appendChat('You', q);
     chatInput.value = '';
-    appendChat('AI', 'Searching...');
+    
+    const loadingMessage = document.createElement('div');
+    loadingMessage.className = 'message bot';
+    loadingMessage.textContent = 'Thinking...';
+    chatMessages.appendChild(loadingMessage);
+
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+      // Pick top 10 current venues to avoid context bloat
+      const contextualVenues = currentVenues.slice(0, 10);
+      
       const resp = await fetch('/semantic-search', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({q, city, mode: 'explorer'}),
-        signal: controller.signal
+        body: JSON.stringify({
+          q, 
+          city: currentCity, 
+          mode: 'explorer',
+          venues: contextualVenues
+        })
       });
-      clearTimeout(timeoutId);
       const j = await resp.json();
-      // remove the 'Searching...' placeholder
-      const last = chatMessages.lastChild;
-      if (last && last.textContent && last.textContent.includes('Searching')) {
-        chatMessages.removeChild(last);
-      }
+      
+      chatMessages.removeChild(loadingMessage);
+
       if (j.error) {
-        appendChat('AI', `Error: ${j.error}`);
-        return;
-      }
-      if (j.answer) {
+        appendChat('AI', `Marco here: I had a bit of trouble finding that. ${j.error}`);
+      } else if (j.answer) {
         appendChat('AI', j.answer);
       } else {
-        appendChat('AI', 'No answer found.');
+        appendChat('AI', "I'm not quite sure about that one, partner. Try asking about local food or sights!");
       }
     } catch (e) {
-      appendChat('AI', `Error: ${e.message}`);
+      chatMessages.removeChild(loadingMessage);
+      appendChat('AI', `Marco here: My explorer's compass is spinning! (Error: ${e.message})`);
     }
   });
-  // also allow Enter key
+
   chatInput.addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter') {
       ev.preventDefault();
       chatSend.click();
     }
-  });
-}
-
-// Clear chat button
-const clearChat = document.getElementById('clearChat');
-if (clearChat) {
-  clearChat.addEventListener('click', () => {
-    chatMessages.innerHTML = '';
-    chatInput.value = '';
   });
 }
 
