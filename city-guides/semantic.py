@@ -6,7 +6,6 @@ import re
 
 import search_provider
 import places_provider
-import places_provider
 
 # Simple in-memory vector store + ingestion that prefers Groq.ai embeddings
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
@@ -171,7 +170,8 @@ def search_and_reason(query, city=None, mode='explorer'):
     # Try to get Places results for the given city (used to enrich prompt context)
     places_results = []
     try:
-        if city and places_provider.gmaps:
+        if city:
+            # Always attempt to fetch places results; tests may mock this function
             places_results = places_provider.discover_restaurants(city, limit=8)
     except Exception:
         places_results = []
@@ -180,7 +180,8 @@ def search_and_reason(query, city=None, mode='explorer'):
         # Fallback: try without city if it was appended
         if city and city.lower() in search_query.lower():
             results = search_provider.searx_search(query, max_results=5)
-        if not results:
+        # If still no search results, but we have places_results, proceed to build prompt
+        if not results and not places_results:
             # Extract dish keyword from query
             dish_keyword = next((word for word in query.lower().split() if word in ['escargot', 'tacos', 'pizza', 'sushi', 'burger', 'pasta']), None)
             if dish_keyword:

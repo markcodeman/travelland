@@ -1,5 +1,9 @@
 import requests
 import time
+import os
+import json
+import hashlib
+from pathlib import Path
 from urllib.parse import urlencode
 
 NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
@@ -67,13 +71,88 @@ def discover_restaurants(city, limit=200, cuisine=None):
     # Do NOT add a cuisine filter to the Overpass query — we'll match name/tags
     # in Python to be more flexible (many POIs don't set cuisine tags).
     q = f'[out:json][timeout:60];(node{amenity_filter}({bbox_str});way{amenity_filter}({bbox_str});relation{amenity_filter}({bbox_str}););out center;'
-    headers = {'User-Agent': 'CityGuides/1.0'}
+    # ---- CACHING & RATE LIMIT -------------------------------------------------
+    # Use an on-disk cache (per-query hash) to avoid repeated heavy Overpass
+    # queries and a simple global rate limiter to avoid spamming the API.
+    CACHE_TTL = int(os.environ.get('OVERPASS_CACHE_TTL', 60 * 60 * 6))  # 6 hours default
+    RATE_LIMIT_SECONDS = float(os.environ.get('OVERPASS_MIN_INTERVAL', 5.0))  # min seconds between requests
+
+    cache_dir = Path(__file__).parent / '.cache' / 'overpass'
     try:
-        r = requests.post(OVERPASS_URL, data={'data': q}, headers=headers, timeout=60)
-        r.raise_for_status()
-        j = r.json()
+        cache_dir.mkdir(parents=True, exist_ok=True)
     except Exception:
-        return []
+        pass
+
+    def _cache_path_for_query(qstr: str) -> Path:
+        h = hashlib.sha256(qstr.encode('utf-8')).hexdigest()
+        return cache_dir / f"{h}.json"
+
+    def _read_cache(qstr: str):
+        p = _cache_path_for_query(qstr)
+        if not p.exists():
+            return None
+        try:
+            m = p.stat().st_mtime
+            age = time.time() - m
+            if age > CACHE_TTL:
+                return None
+            with p.open('r', encoding='utf-8') as fh:
+                return json.load(fh)
+        except Exception:
+            return None
+
+    def _write_cache(qstr: str, data):
+        p = _cache_path_for_query(qstr)
+        try:
+            with p.open('w', encoding='utf-8') as fh:
+                json.dump(data, fh)
+        except Exception:
+            pass
+
+    # simple global rate limiter persisted to a file so separate runs share it
+    rate_file = cache_dir / 'last_request_ts'
+    def _ensure_rate_limit():
+        try:
+            last = float(rate_file.read_text()) if rate_file.exists() else 0.0
+        except Exception:
+            last = 0.0
+        now = time.time()
+        wait = RATE_LIMIT_SECONDS - (now - last)
+        if wait > 0:
+            # sleep to respect rate limit
+            time.sleep(wait)
+        try:
+            rate_file.write_text(str(time.time()))
+        except Exception:
+            pass
+
+    headers = {'User-Agent': 'CityGuides/1.0'}
+    # try cache first
+    cached = _read_cache(q)
+    if cached is not None:
+        try:
+            j = cached
+        except Exception:
+            j = None
+    else:
+        try:
+            _ensure_rate_limit()
+            r = requests.post(OVERPASS_URL, data={'data': q}, headers=headers, timeout=60)
+            # if successful JSON, cache it
+            r.raise_for_status()
+            j = r.json()
+            _write_cache(q, j)
+        except Exception:
+            # on failure, try to fall back to stale cache if available
+            stale_p = _cache_path_for_query(q)
+            if stale_p.exists():
+                try:
+                    with stale_p.open('r', encoding='utf-8') as fh:
+                        j = json.load(fh)
+                except Exception:
+                    return []
+            else:
+                return []
     elements = j.get('elements', [])
     out = []
     # Known chain restaurants to exclude for more authentic recommendations

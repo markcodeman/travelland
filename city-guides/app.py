@@ -4,11 +4,15 @@ import os
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 
-load_dotenv()
+_here = os.path.dirname(__file__)
+# load local .env placed inside the city-guides folder (keeps keys out of repo root)
+load_dotenv(dotenv_path=os.path.join(_here, '.env'))
 
 import semantic
 import overpass_provider
+from overpass_provider import _singularize
 import places_provider
+import multi_provider
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
@@ -81,10 +85,10 @@ def search():
                     }
                     results.append(venue)
             else:
-                # Use OpenStreetMap (default)
+                # Orchestrate multiple providers (OSM + Places) and merge results
                 food_keywords = ['taco', 'pizza', 'burger', 'sushi', 'asian', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'restaurant', 'food', 'eat']
                 cuisine_param = q_norm if q_norm else None
-                pois = overpass_provider.discover_restaurants(city, limit=200, cuisine=cuisine_param)
+                pois = multi_provider.discover_restaurants(city, cuisine=cuisine_param or '', limit=200)
                 
 
                 # Apply optional substring filtering only when we didn't pass a cuisine hint
@@ -97,7 +101,7 @@ def search():
                         combined = ' '.join([str(poi.get(k,'')) for k in ('name','tags')]).lower()
                         # match either the raw query or a normalized singular form
                         try:
-                            q_sing = _singularize(q)
+                            q_sing = overpass_provider._singularize(q)
                         except Exception:
                             q_sing = q
                         if (q not in combined) and (q_sing not in combined):
@@ -190,9 +194,9 @@ def poi_discover():
     city = payload.get('city') or payload.get('location') or ''
     if not city:
         return jsonify({'error': 'city required'}), 400
-    # discover via Overpass (OSM)
+    # discover via orchestrated providers (OSM + Places)
     try:
-        candidates = overpass_provider.discover_restaurants(city, limit=200)
+        candidates = multi_provider.discover_restaurants(city, limit=200)
     except Exception as e:
         return jsonify({'error': 'discover_failed', 'details': str(e)}), 500
     return jsonify({'count': len(candidates), 'candidates': candidates})

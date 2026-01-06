@@ -1,6 +1,44 @@
 # Python
 __pycache__/
 *.py[cod]
+*.so
+
+# Virtual env
+city-guides/.venv/
+.venv/
+
+# Editor
+.vscode/
+.idea/
+
+# Pytest cache
+.pytest_cache/
+
+# OS / runtime
+*.pid
+*.log
+server.pid
+city-guides/server.pid
+
+# Temporary debug scripts
+/tmp_overpass_debug.py
+
+# Overpass cache
+city-guides/.cache/
+
+# Static backup folders (generated/archived)
+city-guides/static/img.bak*/
+city-guides/static/js.bak*/
+city-guides/static/webfonts.bak*/
+city-guides/static/*.bak
+
+# Misc
+*.bak
+*.swp
+*.swo
+# Python
+__pycache__/
+*.py[cod]
 *$py.class
 *.so
 .Python
