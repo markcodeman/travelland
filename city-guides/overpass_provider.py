@@ -238,6 +238,7 @@ def discover_restaurants(city, limit=200, cuisine=None, local_only=False):
         osm_url = f'https://www.openstreetmap.org/{osm_type}/{osm_id}'
         # keep tags_str as built above
         entry = {
+            'osm_id': osm_id,
             'name': name, 
             'website': website, 
             'osm_url': osm_url,

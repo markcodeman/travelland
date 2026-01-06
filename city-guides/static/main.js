@@ -33,7 +33,12 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
       }
       
       if (v.address) {
-        card += `<p class="meta">${v.address}</p>`;
+        if (v.address.includes('Found via Web Search') || v.address.includes('Found via Web')) {
+          card += `<p class="meta">${v.address}</p>`;
+        } else {
+          const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name + ' ' + v.address)}`;
+          card += `<p class="meta"><a href="${mapUrl}" target="_blank" rel="noopener" class="address-link">📍 ${v.address}</a></p>`;
+        }
       }
       
       card += `<p>${v.description}</p>`;

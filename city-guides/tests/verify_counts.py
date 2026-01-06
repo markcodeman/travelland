@@ -8,7 +8,7 @@ import multi_provider
 
 def test_count():
     city = "Chesapeake VA"
-    cuisine = "burgers"
+    cuisine = "sushi"
     print(f"Searching for {cuisine} in {city} (Local Only)...")
     results = multi_provider.discover_restaurants(city, cuisine=cuisine, limit=100, local_only=True)
     print(f"Total results: {len(results)}")

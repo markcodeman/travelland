@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>City Microguides — Budget Picks</title>
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/styles.css?v=2">
 </head>
 <body>
   <div class="hero">
@@ -20,8 +20,10 @@
         <div class="ai-title">🧭 Ask Marco the Explorer</div>
         <div id="chatMessages" class="chat-messages"></div>
         <div class="chat-input-group">
-          <input id="chatCity" placeholder="City (e.g., London UK)" />
-          <input id="chatInput" placeholder="Ask Marco about the city (e.g., 'best museums')" />
+          <div style="width: 100%; display: flex; gap: 10px; flex-wrap: wrap;">
+            <input id="chatCity" placeholder="City, State or Zip (e.g., NYC or 23320)" style="flex: 1;" />
+            <input id="chatInput" placeholder="Ask Marco about the city (e.g., 'best museums')" style="flex: 2;" />
+          </div>
           <button id="chatSend">🧭 Ask Marco</button>
           <button id="clearChat" class="btn-clear-chat">Clear Chat</button>
         </div>
@@ -65,24 +67,25 @@
   <div class="wrap">
     <section class="search-section">
       <div class="search-bar">
-        <input id="city" placeholder="Enter city (e.g., NYC)" />
+        <input id="city" placeholder="City, State or Zip (e.g., Chesapeake VA or 23320)" />
         <select id="budget" title="Select budget">
           <option value="any" selected>Any Budget</option>
           <option value="cheap">Budget (Under $20)</option>
           <option value="mid">Moderate ($20-$50)</option>
         </select>
-        <input id="q" placeholder="Search name, tag, or description" />
+        <input id="q" placeholder="Search sushi, burger, etc." />
         <label class="inline-label">
           <input type="checkbox" id="localOnly" checked />
           <span>Local Gems Only</span>
         </label>
         <button id="searchBtn">🔍 Search</button>
+        <div class="hint"><strong>Pro Tip:</strong> Use a <b>Zip Code</b> or <b>State</b> (e.g., <i>VA</i>) for more accurate results in ambiguous areas.</div>
       </div>
     </section>
 
     <section id="results" class="results"></section>
   </div>
 
-  <script src="/static/main.js"></script>
+  <script src="/static/main.js?v=2"></script>
 </body>
 </html>

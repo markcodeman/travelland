@@ -26,6 +26,8 @@ def search():
     budget = (payload.get('budget') or '').strip().lower()
     q = (payload.get('q') or '').strip().lower()
     local_only = payload.get('localOnly', False)
+    
+    print(f"SEARCH REQUEST: city='{city}', q='{q}', budget='{budget}', local_only={local_only}")
 
     # normalized singular form of query for plural handling
     try:
@@ -75,19 +77,21 @@ def search():
                 if budget and budget != 'any' and v_budget != budget:
                     continue
 
-                # Parse tags for better description
-                tags_dict = dict(tag.split('=', 1) for tag in poi.get('tags', '').split(', ') if '=' in tag)
-                cuisine = tags_dict.get('cuisine', '').replace(';', ', ')
-                brand = tags_dict.get('brand', '')
+                # Use provided description if available, else derive from tags
+                desc = poi.get('description')
+                if not desc:
+                    tags_dict = dict(tag.split('=', 1) for tag in poi.get('tags', '').split(', ') if '=' in tag)
+                    cuisine = tags_dict.get('cuisine', '').replace(';', ', ')
+                    brand = tags_dict.get('brand', '')
 
-                if cuisine:
-                    desc = f"{cuisine.title()} restaurant"
-                    if brand:
-                        desc = f"{brand} - {desc}"
-                else:
-                    desc = f"Restaurant ({amenity})"
-                    if brand:
-                        desc = f"{brand} - {desc}"
+                    if cuisine:
+                        desc = f"{cuisine.title()} restaurant"
+                        if brand:
+                            desc = f"{brand} - {desc}"
+                    else:
+                        desc = f"Restaurant ({amenity})" if amenity else "Restaurant"
+                        if brand:
+                            desc = f"{brand} - {desc}"
 
                 address = poi.get('address', '').strip()
                 if not address:
@@ -113,6 +117,7 @@ def search():
         except Exception as e:
             print(f"Error fetching real-time data: {e}")
 
+    print(f"SEARCH RESULTS: found {len(results)} venues")
     return jsonify({'count': len(results), 'venues': results})
 
 
@@ -180,5 +185,4 @@ def convert_currency():
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5010))
-    debug_mode = os.getenv('FLASK_ENV') != 'production'
-    app.run(host='0.0.0.0', port=port, debug=debug_mode)
+    app.run(host='0.0.0.0', port=port, debug=True)

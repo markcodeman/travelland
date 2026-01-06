@@ -71,6 +71,13 @@ body {
   background: #1d4ed8;
 }
 
+.hint {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 8px;
+  width: 100%;
+}
+
 .results {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -102,6 +109,23 @@ body {
   border-radius: 12px;
   font-size: 12px;
   margin-right: 8px;
+}
+
+.meta {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.address-link {
+  color: #666;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.address-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
 }
 
 .loading {
