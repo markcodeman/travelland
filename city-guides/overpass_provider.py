@@ -36,18 +36,37 @@ def geocode_city(city):
     return None
 
 
+def _singularize(word: str) -> str:
+    w = (word or '').lower().strip()
+    if w.endswith('ies') and len(w) > 3:
+        return w[:-3] + 'y'
+    if w.endswith("'s"):
+        w = w[:-2]
+    if w.endswith('s') and not w.endswith('ss') and len(w) > 3:
+        return w[:-1]
+    return w
+
+
 def discover_restaurants(city, limit=200, cuisine=None):
-    """Discover restaurant POIs for a city using Nominatim + Overpass. Returns list of candidates with possible website or OSM url."""
+    """Discover restaurant POIs for a city using Nominatim + Overpass.
+    We no longer force a cuisine= filter into the Overpass query because many
+    POIs don't set cuisine tags. Instead we fetch amenities and perform
+    name/tag matching in Python. If `cuisine` is provided it is used as a
+    post-filter (with simple plural handling).
+
+    Returns list of candidates with possible website or OSM url.
+    """
     bbox = geocode_city(city)
     if not bbox:
         return []
     south, west, north, east = bbox
     # Overpass bbox format: south,west,north,east
     bbox_str = f"{south},{west},{north},{east}"
-    # query nodes/ways/rels with amenity=restaurant, fast_food, cafe, etc. (budget-friendly options)
-    amenity_filter = "[\"amenity\"~\"restaurant|fast_food|cafe|bar|pub|food_court\"]"
-    cuisine_filter = f"[\"cuisine\"~\"{cuisine}\"]" if cuisine else ""
-    q = f"[out:json][timeout:60];(node{amenity_filter}{cuisine_filter}({bbox_str});way{amenity_filter}{cuisine_filter}({bbox_str});relation{amenity_filter}{cuisine_filter}({bbox_str}););out center;"
+    # query nodes/ways/relations with amenity=restaurant, fast_food, cafe, etc.
+    amenity_filter = '["amenity"~"restaurant|fast_food|cafe|bar|pub|food_court"]'
+    # Do NOT add a cuisine filter to the Overpass query — we'll match name/tags
+    # in Python to be more flexible (many POIs don't set cuisine tags).
+    q = f'[out:json][timeout:60];(node{amenity_filter}({bbox_str});way{amenity_filter}({bbox_str});relation{amenity_filter}({bbox_str}););out center;'
     headers = {'User-Agent': 'CityGuides/1.0'}
     try:
         r = requests.post(OVERPASS_URL, data={'data': q}, headers=headers, timeout=60)
@@ -64,6 +83,9 @@ def discover_restaurants(city, limit=200, cuisine=None):
         'burger king', 'wendy\'s', 'subway', 'starbucks', 'dunkin\'', 'kfc', 
         'pizza hut', 'domino\'s', 'papa john\'s', 'little caesars'
     ]
+    # prepare cuisine matching token (singularized)
+    cuisine_token = _singularize(cuisine) if cuisine else None
+
     for el in elements[:limit]:
         tags = el.get('tags') or {}
         name = tags.get('name') or tags.get('operator') or 'Unnamed'
@@ -88,11 +110,22 @@ def discover_restaurants(city, limit=200, cuisine=None):
         name_lower = name.lower()
         if any(chain.lower() in name_lower for chain in chain_keywords):
             continue
+
+        # Post-filter by cuisine/name/tag matching when requested.
+        # Build a searchable text blob from name and tags.
+        tags_str = ', '.join([f"{k}={v}" for k, v in tags.items()])
+        searchable = ' '.join([name_lower, tags_str.lower()])
+        if cuisine_token:
+            # also check cuisine tag specifically
+            cuisine_tag = (tags.get('cuisine') or '').lower()
+            if cuisine_token not in cuisine_tag and cuisine_token not in searchable and _singularize(cuisine_tag) not in cuisine_token:
+                # no match for requested cuisine, skip
+                continue
         website = tags.get('website') or tags.get('contact:website')
         osm_type = el.get('type')  # node/way/relation
         osm_id = el.get('id')
         osm_url = f'https://www.openstreetmap.org/{osm_type}/{osm_id}'
-        tags_str = ', '.join([f"{k}={v}" for k,v in tags.items()])
+        # keep tags_str as built above
         entry = {
             'name': name, 
             'website': website, 

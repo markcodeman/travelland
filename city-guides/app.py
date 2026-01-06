@@ -24,6 +24,12 @@ def search():
     q = (payload.get('q') or '').strip().lower()
     provider = (payload.get('provider') or 'osm').strip().lower()  # 'osm' or 'google_places'
 
+    # normalized singular form of query for plural handling
+    try:
+        q_norm = overpass_provider._singularize(q)
+    except Exception:
+        q_norm = q
+
     results = []
     if city:
         try:
@@ -31,7 +37,15 @@ def search():
             if provider == 'google_places' and places_provider.gmaps:
                 # Use Google Places API
                 food_keywords = ['taco', 'pizza', 'burger', 'sushi', 'asian', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'restaurant', 'food', 'eat', 'irish', 'indian', 'thai', 'vietnamese', 'greek', 'spanish', 'german', 'british']
-                cuisine_param = q if q in food_keywords else None
+                # normalize query and handle simple plurals (e.g., 'burgers' -> 'burger')
+                try:
+                    from overpass_provider import _singularize
+                    q_norm = _singularize(q)
+                except Exception:
+                    q_norm = q
+                # pass the query through to the provider as a hint so provider can
+                # match against name/tags. We still singularize for better matching.
+                cuisine_param = q_norm if q_norm else None
                 pois = places_provider.discover_restaurants(city, limit=200, cuisine=cuisine_param)
                 
                 for poi in pois:
@@ -69,17 +83,31 @@ def search():
             else:
                 # Use OpenStreetMap (default)
                 food_keywords = ['taco', 'pizza', 'burger', 'sushi', 'asian', 'italian', 'mexican', 'chinese', 'japanese', 'korean', 'restaurant', 'food', 'eat']
-                cuisine_param = q if q in food_keywords else None
+                cuisine_param = q_norm if q_norm else None
                 pois = overpass_provider.discover_restaurants(city, limit=200, cuisine=cuisine_param)
                 
+
+                # Apply optional substring filtering only when we didn't pass a cuisine hint
+                matched_pois = []
                 for poi in pois:
-                    # Filter by query if provided
-                    if q:
+                    # If we passed the query through to the provider as a cuisine/name hint,
+                    # the provider already applied name/tag matching. Only apply the extra
+                    # substring filter when we didn't pass a cuisine hint.
+                    if q and not cuisine_param:
                         combined = ' '.join([str(poi.get(k,'')) for k in ('name','tags')]).lower()
-                        if q not in combined:
+                        # match either the raw query or a normalized singular form
+                        try:
+                            q_sing = _singularize(q)
+                        except Exception:
+                            q_sing = q
+                        if (q not in combined) and (q_sing not in combined):
                             continue
-                    
-                    # Map POI to venue format
+                    matched_pois.append(poi)
+
+                
+
+                # Now map matched_pois to venues
+                for poi in matched_pois:
                     amenity = poi.get('amenity', '')
                     v_budget = 'mid'
                     price_range = '$$'
@@ -89,15 +117,15 @@ def search():
                     elif amenity in ['bar', 'pub']:
                         v_budget = 'mid'
                         price_range = '$$'
-                    
+
                     if budget and budget != 'any' and v_budget != budget:
                         continue
-                    
+
                     # Parse tags for better description
                     tags_dict = dict(tag.split('=', 1) for tag in poi.get('tags', '').split(', ') if '=' in tag)
                     cuisine = tags_dict.get('cuisine', '').replace(';', ', ')
                     brand = tags_dict.get('brand', '')
-                    
+
                     if cuisine:
                         desc = f"{cuisine.title()} restaurant"
                         if brand:
@@ -106,11 +134,11 @@ def search():
                         desc = f"Restaurant ({amenity})"
                         if brand:
                             desc = f"{brand} - {desc}"
-                    
+
                     address = poi.get('address', '').strip()
                     if not address:
                         address = None
-                    
+
                     venue = {
                         'id': poi.get('osm_id', ''),
                         'city': city,
