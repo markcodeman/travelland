@@ -488,6 +488,17 @@ body {
   .hero p { font-size: 1rem; max-width: 380px; margin: 0 auto; }
 }
 
+/* Explicit overrides to ensure search form alignment across conflicting CSS/plugins */
+.search-section .max-w-xl { width: 100%; }
+.search-section .max-w-xl .flex { align-items: center; }
+.search-section input[id="city"], .search-section input[id="q"] { box-sizing: border-box; }
+.search-section #searchBtn { min-width: 120px; }
+
+@media (max-width: 640px) {
+  .search-section #searchBtn { width: 100%; margin-top: 0.6rem; }
+  .search-section .flex.items-center { justify-content: space-between; }
+}
+
 /* Sticky search on larger screens only */
 @media (min-width: 769px) {
   .search-section { position: sticky; top: 20px; z-index: 1000; }
