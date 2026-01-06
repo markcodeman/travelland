@@ -108,7 +108,7 @@ def discover_restaurants(city: str, cuisine: str = None, limit: int = 100, local
                 
                 for e in r:
                     # check if already a provider and use generic if so
-                    if e.get('provider') in ['web', 'opentripmap', 'google_places']:
+                    if e.get('provider') in ['web', 'opentripmap']:
                         entry = _normalize_generic_entry(e)
                     elif 'osm_url' in e or 'tags' in e:
                         entry = _normalize_osm_entry(e)
@@ -144,7 +144,9 @@ def discover_restaurants(city: str, cuisine: str = None, limit: int = 100, local
                 
                 if lat1 and lon1 and lat2 and lon2:
                     d = _haversine_meters(lat1, lon1, lat2, lon2)
-                    if d < 1000: # increased to 1km for web results
+                    # For places with the same name, 150m is a very safe dedupe radius.
+                    # 1km was too large and merged distinct locations with the same name.
+                    if d < 150: 
                         merged = True
                         break
                 else: 

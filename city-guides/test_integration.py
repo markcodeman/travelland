@@ -13,7 +13,7 @@ def test_imports():
     print("✓ Testing module imports...")
     try:
         import app
-        import places_provider
+        import multi_provider
         import overpass_provider
         import semantic
         import search_provider
@@ -23,52 +23,23 @@ def test_imports():
         print(f"  ✗ Import error: {e}")
         return False
 
-def test_places_provider_functions():
-    """Test that places_provider has required functions"""
-    print("✓ Testing places_provider functions...")
+def test_multi_provider_functions():
+    """Test that multi_provider has required functions"""
+    print("✓ Testing multi_provider functions...")
     try:
-        import places_provider
+        import multi_provider
         
         required_functions = [
-            'map_price_level_to_budget',
-            'get_google_places_details',
             'discover_restaurants',
-            'enrich_venue_with_details'
+            '_norm_name',
+            '_haversine_meters'
         ]
         
         for func_name in required_functions:
-            if hasattr(places_provider, func_name):
+            if hasattr(multi_provider, func_name):
                 print(f"  ✓ {func_name} exists")
             else:
                 print(f"  ✗ {func_name} missing")
-                return False
-        
-        return True
-    except Exception as e:
-        print(f"  ✗ Error: {e}")
-        return False
-
-def test_price_level_mapping():
-    """Test price level mapping function"""
-    print("✓ Testing price level mapping...")
-    try:
-        import places_provider
-        
-        test_cases = [
-            (0, ('cheap', '$')),
-            (1, ('cheap', '$')),
-            (2, ('mid', '$$')),
-            (3, ('expensive', '$$$')),
-            (4, ('expensive', '$$$$')),
-            (None, ('cheap', '$'))
-        ]
-        
-        for price_level, expected in test_cases:
-            result = places_provider.map_price_level_to_budget(price_level)
-            if result == expected:
-                print(f"  ✓ price_level {price_level} → {result}")
-            else:
-                print(f"  ✗ price_level {price_level} → {result} (expected {expected})")
                 return False
         
         return True
@@ -151,7 +122,7 @@ def test_requirements_file():
         with open(os.path.join(os.path.dirname(__file__), 'requirements.txt'), 'r') as f:
             content = f.read()
         
-        required_packages = ['Flask', 'googlemaps', 'python-dotenv', 'requests']
+        required_packages = ['Flask', 'python-dotenv', 'requests', 'beautifulsoup4']
         
         for package in required_packages:
             if package.lower() in content.lower():
@@ -166,14 +137,12 @@ def test_requirements_file():
         return False
 
 if __name__ == '__main__':
-    print("\n=== Integration Tests for Google Places Integration ===\n")
+    print("\n=== Integration Tests for Multi-Provider Tooling ===\n")
     
     tests = [
         test_imports(),
-        test_places_provider_functions(),
-        test_price_level_mapping(),
+        test_multi_provider_functions(),
         test_app_routes(),
-        test_search_endpoint_accepts_provider(),
         test_expanded_cuisines(),
         test_requirements_file()
     ]

@@ -3,15 +3,17 @@
 ## 🚀 Deploy in 2 Minutes
 
 ### Prerequisites
-- Google Places API Key ([Get one here](https://console.cloud.google.com/apis/credentials))
+- Groq AI API Key ([Get one here](https://console.groq.com/)) - *Optional, for Marco AI*
+- OpenTripMap API Key ([Get one here](https://opentripmap.io/product)) - *Optional, for enhanced data*
 - Render.com account (free tier works great!)
 
-### Step 1: Set API Key in Render
+### Step 1: Set API Keys in Render
 1. Go to your Render.com dashboard
 2. Select your service (or create one following DEPLOY_NOW.md)
 3. Go to **Environment** tab
-4. Add: `GOOGLE_PLACES_API_KEY` = your_api_key_here
-5. Click **Save Changes**
+4. Add: `GROQ_API_KEY` = your_api_key_here
+5. Add: `OPENTRIPMAP_KEY` = your_api_key_here
+6. Click **Save Changes**
 
 ### Step 2: Deploy
 - If auto-deploy is enabled: **Done!** ✅
@@ -19,9 +21,9 @@
 
 ### Step 3: Test
 1. Open your app URL
-2. Check the ☑️ **"Use Google Places"** checkbox
+2. Check the ☑️ **"Local Gems Only"** checkbox
 3. Search for a city (e.g., "Tokyo")
-4. See ⭐ ratings, 📞 phone numbers, and $$ price levels!
+4. See local spots, 🧭 Marco AI tips, and budget-filtered eats!
 
 ## 🧪 Local Development
 
@@ -29,9 +31,10 @@
 ```bash
 cd city-guides
 pip install -r requirements.txt
-# Create a `.env` file in this directory and add your `GOOGLE_PLACES_API_KEY`
+# Create a `.env` file in this directory and add your API keys
 # Example:
-# GOOGLE_PLACES_API_KEY=your_api_key_here
+# GROQ_API_KEY=your_key_here
+# OPENTRIPMAP_KEY=your_key_here
 python app.py
 ```
 
@@ -39,14 +42,13 @@ python app.py
 ```bash
 # Run all tests
 python test_integration.py
-python test_google_places.py
 python test_max_results.py
 ```
 
 ## ✨ Features
 
 ### From PR #2:
-- ✅ "Use Google Places" checkbox in UI
+- ✅ Multi-provider search (Overpass, OpenTripMap, DuckDuckGo)
 - ✅ 5 results optimization (optimal cognitive load)
 - ✅ Expanded cuisines: Irish, Indian, Thai, Vietnamese, Greek, Spanish, German, British
 - ✅ Render.com deployment ready (dynamic PORT, host='0.0.0.0')
@@ -54,10 +56,10 @@ python test_max_results.py
 
 ### From PR #3:
 - ✅ 200 result limit (increased from 50)
-- ✅ Price level mapping: 0-1→cheap($), 2→mid($$), 3-4→expensive($$$-$$$$)
-- ✅ Fixed Google Maps links (no more broken HTML)
+- ✅ Price level heuristics from OSM and search snippets
+- ✅ Fixed map links (no more broken HTML)
 - ✅ 60s Overpass timeout (increased from 30s)
-- ✅ Real ratings and review counts from Google Places
+- ✅ Integrated 🧭 Marco AI for local tips
 - ✅ Better error handling with user-friendly messages
 
 ## 🔒 API Key Info

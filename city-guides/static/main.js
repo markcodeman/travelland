@@ -37,12 +37,10 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
       let card = `<div class="card">`;
       card += `<h3>${v.name} <span class="tag">${v.price_range}</span></h3>`;
       
-      // Add rating if available (Google Places)
+      // Add rating if available
       if (v.rating) {
-        const roundedRating = Math.round(v.rating);
-        const starCount = Math.max(1, roundedRating); // Ensure at least 1 star for any positive rating
-        const stars = '⭐'.repeat(starCount);
-        card += `<p class="meta">${stars} ${v.rating}/5 (${v.user_ratings_total} reviews)</p>`;
+        const stars = '⭐'.repeat(Math.min(5, Math.ceil(v.rating)));
+        card += `<p class="meta">${stars} ${v.rating}/5</p>`;
       }
       
       if (v.address) {
@@ -56,7 +54,7 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
       
       card += `<p>${v.description}</p>`;
       
-      // Add phone if available (Google Places)
+      // Add phone if available
       if (v.phone) {
         card += `<p><strong>Phone:</strong> ${v.phone}</p>`;
       }

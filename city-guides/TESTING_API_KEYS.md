@@ -1,102 +1,95 @@
-# Testing Google Places API Key
+# Testing API Keys (Groq & OpenTripMap)
 
 ## 🧪 Quick API Key Test
 
-### Method 1: Interactive Test Script
+### Method 1: Test Groq API (for Marco AI)
 
-Run this command to test your API key:
+Run this command to test your Groq key:
 
 ```bash
 cd city-guides
 python -c "
 import os
+import requests
 from dotenv import load_dotenv
-import googlemaps
 
 load_dotenv()
-key = os.getenv('GOOGLE_PLACES_API_KEY')
+key = os.getenv('GROQ_API_KEY')
 
 if not key:
-    print('❌ GOOGLE_PLACES_API_KEY not found in environment')
-    print('→ Create .env file with: GOOGLE_PLACES_API_KEY=your_key_here')
+    print('❌ GROQ_API_KEY not found in environment')
     exit(1)
 
-print(f'✓ API key found: {key[:10]}...{key[-4:]}')
+print(f'✓ Key found: {key[:10]}...')
 
+headers = {'Authorization': f'Bearer {key}', 'Content-Type': 'application/json'}
+payload = {
+    'model': 'llama-3.1-8b-instant',
+    'messages': [{'role': 'user', 'content': 'Say hello in explorer theme'}]
+}
 try:
-    gmaps = googlemaps.Client(key=key)
-    result = gmaps.places('restaurants in Tokyo')
-    
-    if result.get('status') == 'OK':
-        print('✓ API key works! Found results')
-        print(f'→ {len(result.get(\"results\", []))} places returned')
-    else:
-        print(f'⚠ API returned status: {result.get(\"status\")}')
+    r = requests.post('https://api.groq.com/openai/v1/chat/completions', json=payload, headers=headers)
+    r.raise_for_status()
+    print('✓ Groq API works!')
+    print('→ Response:', r.json()['choices'][0]['message']['content'])
 except Exception as e:
-    print(f'❌ Error: {e}')
+    print(f'❌ Groq Error: {e}')
 "
 ```
 
-### Method 2: Run Test Suite
+### Method 2: Test OpenTripMap (for Enhanced Venue Data)
 
 ```bash
 cd city-guides
-python test_google_places.py
-```
+python -c "
+import os
+import requests
+from dotenv import load_dotenv
 
-Expected output:
-```
-✓ Testing Google Places provider import...
-  ✓ places_provider imported successfully
-✓ Testing googlemaps package...
-  ✓ googlemaps package available
-✓ Testing API key environment...
-  ✓ GOOGLE_PLACES_API_KEY is set
-  → Key: AIzaSyBxxx...xyz1
-...
-✓ All Google Places tests passed!
+load_dotenv()
+key = os.getenv('OPENTRIPMAP_KEY')
+
+if not key:
+    print('❌ OPENTRIPMAP_KEY not found in environment')
+    exit(1)
+
+params = {'apikey': key, 'lat': 51.5074, 'lon': -0.1278, 'radius': 1000, 'kinds': 'restaurants'}
+try:
+    r = requests.get('https://api.opentripmap.com/0.1/en/places/radius', params=params)
+    r.raise_for_status()
+    print('✓ OpenTripMap API works!')
+    print(f'→ Found {len(r.json().get(\"features\", []))} locations in London')
+except Exception as e:
+    print(f'❌ OpenTripMap Error: {e}')
+"
 ```
 
 ---
 
-## 🔑 Getting Your API Key
+## 🔑 Getting Your API Keys
 
-### Step 1: Create Google Cloud Project
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Click **Select a project** → **New Project**
-3. Name it (e.g., "Travelland")
-4. Click **Create**
+### Groq API (Intelligence)
+1. Go to [Groq Cloud Console](https://console.groq.com/)
+2. Create an account
+3. Go to **API Keys** and create one
+4. Copy to your `.env` as `GROQ_API_KEY`
 
-### Step 2: Enable APIs
-1. Go to **APIs & Services** → **Library**
-2. Search for and enable:
-   - **Places API (New)** ✅
-   - **Maps JavaScript API** ✅ (optional, for map features)
-
-### Step 3: Create API Key
-1. Go to **APIs & Services** → **Credentials**
-2. Click **Create Credentials** → **API Key**
-3. Copy your API key (looks like: `AIzaSyBxxxxxxxxxxxxxxxxxxxxx`)
-4. Click **Restrict Key** (recommended)
-
-### Step 4: Restrict Your Key (Optional but Recommended)
-1. **Application restrictions**:
-   - Choose **HTTP referrers (web sites)**
-   - Add your domains:
-     - `https://your-app.onrender.com/*`
-     - `http://localhost:5010/*` (for local testing)
-
-2. **API restrictions**:
-   - Choose **Restrict key**
-   - Select:
-     - Places API (New)
-     - Maps JavaScript API
-
-3. Click **Save**
+### OpenTripMap (Venue Ratings/Details)
+1. Go to [OpenTripMap API](https://opentripmap.io/product)
+2. Sign up for a free API key
+3. Copy to your `.env` as `OPENTRIPMAP_KEY`
 
 ---
 
-## 🧪 Test API Key Locally
+## 🔧 Troubleshooting
+
+### Key Not Loading
+Ensure your `.env` file is in the `city-guides/` folder, NOT the root folder.
+The app loads it from `city-guides/.env`.
+
+### Rate Limits
+Free keys have limits. If you see 429 errors, wait a minute before retrying.
+DuckDuckGo and Overpass (OSM) do not require keys but are also rate-limited.
 
 ### Setup .env file:
 ```bash

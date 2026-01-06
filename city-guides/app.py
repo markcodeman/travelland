@@ -93,6 +93,7 @@ def search():
                     if 'opening_hours' in tags_dict: features.append("listed hours")
                     
                     feature_text = f" with {', '.join(features)}" if features else ""
+                    hours = tags_dict.get('opening_hours', '')
 
                     if cuisine:
                         desc = f"{cuisine.title()} restaurant{feature_text}"
@@ -102,11 +103,19 @@ def search():
                         desc = f"Restaurant ({amenity}){feature_text}" if amenity else f"Local venue{feature_text}"
                         if brand:
                             desc = f"{brand} - {desc}"
+                    
+                    if hours:
+                        desc += f". Hours: {hours}"
 
                 address = poi.get('address', '').strip()
                 if not address:
                     address = None
 
+                # Extract phone and rating if available from tags or other providers
+                tags_dict = dict(tag.split('=', 1) for tag in poi.get('tags', '').split(', ') if '=' in tag)
+                phone = tags_dict.get('phone') or tags_dict.get('contact:phone')
+                rating = poi.get('rating')
+                
                 venue = {
                     'id': poi.get('osm_id', poi.get('id', '')),
                     'city': city,
@@ -121,7 +130,9 @@ def search():
                     'website': poi.get('website', ''),
                     'osm_url': poi.get('osm_url', ''),
                     'amenity': amenity,
-                    'provider': poi.get('provider', 'osm')
+                    'provider': poi.get('provider', 'osm'),
+                    'phone': phone,
+                    'rating': rating
                 }
                 results.append(venue)
         except Exception as e:

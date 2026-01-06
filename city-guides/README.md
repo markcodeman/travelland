@@ -1,18 +1,16 @@
 # City Microguides — Budget Picks
 
-Discover affordable restaurants and places with real-time data from OpenStreetMap and Google Places.
+Discover affordable restaurants and places with real-time data from OpenStreetMap, OpenTripMap, and DuckDuckGo.
 
 ## ✨ Features
 
-- **Dual Data Sources**: Toggle between OpenStreetMap (default, free) and Google Places (enhanced data)
-- **Up to 200 Results**: Broader venue coverage for better exploration
-- **Real Ratings & Reviews**: ⭐ Star ratings and user review counts from Google Places
-- **Price Level Mapping**: Clear price indicators ($, $$, $$$, $$$$) from Google Places API
-- **Expanded Cuisines**: Support for Irish, Indian, Thai, Vietnamese, Greek, Spanish, German, British, and more
+- **Multi-Provider search**: Orchestrates Overpass (OSM), DuckDuckGo, and OpenTripMap for high-quality data.
+- **Up to 200 Results**: Broader venue coverage for better exploration.
 - **Budget Filtering**: Find affordable gems (under $20), moderate favorites ($20-50), or explore all options.
-- **5 Result Optimization**: Based on Miller's Law for optimal cognitive load (7±2 items)
-- **Production Ready**: Dynamic PORT binding, host='0.0.0.0', and production mode
-- **Enhanced Data**: Phone numbers, websites, and accurate addresses from Google Places
+- **Local Gems Only**: Filter out major chains to find authentic local eateries.
+- **5 Result Optimization**: Based on Miller's Law for optimal cognitive load (7±2 items).
+- **🧭 Marco AI Chat**: Personalized local tips powered by Groq and Llama 3.1.
+- **Production Ready**: Dynamic PORT binding, host='0.0.0.0', and production mode.
 
 ## 🚀 Quick Start
 
@@ -30,9 +28,10 @@ pip install -r requirements.txt
 
 3. Configure environment:
 ```bash
-# Create a `.env` file in this directory and add your `GOOGLE_PLACES_API_KEY`
+# Create a `.env` file in this directory and add your keys
 # Example:
-# GOOGLE_PLACES_API_KEY=your_api_key_here
+# GROQ_API_KEY=your_key_here
+# OPENTRIPMAP_KEY=your_key_here
 ```
 
 4. Run:
@@ -47,7 +46,7 @@ Open http://127.0.0.1:5010
 See `QUICK_START.md` for full deployment guide.
 
 **Quick steps:**
-1. Set `GOOGLE_PLACES_API_KEY` in Render.com Environment variables
+1. Set `GROQ_API_KEY` and `OPENTRIPMAP_KEY` in Render.com Environment variables
 2. Deploy (auto-deploys on push to main)
 3. Test the "Use Google Places" checkbox!
 

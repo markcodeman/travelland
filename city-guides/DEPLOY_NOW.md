@@ -31,14 +31,9 @@ Fill in these settings:
 Click **Environment** tab and add:
 
 ```
-GOOGLE_PLACES_API_KEY=your_api_key_here
-FLASK_ENV=production
-```
-
-Optional (if using AI features):
-```
 GROQ_API_KEY=your_groq_key_here
 OPENTRIPMAP_KEY=your_opentripmap_key_here
+FLASK_ENV=production
 ```
 
 #### Step 4: Deploy
@@ -63,15 +58,14 @@ If auto-deploy is disabled:
 
 ### Test Checklist:
 1. ✅ Open your app URL
-2. ✅ Search for a city without checking "Use Google Places" (tests OSM)
-3. ✅ Check the "Use Google Places" checkbox
-4. ✅ Search for "Tokyo" (tests Google Places)
-5. ✅ Verify you see:
-   - ⭐ Star ratings
-   - Review counts
-   - Price levels ($, $$, $$$, $$$$)
-   - Phone numbers
-   - Clickable Google Maps links
+2. ✅ Search for a city
+3. ✅ Toggle "Local Gems Only" to see the difference
+4. ✅ Verify you see:
+   - Budget-filtered results
+   - Descriptions and Tag-based features
+   - Clickable map links
+   - Visit Website links
+5. ✅ Chat with 🧭 Marco for local tips
 
 ---
 
