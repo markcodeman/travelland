@@ -7,7 +7,11 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
-OVERPASS_URL = 'https://overpass-api.de/api/interpreter'
+OVERPASS_URLS = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.openstreetmap.fr/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter'
+]
 
 
 def reverse_geocode(lat, lon):
@@ -168,14 +172,34 @@ def discover_restaurants(city, limit=200, cuisine=None, local_only=False):
         except Exception:
             j = None
     else:
-        try:
-            _ensure_rate_limit()
-            r = requests.post(OVERPASS_URL, data={'data': q}, headers=headers, timeout=60)
-            # if successful JSON, cache it
-            r.raise_for_status()
-            j = r.json()
-            _write_cache(q, j)
-        except Exception:
+        # Try multiple Overpass endpoints with retries/backoff to reduce 504s
+        tried = []
+        j = None
+        for base_url in OVERPASS_URLS:
+            try:
+                _ensure_rate_limit()
+                # exponential backoff for each endpoint attempt
+                attempts = int(os.environ.get('OVERPASS_RETRIES', 2))
+                for attempt in range(1, attempts + 1):
+                    try:
+                        r = requests.post(base_url, data={'data': q}, headers=headers, timeout=int(os.environ.get('OVERPASS_TIMEOUT', 60)))
+                        r.raise_for_status()
+                        j = r.json()
+                        _write_cache(q, j)
+                        break
+                    except Exception:
+                        if attempt < attempts:
+                            time.sleep(1 * attempt)
+                        else:
+                            raise
+                if j is not None:
+                    break
+            except Exception:
+                tried.append(base_url)
+                # continue to next endpoint
+                continue
+
+        if j is None:
             # on failure, try to fall back to stale cache if available
             stale_p = _cache_path_for_query(q)
             if stale_p.exists():
