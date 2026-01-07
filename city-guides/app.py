@@ -377,6 +377,27 @@ def transport():
                 break
         except Exception:
             quick_guide = ''
+    # If Wikivoyage didn't have an extract, try Wikipedia as a fallback
+    if not quick_guide:
+        try:
+            url = "https://en.wikipedia.org/w/api.php"
+            params = {
+                "action": "query",
+                "prop": "extracts",
+                "exintro": True,
+                "explaintext": True,
+                "titles": city,
+                "format": "json",
+                "redirects": 1
+            }
+            resp = requests.get(url, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8)
+            resp.raise_for_status()
+            pages = resp.json().get('query', {}).get('pages', {})
+            for p in pages.values():
+                quick_guide = p.get('extract', '')
+                break
+        except Exception:
+            quick_guide = quick_guide or ''
 
     provider_links = (transport_payload.get('provider_links') if transport_payload else None) or get_provider_links(city)
 
@@ -507,6 +528,28 @@ def api_city_info():
             break
     except Exception:
         quick_guide = ''
+
+    # fallback to Wikipedia if Wikivoyage is empty
+    if not quick_guide:
+        try:
+            url = "https://en.wikipedia.org/w/api.php"
+            params = {
+                "action": "query",
+                "prop": "extracts",
+                "exintro": True,
+                "explaintext": True,
+                "titles": city,
+                "format": "json",
+                "redirects": 1
+            }
+            resp = requests.get(url, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8)
+            resp.raise_for_status()
+            pages = resp.json().get('query', {}).get('pages', {})
+            for p in pages.values():
+                quick_guide = p.get('extract', '')
+                break
+        except Exception:
+            quick_guide = quick_guide or ''
 
     # Marco recommendation via semantic module
     marco = None
