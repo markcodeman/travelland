@@ -55,7 +55,7 @@
         </section>
 
         <section class="grid md:grid-cols-2 gap-8 mb-12">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div id="quick-guide" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                 <div class="flex items-center gap-4 mb-4">
                     <div class="bg-blue-100 p-3 rounded-xl text-blue-600">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -64,24 +64,9 @@
                     </div>
                     <h2 class="text-xl font-bold">Quick Guide</h2>
                 </div>
-                <ul class="space-y-3 text-gray-600">
-                    <li class="flex gap-3">
-                        <span class="text-blue-500 font-bold">•</span>
-                        <span>Tickets can be bought at kiosks or via the city app.</span>
-                    </li>
-                    <li class="flex gap-3">
-                        <span class="text-blue-500 font-bold">•</span>
-                        <span>Always validate your ticket before boarding.</span>
-                    </li>
-                    <li class="flex gap-3">
-                        <span class="text-blue-500 font-bold">•</span>
-                        <span>Daily passes are usually the best value for tourists.</span>
-                    </li>
-                    <li class="flex gap-3">
-                        <span class="text-blue-500 font-bold">•</span>
-                        <span>Buses and Trams run 5 AM to Midnight.</span>
-                    </li>
-                </ul>
+                <div id="quick-guide-list" class="space-y-3 text-gray-600">
+                    <p>Loading quick guide…</p>
+                </div>
             </div>
 
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -148,7 +133,53 @@
         document.addEventListener('DOMContentLoaded', () => {
             setupMapLinks();
             fetchMarcoTips();
+            fetchTransportData();
         });
+
+        async function fetchTransportData() {
+            const city = "{{ city }}";
+            try {
+                const resp = await fetch(`/api/transport?city=${encodeURIComponent(city)}`);
+                if (!resp.ok) return;
+                const j = await resp.json();
+                applyTransportPayload(j);
+            } catch (e) {
+                console.warn('transport fetch failed', e);
+            }
+        }
+
+        function applyTransportPayload(payload) {
+            try {
+                // Fill quick guide
+                const q = document.getElementById('quick-guide-list');
+                const sum = payload.wikivoyage_summary || '';
+                if (sum) {
+                    // take first 4 sentences as quick bullets
+                    const sentences = sum.match(/[^\.\!\?]+[\.\!\?]+/g) || [sum];
+                    const bullets = sentences.slice(0,4).map(s => s.trim());
+                    q.innerHTML = bullets.map(b => `<div class="flex gap-3"><span class="text-blue-500 font-bold">•</span><span>${b}</span></div>`).join('');
+                } else {
+                    q.innerHTML = '<p>No quick guide available.</p>';
+                }
+
+                // Update transit map link to payload center if available
+                if (payload.center && payload.center.lat && payload.center.lon) {
+                    const mapLink = document.getElementById('transit-map-link');
+                    mapLink.href = `https://www.google.com/maps/@${payload.center.lat},${payload.center.lon},13z/data=!5m1!1e2`;
+                }
+
+                // Optionally show counts or stops somewhere — add a small badge
+                if (payload.stops && payload.stops.length) {
+                    const tips = document.getElementById('marco-tips-content');
+                    const note = document.createElement('p');
+                    note.className = 'mt-3 text-sm opacity-80';
+                    note.textContent = `${payload.stops.length} nearby transport stops discovered.`;
+                    tips.appendChild(note);
+                }
+            } catch (e) {
+                console.warn('applyTransportPayload failed', e);
+            }
+        }
 
         function setupMapLinks() {
             const city = "{{ city }}";

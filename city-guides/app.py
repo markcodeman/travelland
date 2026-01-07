@@ -1,5 +1,6 @@
 
 from flask import Flask, render_template, request, jsonify
+from pathlib import Path
 import json
 import os
 from urllib.parse import urlparse
@@ -245,6 +246,30 @@ def transport():
     lat = request.args.get('lat')
     lon = request.args.get('lon')
     return render_template('transport.html', city=city, lat=lat, lon=lon)
+
+
+@app.route('/api/transport')
+def api_transport():
+    """Return a transport JSON for a requested city.
+    Searches files named data/transport_*.json and matches by city substring if provided.
+    """
+    city_q = (request.args.get('city') or '').lower()
+    data_dir = Path(__file__).resolve().parents[1] / 'data'
+    files = sorted(data_dir.glob('transport_*.json'))
+    payload = None
+    for p in files:
+        try:
+            with p.open(encoding='utf-8') as f:
+                j = json.load(f)
+            if city_q and city_q in (j.get('city') or '').lower():
+                return jsonify(j)
+            if payload is None:
+                payload = j
+        except Exception:
+            continue
+    if payload:
+        return jsonify(payload)
+    return jsonify({'error': 'no_transport_data'}), 404
 
 @app.route('/search', methods=['POST'])
 def search():
