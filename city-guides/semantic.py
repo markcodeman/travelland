@@ -3,12 +3,16 @@ import requests
 from bs4 import BeautifulSoup
 import math
 import re
+import logging
 
 import search_provider
 import duckduckgo_provider
 
 # Simple in-memory vector store + ingestion that prefers Groq.ai embeddings
 GROQ_EMBEDDING_ENDPOINT = 'https://api.groq.ai/v1/embeddings'
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class InMemoryIndex:
@@ -19,6 +23,7 @@ class InMemoryIndex:
         self.items.append((embedding, meta))
 
     def search(self, query_emb, top_k=5):
+        logging.debug(f"Performing search with top_k={top_k}")
         scores = []
         q_norm = math.sqrt(sum(x * x for x in query_emb))
         for emb, meta in self.items:
@@ -28,7 +33,9 @@ class InMemoryIndex:
             score = dot / (q_norm * e_norm + 1e-12)
             scores.append((score, meta))
         scores.sort(key=lambda x: x[0], reverse=True)
-        return [{'score': float(s), 'meta': m} for s, m in scores[:top_k]]
+        results = [{'score': float(s), 'meta': m} for s, m in scores[:top_k]]
+        logging.debug(f"Search results: {results}")
+        return results
 
 
 INDEX = InMemoryIndex()
