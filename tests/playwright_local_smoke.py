@@ -1,9 +1,9 @@
 from playwright.sync_api import sync_playwright
 import time
 
-URL = 'http://127.0.0.1:5010'
+URL = 'http://127.0.0.1:5000'
 
-def run():
+def test_playwright_ui():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
@@ -24,22 +24,18 @@ def run():
         try:
             count = page.evaluate("() => document.querySelectorAll('.card').length")
             print('DOM .card count (direct):', count)
-            if count == 0:
-                # dump raw results container to debug
-                html = page.evaluate("() => document.querySelector('#results').innerHTML")
-                print('results HTML preview:', html[:500])
+            assert count > 0, "No venues found"
             page.wait_for_selector('.card', timeout=10000)
             venues = page.query_selector_all('.card')
             print(f'Found {len(venues)} venue(s)')
-            for i, v in enumerate(venues[:10]):
-                print(f"{i+1}: {v.inner_text()[:120].replace('\n', ' ')}")
         except Exception as e:
-            # If search failed, dump any error node
             err = page.query_selector('.error')
             if err:
                 print('Error message on page:', err.inner_text())
             else:
                 print('No results and no explicit error:', str(e))
+            assert False, "Search failed"
+
         # Also test Marco chat quick query
         page.fill('#chatCity', 'Guadalajara')
         page.fill('#chatInput', 'best tacos')
@@ -51,7 +47,5 @@ def run():
             print('AI replies:', msgs[-1].inner_text())
         except Exception as e:
             print('No AI reply:', str(e))
+            assert False, "AI reply failed"
         browser.close()
-
-if __name__ == '__main__':
-    run()

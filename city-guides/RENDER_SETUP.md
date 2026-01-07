@@ -17,7 +17,7 @@
 2. Click **New +** → **Web Service**
 3. Click **Connect GitHub** (if not already connected)
 4. Authorize Render to access your repositories
-5. Select **Only select repositories** → Choose `travelland`
+5. Select **Only select repositories** → Choose `Marco's Micro City Guides by Travel Land LLC`
 6. Click **Install**
 
 ### 2. Create Web Service

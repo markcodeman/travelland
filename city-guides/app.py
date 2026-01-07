@@ -3,6 +3,7 @@ import json
 import os
 from urllib.parse import urlparse
 from dotenv import load_dotenv
+import logging
 
 _here = os.path.dirname(__file__)
 # load local .env placed inside the city-guides folder (keeps keys out of repo root)
@@ -13,24 +14,31 @@ import overpass_provider
 from overpass_provider import _singularize
 import multi_provider
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
 
 def _compute_open_now(lat, lon, opening_hours_str):
+    logging.debug(f"Computing open status for lat={lat}, lon={lon}, opening_hours_str='{opening_hours_str}'")
     """Best-effort server-side opening_hours check.
     - Tries to resolve timezone from lat/lon using timezonefinder if available.
-    - Supports simple OSM opening_hours patterns like '24/7' and 'Mo-Sa 09:00-18:00; Su 10:00-16:00'.
+    - Supports simple OSM opening_hours patterns like '24/7' and 'Mo-Sa 09:00-18:00'; Su 10:00-16:00'.
     Returns (is_open: bool|None, next_change_iso: str|None)
     """
     if not opening_hours_str:
+        logging.debug("No opening_hours_str provided. Returning (None, None).")
         return (None, None)
 
     s = opening_hours_str.strip()
     if not s:
+        logging.debug("Empty opening_hours_str. Returning (None, None).")
         return (None, None)
 
     # Quick common check
     if '24/7' in s or '24h' in s or '24 hr' in s.lower():
+        logging.debug("Detected 24/7 hours. Returning (True, None).")
         return (True, None)
 
     # Determine timezone (best-effort)
@@ -55,6 +63,9 @@ def _compute_open_now(lat, lon, opening_hours_str):
             now = datetime.now()
     else:
         now = datetime.now()
+
+    logging.debug(f"Parsed timezone: {tzname}")
+    logging.debug(f"Current datetime: {now}")
 
     # Map short day names to weekday numbers
     days_map = {'mo':0,'tu':1,'we':2,'th':3,'fr':4,'sa':5,'su':6}
@@ -109,21 +120,29 @@ def _compute_open_now(lat, lon, opening_hours_str):
                 if now.weekday() in days:
                     todays_matches.append((t1,t2))
 
+    logging.debug(f"Today's matches: {todays_matches}")
+
     # Check if current time falls in any range
-    for (t1,t2) in todays_matches:
+    for (t1, t2) in todays_matches:
+        logging.debug(f"Checking time range: {t1} - {t2}")
         dt = now.time()
         if t1 <= dt <= t2:
+            logging.debug("Current time falls within range. Returning (True, None).")
             return (True, None)
+        # Handle overnight ranges (e.g., 18:00-02:00)
+        elif t1 > t2:
+            # range spans midnight
+            if dt >= t1 or dt <= t2:
+                logging.debug("Current time falls within overnight range. Returning (True, None).")
+                return (True, None)
 
-    # If we had matches but none matched, return False
-    if todays_matches:
-        return (False, None)
-
-    return (None, None)
+    logging.debug("No matching time range found. Returning (False, None).")
+    return (False, None)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    phone = "tel:+1-757-755-7505"  # Replace with dynamic value if needed
+    return render_template('index.html', phone=phone)
 
 @app.route('/search', methods=['POST'])
 def search():
@@ -199,7 +218,9 @@ def search():
                     if 'opening_hours' in tags_dict: features.append("listed hours")
                     
                     feature_text = f" with {', '.join(features)}" if features else ""
-                    hours = tags_dict.get('opening_hours', '')
+                    hours = tags_dict.get('opening_hours', '').strip()
+                    if not hours:
+                        hours = None
 
                     if cuisine:
                         desc = f"{cuisine.title()} restaurant{feature_text}"
@@ -210,8 +231,12 @@ def search():
                         if brand:
                             desc = f"{brand} - {desc}"
                     
+                    # Ensure hours are valid before displaying
+                    hours = tags_dict.get('opening_hours', '').strip()
                     if hours:
                         desc += f". Hours: {hours}"
+                    else:
+                        logging.debug("No valid hours found. Skipping hours display.")
 
                 address = poi.get('address', '').strip()
                 if not address:
@@ -220,6 +245,8 @@ def search():
                 # Extract phone and rating if available from tags or other providers
                 tags_dict = dict(tag.split('=', 1) for tag in poi.get('tags', '').split(', ') if '=' in tag)
                 phone = tags_dict.get('phone') or tags_dict.get('contact:phone')
+                if phone:
+                    phone = f"tel:{phone}"
                 rating = poi.get('rating')
                 hours = tags_dict.get('opening_hours') or tags_dict.get('hours') or ''
                 try:
@@ -319,7 +346,6 @@ def convert_currency():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5010))
-    # Explicitly enable threading and set a longer timeout
-    app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
+if __name__ == "__main__":
+    port = int(os.getenv("FLASK_PORT", 5000))
+    app.run(host="0.0.0.0", port=port)

@@ -1,4 +1,4 @@
-# Quick Start Guide - Travelland City Guides
+# Quick Start Guide - Marco's Micro City Guides by Travel Land LLC
 
 ## 🚀 Deploy in 2 Minutes
 

@@ -8,7 +8,7 @@
 1. Go to [Render.com Dashboard](https://dashboard.render.com/)
 2. Click **New +** → **Web Service**
 3. Connect your GitHub account if not already connected
-4. Select your `travelland` repository
+4. Select your `Marco's Micro City Guides by Travel Land LLC` repository
 
 #### Step 2: Configure Service
 Fill in these settings:
