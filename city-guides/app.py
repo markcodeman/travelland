@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv
 import logging
 import requests
+import re
 
 _here = os.path.dirname(__file__)
 # load local .env placed inside the city-guides folder (keeps keys out of repo root)
@@ -16,11 +17,94 @@ import semantic
 import overpass_provider
 from overpass_provider import _singularize
 import multi_provider
+import image_provider
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
+
+# Small mapping of known transit provider links by city (best-effort)
+PROVIDER_LINKS = {
+    'london': [
+        {'name': 'TfL (official)', 'url': 'https://tfl.gov.uk'},
+        {'name': 'Google Transit (TfL)', 'url': 'https://www.google.com/maps/place/London+Underground'}
+    ],
+    'paris': [
+        {'name': 'RATP (official)', 'url': 'https://www.ratp.fr/en'},
+        {'name': 'SNCF (regional)', 'url': 'https://www.sncf.com/en'}
+    ],
+    'new york': [
+        {'name': 'MTA (official)', 'url': 'https://new.mta.info'},
+        {'name': 'NYC Subway map (Google)', 'url': 'https://www.google.com/maps/place/New+York+City+Subway'}
+    ],
+    'shanghai': [
+        {'name': 'Shanghai Metro (official)', 'url': 'http://service.shmetro.com'},
+        {'name': 'Metro / Transit info', 'url': 'https://www.travelchinaguide.com/cityguides/shanghai/transportation.htm'}
+    ],
+    'tokyo': [
+        {'name': 'Tokyo Metro (official)', 'url': 'https://www.tokyometro.jp/en/'},
+    ],
+    'default': [
+        {'name': 'Google Transit', 'url': 'https://www.google.com/maps'}
+    ]
+}
+
+def get_provider_links(city_name):
+    if not city_name:
+        return PROVIDER_LINKS.get('default')
+    key = city_name.strip().lower()
+    # try full match then substring match
+    if key in PROVIDER_LINKS:
+        return PROVIDER_LINKS[key]
+    for k, v in PROVIDER_LINKS.items():
+        if k != 'default' and k in key:
+            return v
+    return PROVIDER_LINKS.get('default')
+
+
+def shorten_place(name):
+    """Return a compact display name for a possibly long place string.
+    Strategy:
+      - split on commas and examine tokens right-to-left
+      - skip tokens that look like generic regions (e.g. 'Região', 'Region', 'Metropolitana', 'Southeast Region', country names)
+      - prefer the first non-generic token from the right; fallback to the first token
+    """
+    if not name:
+        return name
+    try:
+        toks = [t.strip() for t in name.split(',') if t.strip()]
+        if not toks:
+            return name.strip()
+        generic = [
+            'região', 'regiao', 'region', 'metropolitana', 'metropolitan', 'região metropolitana', 'região geográfica',
+            'região geográfica intermediária', 'southeast region', 'north', 'south', 'east', 'west', 'region', 'state', 'country'
+        ]
+        # Prefer a non-generic token that looks like a city (contains accented chars or multiple words or is reasonably long).
+        preferred = None
+        for t in reversed(toks):
+            tl = t.lower()
+            skip = any(g in tl for g in generic)
+            if skip:
+                continue
+            # heuristics for a good city token
+            if re.search(r'[àáâãäåéèêíïóôõöúçñ]', t.lower()) or len(t.split()) > 1 or len(t) > 6:
+                return t
+            if not preferred:
+                preferred = t
+        if preferred:
+            return preferred
+        # fallback: prefer a token that contains accented characters or longer words
+        def score_token(x):
+            s = 0
+            if re.search(r'[àáâãäåéèêíïóôõöúçñ]', x.lower()):
+                s += 5
+            s += len(x.split())
+            return s
+        best = max(toks, key=score_token)
+        return best
+    except Exception:
+        return name
 
 # Expose whether Groq API key is configured to templates
 @app.context_processor
@@ -245,7 +329,59 @@ def transport():
     city = request.args.get('city', 'the city')
     lat = request.args.get('lat')
     lon = request.args.get('lon')
-    return render_template('transport.html', city=city, lat=lat, lon=lon)
+    # fetch a banner image for the requested city (best-effort)
+    try:
+        banner = image_provider.get_banner_for_city(city)
+        banner_url = banner.get('url') if banner else None
+        banner_attr = banner.get('attribution') if banner else None
+    except Exception:
+        banner_url = None
+        banner_attr = None
+    # attempt to load any pre-generated transport JSON for this city
+    data_dir = Path(__file__).resolve().parents[1] / 'data'
+    transport_payload = None
+    try:
+        for p in data_dir.glob('transport_*.json'):
+            try:
+                with p.open(encoding='utf-8') as f:
+                    j = json.load(f)
+                if city.lower() in (j.get('city') or '').lower():
+                    transport_payload = j
+                    break
+            except Exception:
+                continue
+    except Exception:
+        transport_payload = None
+
+    # Quick guide via Wikivoyage (use transport payload if it already contains an extract)
+    quick_guide = ''
+    if transport_payload and transport_payload.get('wikivoyage_summary'):
+        quick_guide = transport_payload.get('wikivoyage_summary')
+    else:
+        try:
+            url = "https://en.wikivoyage.org/w/api.php"
+            params = {
+                "action": "query",
+                "prop": "extracts",
+                "exintro": True,
+                "explaintext": True,
+                "titles": city,
+                "format": "json",
+                "redirects": 1
+            }
+            resp = requests.get(url, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8)
+            resp.raise_for_status()
+            pages = resp.json().get('query', {}).get('pages', {})
+            for p in pages.values():
+                quick_guide = p.get('extract', '')
+                break
+        except Exception:
+            quick_guide = ''
+
+    provider_links = (transport_payload.get('provider_links') if transport_payload else None) or get_provider_links(city)
+
+    city_display = shorten_place(city)
+    return render_template('transport.html', city=city, city_display=city_display, lat=lat, lon=lon, banner_url=banner_url, banner_attr=banner_attr, initial_quick_guide=quick_guide, initial_provider_links=provider_links, initial_transport=transport_payload)
 
 
 @app.route('/api/transport')
@@ -253,7 +389,8 @@ def api_transport():
     """Return a transport JSON for a requested city.
     Searches files named data/transport_*.json and matches by city substring if provided.
     """
-    city_q = (request.args.get('city') or '').lower()
+    city_q_raw = (request.args.get('city') or '').strip()
+    city_q = city_q_raw.lower()
     data_dir = Path(__file__).resolve().parents[1] / 'data'
     files = sorted(data_dir.glob('transport_*.json'))
     payload = None
@@ -261,15 +398,144 @@ def api_transport():
         try:
             with p.open(encoding='utf-8') as f:
                 j = json.load(f)
+            # attach provider links if missing
+            try:
+                j['provider_links'] = j.get('provider_links') or get_provider_links(j.get('city') or city_q_raw)
+            except Exception:
+                pass
             if city_q and city_q in (j.get('city') or '').lower():
+                # attach a compact display name
+                try:
+                    j['city_display'] = shorten_place(j.get('city') or city_q_raw)
+                except Exception:
+                    j['city_display'] = j.get('city')
                 return jsonify(j)
             if payload is None:
                 payload = j
         except Exception:
             continue
+
+    # If a specific city was requested but we didn't find a pre-generated file,
+    # return a best-effort minimal payload using geocoding + Wikivoyage extract so
+    # the frontend can at least deep-link to Google and show a local quick guide.
+    if city_q:
+        lat, lon = geocode_city(city_q_raw)
+        quick = ''
+        try:
+            url = "https://en.wikivoyage.org/w/api.php"
+            params = {
+                "action": "query",
+                "prop": "extracts",
+                "exintro": True,
+                "explaintext": True,
+                "titles": city_q_raw,
+                "format": "json",
+                "redirects": 1
+            }
+            resp = requests.get(url, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8)
+            resp.raise_for_status()
+            pages = resp.json().get('query', {}).get('pages', {})
+            for p in pages.values():
+                quick = p.get('extract', '')
+                break
+        except Exception:
+            quick = ''
+
+        minimal = {
+            'city': city_q_raw,
+            'city_display': shorten_place(city_q_raw),
+            'generated_at': None,
+            'center': {'lat': lat, 'lon': lon},
+            'wikivoyage_summary': quick,
+            'stops': [],
+            'stops_count': 0,
+            'provider_links': get_provider_links(city_q_raw)
+        }
+        return jsonify(minimal)
+
     if payload:
         return jsonify(payload)
     return jsonify({'error': 'no_transport_data'}), 404
+
+
+@app.route('/api/city_info')
+def api_city_info():
+    """Return quick info for any city: Marco recommendations, Google deep-link, quick guide.
+    Falls back to transport JSON if available.
+    """
+    city = (request.args.get('city') or '').strip()
+    if not city:
+        return jsonify({'error': 'city required'}), 400
+
+    # geocode best-effort
+    lat, lon = geocode_city(city)
+
+    # Attempt to reuse existing transport data if present
+    data_dir = Path(__file__).resolve().parents[1] / 'data'
+    transport = None
+    try:
+        for p in data_dir.glob('transport_*.json'):
+            try:
+                with p.open(encoding='utf-8') as f:
+                    j = json.load(f)
+                if city.lower() in (j.get('city') or '').lower():
+                    transport = j
+                    break
+            except Exception:
+                continue
+    except Exception:
+        transport = None
+
+    # Quick guide via Wikivoyage
+    quick_guide = ''
+    try:
+        url = "https://en.wikivoyage.org/w/api.php"
+        params = {
+            "action": "query",
+            "prop": "extracts",
+            "exintro": True,
+            "explaintext": True,
+            "titles": city,
+            "format": "json",
+            "redirects": 1
+        }
+        resp = requests.get(url, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8)
+        resp.raise_for_status()
+        pages = resp.json().get('query', {}).get('pages', {})
+        for p in pages.values():
+            quick_guide = p.get('extract', '')
+            break
+    except Exception:
+        quick_guide = ''
+
+    # Marco recommendation via semantic module
+    marco = None
+    try:
+        q = f"How do I get around {city}? Name the primary transit app or website used by locals and give 3 quick survival tips."
+        # use existing semantic search_and_reason function
+        marco = semantic.search_and_reason(q, city, mode='explorer')
+    except Exception:
+        marco = None
+
+    google_link = None
+    if lat and lon:
+        google_link = f"https://www.google.com/maps/@{lat},{lon},13z/data=!5m1!1e2"
+    else:
+        google_link = f"https://www.google.com/maps/search/{requests.utils.requote_uri(city + ' public transport')}/data=!5m1!1e2"
+
+    result = {
+        'city': city,
+        'city_display': shorten_place(city),
+        'lat': lat,
+        'lon': lon,
+        'google_map': google_link,
+        'quick_guide': quick_guide,
+        'marco': marco,
+        'transport_available': bool(transport),
+        'transport': transport,
+        'provider_links': (transport.get('provider_links') if transport else None) or get_provider_links(city)
+    }
+    return jsonify(result)
 
 @app.route('/search', methods=['POST'])
 def search():

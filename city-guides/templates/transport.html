@@ -19,10 +19,13 @@
 
     <header class="relative h-64 flex items-center justify-center text-white overflow-hidden bg-blue-600">
         <div class="absolute inset-0 bg-blue-900/40 z-10"></div>
-        <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=2000" alt="Transport" class="absolute inset-0 w-full h-full object-cover">
+        <img src="{{ banner_url or 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=2000' }}" alt="Transport" class="absolute inset-0 w-full h-full object-cover">
+        {% if banner_attr %}
+        <div class="absolute bottom-2 right-3 z-30 text-xs text-white/90 bg-black/30 px-2 py-1 rounded">{{ banner_attr }}</div>
+        {% endif %}
         <div class="relative z-20 text-center">
-            <h1 class="text-4xl md:text-5xl font-bold mb-2">Transport in {{ city }}</h1>
-            <p class="text-xl opacity-90">Navigate {{ city }} like a local</p>
+            <h1 class="text-4xl md:text-5xl font-bold mb-2">Transport in {{ city_display or city }}</h1>
+            <p class="text-xl opacity-90">Navigate {{ city_display or city }} like a local</p>
         </div>
     </header>
 
@@ -63,10 +66,24 @@
                         </svg>
                     </div>
                     <h2 class="text-xl font-bold">Quick Guide</h2>
-                </div>
-                <div id="quick-guide-list" class="space-y-3 text-gray-600">
-                    <p>Loading quick guide…</p>
-                </div>
+                    </div>
+                    <div id="quick-guide-list" class="space-y-3 text-gray-600">
+                        <p>Loading quick guide…</p>
+                    </div>
+                    {% if initial_quick_guide %}
+                    <script>
+                    document.addEventListener('DOMContentLoaded', ()=>{
+                        try{
+                            const initial = {{ initial_quick_guide|tojson|safe }};
+                            if(initial){
+                                const q = document.getElementById('quick-guide-list');
+                                const sentences = initial.match(/[^\.\!\?]+[\.\!\?]+/g) || [initial];
+                                q.innerHTML = sentences.slice(0,4).map(b => `<div class="flex gap-3"><span class="text-blue-500 font-bold">•</span><span>${b.trim()}</span></div>`).join('');
+                            }
+                        }catch(e){}
+                    });
+                    </script>
+                    {% endif %}
             </div>
 
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -93,6 +110,9 @@
         <section class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-12">
             <h2 class="text-2xl font-bold mb-6">Live fares & times</h2>
             <p class="text-gray-600">For up-to-date fares and live departure times, please use the transit provider links below or open the map (Google Transit) — they provide authoritative, real-time information.</p>
+            <div id="provider-links" class="mt-4 space-y-2">
+                <!-- provider links injected here -->
+            </div>
         </section>
 
         <section class="text-center bg-gray-900 text-white p-12 rounded-3xl">
@@ -113,7 +133,20 @@
             setupMapLinks();
             fetchMarcoTips();
             fetchTransportData();
+            fetchCityInfoFallback();
+            renderSampleDestinations();
         });
+
+        // global city center used by quick-destination buttons
+        window.__CITY_CENTER = {lat: null, lon: null};
+
+        function makeDirectionsLink(originLat, originLon, destination) {
+            if (originLat && originLon && originLat !== 'None') {
+                const origin = `${originLat},${originLon}`;
+                return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=transit`;
+            }
+            return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&travelmode=transit`;
+        }
 
         async function fetchTransportData() {
             const city = "{{ city }}";
@@ -144,7 +177,19 @@
                 // Update transit map link to payload center if available
                 if (payload.center && payload.center.lat && payload.center.lon) {
                     const mapLink = document.getElementById('transit-map-link');
-                    mapLink.href = `https://www.google.com/maps/@${payload.center.lat},${payload.center.lon},13z/data=!5m1!1e2`;
+                    // if a dest param is present, prefer a directions link
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const destParam = urlParams.get('dest');
+                    if (destParam) {
+                        mapLink.href = makeDirectionsLink(payload.center.lat, payload.center.lon, destParam);
+                    } else {
+                        mapLink.href = `https://www.google.com/maps/@${payload.center.lat},${payload.center.lon},13z/data=!5m1!1e2`;
+                    }
+                    // expose city center for quick-destination buttons
+                    try {
+                        window.__CITY_CENTER.lat = payload.center.lat;
+                        window.__CITY_CENTER.lon = payload.center.lon;
+                    } catch (e) {}
                 }
 
                 // Optionally show counts or stops somewhere — add a small badge
@@ -155,9 +200,102 @@
                     note.textContent = `${payload.stops.length} nearby transport stops discovered.`;
                     tips.appendChild(note);
                 }
+                // Render provider links
+                try {
+                    const pl = document.getElementById('provider-links');
+                    if (pl) {
+                        const links = payload.provider_links || [];
+                        if (links.length) {
+                            pl.innerHTML = links.map(l => `<div><a href="${l.url}" target="_blank" class="text-blue-600 hover:underline font-semibold">${l.name}</a></div>`).join('');
+                        } else {
+                            pl.innerHTML = '';
+                        }
+                    }
+                } catch (e) { console.warn(e); }
             } catch (e) {
                 console.warn('applyTransportPayload failed', e);
             }
+        }
+
+        // Fallback: ask server for city info (quick guide + Marco) when transport JSON not present
+        async function fetchCityInfoFallback() {
+            const city = "{{ city }}";
+            if (!city || city === 'the city') return;
+            try {
+                const resp = await fetch(`/api/city_info?city=${encodeURIComponent(city)}`);
+                if (!resp.ok) return;
+                const j = await resp.json();
+                // populate quick guide if empty
+                const q = document.getElementById('quick-guide-list');
+                if (q && (!q.innerText || q.innerText.includes('Loading quick guide'))) {
+                    if (j.quick_guide) {
+                        const sentences = j.quick_guide.match(/[^\.\!\?]+[\.\!\?]+/g) || [j.quick_guide];
+                        const bullets = sentences.slice(0,4).map(s => s.trim());
+                        q.innerHTML = bullets.map(b => `<div class="flex gap-3"><span class="text-blue-500 font-bold">•</span><span>${b}</span></div>`).join('');
+                    }
+                }
+                // populate Marco if empty
+                const marcoDiv = document.getElementById('marco-tips-content');
+                if (marcoDiv && j.marco && (!marcoDiv.innerText || marcoDiv.innerText.includes('Marco is consulting'))) {
+                    let html = (j.marco.answer || j.marco || '').toString().replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+                    marcoDiv.innerHTML = `<div class="bg-white/10 p-4 rounded-xl border border-white/20">${html}</div>`;
+                }
+                // update map link
+                if (j.lat && j.lon) {
+                    const mapLink = document.getElementById('transit-map-link');
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const destParam = urlParams.get('dest');
+                    if (destParam) {
+                        mapLink.href = makeDirectionsLink(j.lat, j.lon, destParam);
+                    } else {
+                        mapLink.href = `https://www.google.com/maps/@${j.lat},${j.lon},13z/data=!5m1!1e2`;
+                    }
+                    try {
+                        window.__CITY_CENTER.lat = j.lat;
+                        window.__CITY_CENTER.lon = j.lon;
+                    } catch (e) {}
+                } else if (j.google_map) {
+                    const mapLink = document.getElementById('transit-map-link');
+                    mapLink.href = j.google_map;
+                }
+                // provider links from city_info
+                try {
+                    const pl = document.getElementById('provider-links');
+                    if (pl) {
+                        const links = j.provider_links || [];
+                        if (links.length) {
+                            pl.innerHTML = links.map(l => `<div><a href="${l.url}" target="_blank" class="text-blue-600 hover:underline font-semibold">${l.name}</a></div>`).join('');
+                        }
+                    }
+                } catch (e) { console.warn(e); }
+            } catch (e) {
+                console.warn('fetchCityInfoFallback failed', e);
+            }
+        }
+
+        function renderSampleDestinations() {
+            const city = "{{ city }}".trim();
+            const target = document.getElementById('sample-dests');
+            if (!target) return;
+            const samples = {
+                'paris': ['Eiffel Tower','Gare du Nord','Charles de Gaulle Airport'],
+                'shanghai': ['The Bund','Shanghai Tower','Pudong Airport'],
+                'london': ['King\'s Cross','Heathrow Airport','London Bridge'],
+                'new york': ['Times Square','JFK Airport','Grand Central Terminal'],
+                'tokyo': ['Shibuya Crossing','Tokyo Station','Haneda Airport']
+            };
+            const key = city.toLowerCase();
+            const list = samples[key] || ['Central Station','Airport','Main Attraction'];
+            target.innerHTML = list.map(d => `<button class="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 hover:bg-blue-100" data-dest="${encodeURIComponent(d)}">${d}</button>`).join(' ');
+            // attach handlers
+            target.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const dest = decodeURIComponent(e.currentTarget.getAttribute('data-dest'));
+                    const origin = window.__CITY_CENTER || {};
+                    const link = makeDirectionsLink(origin.lat, origin.lon, dest);
+                    window.open(link, '_blank');
+                });
+            });
         }
 
         function setupMapLinks() {
@@ -165,11 +303,29 @@
             const lat = "{{ lat }}";
             const lon = "{{ lon }}";
             const mapLink = document.getElementById('transit-map-link');
+            const urlParams = new URLSearchParams(window.location.search);
+            const destParam = urlParams.get('dest');
+
+            function makeDirectionsLink(originLat, originLon, destination) {
+                if (originLat && originLon) {
+                    const origin = `${originLat},${originLon}`;
+                    return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=transit`;
+                }
+                return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&travelmode=transit`;
+            }
             
             if (lat && lon && lat !== "None") {
-                mapLink.href = `https://www.google.com/maps/@${lat},${lon},14z/data=!5m1!1e2`;
+                if (destParam) {
+                    mapLink.href = makeDirectionsLink(lat, lon, destParam);
+                } else {
+                    mapLink.href = `https://www.google.com/maps/@${lat},${lon},14z/data=!5m1!1e2`;
+                }
             } else {
-                mapLink.href = `https://www.google.com/maps/search/${encodeURIComponent(city + ' public transport')}/data=!5m1!1e2`;
+                if (destParam) {
+                    mapLink.href = makeDirectionsLink(null, null, destParam);
+                } else {
+                    mapLink.href = `https://www.google.com/maps/search/${encodeURIComponent(city + ' public transport')}/data=!5m1!1e2`;
+                }
             }
         }
 
