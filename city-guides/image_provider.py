@@ -121,27 +121,35 @@ def _download_image(url, dest_path):
 
 
 def get_banner_for_city(city):
-    """Return {url, attribution} where url is a local /static path (best-effort).
-    Caches results in data/banner_cache.json and stores files under static/banners/.
-    TTL (days) controlled by BANNER_CACHE_TTL_DAYS env var.
+    """Return banner info for a city.
+
+    Behavior is configurable via environment variable `BANNER_STORE_LOCAL`:
+      - '1' (store locally under `static/banners/` and return a local `/static` URL)
+      - any other value (default): return the remote Wikimedia URL directly and do not store the file locally.
+
+    Cached metadata is kept in `data/banner_cache.json` either way; TTL (days) is controlled by BANNER_CACHE_TTL_DAYS.
     """
     if not city:
         return None
     key = city.strip().lower()
     ttl = int(os.getenv('BANNER_CACHE_TTL_DAYS', '7'))
+    store_local = os.getenv('BANNER_STORE_LOCAL', '0') == '1'
 
     with _CACHE_LOCK:
         c = _load_cache()
         rec = c.get(key)
-        # If we have a cached local filename and file exists and not expired, return it
         if rec and rec.get('generated_at') and not _is_expired(rec.get('generated_at'), ttl):
-            local_fn = rec.get('local_filename')
-            if local_fn:
+            # If we stored a local filename previously and local storage is enabled, prefer it
+            if store_local and rec.get('local_filename'):
+                local_fn = rec.get('local_filename')
                 local_path = _BANNERS_DIR / local_fn
                 if local_path.exists():
                     return {'url': f'/static/banners/{local_fn}', 'attribution': rec.get('attribution')}
+            # Otherwise, if we have a remote_url cached, return it
+            if rec.get('remote_url'):
+                return {'url': rec.get('remote_url'), 'attribution': rec.get('attribution')}
 
-    # Fetch remote thumbnail
+    # Fetch remote thumbnail metadata
     val = fetch_banner_from_wikipedia(city)
     if not val:
         return None
@@ -149,7 +157,15 @@ def get_banner_for_city(city):
     remote_url = val.get('remote_url')
     attribution = val.get('attribution')
 
-    # Download into static/banners/<slug><ext>
+    # If caller doesn't want local storage, cache remote_url and return it
+    if not store_local:
+        with _CACHE_LOCK:
+            c = _load_cache()
+            c[key] = {'remote_url': remote_url, 'attribution': attribution, 'generated_at': datetime.datetime.utcnow().isoformat()}
+            _write_cache(c)
+        return {'url': remote_url, 'attribution': attribution}
+
+    # Otherwise, download and store locally under static/banners
     slug = _slugify(city)
     ext = _ext_from_url(remote_url)
     filename = f"{slug}{ext}"
@@ -157,14 +173,12 @@ def get_banner_for_city(city):
 
     # If file exists and is recent enough, reuse
     if dest_path.exists():
-        # check mtime vs ttl
         try:
             mtime = datetime.datetime.utcfromtimestamp(dest_path.stat().st_mtime)
             if (datetime.datetime.utcnow() - mtime).days < ttl:
-                # Update cache record and return
                 with _CACHE_LOCK:
                     c = _load_cache()
-                    c[key] = {'local_filename': filename, 'attribution': attribution, 'generated_at': datetime.datetime.utcnow().isoformat()}
+                    c[key] = {'local_filename': filename, 'attribution': attribution, 'generated_at': datetime.datetime.utcnow().isoformat(), 'remote_url': remote_url}
                     _write_cache(c)
                 return {'url': f'/static/banners/{filename}', 'attribution': attribution}
         except Exception:
@@ -172,12 +186,16 @@ def get_banner_for_city(city):
 
     ok = _download_image(remote_url, dest_path)
     if not ok:
-        return None
+        # fallback to returning remote URL
+        with _CACHE_LOCK:
+            c = _load_cache()
+            c[key] = {'remote_url': remote_url, 'attribution': attribution, 'generated_at': datetime.datetime.utcnow().isoformat()}
+            _write_cache(c)
+        return {'url': remote_url, 'attribution': attribution}
 
-    # update cache
     with _CACHE_LOCK:
         c = _load_cache()
-        c[key] = {'local_filename': filename, 'attribution': attribution, 'generated_at': datetime.datetime.utcnow().isoformat()}
+        c[key] = {'local_filename': filename, 'attribution': attribution, 'generated_at': datetime.datetime.utcnow().isoformat(), 'remote_url': remote_url}
         _write_cache(c)
 
     return {'url': f'/static/banners/{filename}', 'attribution': attribution}
