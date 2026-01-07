@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Currency Converter — City Microguides</title>
+  <link rel="stylesheet" href="/static/styles.css?v=2">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@2.51.6/dist/full.css">
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@1.6.5/dist/flowbite.min.js"></script>
+  <style>
+    .tools-back { position: fixed; left: 12px; top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="tools-back">
+      <a href="/" class="px-3 py-2 bg-white rounded shadow">← Back</a>
+    </div>
+    <div class="max-w-xl mx-auto mt-16 bg-white/70 backdrop-blur-md border border-white/30 rounded-2xl p-4 sm:p-6 shadow">
+      <h2 class="text-xl font-semibold mb-3">🪙 Currency Converter</h2>
+      <div class="currency-input-group">
+        <input id="amount" type="number" placeholder="Amount" class="p-2 border rounded" />
+        <select id="fromCurr" title="Convert from currency" class="p-2 border rounded">
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="GBP">GBP</option>
+          <option value="JPY">JPY</option>
+          <option value="CAD">CAD</option>
+          <option value="AUD">AUD</option>
+          <option value="MXN">MXN</option>
+        </select>
+        <span class="px-2">to</span>
+        <select id="toCurr" title="Convert to currency" class="p-2 border rounded">
+          <option value="GBP">GBP</option>
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="JPY">JPY</option>
+          <option value="CAD">CAD</option>
+          <option value="AUD">AUD</option>
+          <option value="MXN">MXN</option>
+        </select>
+        <button id="convertBtn" class="ml-2 px-3 py-2 bg-blue-600 text-white rounded">Convert</button>
+      </div>
+      <div id="convertResult" class="mt-3"></div>
+    </div>
+  </div>
+  <!-- Dedicated currency converter JS for this page only -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const convertBtn = document.getElementById('convertBtn');
+      const convertResult = document.getElementById('convertResult');
+      if (convertBtn && convertResult) {
+        convertBtn.addEventListener('click', async () => {
+          const amount = parseFloat(document.getElementById('amount').value);
+          const fromCurr = document.getElementById('fromCurr').value;
+          const toCurr = document.getElementById('toCurr').value;
+          if (!amount || amount <= 0) {
+            convertResult.innerHTML = '<div class="error">Please enter a valid amount.</div>';
+            return;
+          }
+          convertResult.innerHTML = '<div class="loading">Converting…</div>';
+          try {
+            const resp = await fetch('/convert', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({amount, from: fromCurr, to: toCurr})
+            });
+            const j = await resp.json();
+            if (j.result) {
+              convertResult.innerHTML = `<div class="success">${j.result}</div>`;
+            } else {
+              convertResult.innerHTML = `<div class="error">${j.error}</div>`;
+            }
+          } catch (e) {
+            convertResult.innerHTML = `<div class="error">Error: ${e.message}</div>`;
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

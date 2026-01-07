@@ -555,3 +555,22 @@ body {
 @media (min-width: 769px) {
   .search-section { position: sticky; top: 20px; z-index: 1000; }
 }
+
+/* Nominatim suggestion styles */
+.suggestion-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+.suggestion-item:hover, .suggestion-item.focused {
+  background: rgba(59,130,246,0.06);
+}
+
+/* Hamburger button */
+.hamburger {
+  z-index: 2000;
+  font-size: 18px;
+  line-height: 1;
+  border: 1px solid rgba(0,0,0,0.06);
+}

@@ -69,6 +69,12 @@ python test_max_results.py    # Verify 5 results config
 
 ## 🔒 API Requirements
 
+## ⚠️ Nominatim usage
+
+This project uses the OpenStreetMap Nominatim API client-side for lightweight city/place autocomplete. Nominatim terms require a valid HTTP Referer or User-Agent and fair-use (rate limits). For production use consider hosting your own instance or using a commercial geocoding provider if you expect heavy traffic.
+
+Client requests are debounced and limited to a few suggestions to reduce impact on the public Nominatim service.
+
 **Required for Google Places features:**
 - Google Places API Key (free tier: 28,000+ requests/month)
 - Enable "Places API (New)" in Google Cloud Console

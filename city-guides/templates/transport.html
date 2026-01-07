@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Transport - TravelLand</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <div class="fixed top-4 left-4 z-50">
+        <a href="/" class="bg-white/90 backdrop-blur p-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center border border-gray-100" title="Back to Home">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+        </a>
+    </div>
+
+    <header class="relative h-64 flex items-center justify-center text-white overflow-hidden bg-blue-600">
+        <div class="absolute inset-0 bg-blue-900/40 z-10"></div>
+        <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=2000" alt="Transport" class="absolute inset-0 w-full h-full object-cover">
+        <div class="relative z-20 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-2">Transport in {{ city }}</h1>
+            <p class="text-xl opacity-90">Navigate {{ city }} like a local</p>
+        </div>
+    </header>
+
+    <!-- No-key info notice -->
+    <div class="max-w-4xl mx-auto px-4 mt-4">
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg text-yellow-800 text-sm">
+            <strong>Note:</strong> This transport hub works without API keys — the "Open Google Transit Map" link is a deep-link and does not require a key. Marco's tips will be richer if a server-side AI key is configured, but will fall back to helpful generic guidance when none is present.
+        </div>
+    </div>
+
+    <main class="max-w-4xl mx-auto px-4 py-12">
+        <!-- AI Tips Section -->
+        <section id="ai-transit-tips" class="mb-12 bg-gradient-to-br from-blue-600 to-blue-800 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
+            <div class="relative z-10">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span class="text-3xl">🧭</span> Marco's Transit Tips
+                </h2>
+                <div id="marco-tips-content" class="prose prose-invert max-w-none">
+                    <p class="animate-pulse">Marco is consulting his maps for {{ city }}...</p>
+                    {% if GROQ_ENABLED %}
+                        <p class="mt-3 text-sm opacity-90">Marco: enhanced reasoning enabled (Groq)</p>
+                    {% else %}
+                        <p class="mt-3 text-sm opacity-90">Marco: running in fallback mode (no Groq API key configured)</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="absolute top-[-20px] right-[-20px] opacity-10">
+                <svg width="200" height="200" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/></svg>
+            </div>
+        </section>
+
+        <section class="grid md:grid-cols-2 gap-8 mb-12">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="bg-blue-100 p-3 rounded-xl text-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-bold">Quick Guide</h2>
+                </div>
+                <ul class="space-y-3 text-gray-600">
+                    <li class="flex gap-3">
+                        <span class="text-blue-500 font-bold">•</span>
+                        <span>Tickets can be bought at kiosks or via the city app.</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="text-blue-500 font-bold">•</span>
+                        <span>Always validate your ticket before boarding.</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="text-blue-500 font-bold">•</span>
+                        <span>Daily passes are usually the best value for tourists.</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="text-blue-500 font-bold">•</span>
+                        <span>Buses and Trams run 5 AM to Midnight.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="bg-green-100 p-3 rounded-xl text-green-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-bold">Transit Map</h2>
+                </div>
+                <p class="text-gray-600 mb-4">View real-time lines and schedules in <strong>{{ city }}</strong>.</p>
+                <div id="map-container" class="relative group">
+                    <div class="h-32 bg-blue-50 rounded-xl flex flex-col items-center justify-center border-2 border-blue-100 group-hover:bg-blue-100 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                        <a id="transit-map-link" href="#" target="_blank" class="text-blue-600 font-bold hover:underline">Open Google Transit Map</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-12">
+            <h2 class="text-2xl font-bold mb-6">Simple Fare Calculator</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Ticket Type</label>
+                    <select id="ticketType" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="2.50">Single Ride ($2.50)</option>
+                        <option value="7.00">Daily Pass ($7.00)</option>
+                        <option value="25.00">Weekly Pass ($25.00)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Number of People</label>
+                    <input type="number" id="peopleCount" value="1" min="1" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="flex items-end">
+                    <button onclick="calculateFare()" class="w-full p-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
+                        Calculate Total
+                    </button>
+                </div>
+            </div>
+            <div id="fareResult" class="mt-6 p-4 bg-blue-50 rounded-xl text-blue-800 font-bold text-center hidden">
+                Total Cost: $0.00
+            </div>
+        </section>
+
+        <section class="text-center bg-gray-900 text-white p-12 rounded-3xl">
+            <h2 class="text-3xl font-bold mb-4">Need a tailored route?</h2>
+            <p class="text-gray-400 mb-8 max-w-lg mx-auto">Marco can help you figure out the best lines to reach your destination. Just ask him back on the home page!</p>
+            <a href="/" class="inline-block px-8 py-3 bg-white text-gray-900 rounded-full font-bold hover:bg-blue-50 transition-colors">
+                Back to Explorer
+            </a>
+        </section>
+    </main>
+
+    <footer class="text-center py-8 text-gray-400 text-sm">
+        &copy; 2026 TravelLand City Guides. Stay mobile.
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setupMapLinks();
+            fetchMarcoTips();
+        });
+
+        function setupMapLinks() {
+            const city = "{{ city }}";
+            const lat = "{{ lat }}";
+            const lon = "{{ lon }}";
+            const mapLink = document.getElementById('transit-map-link');
+            
+            if (lat && lon && lat !== "None") {
+                mapLink.href = `https://www.google.com/maps/@${lat},${lon},14z/data=!5m1!1e2`;
+            } else {
+                mapLink.href = `https://www.google.com/maps/search/${encodeURIComponent(city + ' public transport')}/data=!5m1!1e2`;
+            }
+        }
+
+        async function fetchMarcoTips() {
+            const city = "{{ city }}";
+            const content = document.getElementById('marco-tips-content');
+            if (city === "the city" || !city) {
+                content.innerHTML = "<p>Search for a city on the home page to get specific transit tips!</p>";
+                return;
+            }
+
+            try {
+                const resp = await fetch('/semantic-search', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({
+                        q: `How do I get around ${city}? Name the primary transit app or website used by locals (e.g. TfL, RATP, MTA) and give 3 quick survival tips.`,
+                        city: city,
+                        mode: 'explorer'
+                    })
+                });
+                const j = await resp.json();
+                if (j.answer) {
+                    // Basic markdown to html for common Marco formatting
+                    let html = j.answer.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                      .replace(/\n/g, '<br>');
+                    content.innerHTML = `<div class="bg-white/10 p-4 rounded-xl border border-white/20">${html}</div>`;
+                } else {
+                    content.innerHTML = "<p>Marco is unsure about the routes here. Try the local kiosks!</p>";
+                }
+            } catch (e) {
+                content.innerHTML = "<p>My compass is spinning! (Error fetching tips)</p>";
+            }
+        }
+
+        function calculateFare() {
+            const price = parseFloat(document.getElementById('ticketType').value);
+            const count = parseInt(document.getElementById('peopleCount').value);
+            const total = (price * count).toFixed(2);
+            const res = document.getElementById('fareResult');
+            res.textContent = `Estimated Total Cost: $${total}`;
+            res.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

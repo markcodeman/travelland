@@ -1,9 +1,11 @@
+
 from flask import Flask, render_template, request, jsonify
 import json
 import os
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 import logging
+import requests
 
 _here = os.path.dirname(__file__)
 # load local .env placed inside the city-guides folder (keeps keys out of repo root)
@@ -18,6 +20,64 @@ import multi_provider
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
+
+# Expose whether Groq API key is configured to templates
+@app.context_processor
+def inject_feature_flags():
+    return {
+        'GROQ_ENABLED': bool(os.getenv('GROQ_API_KEY'))
+    }
+def geocode_city(city):
+    """Geocode a city name to (lat, lon) using Nominatim."""
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {"q": city, "format": "json", "limit": 1}
+    try:
+        resp = requests.get(url, params=params, headers={"User-Agent": "city-guides-app"}, timeout=5)
+        resp.raise_for_status()
+        data = resp.json()
+        if data:
+            return float(data[0]["lat"]), float(data[0]["lon"])
+    except Exception as e:
+        print(f"Geocoding failed: {e}")
+    return None, None
+
+@app.route('/weather', methods=['POST'])
+def weather():
+    payload = request.json or {}
+    city = (payload.get('city') or '').strip()
+    lat = payload.get('lat')
+    lon = payload.get('lon')
+    if not (lat and lon):
+        if not city:
+            return jsonify({'error': 'city or lat/lon required'}), 400
+        lat, lon = geocode_city(city)
+        if not (lat and lon):
+            return jsonify({'error': 'geocode_failed'}), 400
+    try:
+        # Open-Meteo API: https://open-meteo.com/en/docs
+        url = "https://api.open-meteo.com/v1/forecast"
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "current_weather": True,
+            "temperature_unit": "celsius",
+            "windspeed_unit": "kmh",
+            "precipitation_unit": "mm",
+            "timezone": "auto"
+        }
+        resp = requests.get(url, params=params, timeout=6)
+        resp.raise_for_status()
+        data = resp.json()
+        weather = data.get("current_weather", {})
+        return jsonify({
+            "lat": lat,
+            "lon": lon,
+            "city": city,
+            "weather": weather
+        })
+    except Exception as e:
+        print(f"Weather fetch failed: {e}")
+        return jsonify({'error': 'weather_fetch_failed', 'details': str(e)}), 500
 
 
 def _compute_open_now(lat, lon, opening_hours_str):
@@ -49,6 +109,13 @@ def _compute_open_now(lat, lon, opening_hours_str):
         tzname = tf.timezone_at(lat=float(lat), lng=float(lon)) if lat and lon else None
     except Exception:
         tzname = None
+
+    # If timezonefinder isn't available or didn't find a timezone, allow an
+    # explicit override via FLASK_TZ (useful on hosts like Render that run in UTC).
+    if not tzname:
+        tz_env = os.getenv('FLASK_TZ') or os.getenv('DEFAULT_TZ')
+        if tz_env:
+            tzname = tz_env
 
     from datetime import datetime, time, timedelta
     try:
@@ -172,10 +239,19 @@ def index():
     phone = "tel:+1-757-755-7505"  # Replace with dynamic value if needed
     return render_template('index.html', phone=phone)
 
+@app.route('/transport')
+def transport():
+    city = request.args.get('city', 'the city')
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    return render_template('transport.html', city=city, lat=lat, lon=lon)
+
 @app.route('/search', methods=['POST'])
 def search():
     payload = request.json or {}
     city = (payload.get('city') or '').strip()
+    user_lat = payload.get('user_lat')
+    user_lon = payload.get('user_lon')
     budget = (payload.get('budget') or '').strip().lower()
     q = (payload.get('q') or '').strip().lower()
     local_only = payload.get('localOnly', False)
@@ -311,6 +387,26 @@ def search():
             print(f"Error fetching real-time data: {e}")
 
     print(f"SEARCH RESULTS: found {len(results)} venues")
+    # If the client provided a lat/lon (from Nominatim selection), sort by distance
+    try:
+        if user_lat and user_lon and results:
+            def haversine_km(lat1, lon1, lat2, lon2):
+                from math import radians, sin, cos, asin, sqrt
+                lat1, lon1, lat2, lon2 = map(float, (lat1, lon1, lat2, lon2))
+                dlat = radians(lat2 - lat1)
+                dlon = radians(lon2 - lon1)
+                a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+                c = 2 * asin(sqrt(a))
+                return 6371.0 * c
+
+            for v in results:
+                try:
+                    v['distance_km'] = round(haversine_km(user_lat, user_lon, v.get('latitude', 0), v.get('longitude', 0)), 2)
+                except Exception:
+                    v['distance_km'] = None
+            results.sort(key=lambda x: x.get('distance_km') if x.get('distance_km') is not None else 1e9)
+    except Exception:
+        pass
     return jsonify({'count': len(results), 'venues': results})
 
 
@@ -359,8 +455,9 @@ def ai_reason():
     venues = payload.get('venues', [])      #venues from UI context
     if not q:
         return jsonify({'error': 'query required'}), 400
+    weather = payload.get('weather')
     try:
-        answer = semantic.search_and_reason(q, city if city else None, mode, context_venues=venues)
+        answer = semantic.search_and_reason(q, city if city else None, mode, context_venues=venues, weather=weather)
         return jsonify({'answer': answer})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -376,6 +473,29 @@ def convert_currency():
         return jsonify({'result': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/version', methods=['GET'])
+def version():
+    """Return deployed commit and presence of key environment variables for debugging."""
+    import subprocess, os
+    commit = None
+    try:
+        commit = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], cwd=os.path.dirname(__file__)).decode().strip()
+    except Exception:
+        commit = os.getenv('GIT_COMMIT') or 'unknown'
+
+    env_flags = {
+        'OPENTRIPMAP_KEY_set': bool(os.getenv('OPENTRIPMAP_KEY')),
+        'GROQ_API_KEY_set': bool(os.getenv('GROQ_API_KEY')),
+        'SEARX_INSTANCES_set': bool(os.getenv('SEARX_INSTANCES'))
+    }
+    return jsonify({'commit': commit, 'env': env_flags})
+
+
+@app.route('/tools/currency', methods=['GET'])
+def tools_currency():
+    return render_template('convert.html')
 
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", 5000))

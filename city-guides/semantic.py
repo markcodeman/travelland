@@ -85,6 +85,30 @@ def _chunk_text(text, max_chars=1000):
     return parts
 
 
+def _shorten(text, n=200):
+    if not text:
+        return ''
+    s = ' '.join(text.split())
+    if len(s) <= n:
+        return s
+    return s[:n].rsplit(' ', 1)[0] + '...'
+
+
+def summarize_results(results, max_items=3):
+    """Create a short, human-readable summary of search results to keep prompts small."""
+    if not results:
+        return ''
+    items = []
+    for r in results[:max_items]:
+        title = r.get('title') or r.get('name') or ''
+        snippet = r.get('snippet') or r.get('description') or ''
+        url = r.get('url') or r.get('link') or ''
+        brief = _shorten(snippet, 180)
+        line = f"- {title}: {brief} {f'({url})' if url else ''}"
+        items.append(line)
+    return '\n'.join(items)
+
+
 def _get_api_key():
     return os.getenv('GROQ_API_KEY')
 
@@ -150,12 +174,13 @@ def semantic_search(query, top_k=5):
     return INDEX.search(q_emb, top_k=top_k)
 
 
-def search_and_reason(query, city=None, mode='explorer', context_venues=None):
+def search_and_reason(query, city=None, mode='explorer', context_venues=None, weather=None):
     """Search the web and use Groq to reason about the query.
     
     mode: 'explorer' for themed responses, 'rational' for straightforward responses
     context_venues: optional list of venues already showing in the UI
     """
+
     # Check for currency conversion
     if 'convert' in query.lower() or 'currency' in query.lower():
         match = re.search(r'(\d+(?:\.\d+)?)\s*([A-Z]{3})\s*to\s*([A-Z]{3})', query, re.IGNORECASE)
@@ -173,6 +198,30 @@ def search_and_reason(query, city=None, mode='explorer', context_venues=None):
                 return "Arrr, I couldn't parse that currency request. Try 'convert 100 USD to EUR'!"
             else:
                 return "Unable to parse currency conversion request. Please use format like 'convert 100 USD to EUR'."
+
+    # Check for weather questions
+    weather_keywords = ['weather', 'temperature', 'forecast', 'wind', 'rain', 'sunny', 'cloudy', 'humidity', 'umbrella', 'jacket', 'coat', 'wear', 'outdoor']
+    if any(w in query.lower() for w in weather_keywords):
+        # Use provided weather data if available
+        if weather:
+            icons = {
+                0: 'Clear ☀️', 1: 'Mainly clear 🌤️', 2: 'Partly cloudy ⛅', 3: 'Overcast ☁️', 45: 'Fog 🌫️', 48: 'Depositing rime fog 🌫️',
+                51: 'Light drizzle 🌦️', 53: 'Moderate drizzle 🌦️', 55: 'Dense drizzle 🌦️', 56: 'Light freezing drizzle 🌧️', 57: 'Dense freezing drizzle 🌧️',
+                61: 'Slight rain 🌦️', 63: 'Moderate rain 🌦️', 65: 'Heavy rain 🌧️', 66: 'Light freezing rain 🌧️', 67: 'Heavy freezing rain 🌧️',
+                71: 'Slight snow fall 🌨️', 73: 'Moderate snow fall 🌨️', 75: 'Heavy snow fall ❄️', 77: 'Snow grains ❄️', 80: 'Slight rain showers 🌧️', 81: 'Moderate rain showers 🌧️', 82: 'Violent rain showers 🌧️',
+                85: 'Slight snow showers 🌨️', 86: 'Heavy snow showers 🌨️', 95: 'Thunderstorm ⛈️', 96: 'Thunderstorm with slight hail ⛈️', 99: 'Thunderstorm with heavy hail ⛈️'
+            }
+            summary = icons.get(weather.get('weathercode'), 'Unknown')
+            details = f"{weather.get('temperature_c')}°C / {weather.get('temperature_f')}°F, Wind {weather.get('wind_kmh')} km/h / {weather.get('wind_mph')} mph"
+            
+            # If it's a simple weather check, return immediately. 
+            # If it's more complex (like "should I bring an umbrella?"), we'll let it fall through to the AI.
+            simple_weather_check = any(w in query.lower() for w in ['weather', 'temperature', 'forecast', 'forecasts']) and len(query.split()) < 5
+            if simple_weather_check:
+                if mode == 'explorer':
+                    return f"Ahoy! 🧭 The current weather in {city or 'this city'} is: {summary}. {details}. Safe travels! - Marco"
+                else:
+                    return f"Current weather in {city or 'this city'}: {summary}. {details}."
     
     # Determine if this is a query about the visible results
     screen_keywords = ['these', 'visible', 'listed', 'on screen', 'above', 'results']
@@ -190,21 +239,32 @@ def search_and_reason(query, city=None, mode='explorer', context_venues=None):
                     results = [{'title': r['title'], 'url': r['href'], 'snippet': r['body']} for r in ddg_results]
             except Exception: pass
 
-    # Build contexts
-    context_items = []
-    for r in results:
-        context_items.append(f"Title: {r.get('title')}\nSnippet: {r.get('snippet')}\nURL: {r.get('url')}")
-    context = "\n\n".join(context_items)
+    # Build a concise summary of web results to keep the LLM prompt small
+    context = summarize_results(results)
 
     ui_context = ''
     if context_venues:
         ui_lines = [f"- {v.get('name')} | {v.get('address')} | {v.get('description')}" for v in context_venues]
         ui_context = "VENUES ON SCREEN:\n" + "\n".join(ui_lines)
 
+    weather_context = ""
+    if weather:
+        icons = {
+            0: 'Clear ☀️', 1: 'Mainly clear 🌤️', 2: 'Partly cloudy ⛅', 3: 'Overcast ☁️', 45: 'Fog 🌫️', 48: 'Depositing rime fog 🌫️',
+            51: 'Light drizzle 🌦️', 53: 'Moderate drizzle 🌦️', 55: 'Dense drizzle 🌦️', 56: 'Light freezing drizzle 🌧️', 57: 'Dense freezing drizzle 🌧️',
+            61: 'Slight rain 🌦️', 63: 'Moderate rain 🌦️', 65: 'Heavy rain 🌧️', 66: 'Light freezing rain 🌧️', 67: 'Heavy freezing rain 🌧️',
+            71: 'Slight snow fall 🌨️', 73: 'Moderate snow fall 🌨️', 75: 'Heavy snow fall ❄️', 77: 'Snow grains ❄️', 80: 'Slight rain showers 🌧️', 81: 'Moderate rain showers 🌧️', 82: 'Violent rain showers 🌧️',
+            85: 'Slight snow showers 🌨️', 86: 'Heavy snow showers 🌨️', 95: 'Thunderstorm ⛈️', 96: 'Thunderstorm with slight hail ⛈️', 99: 'Thunderstorm with heavy hail ⛈️'
+        }
+        w_summary = icons.get(weather.get('weathercode'), 'Unknown')
+        weather_context = f"\nCURRENT WEATHER IN {city or 'the city'}:\n{w_summary}, {weather.get('temperature_c')}°C / {weather.get('temperature_f')}°F, Wind {weather.get('wind_kmh')} km/h.\n"
+
     if mode == 'explorer':
         prompt = f"""You are Marco, the legendary explorer! 🗺️
 
 Traveler is asking: {query}
+
+{weather_context}
 
 {ui_context if ui_context else 'No venues on screen yet.'}
 
@@ -213,10 +273,11 @@ WEB SEARCH DATA:
 
 INSTRUCTIONS FOR MARCO:
 1. If the traveler is asking about what's on their screen, use the VENUES ON SCREEN list first.
-2. For every recommendation, you MUST provide a specific reason WHY from the data (e.g., "mentions outdoor seating", "noted as a quick cafe", "listed as accessible"). 
-3. Don't just say it's "a great spot" - explain the treasure you found in the description or data provided.
-4. If multiple spots match, mention 2 options.
-5. Be enthusiastic and explorer-themed. Sign off as Marco.🗺️🧭"""
+2. If there is weather data provided, use it to suggest appropriate activities (e.g., indoor vs outdoor).
+3. For every recommendation, you MUST provide a specific reason WHY from the data (e.g., "mentions outdoor seating", "noted as a quick cafe", "listed as accessible"). 
+4. Don't just say it's "a great spot" - explain the treasure you found in the description or data provided.
+5. If multiple spots match, mention 2 options.
+6. Be enthusiastic and explorer-themed. Sign off as Marco.🗺️🧭"""
     else:
         prompt = f"User query: {query}\n\n{ui_context}\n\nWeb Data:\n{context}\n\nProvide a factual response."
     
@@ -229,13 +290,19 @@ INSTRUCTIONS FOR MARCO:
             print("DEBUG: No GROQ_API_KEY found in environment")
             raise Exception("No API Key")
 
+        # Respect service limits: truncate overly large prompts to avoid 413 errors
+        MAX_PROMPT_CHARS = 1200
+        if len(prompt) > MAX_PROMPT_CHARS:
+            print(f"DEBUG: Prompt too long ({len(prompt)} chars), truncating to {MAX_PROMPT_CHARS}")
+            prompt = prompt[:MAX_PROMPT_CHARS] + "\n\n[TRUNCATED]"
+
         response = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
             json={
                 "model": "llama-3.1-8b-instant", 
                 "messages": [{"role": "user", "content": prompt}], 
-                "max_tokens": 800,
+                "max_tokens": 256,
                 "temperature": 0.7
             },
             timeout=30
