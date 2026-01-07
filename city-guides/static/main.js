@@ -62,6 +62,11 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
       }
       
       card += `<p>${v.description}</p>`;
+
+      // Show human-friendly hours if available
+      if (v.opening_hours_pretty || v.opening_hours) {
+        card += `<p class="meta"><strong>Hours:</strong> ${v.opening_hours_pretty || v.opening_hours}</p>`;
+      }
       
       // Add phone if available
       if (v.phone) {

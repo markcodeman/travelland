@@ -118,7 +118,7 @@ def _compute_open_now(lat, lon, opening_hours_str):
             t2 = parse_time(t2s)
             if t1 and t2:
                 if now.weekday() in days:
-                    todays_matches.append((t1,t2))
+                    todays_matches.append((t1, t2))
 
     logging.debug(f"Today's matches: {todays_matches}")
 
@@ -138,6 +138,34 @@ def _compute_open_now(lat, lon, opening_hours_str):
 
     logging.debug("No matching time range found. Returning (False, None).")
     return (False, None)
+
+
+def _humanize_opening_hours(opening_hours_str):
+    """Return a user-friendly hours string in 12-hour format if possible."""
+    if not opening_hours_str:
+        return None
+    import re
+    from datetime import time
+
+    def fmt(tstr):
+        try:
+            hh, mm = tstr.split(':')
+            t = time(int(hh), int(mm))
+            return t.strftime('%I:%M %p').lstrip('0').replace(' 0', ' ')
+        except Exception:
+            return tstr
+
+    pretty_parts = []
+    for part in opening_hours_str.split(';'):
+        part = part.strip()
+        if not part:
+            continue
+        # replace ranges like 10:00-22:30 with 10:00 AM–10:30 PM
+        part = re.sub(r'(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})',
+                      lambda m: f"{fmt(m.group(1))}–{fmt(m.group(2))}",
+                      part)
+        pretty_parts.append(part)
+    return '; '.join(pretty_parts) if pretty_parts else None
 
 @app.route('/')
 def index():
@@ -234,7 +262,8 @@ def search():
                     # Ensure hours are valid before displaying
                     hours = tags_dict.get('opening_hours', '').strip()
                     if hours:
-                        desc += f". Hours: {hours}"
+                        pretty_hours = _humanize_opening_hours(hours) or hours
+                        desc += f". Hours: {pretty_hours}"
                     else:
                         logging.debug("No valid hours found. Skipping hours display.")
 
@@ -249,6 +278,7 @@ def search():
                     phone = f"tel:{phone}"
                 rating = poi.get('rating')
                 hours = tags_dict.get('opening_hours') or tags_dict.get('hours') or ''
+                pretty_hours = _humanize_opening_hours(hours) if hours else None
                 try:
                     is_open, next_change = _compute_open_now(poi.get('lat'), poi.get('lon'), hours)
                 except Exception:
@@ -272,6 +302,7 @@ def search():
                     'phone': phone,
                     'rating': rating,
                     'opening_hours': hours,
+                    'opening_hours_pretty': pretty_hours,
                     'open_now': is_open,
                     'next_change': next_change
                 }
