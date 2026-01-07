@@ -70,7 +70,13 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
       
       // Add phone if available
       if (v.phone) {
-        card += `<p><strong>Phone:</strong> ${v.phone}</p>`;
+        // render clickable phone link and display number without the 'tel:' prefix
+        try {
+          const plain = v.phone.replace(/^tel:/i, '');
+          card += `<p><strong>Phone:</strong> <a href="${v.phone}" class="phone-link">${plain}</a></p>`;
+        } catch (e) {
+          card += `<p><strong>Phone:</strong> ${v.phone}</p>`;
+        }
       }
       
       if (v.website) {
