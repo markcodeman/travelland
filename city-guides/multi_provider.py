@@ -13,6 +13,10 @@ try:
     import duckduckgo_provider
 except Exception:
     duckduckgo_provider = None
+try:
+    import searx_provider
+except Exception:
+    searx_provider = None
 
 
 def _norm_name(name: str) -> str:
@@ -96,6 +100,12 @@ def discover_restaurants(city: str, cuisine: str = None, limit: int = 100, local
         if duckduckgo_provider:
             try:
                 calls.append(ex.submit(duckduckgo_provider.discover_restaurants, city, limit, cuisine))
+            except Exception:
+                pass
+        # SearX (optional)
+        if searx_provider:
+            try:
+                calls.append(ex.submit(searx_provider.discover_restaurants, city, limit, cuisine))
             except Exception:
                 pass
 

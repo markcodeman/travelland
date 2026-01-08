@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import logging
 import requests
 import re
+import time
 
 _here = os.path.dirname(__file__)
 # load local .env placed inside the city-guides folder (keeps keys out of repo root)
@@ -117,7 +118,8 @@ def geocode_city(city):
     url = "https://nominatim.openstreetmap.org/search"
     params = {"q": city, "format": "json", "limit": 1}
     try:
-        resp = requests.get(url, params=params, headers={"User-Agent": "city-guides-app"}, timeout=5)
+        headers = {"User-Agent": "city-guides-app", "Accept-Language": "en"}
+        resp = requests.get(url, params=params, headers=headers, timeout=5)
         resp.raise_for_status()
         data = resp.json()
         if data:
@@ -125,6 +127,426 @@ def geocode_city(city):
     except Exception as e:
         print(f"Geocoding failed: {e}")
     return None, None
+
+
+def get_country_for_city(city):
+    """Return country name for a given city using Nominatim (best-effort)."""
+    if not city:
+        return None
+    try:
+        url = "https://nominatim.openstreetmap.org/search"
+        params = {"q": city, "format": "json", "limit": 1, "addressdetails": 1}
+        # Request results in English where possible to prefer ASCII country names
+        headers = {"User-Agent": "city-guides-app", "Accept-Language": "en"}
+        resp = requests.get(url, params=params, headers=headers, timeout=6)
+        resp.raise_for_status()
+        data = resp.json()
+        if data:
+            addr = data[0].get('address', {})
+            country = addr.get('country')
+            # prefer an ASCII/English country name when possible; Nominatim sometimes returns
+            # the localized/native country name (e.g. '中国') which may not work with downstream
+            # services. Use the display_name fallback to extract an English name if needed.
+            if country:
+                try:
+                    # if country contains non-ascii characters, try to derive an English name
+                    if any(ord(ch) > 127 for ch in country):
+                        display = data[0].get('display_name', '') or ''
+                        parts = [p.strip() for p in display.split(',') if p.strip()]
+                        if parts:
+                            # last part of display_name is usually the country in English
+                            candidate = parts[-1]
+                            if any(c.isalpha() for c in candidate):
+                                return candidate
+                except Exception:
+                    pass
+            # fallback to country or country_code
+            return country or addr.get('country_code')
+    except Exception:
+        pass
+    return None
+
+
+def get_currency_for_country(country):
+    """Return the primary currency code (ISO 4217) for a given country name using restcountries API."""
+    if not country:
+        return None
+    try:
+        url = f"https://restcountries.com/v3.1/name/{requests.utils.requote_uri(country)}"
+        resp = requests.get(url, params={'fields': 'name,currencies'}, headers={"User-Agent": "city-guides-app"}, timeout=6)
+        resp.raise_for_status()
+        data = resp.json()
+        if isinstance(data, list) and data:
+            # currencies is an object with codes as keys
+            cur_obj = data[0].get('currencies') or {}
+            if isinstance(cur_obj, dict) and cur_obj:
+                # return first currency code
+                for code in cur_obj.keys():
+                    return code
+    except Exception:
+        pass
+    return None
+
+
+def get_currency_name(code):
+    """Return a human-friendly currency name for an ISO 4217 code.
+    Uses a small internal map and falls back to RestCountries lookup when possible.
+    """
+    if not code:
+        return None
+    code = code.strip().upper()
+    names = {
+        'USD': 'US Dollar',
+        'EUR': 'Euro',
+        'GBP': 'Pound Sterling',
+        'JPY': 'Japanese Yen',
+        'CAD': 'Canadian Dollar',
+        'AUD': 'Australian Dollar',
+        'MXN': 'Mexican Peso',
+        'CNY': 'Chinese Yuan',
+        'THB': 'Thai Baht',
+        'RUB': 'Russian Ruble',
+        'CUP': 'Cuban Peso',
+        'VES': 'Venezuelan Bolívar',
+        'KES': 'Kenyan Shilling',
+        'ZWL': 'Zimbabwean Dollar',
+        'PEN': 'Peruvian Sol'
+    }
+    if code in names:
+        return names[code]
+    # try RestCountries API to resolve name
+    try:
+        url = f"https://restcountries.com/v3.1/currency/{requests.utils.requote_uri(code)}"
+        resp = requests.get(url, params={'fields': 'name,currencies'}, headers={"User-Agent": "city-guides-app"}, timeout=6)
+        resp.raise_for_status()
+        data = resp.json()
+        if isinstance(data, list) and data:
+            cur_obj = data[0].get('currencies') or {}
+            # currencies is dict mapping code -> {name, symbol}
+            if isinstance(cur_obj, dict) and code in cur_obj:
+                info = cur_obj.get(code)
+                if isinstance(info, dict):
+                    return info.get('name') or info.get('symbol') or code
+    except Exception:
+        pass
+    return code
+
+
+def get_cost_estimates(city, ttl_seconds=604800):
+    """Fetch average local prices for a city using Teleport free API with caching and a small local fallback.
+
+    Returns a list of dicts: [{'label': 'Coffee', 'value': 12.5}, ...]
+    """
+    if not city:
+        return []
+    try:
+        cache_dir = Path(_here) / '.cache' / 'teleport_prices'
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        key = re.sub(r"[^a-z0-9]+", '_', city.strip().lower())
+        cache_file = cache_dir / f"{key}.json"
+        # return cached if fresh
+        if cache_file.exists():
+            try:
+                raw = json.loads(cache_file.read_text())
+                if raw.get('ts') and time.time() - raw['ts'] < ttl_seconds:
+                    return raw.get('data', [])
+            except Exception:
+                pass
+
+        # Try Teleport search -> city item -> urban area -> prices
+        base = 'https://api.teleport.org'
+        try:
+            s = requests.get(f"{base}/api/cities/", params={'search': city, 'limit': 5}, timeout=6, headers={"User-Agent": "city-guides-app"})
+            s.raise_for_status()
+            j = s.json()
+            results = j.get('_embedded', {}).get('city:search-results', [])
+            city_item_href = None
+            for r in results:
+                href = r.get('_links', {}).get('city:item', {}).get('href')
+                if href:
+                    city_item_href = href
+                    break
+            if not city_item_href:
+                raise RuntimeError('no city item from teleport')
+
+            ci = requests.get(city_item_href, timeout=6, headers={"User-Agent": "city-guides-app"})
+            ci.raise_for_status()
+            ci_j = ci.json()
+            urban_href = ci_j.get('_links', {}).get('city:urban_area', {}).get('href')
+            if not urban_href:
+                # no urban area -> no prices available
+                raise RuntimeError('no urban area')
+
+            prices_href = urban_href.rstrip('/') + '/prices/'
+            p = requests.get(prices_href, timeout=6, headers={"User-Agent": "city-guides-app"})
+            p.raise_for_status()
+            p_j = p.json()
+
+            items = []
+            # Teleport responses typically include 'categories' -> each has 'data' list of items
+            for cat in p_j.get('categories', []):
+                for d in cat.get('data', []):
+                    label = d.get('label') or d.get('id')
+                    # find a numeric price in common keys
+                    val = None
+                    for k in ('usd_value', 'currency_dollar_adjusted', 'price', 'amount', 'value'):
+                        if k in d and isinstance(d[k], (int, float)):
+                            val = float(d[k]); break
+                    # some Teleport payloads nest price under 'prices' or similar
+                    if val is None:
+                        # try nested structures
+                        for kk in d.keys():
+                            vvv = d.get(kk)
+                            if isinstance(vvv, (int, float)):
+                                val = float(vvv); break
+                    if label and val is not None:
+                        items.append({'label': label, 'value': round(val, 2)})
+
+            # prefer a short curated subset (coffee, beer, meal, taxi, hotel)
+            keywords = ['coffee', 'beer', 'meal', 'taxi', 'hotel', 'apartment', 'rent']
+            selected = []
+            lower_seen = set()
+            for k in keywords:
+                for it in items:
+                    if k in it['label'].lower() and it['label'].lower() not in lower_seen:
+                        selected.append(it)
+                        lower_seen.add(it['label'].lower())
+                        break
+            # if still empty, take first N items
+            if not selected:
+                selected = items[:8]
+
+            # save cache
+            try:
+                cache_file.write_text(json.dumps({'ts': time.time(), 'data': selected}))
+            except Exception:
+                pass
+            return selected
+        except Exception as e:
+            logging.debug(f"Teleport fetch failed: {e}")
+            # fall through to local fallback
+
+        # Local fallback map keyed by country (best-effort)
+        try:
+            country = get_country_for_city(city) or ''
+        except Exception:
+            country = ''
+        fb = {
+            'china': [
+                {'label': 'Coffee (cafe)', 'value': 20.0},
+                {'label': 'Local beer (0.5L)', 'value': 12.0},
+                {'label': 'Meal (mid-range)', 'value': 70.0},
+                {'label': 'Taxi start (local)', 'value': 10.0},
+                {'label': 'Hotel (1 night, mid)', 'value': 350.0}
+            ],
+            'russia': [
+                {'label': 'Coffee (cafe)', 'value': 200.0},
+                {'label': 'Local beer (0.5L)', 'value': 150.0},
+                {'label': 'Meal (mid-range)', 'value': 700.0},
+                {'label': 'Taxi start (local)', 'value': 100.0},
+                {'label': 'Hotel (1 night, mid)', 'value': 4000.0}
+            ],
+            'cuba': [
+                {'label': 'Coffee (cafe)', 'value': 50.0},
+                {'label': 'Local beer (0.5L)', 'value': 60.0},
+                {'label': 'Meal (mid-range)', 'value': 200.0},
+                {'label': 'Taxi (short)', 'value': 80.0},
+                {'label': 'Hotel (1 night, mid)', 'value': 2500.0}
+            ],
+            'portugal': [
+                {'label': 'Coffee (cafe)', 'value': 1.6},
+                {'label': 'Local beer (0.5L)', 'value': 2.0},
+                {'label': 'Meal (mid-range)', 'value': 12.0},
+                {'label': 'Taxi start (local)', 'value': 3.0},
+                {'label': 'Hotel (1 night, mid)', 'value': 80.0}
+            ],
+            'united states': [
+                {'label': 'Coffee (cafe)', 'value': 3.5},
+                {'label': 'Local beer (0.5L)', 'value': 5.0},
+                {'label': 'Meal (mid-range)', 'value': 20.0},
+                {'label': 'Taxi start (local)', 'value': 3.0},
+                {'label': 'Hotel (1 night, mid)', 'value': 140.0}
+            ],
+            'united kingdom': [
+                {'label': 'Coffee (cafe)', 'value': 2.8},
+                {'label': 'Local beer (0.5L)', 'value': 4.0},
+                {'label': 'Meal (mid-range)', 'value': 15.0},
+                {'label': 'Taxi start (local)', 'value': 3.5},
+                {'label': 'Hotel (1 night, mid)', 'value': 120.0}
+            ]
+            ,
+            'thailand': [
+                {'label': 'Coffee (cafe)', 'value': 50.0},
+                {'label': 'Local beer (0.5L)', 'value': 60.0},
+                {'label': 'Meal (mid-range)', 'value': 250.0},
+                {'label': 'Taxi start (local)', 'value': 35.0},
+                {'label': 'Hotel (1 night, mid)', 'value': 1200.0}
+            ]
+        }
+        lookup = (country or '').strip().lower()
+        # sometimes country is a code; attempt to match common names
+        for k in fb.keys():
+            if k in lookup:
+                try:
+                    cache_file.write_text(json.dumps({'ts': time.time(), 'data': fb[k]}))
+                except Exception:
+                    pass
+                return fb[k]
+        # nothing found
+        return []
+    except Exception:
+        return []
+
+
+def fetch_us_state_advisory(country):
+    """Best-effort fetch of US State Dept travel advisory for a country.
+    Returns dict {url, summary} or None.
+    """
+    if not country:
+        return None
+    # construct slug
+    slug = country.lower().strip()
+    slug = re.sub(r"[^a-z0-9\s-]", '', slug)
+    slug = re.sub(r"\s+", '-', slug)
+    urls = [
+        f'https://travel.state.gov/content/travel/en/traveladvisories/traveladvisories/{slug}.html',
+        f'https://travel.state.gov/content/travel/en/traveladvisories/traveladvisories/2020/{slug}.html'
+    ]
+    for u in urls:
+        try:
+            resp = requests.get(u, headers={"User-Agent": "TravelLand/1.0"}, timeout=8)
+            if resp.status_code != 200:
+                continue
+            html = resp.text
+            # try meta description
+            m = re.search(r'<meta\s+name="description"\s+content="([^"]+)"', html, flags=re.I)
+            summary = None
+            if m:
+                summary = m.group(1).strip()
+            else:
+                # try to find first paragraph
+                m2 = re.search(r'<p[^>]*>(.*?)</p>', html, flags=re.I|re.S)
+                if m2:
+                    summary = re.sub(r'<[^>]+>', '', m2.group(1)).strip()
+            return {'url': u, 'summary': summary}
+        except Exception:
+            continue
+    return None
+
+
+def fetch_safety_section(city):
+    """Attempt to extract a 'Safety' or 'Crime' section from Wikivoyage or Wikipedia.
+    Fallbacks:
+      - parse sectioned content via action=parse and look for headings containing keywords
+      - use plaintext extracts and search for paragraphs mentioning keywords
+      - as last resort, ask semantic.search_and_reason to synthesise tips
+    Returns a string (possibly empty).
+    """
+    if not city:
+        return ''
+    keywords = ['safety', 'crime', 'security', 'safety and security', 'crime and safety']
+    # Try Wikivoyage first, then Wikipedia
+    sites = [
+        ('https://en.wikivoyage.org/w/api.php'),
+        ('https://en.wikipedia.org/w/api.php')
+    ]
+    for api in sites:
+        try:
+            # fetch sections list
+            params = {'action': 'parse', 'page': city, 'prop': 'sections', 'format': 'json', 'redirects': 1}
+            resp = requests.get(api, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8)
+            resp.raise_for_status()
+            data = resp.json()
+            secs = data.get('parse', {}).get('sections', [])
+            for s in secs:
+                line = (s.get('line') or '').lower()
+                for kw in keywords:
+                    if kw in line:
+                        idx = s.get('index')
+                        # fetch that section's HTML and strip tags
+                        params2 = {'action': 'parse', 'page': city, 'prop': 'text', 'section': idx, 'format': 'json', 'redirects': 1}
+                        resp2 = requests.get(api, params=params2, headers={"User-Agent": "TravelLand/1.0"}, timeout=8)
+                        resp2.raise_for_status()
+                        html = resp2.json().get('parse', {}).get('text', {}).get('*', '')
+                        text = re.sub(r'<[^>]+>', '', html).strip()
+                        if text:
+                            return _sanitize_safety_text(text)
+        except Exception:
+            # ignore and try next source
+            continue
+
+    # Try plaintext extracts and look for paragraphs mentioning keywords
+    try:
+        for api in sites:
+            params = {'action': 'query', 'prop': 'extracts', 'explaintext': True, 'titles': city, 'format': 'json', 'redirects': 1}
+            resp = requests.get(api, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8)
+            resp.raise_for_status()
+            pages = resp.json().get('query', {}).get('pages', {})
+            for p in pages.values():
+                extract = p.get('extract', '') or ''
+                lower = extract.lower()
+                for kw in keywords:
+                    if kw in lower:
+                        # try to return the paragraph containing the keyword
+                        parts = re.split(r'\n\s*\n', extract)
+                        for part in parts:
+                            if kw in part.lower():
+                                return _sanitize_safety_text(part.strip())
+    except Exception:
+        pass
+
+    # Last resort: synthesise safety tips via semantic module
+    try:
+        q = f"Provide 5 concise crime and safety tips for travelers in {city}. Include common scams, areas to avoid, and nighttime safety."
+        res = semantic.search_and_reason(q, city, mode='explorer')
+        if isinstance(res, dict):
+            out = str(res.get('answer') or res.get('text') or res)
+        else:
+            out = str(res)
+        return _sanitize_safety_text(out)
+    except Exception:
+        return []
+
+
+def _sanitize_safety_text(raw):
+    """Sanitize safety text: remove salutations/persona intros and return concise sentences (up to 5).
+    Heuristics:
+      - remove leading lines that look like greetings or 'As Marco' intros
+      - split into sentences and find the first sentence that looks like advice (starts with a verb or contains 'be', 'avoid', "don't")
+      - return up to 5 sentences starting from that point
+    """
+    if not raw:
+        return []
+    try:
+        text = raw.strip()
+        # remove common greetings at start
+        text = re.sub(r'^(\s*(buon giorno|bonjour|hello|hi|dear|greetings)[^\n]*\n)+', '', text, flags=re.I)
+        # remove lines that mention 'Marco' as persona
+        text = re.sub(r'(?im)^.*\bmarco\b.*$', '', text)
+        # collapse multiple newlines
+        text = re.sub(r'\n{2,}', '\n', text).strip()
+
+        # split into sentences (rough)
+        sentences = re.findall(r'[^\.\!\?]+[\.\!\?]+', text)
+        if not sentences:
+            # fallback to line splits
+            sentences = [s.strip() for s in text.split('\n') if s.strip()]
+
+        # find first advisory-like sentence
+        advice_idx = 0
+        adv_regex = re.compile(r"^(Be|Avoid|Don't|Do not|Keep|Watch|Stay|Avoiding|Use caution|Exercise|Carry|Keep)\b", re.I)
+        for i, s in enumerate(sentences):
+            if adv_regex.search(s.strip()):
+                advice_idx = i
+                break
+
+        # take up to 5 sentences from advice_idx; if advice_idx==0, still take first 5
+        chosen = sentences[advice_idx:advice_idx+5]
+        # final cleanup: remove ordinal lists like '1.' at the start of a sentence
+        clean = [re.sub(r'^\s*\d+\.\s*', '', s).strip() for s in chosen]
+        return clean
+    except Exception:
+        return [raw[:1000]]
 
 @app.route('/weather', methods=['POST'])
 def weather():
@@ -398,11 +820,22 @@ def transport():
                 break
         except Exception:
             quick_guide = quick_guide or ''
+    # Attempt to fetch a safety/crime section for server-side initial render
+    try:
+        initial_safety = fetch_safety_section(city) or []
+    except Exception:
+        initial_safety = []
+    # Attempt to fetch US State Dept advisory for the city's country
+    try:
+        country = get_country_for_city(city)
+        initial_us_advisory = fetch_us_state_advisory(country) if country else None
+    except Exception:
+        initial_us_advisory = None
 
     provider_links = (transport_payload.get('provider_links') if transport_payload else None) or get_provider_links(city)
 
     city_display = shorten_place(city)
-    return render_template('transport.html', city=city, city_display=city_display, lat=lat, lon=lon, banner_url=banner_url, banner_attr=banner_attr, initial_quick_guide=quick_guide, initial_provider_links=provider_links, initial_transport=transport_payload)
+    return render_template('transport.html', city=city, city_display=city_display, lat=lat, lon=lon, banner_url=banner_url, banner_attr=banner_attr, initial_quick_guide=quick_guide, initial_safety_tips=initial_safety, initial_us_advisory=initial_us_advisory, initial_provider_links=provider_links, initial_transport=transport_payload)
 
 
 @app.route('/api/transport')
@@ -560,11 +993,26 @@ def api_city_info():
     except Exception:
         marco = None
 
+    # Safety / crime tips (best-effort extraction) -> list of bullets
+    try:
+        safety_list = fetch_safety_section(city) or []
+    except Exception:
+        safety_list = []
+
     google_link = None
     if lat and lon:
         google_link = f"https://www.google.com/maps/@{lat},{lon},13z/data=!5m1!1e2"
     else:
         google_link = f"https://www.google.com/maps/search/{requests.utils.requote_uri(city + ' public transport')}/data=!5m1!1e2"
+
+    # Country-level US State Dept advisory (best-effort)
+    us_advisory = None
+    try:
+        country = get_country_for_city(city)
+        if country:
+            us_advisory = fetch_us_state_advisory(country)
+    except Exception:
+        us_advisory = None
 
     result = {
         'city': city,
@@ -574,6 +1022,8 @@ def api_city_info():
         'google_map': google_link,
         'quick_guide': quick_guide,
         'marco': marco,
+        'safety_tips': safety_list,
+        'us_state_advisory': us_advisory,
         'transport_available': bool(transport),
         'transport': transport,
         'provider_links': (transport.get('provider_links') if transport else None) or get_provider_links(city)
@@ -829,7 +1279,97 @@ def version():
 
 @app.route('/tools/currency', methods=['GET'])
 def tools_currency():
-    return render_template('convert.html')
+    # Optional city param to auto-detect local currency
+    city = request.args.get('city')
+    initial_currency = None
+    initial_country = None
+    if city:
+        try:
+            country = get_country_for_city(city)
+            initial_country = country
+            if country:
+                cur = get_currency_for_country(country)
+                initial_currency = cur
+        except Exception:
+            initial_currency = None
+    initial_currency_name = None
+    try:
+        if initial_currency:
+            initial_currency_name = get_currency_name(initial_currency)
+    except Exception:
+        initial_currency_name = None
+    # Basic ATM tips (server-side) — short list
+    atm_tips = [
+        "Use bank-branded ATMs when possible — independent ATMs often charge higher fees.",
+        "Check the fee and exchange rate shown on the ATM before accepting the transaction.",
+        "Avoid ATMs in poorly lit or isolated areas, and prefer those inside banks or malls.",
+        "For small purchases, consider using a card at shops to avoid ATM fees."
+    ]
+    # Country-specific payment acceptance notes
+    payment_notes_map = {
+        'Cuba': [
+            "Card acceptance in Cuba is limited; many places are cash-only.",
+            "US bank cards and services like Zelle will not currently work — carry sufficient cash and local-denominated notes.",
+            "Exchange currency at official casas de cambio or banks; avoid airport exchange desks with poor rates."
+        ],
+        'Portugal': [
+            "Some independent ATMs (Euronet) charge high fees and offer poor exchange rates.",
+            "Prefer withdrawing from bank-branded ATMs to avoid dynamic fees.",
+            "Check with your bank about international ATM fees and set a daily withdrawal limit accordingly."
+        ],
+        'default': [
+            "Check with your bank whether your card will work abroad and notify them before travel.",
+            "Carry a small amount of local cash for markets/taxis where cards may not be accepted.",
+            "Avoid dynamic currency conversion prompts on ATMs and receipts — choose local currency to get a fairer rate."
+        ]
+    }
+    # Expand with more country-specific notes
+    payment_notes_map.update({
+        'Russia': [
+            "Card networks and international payment services may be restricted; cash is often preferred.",
+            "ATMs may charge higher fees; use bank-branded ATMs where possible."
+        ],
+        'Venezuela': [
+            "Severe cash and currency controls exist; exchange markets can be informal and risky.",
+            "Use official exchange points where possible and avoid street exchangers."
+        ],
+        'Myanmar': [
+            "Card acceptance is limited outside major hotels; cash is necessary in many places.",
+            "Carry small denominations and be aware of potential counterfeit notes."
+        ],
+        'Nicaragua': [
+            "US dollar cash is commonly accepted in tourist areas but local Córdoba is used widely; have both if possible.",
+            "ATMs can be scarce outside cities."
+        ],
+        'Kenya': [
+            "Mobile money (M-Pesa) is widely used — many vendors accept it instead of cards.",
+            "ATMs are available in cities; carry small cash in rural areas."
+        ],
+        'Zimbabwe': [
+            "Currency situation can be complex; cash and mobile payments may vary—check local guidance.",
+            "Carry multiple payment methods if possible."
+        ],
+        'Peru': [
+            "Major cards are accepted in Lima and tourist areas; smaller towns may be cash-only.",
+            "Avoid withdrawing large sums at once; prefer bank ATMs."
+        ]
+    })
+    initial_payment_notes = None
+    try:
+        if initial_country:
+            # prefer exact match, else default
+            notes = payment_notes_map.get(initial_country) or payment_notes_map.get(initial_country.split(',')[0]) or payment_notes_map.get('default')
+        else:
+            notes = payment_notes_map.get('default')
+        initial_payment_notes = notes
+    except Exception:
+        initial_payment_notes = payment_notes_map.get('default')
+    # Attempt to fetch average local prices (Teleport) for initial display
+    try:
+        initial_costs = get_cost_estimates(city) if city else []
+    except Exception:
+        initial_costs = []
+    return render_template('convert.html', initial_currency=initial_currency, initial_currency_name=initial_currency_name, initial_country=initial_country, initial_atm_tips=atm_tips, initial_payment_notes=initial_payment_notes, initial_costs=initial_costs)
 
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", 5000))

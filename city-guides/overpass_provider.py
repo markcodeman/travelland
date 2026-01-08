@@ -16,7 +16,7 @@ OVERPASS_URLS = [
 
 def reverse_geocode(lat, lon):
     url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}"
-    headers = {'User-Agent': 'CityGuides/1.0'}
+    headers = {'User-Agent': 'CityGuides/1.0', 'Accept-Language': 'en'}
     try:
         r = requests.get(url, headers=headers, timeout=10)
         r.raise_for_status()
@@ -28,7 +28,7 @@ def reverse_geocode(lat, lon):
 
 def geocode_city(city):
     params = {'q': city, 'format': 'json', 'limit': 1}
-    headers = {'User-Agent': 'CityGuides/1.0'}
+    headers = {'User-Agent': 'CityGuides/1.0', 'Accept-Language': 'en'}
     r = requests.get(NOMINATIM_URL, params=params, headers=headers, timeout=10)
     r.raise_for_status()
     j = r.json()

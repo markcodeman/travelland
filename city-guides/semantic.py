@@ -4,6 +4,11 @@ from bs4 import BeautifulSoup
 import math
 import re
 import logging
+import hashlib
+import json
+import datetime
+import threading
+from pathlib import Path
 
 import search_provider
 import duckduckgo_provider
@@ -39,6 +44,63 @@ class InMemoryIndex:
 
 
 INDEX = InMemoryIndex()
+
+# Simple file-based cache for Marco responses. Stored at data/marco_cache.json.
+_CACHE_FILE = Path(__file__).resolve().parents[1] / 'data' / 'marco_cache.json'
+_CACHE_LOCK = threading.Lock()
+
+def _make_cache_key(query, city, mode):
+    s = f"{(city or '').strip().lower()}|{mode}|{(query or '').strip().lower()}"
+    return hashlib.sha256(s.encode('utf-8')).hexdigest()
+
+def _load_cache():
+    try:
+        if not _CACHE_FILE.exists():
+            return {}
+        with _CACHE_FILE.open('r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _write_cache(cache):
+    try:
+        tmp = _CACHE_FILE.with_suffix('.tmp')
+        with tmp.open('w', encoding='utf-8') as f:
+            json.dump(cache, f, ensure_ascii=False, indent=2)
+        tmp.replace(_CACHE_FILE)
+    except Exception:
+        pass
+
+def _cache_get(key):
+    ttl_days = int(os.getenv('MARCO_CACHE_TTL_DAYS', '7'))
+    with _CACHE_LOCK:
+        c = _load_cache()
+        rec = c.get(key)
+        if not rec:
+            return None
+        gen = rec.get('generated_at')
+        if not gen:
+            return rec.get('value')
+        try:
+            gen_dt = datetime.datetime.fromisoformat(gen)
+            if (datetime.datetime.utcnow() - gen_dt).days >= ttl_days:
+                # expired
+                try:
+                    del c[key]
+                    _write_cache(c)
+                except Exception:
+                    pass
+                return None
+            return rec.get('value')
+        except Exception:
+            return rec.get('value')
+
+def _cache_set(key, value, source='groq'):
+    rec = {'value': value, 'generated_at': datetime.datetime.utcnow().isoformat(), 'source': source}
+    with _CACHE_LOCK:
+        c = _load_cache()
+        c[key] = rec
+        _write_cache(c)
 
 
 def convert_currency(amount, from_curr, to_curr):
@@ -281,11 +343,18 @@ INSTRUCTIONS FOR MARCO:
     else:
         prompt = f"User query: {query}\n\n{ui_context}\n\nWeb Data:\n{context}\n\nProvide a factual response."
     
+    # Cache lookup: avoid calling Groq repeatedly for identical queries
     try:
+        cache_key = _make_cache_key(query, city, mode)
+        cached = _cache_get(cache_key)
+        if cached:
+            logging.debug(f"Marco cache hit for key={cache_key}")
+            return cached
+
         key = _get_api_key()
         print(f"DEBUG: Calling Groq for query: {query}")
         print(f"DEBUG: Context Venues Count: {len(context_venues) if context_venues else 0}")
-        
+
         if not key:
             print("DEBUG: No GROQ_API_KEY found in environment")
             raise Exception("No API Key")
@@ -314,23 +383,47 @@ INSTRUCTIONS FOR MARCO:
         if response.status_code == 200:
             res_data = response.json()
             answer = res_data["choices"][0]["message"]["content"]
-            if answer.strip(): 
-                return answer.strip()
+            if answer and answer.strip():
+                ans = answer.strip()
+                try:
+                    _cache_set(cache_key, ans, source='groq')
+                except Exception:
+                    pass
+                return ans
             
         # Smarter fallback if AI fails
         if context_venues:
             # Pick a random one for variety if we're hitting fallbacks
             import random
-            # Filter out generic ones or use a wider pool
             pool = context_venues[:5] if len(context_venues) >= 5 else context_venues
-            v = random.choice(pool) 
+            v = random.choice(pool)
             name = v.get('name', 'this spot')
-            return f"Ahoy! 🧭 My compass is spinning, but looking at our map, **{name}** stands out! Based on my logs, it should be a fine spot for your quest. Safe travels! - Marco"
-        
-        return "Ahoy! 🪙 My explorer's eyes are tired. Try searching for a specific place above first! - Marco"
+            fallback = f"Ahoy! 🧭 My compass is spinning, but looking at our map, **{name}** stands out! Based on my logs, it should be a fine spot for your quest. Safe travels! - Marco"
+            try:
+                _cache_set(cache_key, fallback, source='fallback')
+            except Exception:
+                pass
+            return fallback
+
+        fallback2 = "Ahoy! 🪙 My explorer's eyes are tired. Try searching for a specific place above first! - Marco"
+        try:
+            _cache_set(cache_key, fallback2, source='fallback')
+        except Exception:
+            pass
+        return fallback2
     except Exception as e:
         print(f"DEBUG: Groq Exception: {e}")
         if context_venues:
-            return f"Ahoy! 🧭 My compass is spinning, but **{context_venues[0].get('name')}** on your screen looks like a treasure! - Marco"
-        return "Ahoy! 🪙 My explorer's eyes are tired. - Marco"
+            fallback = f"Ahoy! 🧭 My compass is spinning, but **{context_venues[0].get('name')}** on your screen looks like a treasure! - Marco"
+            try:
+                _cache_set(cache_key, fallback, source='fallback')
+            except Exception:
+                pass
+            return fallback
+        fallback3 = "Ahoy! 🪙 My explorer's eyes are tired. - Marco"
+        try:
+            _cache_set(cache_key, fallback3, source='fallback')
+        except Exception:
+            pass
+        return fallback3
 

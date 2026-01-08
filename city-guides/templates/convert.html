@@ -12,7 +12,43 @@
     .tools-back { position: fixed; left: 12px; top: 12px; }
   </style>
 </head>
-<body>
+  <body>
+  {% if initial_currency or initial_country %}
+  <div id="detected-banner" class="fixed top-0 left-0 w-full z-50 shadow" style="background: linear-gradient(90deg,#fde68a,#fef3c7);">
+    <div class="max-w-4xl mx-auto p-3 flex items-center justify-between">
+      <div class="text-sm font-medium">
+        Detected: <strong>{{ initial_country or '—' }}</strong>
+        &middot;
+        Currency: <strong>
+          {% if initial_currency %}
+            {{ initial_currency }}{% if initial_currency_name %} ({{ initial_currency_name }}){% endif %}
+          {% else %}
+            —
+          {% endif %}
+        </strong>
+      </div>
+      <div>
+        <button id="dismiss-banner" class="px-3 py-1 bg-white rounded shadow-sm text-sm">Dismiss</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Add top padding so the fixed banner doesn't overlap content
+    (function(){
+      try{
+        const b = document.getElementById('detected-banner');
+        if(b){
+          document.documentElement.style.scrollPaddingTop = b.offsetHeight + 'px';
+          document.body.style.paddingTop = b.offsetHeight + 'px';
+          document.getElementById('dismiss-banner').addEventListener('click', function(){
+            b.style.display = 'none';
+            document.body.style.paddingTop = null;
+          });
+        }
+      }catch(e){console.warn(e)}
+    })();
+  </script>
+  {% endif %}
   <div class="wrap">
     <div class="tools-back">
       <a href="/" class="px-3 py-2 bg-white rounded shadow">← Back</a>
@@ -30,6 +66,7 @@
           <option value="AUD">AUD</option>
           <option value="MXN">MXN</option>
         </select>
+        <button id="swapCurr" type="button" title="Swap from/to" class="mx-2 px-2 py-1 bg-gray-100 rounded border">⇄</button>
         <span class="px-2">to</span>
         <select id="toCurr" title="Convert to currency" class="p-2 border rounded">
           <option value="GBP">GBP</option>
@@ -40,16 +77,94 @@
           <option value="AUD">AUD</option>
           <option value="MXN">MXN</option>
         </select>
-        <button id="convertBtn" class="ml-2 px-3 py-2 bg-blue-600 text-white rounded">Convert</button>
+          <button id="convertBtn" class="ml-2 px-3 py-2 bg-blue-600 text-white rounded">Convert</button>
+        <div id="convertResult" class="mt-3"></div>
       </div>
-      <div id="convertResult" class="mt-3"></div>
+        {% if initial_atm_tips %}
+        <div class="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded text-sm">
+          <strong>ATM & money tips</strong>
+          <ul class="mt-2 list-disc ml-5 text-gray-700">
+            {% for t in initial_atm_tips %}
+            <li>{{ t }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        {% if initial_payment_notes %}
+        <div class="mt-4 bg-red-50 border-l-4 border-red-400 p-3 rounded text-sm">
+          <strong>Payment availability notes</strong>
+          <ul class="mt-2 list-disc ml-5 text-gray-700">
+            {% for p in initial_payment_notes %}
+            <li>{{ p }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        {% if initial_costs %}
+        <div class="mt-4 bg-green-50 border-l-4 border-green-400 p-3 rounded text-sm">
+          <strong>Average local prices</strong>
+          <ul class="mt-2 list-disc ml-5 text-gray-700">
+            {% for c in initial_costs %}
+            <li>
+              {{ c.label }} —
+              {% if c.value %}
+                {{ c.value }} {{ initial_currency or 'local' }}{% if initial_currency_name %} ({{ initial_currency_name }}){% endif %}
+              {% else %}
+                n/a
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        {% if initial_country or initial_currency %}
+        <div class="mt-4">
+          <span class="inline-block bg-gray-100 px-3 py-1 rounded text-sm mr-2">Detected country: <strong>{{ initial_country or '—' }}</strong></span>
+          <span class="inline-block bg-gray-100 px-3 py-1 rounded text-sm">Detected currency: <strong>{% if initial_currency %}{{ initial_currency }}{% if initial_currency_name %} ({{ initial_currency_name }}){% endif %}{% else %}—{% endif %}</strong></span>
+        </div>
+        {% endif %}
+      
     </div>
   </div>
   <!-- Dedicated currency converter JS for this page only -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // preselect detected currency if provided by server; if missing, add it to the selector
+        try{
+          const init = {{ initial_currency|tojson|default('null') }};
+          if(init){
+            const sel = document.getElementById('fromCurr');
+            if(sel){
+              let found = false;
+              for(const o of sel.options){ if(o.value === init){ o.selected = true; found = true; break; } }
+              if(!found){
+                const opt = document.createElement('option');
+                opt.value = init;
+                opt.textContent = init + ' (detected)';
+                opt.selected = true;
+                sel.appendChild(opt);
+              }
+            }
+          }
+        }catch(e){}
       const convertBtn = document.getElementById('convertBtn');
       const convertResult = document.getElementById('convertResult');
+      const swapBtn = document.getElementById('swapCurr');
+      if (swapBtn) {
+        swapBtn.addEventListener('click', () => {
+          try {
+            const fromSel = document.getElementById('fromCurr');
+            const toSel = document.getElementById('toCurr');
+            if (fromSel && toSel) {
+              const tmp = fromSel.value;
+              fromSel.value = toSel.value;
+              toSel.value = tmp;
+              // If a conversion was already performed, re-run it for the new pair
+              if (convertBtn) convertBtn.click();
+            }
+          } catch (e) { console.warn('swap error', e); }
+        });
+      }
       if (convertBtn && convertResult) {
         convertBtn.addEventListener('click', async () => {
           const amount = parseFloat(document.getElementById('amount').value);

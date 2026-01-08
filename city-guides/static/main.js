@@ -24,7 +24,8 @@ function showCitySuggestions(items) {
 }
 
 function fetchCitySuggestions(q) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&q=${encodeURIComponent(q)}`;
+  // request English results to prefer ASCII country names
+  const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&accept-language=en&q=${encodeURIComponent(q)}`;
   return fetch(url, {headers: {'Accept': 'application/json'}}).then(r => r.json());
 }
 
@@ -66,6 +67,7 @@ if (cityInput) {
       hfLat.value = lat;
       hfLon.value = lon;
       updateTransportLink();
+      try{ updateCurrencyLink(); }catch(e){}
     } else if (ev.target !== cityInput && !ev.target.closest('#city-suggestions')) {
       hideCitySuggestions();
     }
@@ -346,6 +348,18 @@ function updateTransportLink() {
   }
 }
 
+function updateCurrencyLink() {
+  const city = document.getElementById('city').value.trim();
+  const hambCurrency = document.querySelector('#hamburgerMenu a[href="/tools/currency"]');
+  if (hambCurrency) {
+    if (city) {
+      hambCurrency.href = `/tools/currency?city=${encodeURIComponent(city)}`;
+    } else {
+      hambCurrency.href = '/tools/currency';
+    }
+  }
+}
+
 const mainSearchBtn = document.getElementById('searchBtn');
 if (mainSearchBtn) {
   const origHandler = mainSearchBtn.onclick;
@@ -355,11 +369,13 @@ if (mainSearchBtn) {
     const user_lon = document.getElementById('user_lon') ? document.getElementById('user_lon').value : undefined;
     fetchAndShowWeather(city, user_lat, user_lon);
     updateTransportLink();
+    try{ updateCurrencyLink(); }catch(e){}
     if (typeof origHandler === 'function') origHandler();
   });
   // Initial search
   mainSearchBtn.click();
   updateTransportLink();
+  try{ updateCurrencyLink(); }catch(e){}
 }
 
 (() => {

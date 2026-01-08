@@ -97,7 +97,55 @@ def fetch_banner_from_wikipedia(city):
                 pageurl = f'https://en.wikipedia.org/?curid={pageid}' if pageid else 'https://en.wikipedia.org/'
                 return {'remote_url': thumb, 'attribution': f'Image via Wikimedia/Wikipedia ({pageurl})'}
     except Exception:
-        return None
+        pass
+
+    # Fallback strategy: try searching for skyline / aerial images related to the city
+    try:
+        search_url = 'https://en.wikipedia.org/w/api.php'
+        search_queries = [
+            f"{city} skyline",
+            f"{city} city skyline",
+            f"{city} skyline aerial",
+            f"{city} skyline at night",
+            f"{city} panorama",
+            city
+        ]
+        for q in search_queries:
+            params = {
+                'action': 'query',
+                'list': 'search',
+                'srsearch': q,
+                'format': 'json',
+                'srlimit': 5
+            }
+            r = requests.get(search_url, params=params, headers={'User-Agent': 'TravelLand/1.0'}, timeout=8)
+            r.raise_for_status()
+            results = r.json().get('query', {}).get('search', [])
+            titles = [r.get('title') for r in results if r.get('title')]
+            if not titles:
+                continue
+            # Request thumbnails for the candidate titles
+            params2 = {
+                'action': 'query',
+                'prop': 'pageimages',
+                'titles': '|'.join(titles[:5]),
+                'format': 'json',
+                'pithumbsize': 2000,
+                'redirects': 1
+            }
+            r2 = requests.get(search_url, params=params2, headers={'User-Agent': 'TravelLand/1.0'}, timeout=8)
+            r2.raise_for_status()
+            data2 = r2.json()
+            pages2 = data2.get('query', {}).get('pages', {})
+            for p2 in pages2.values():
+                thumb = p2.get('thumbnail', {}).get('source')
+                if thumb:
+                    pageid = p2.get('pageid')
+                    pageurl = f'https://en.wikipedia.org/?curid={pageid}' if pageid else 'https://en.wikipedia.org/'
+                    return {'remote_url': thumb, 'attribution': f'Image via Wikimedia/Wikipedia ({pageurl})'}
+    except Exception:
+        pass
+
     return None
 
 

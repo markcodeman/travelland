@@ -19,11 +19,11 @@ import requests
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUT_PATH = REPO_ROOT.parent / "data" / "transport_london.json"
 
-HEADERS = {"User-Agent": "TravelLand/1.0 (fetcher)"}
+HEADERS = {"User-Agent": "TravelLand/1.0 (fetcher)", "Accept-Language": "en"}
 
 def geocode_city(city_name):
     url = "https://nominatim.openstreetmap.org/search"
-    params = {"q": city_name, "format": "json", "limit": 1}
+    params = {"q": city_name, "format": "json", "limit": 1, "accept-language": "en"}
     r = requests.get(url, params=params, headers=HEADERS, timeout=10)
     r.raise_for_status()
     items = r.json()

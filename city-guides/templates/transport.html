@@ -108,12 +108,51 @@
         </section>
 
         <section class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-12">
-            <h2 class="text-2xl font-bold mb-6">Live fares & times</h2>
-            <p class="text-gray-600">For up-to-date fares and live departure times, please use the transit provider links below or open the map (Google Transit) — they provide authoritative, real-time information.</p>
-            <div id="provider-links" class="mt-4 space-y-2">
-                <!-- provider links injected here -->
+            <h2 class="text-2xl font-bold mb-6">Crime & Safety Tips</h2>
+            <p class="text-gray-600">Practical safety guidance for visitors — local scams, areas to avoid, and common-sense precautions. This is best-effort and should not replace official advisories.</p>
+            <div id="safety-tips-list" class="mt-4 space-y-2 text-gray-700">
+                <p>Loading safety tips…</p>
             </div>
+            <div class="mt-4 text-sm text-gray-500">Recommended sources: local police, official tourism sites, Wikivoyage/Wikipedia, and community reports.</div>
+            <div id="us-advisory-block" class="mt-4 text-sm text-gray-600"></div>
         </section>
+
+        {% if initial_safety_tips %}
+        <script>
+        document.addEventListener('DOMContentLoaded', ()=>{
+            try{
+                const raw = {{ initial_safety_tips|tojson|safe }};
+                const el = document.getElementById('safety-tips-list');
+                if(!el) return;
+                let bullets = [];
+                if(Array.isArray(raw)){
+                    bullets = raw;
+                } else if (typeof raw === 'string'){
+                    bullets = raw.match(/[^\.\!\?]+[\.\!\?]+/g) || raw.split('\n').filter(Boolean);
+                } else if (raw && typeof raw === 'object'){
+                    bullets = (raw.answer || raw.text || JSON.stringify(raw)).match(/[^\.\!\?]+[\.\!\?]+/g) || [];
+                }
+                if(!bullets || !bullets.length) return;
+                el.innerHTML = bullets.slice(0,5).map(b => `<div class="flex gap-3"><span class="text-red-500 font-bold">•</span><span>${b.trim()}</span></div>`).join('');
+            }catch(e){}
+        });
+        </script>
+        {% endif %}
+
+        {% if initial_us_advisory %}
+        <script>
+        document.addEventListener('DOMContentLoaded', ()=>{
+            try{
+                const adv = {{ initial_us_advisory|tojson|safe }};
+                const block = document.getElementById('us-advisory-block');
+                if(!block || !adv) return;
+                const url = adv.url || '#';
+                const summary = adv.summary || '';
+                block.innerHTML = `<div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded"><strong>US State Dept advisory:</strong> ${summary ? summary : ''} <a href="${url}" target="_blank" class="text-blue-600 underline ml-2">Read full advisory</a></div>`;
+            }catch(e){}
+        });
+        </script>
+        {% endif %}
 
         <section class="text-center bg-gray-900 text-white p-12 rounded-3xl">
             <h2 class="text-3xl font-bold mb-4">Need a tailored route?</h2>
@@ -266,6 +305,38 @@
                         if (links.length) {
                             pl.innerHTML = links.map(l => `<div><a href="${l.url}" target="_blank" class="text-blue-600 hover:underline font-semibold">${l.name}</a></div>`).join('');
                         }
+                    }
+                } catch (e) { console.warn(e); }
+
+                // safety tips from city_info
+                try {
+                    const st = document.getElementById('safety-tips-list');
+                    if (st) {
+                        const raw = j.safety_tips || [];
+                        let bullets = [];
+                        if (Array.isArray(raw)) {
+                            bullets = raw;
+                        } else if (typeof raw === 'string') {
+                            bullets = raw.match(/[^\.\!\?]+[\.\!\?]+/g) || raw.split('\n').filter(Boolean);
+                        } else if (raw && typeof raw === 'object') {
+                            bullets = (raw.answer || raw.text || JSON.stringify(raw)).match(/[^\.\!\?]+[\.\!\?]+/g) || [];
+                        }
+                        if (bullets && bullets.length) {
+                            st.innerHTML = bullets.slice(0,5).map(p => `<div class="flex gap-3"><span class="text-red-500 font-bold">•</span><span>${p.trim()}</span></div>`).join('');
+                        } else {
+                            st.innerHTML = '<p>No specific safety tips available. Stay aware, avoid poorly-lit areas, and keep valuables secure.</p>';
+                        }
+                    }
+                } catch (e) { console.warn(e); }
+
+                // US State Dept advisory from city_info
+                try {
+                    const advBlock = document.getElementById('us-advisory-block');
+                    if (advBlock && j.us_state_advisory) {
+                        const adv = j.us_state_advisory;
+                        const url = adv.url || '#';
+                        const summary = adv.summary || '';
+                        advBlock.innerHTML = `<div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded"><strong>US State Dept advisory:</strong> ${summary ? summary : ''} <a href="${url}" target="_blank" class="text-blue-600 underline ml-2">Read full advisory</a></div>`;
                     }
                 } catch (e) { console.warn(e); }
             } catch (e) {
