@@ -437,3 +437,255 @@ def discover_restaurants(city, limit=200, cuisine=None, local_only=False):
 
     out.sort(key=sort_key)
     return out
+
+
+def discover_pois(city, poi_type="restaurant", limit=200, local_only=False):
+    """Discover POIs of various types for a city using Nominatim + Overpass.
+
+    Args:
+        city: City name to search in
+        poi_type: Type of POI ("restaurant", "historic", "museum", "park", etc.)
+        limit: Maximum results to return
+        local_only: Filter out chains (only applies to restaurants)
+
+    Returns list of candidates with OSM data.
+    """
+    bbox = geocode_city(city)
+    if not bbox:
+        return []
+    south, west, north, east = bbox
+    # Overpass bbox format: south,west,north,east
+    bbox_str = f"{south},{west},{north},{east}"
+
+    # Define queries for different POI types
+    poi_queries = {
+        "restaurant": '["amenity"~"restaurant|fast_food|cafe|bar|pub|food_court"]',
+        "historic": '["tourism"="attraction"]',
+        "museum": '["tourism"="museum"]',
+        "park": '["leisure"="park"]',
+        "market": '["amenity"="marketplace"]',
+        "transport": '["amenity"~"bus_station|train_station|subway_entrance|ferry_terminal|airport"]',
+        "family": '["leisure"~"playground|amusement_arcade|miniature_golf"]',
+        "event": '["amenity"~"theatre|cinema|arts_centre|community_centre"]',
+        "local": '["tourism"~"attraction"]',  # generic attractions
+        "hidden": '["tourism"~"attraction"]',  # same as local
+        "coffee": '["amenity"~"cafe|coffee_shop"]',
+    }
+
+    # Default to restaurant if unknown type
+    amenity_filter = poi_queries.get(poi_type, poi_queries["restaurant"])
+
+    q = f"[out:json][timeout:60];(node{amenity_filter}({bbox_str});way{amenity_filter}({bbox_str});relation{amenity_filter}({bbox_str}););out center;"
+
+    # ---- CACHING & RATE LIMIT -------------------------------------------------
+    CACHE_TTL = int(
+        os.environ.get("OVERPASS_CACHE_TTL", 60 * 60 * 6)
+    )  # 6 hours default
+    RATE_LIMIT_SECONDS = float(
+        os.environ.get("OVERPASS_MIN_INTERVAL", 5.0)
+    )  # min seconds between requests
+
+    cache_dir = Path(__file__).parent / ".cache" / "overpass"
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+
+    def _cache_path_for_query(qstr: str) -> Path:
+        h = hashlib.sha256(qstr.encode("utf-8")).hexdigest()
+        return cache_dir / f"{h}.json"
+
+    def _read_cache(qstr: str):
+        p = _cache_path_for_query(qstr)
+        if not p.exists():
+            return None
+        try:
+            m = p.stat().st_mtime
+            age = time.time() - m
+            if age > CACHE_TTL:
+                return None
+            with p.open("r", encoding="utf-8") as fh:
+                return json.load(fh)
+        except Exception:
+            return None
+
+    def _write_cache(qstr: str, data):
+        p = _cache_path_for_query(qstr)
+        try:
+            with p.open("w", encoding="utf-8") as fh:
+                json.dump(data, fh)
+        except Exception:
+            pass
+
+    # simple global rate limiter persisted to a file so separate runs share it
+    rate_file = cache_dir / "last_request_ts"
+
+    def _ensure_rate_limit():
+        try:
+            last = float(rate_file.read_text()) if rate_file.exists() else 0.0
+        except Exception:
+            last = 0.0
+        now = time.time()
+        wait = RATE_LIMIT_SECONDS - (now - last)
+        if wait > 0:
+            time.sleep(wait)
+        try:
+            rate_file.write_text(str(time.time()))
+        except Exception:
+            pass
+
+    headers = {"User-Agent": "CityGuides/1.0"}
+    # try cache first
+    cached = _read_cache(q)
+    if cached is not None:
+        try:
+            j = cached
+        except Exception:
+            j = None
+    else:
+        # Try multiple Overpass endpoints with retries/backoff to reduce 504s
+        tried = []
+        j = None
+        for base_url in OVERPASS_URLS:
+            try:
+                _ensure_rate_limit()
+                attempts = int(os.environ.get("OVERPASS_RETRIES", 2))
+                for attempt in range(1, attempts + 1):
+                    try:
+                        r = requests.post(
+                            base_url,
+                            data={"data": q},
+                            headers=headers,
+                            timeout=int(os.environ.get("OVERPASS_TIMEOUT", 20)),
+                        )
+                        r.raise_for_status()
+                        j = r.json()
+                        _write_cache(q, j)
+                        break
+                    except Exception:
+                        if attempt < attempts:
+                            time.sleep(1 * attempt)
+                        else:
+                            raise
+                if j is not None:
+                    break
+            except Exception:
+                tried.append(base_url)
+                continue
+
+        if j is None:
+            # on failure, try to fall back to stale cache if available
+            stale_p = _cache_path_for_query(q)
+            if stale_p.exists():
+                try:
+                    with stale_p.open("r", encoding="utf-8") as fh:
+                        j = json.load(fh)
+                except Exception:
+                    return []
+            else:
+                return []
+
+    elements = j.get("elements", [])
+    out = []
+
+    for el in elements:
+        tags = el.get("tags") or {}
+        name = tags.get("name") or tags.get("operator") or "Unnamed"
+
+        # For historic sites, try to generate better names from tags
+        if poi_type == "historic" and name == "Unnamed":
+            # Try various tag fields for better names
+            better_name = None
+            if tags.get("inscription"):
+                # Use first 50 chars of inscription as name
+                inscription = tags["inscription"].strip()
+                better_name = inscription[:50] + ("..." if len(inscription) > 50 else "")
+            elif tags.get("description"):
+                desc = tags["description"].strip()
+                better_name = desc[:50] + ("..." if len(desc) > 50 else "")
+            elif tags.get("memorial"):
+                memorial_type = tags["memorial"].replace("_", " ").title()
+                if tags.get("wikidata"):
+                    better_name = f"{memorial_type} Memorial"
+                else:
+                    better_name = memorial_type
+            elif tags.get("historic"):
+                historic_type = tags["historic"].replace("_", " ").title()
+                better_name = historic_type
+
+            if better_name:
+                name = better_name
+
+        # Skip if still unnamed and no useful information
+        if name == "Unnamed" and not any(tags.get(k) for k in ["inscription", "description", "memorial", "wikidata"]):
+            continue
+
+        # Get lat/lon
+        if el["type"] == "node":
+            lat = el.get("lat")
+            lon = el.get("lon")
+        else:
+            center = el.get("center")
+            if center:
+                lat = center["lat"]
+                lon = center["lon"]
+            else:
+                continue
+
+        # Build address
+        address = (
+            tags.get("addr:full")
+            or f"{tags.get('addr:housenumber','')} {tags.get('addr:street','')} {tags.get('addr:city','')} {tags.get('addr:postcode','')}".strip()
+        )
+        if not address:
+            address = f"{lat}, {lon}"
+
+        # For non-restaurant POIs, skip chain filtering (doesn't apply)
+        if poi_type == "restaurant" and local_only:
+            name_lower = name.lower()
+            if any(chain.lower() in name_lower for chain in CHAIN_KEYWORDS):
+                continue
+
+        website = tags.get("website") or tags.get("contact:website")
+        osm_type = el.get("type")
+        osm_id = el.get("id")
+        osm_url = f"https://www.openstreetmap.org/{osm_type}/{osm_id}"
+
+        tags_str = ", ".join([f"{k}={v}" for k, v in tags.items()])
+
+        entry = {
+            "osm_id": osm_id,
+            "name": name,
+            "website": website,
+            "osm_url": osm_url,
+            "amenity": tags.get("amenity", ""),
+            "historic": tags.get("historic", ""),
+            "tourism": tags.get("tourism", ""),
+            "leisure": tags.get("leisure", ""),
+            "cost": tags.get("cost", ""),
+            "address": address,
+            "lat": lat,
+            "lon": lon,
+            "tags": tags_str,
+        }
+        out.append(entry)
+
+    # Sort by relevance (prioritize named entries, then by type significance)
+    def sort_key(entry):
+        name = entry.get("name", "")
+        historic_type = entry.get("historic", "")
+
+        # Primary: Prefer named entries over unnamed
+        name_score = 0 if name == "Unnamed" else 1
+
+        # Secondary: Prefer more significant historic types
+        type_priority = {
+            "monument": 10, "castle": 9, "palace": 8, "church": 7, "cathedral": 7,
+            "temple": 6, "mosque": 6, "museum": 5, "fort": 4, "tower": 3,
+            "ruins": 2, "archaeological_site": 2, "memorial": 1
+        }.get(historic_type, 0)
+
+        return (-name_score, -type_priority, len(name))
+
+    out.sort(key=sort_key, reverse=True)
+    return out[:limit]

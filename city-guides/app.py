@@ -1303,6 +1303,24 @@ def search():
         "best food",
         "food highlights",
     ]
+    historic_keywords = [
+        "historic",
+        "history",
+        "museum",
+        "monument",
+        "landmark",
+        "sight",
+        "sites",
+        "attraction",
+        "castle",
+        "palace",
+        "temple",
+        "church",
+        "cathedral",
+        "ruins",
+        "archaeological",
+        "heritage",
+    ]
     currency_keywords = [
         "currency",
         "exchange",
@@ -1334,6 +1352,7 @@ def search():
         "underground",
     ]
     is_food_query = any(kw in (q or "") for kw in food_keywords)
+    is_historic_query = any(kw in (q or "") for kw in historic_keywords)
     is_currency_query = any(kw in (q or "") for kw in currency_keywords)
     is_transport_query = any(kw in (q or "") for kw in transport_keywords)
 
@@ -1349,14 +1368,14 @@ def search():
     elif is_transport_query:
         # For transport queries, fetch city_info (which includes transport)
         city_info = _get_city_info(city)
-    elif is_food_query:
-        # For food/venue queries, skip cost/currency/transport enrichments for speed
+    elif is_food_query or is_historic_query:
+        # For food/venue/historic queries, skip cost/currency/transport enrichments for speed
         pass
     else:
         # Default: fetch city_info for general queries
         city_info = _get_city_info(city)
     # Option to include web/Searx results (default: False)
-    include_web = bool(payload.get("include_web", False))
+    include_web = bool(payload.get("include_web", True))
     # Normalize query string for cuisine/food search
     q_norm = (q or "").strip().lower().replace("-", " ").replace("_", " ")
     # Determine whether to exclude obvious chains. If the client explicitly
@@ -1370,36 +1389,25 @@ def search():
         )
     # Special handling for 'top food' queries: try to extract Wikivoyage highlights first
     # Broadened: treat any food-related query as a generic food search
-    food_keywords = [
-        "food",
-        "eat",
-        "restaurant",
-        "cuisine",
-        "dining",
-        "must eat",
-        "must-try",
-        "top food",
-        "top eats",
-        "best food",
-        "food highlights",
-    ]
     is_food_query = any(kw in (q or "") for kw in food_keywords)
     wikivoyage_results = []
     t1 = time.time()
     print(f"[TIMING] After Wikivoyage setup: {t1-t0:.2f}s")
-    if city and is_food_query and include_web:
+    if city and (is_food_query or is_historic_query) and include_web:
 
-        def fetch_wikivoyage_food(city_name):
+        def fetch_wikivoyage_section(city_name, section_keywords, section_type):
+            # Strip country part for Wikivoyage lookup
+            city_base = city_name.split(',')[0].strip()
             url = "https://en.wikivoyage.org/w/api.php"
             params = {
                 "action": "parse",
-                "page": city_name,
+                "page": city_base,
                 "prop": "sections",
                 "format": "json",
                 "redirects": 1,
             }
             items = []
-            logging.debug(f"Trying Wikivoyage food highlights for city: '{city_name}'")
+            logging.debug(f"Trying Wikivoyage {section_type} highlights for city: '{city_name}'")
             try:
                 resp = requests.get(
                     url,
@@ -1410,30 +1418,19 @@ def search():
                 resp.raise_for_status()
                 data = resp.json()
                 secs = data.get("parse", {}).get("sections", [])
-                food_section_idx = None
+                target_section_idx = None
                 for s in secs:
                     line = (s.get("line") or "").lower()
-                    if any(
-                        kw in line
-                        for kw in [
-                            "eat",
-                            "food",
-                            "cuisine",
-                            "dining",
-                            "restaurants",
-                            "must eat",
-                            "must-try",
-                        ]
-                    ):
-                        food_section_idx = s.get("index")
+                    if any(kw in line for kw in section_keywords):
+                        target_section_idx = s.get("index")
                         break
-                if not food_section_idx:
+                if not target_section_idx:
                     return items
                 params2 = {
                     "action": "parse",
-                    "page": city_name,
+                    "page": city_base,
                     "prop": "text",
-                    "section": food_section_idx,
+                    "section": target_section_idx,
                     "format": "json",
                     "redirects": 1,
                 }
@@ -1456,18 +1453,18 @@ def search():
                 for idx, h in enumerate(highlights):
                     items.append(
                         {
-                            "id": f"wikivoyage-food-{idx}",
+                            "id": f"wikivoyage-{section_type}-{idx}",
                             "city": city_name,
                             "name": h.split(".")[0][:60] if "." in h else h[:60],
                             "description": h,
                             "provider": "wikivoyage",
-                            "tags": "wikivoyage,food",
+                            "tags": f"wikivoyage,{section_type}",
                             "address": "",
                             "latitude": None,
                             "longitude": None,
                             "website": "",
                             "osm_url": "",
-                            "amenity": "food",
+                            "amenity": section_type,
                             "budget": "",
                             "price_range": "",
                             "phone": "",
@@ -1479,12 +1476,19 @@ def search():
                         }
                     )
             except Exception as e:
-                logging.debug(f"Wikivoyage food highlights failed for {city_name}: {e}")
+                logging.debug(f"Wikivoyage {section_type} highlights failed for {city_name}: {e}")
             return items
 
-        wikivoyage_results = fetch_wikivoyage_food(city)
+        if is_food_query:
+            wikivoyage_results = fetch_wikivoyage_section(city, [
+                "eat", "food", "cuisine", "dining", "restaurants", "must eat", "must-try"
+            ], "food")
+        elif is_historic_query:
+            wikivoyage_results = fetch_wikivoyage_section(city, [
+                "see", "sight", "sights", "attractions", "historic", "landmarks", "monuments"
+            ], "historic")
 
-    if is_food_query:
+    if is_food_query or is_historic_query:
         t_real_start = time.time()
         # Respect the client/UI timeout. Some cities are slow on Overpass (Rome ~11s, Paris ~12s).
         # Give providers almost all available time, minus 1-2s buffer for processing.
@@ -1501,15 +1505,19 @@ def search():
         else:
             provider_timeout = 23.0  # Default: 23s for providers
         try:
-            pois = multi_provider.discover_restaurants(
+            # Determine POI type based on query
+            poi_type = "restaurant" if is_food_query else ("historic" if is_historic_query else "restaurant")
+            print(f"[DEBUG] Query: '{q}', is_food: {is_food_query}, is_historic: {is_historic_query}, poi_type: {poi_type}")
+            pois = multi_provider.discover_pois(
                 city,
+                poi_type=poi_type,
                 limit=20,
-                local_only=local_only,
+                local_only=local_only if poi_type == "restaurant" else False,
                 timeout=provider_timeout,
             )
             partial = False
             print(
-                f"[DEBUG] Overpass/multi_provider returned {len(pois)} venues for city '{city}'"
+                f"[DEBUG] multi_provider returned {len(pois)} {poi_type} venues for city '{city}'"
             )
         except Exception as e:
             print(f"[ERROR] Failed to fetch real venues: {e}")

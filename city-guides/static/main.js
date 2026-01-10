@@ -272,10 +272,13 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
     }
     let html = '';
     if (wikivoyageVenues.length > 0) {
-      html += `<div class="wikivoyage-section"><h2>🍽️ Local Food Highlights (Wikivoyage)</h2>`;
+      // Determine if these are historic or food venues based on the first venue's amenity
+      const isHistoric = wikivoyageVenues[0].amenity === 'historic';
+      const headerText = isHistoric ? '🏛️ Historic Sites & Attractions (Wikivoyage)' : '🍽️ Local Food Highlights (Wikivoyage)';
+      html += `<div class="wikivoyage-section"><h2>${headerText}</h2>`;
       html += wikivoyageVenues.map(v => {
-        const imgUrl = v.image || v.banner_url || '/static/img/dummy-img.png';
-        return `<div class="card wikivoyage-card"><img class="card-img" src="${imgUrl}" alt="${v.name}" loading="lazy" onerror="this.onerror=null;this.src='/static/img/dummy-img.png'"/><h3>${v.name}</h3><p>${v.description}</p></div>`;
+        const imgUrl = v.image || v.banner_url || '/static/img/placeholder.png';
+        return `<div class="card wikivoyage-card"><img class="card-img" src="${imgUrl}" alt="${v.name}" loading="lazy" onerror="this.onerror=null;this.src='/static/img/placeholder.png'"/><h3>${v.name}</h3><p>${v.description}</p></div>`;
       }).join('');
       html += '</div>';
     }

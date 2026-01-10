@@ -78,23 +78,26 @@ def _normalize_generic_entry(e: Dict) -> Dict:
     }
 
 
-def discover_restaurants(
+def discover_pois(
     city: str,
-    cuisine: str = None,
+    poi_type: str = "restaurant",
     limit: int = 100,
     local_only: bool = False,
     timeout: float = 12.0,
 ) -> List[Dict]:
-    """Orchestrate multiple providers concurrently, normalize, dedupe, and rank results.
+    """Orchestrate multiple providers concurrently for different POI types.
+
+    Args:
+        city: City name to search in
+        poi_type: Type of POI ("restaurant", "historic", "museum", "park", etc.)
+        limit: Maximum results to return
+        local_only: Filter out chain restaurants (only applies to restaurants)
+        timeout: Timeout for provider calls
 
     Returns list of unified entries with at least keys: id,name,lat,lon,osm_url,provider,raw
     """
     results = []
 
-    # Overpass can return thousands of elements. Our dedupe step is O(n^2) in the
-    # worst case, so we must cap how many candidates we process to keep requests
-    # interactive (e.g., UI timeouts at ~10s).
-    #
     # Heuristic: process at most ~10x the requested limit per provider and cap the
     # combined candidate pool too.
     max_per_provider = max(int(limit) * 10, 200)
@@ -121,134 +124,104 @@ def discover_restaurants(
 
     calls = []
     with ThreadPoolExecutor(max_workers=4) as ex:
-        # Overpass (OSM)
-        calls.append(
-            ex.submit(
-                _timed_call,
-                overpass_provider.discover_restaurants,
-                "overpass",
-                city,
-                limit,
-                cuisine,
-                local_only,
+        # Overpass (OSM) - supports different POI types
+        if poi_type == "restaurant":
+            calls.append(
+                ex.submit(
+                    _timed_call,
+                    overpass_provider.discover_restaurants,
+                    "overpass",
+                    city,
+                    limit,
+                    None,  # cuisine
+                    local_only,
+                )
             )
-        )
-        # OpenTripMap (optional)
+        else:
+            # For other POI types, use the general discover_pois function
+            calls.append(
+                ex.submit(
+                    _timed_call,
+                    overpass_provider.discover_pois,
+                    "overpass",
+                    city,
+                    poi_type,
+                    limit,
+                    local_only,
+                )
+            )
+
+        # OpenTripMap (optional) - supports different kinds
         if opentripmap_provider:
             try:
+                # Map poi_type to OpenTripMap kinds
+                otm_kinds = {
+                    "restaurant": "restaurants",
+                    "historic": "historic,museums",
+                    "museum": "museums",
+                    "park": "parks",
+                    "market": "markets",
+                    "transport": "transport",
+                    "family": "amusements",  # closest match
+                    "event": "cultural",
+                    "local": "cultural",
+                    "hidden": "cultural",
+                    "coffee": "cafes",
+                }.get(poi_type, poi_type)
+
                 calls.append(
                     ex.submit(
                         _timed_call,
-                        opentripmap_provider.discover_restaurants,
+                        opentripmap_provider.discover_pois,
                         "opentripmap",
                         city,
+                        otm_kinds,
                         limit,
-                        cuisine,
                     )
                 )
             except Exception:
                 pass
-        # DuckDuckGo and SearX removed
 
-        # Wait for futures to complete up to `timeout` seconds. If timeout is None, wait forever.
-        import concurrent.futures
-
+    # Collect results from all providers
+    for call in as_completed(calls):
         try:
-            done, not_done = concurrent.futures.wait(calls, timeout=timeout)
-        except Exception:
-            done = set()
-            not_done = set(calls)
+            provider_results = call.result()
+            if provider_results:
+                results.extend(provider_results)
+        except Exception as e:
+            logging.warning(f"Error collecting provider results: {e}")
 
-        # Process completed futures only
-        for fut in done:
-            try:
-                r = fut.result()
-                if not r:
-                    continue
-                for e in r[:max_per_provider]:
-                    # check if already a provider and use generic if so
-                    if e.get("provider") in ["web", "opentripmap"]:
-                        entry = _normalize_generic_entry(e)
-                    elif "osm_url" in e or "tags" in e:
-                        entry = _normalize_osm_entry(e)
-                    else:
-                        entry = _normalize_generic_entry(e)
+    # Normalize and dedupe
+    normalized = []
+    seen_ids = set()
+    for e in results[:max_total_candidates]:
+        try:
+            if poi_type == "restaurant":
+                norm = _normalize_osm_entry(e)
+            else:
+                norm = _normalize_generic_entry(e)
+            # Skip duplicates by ID
+            if norm["id"] and norm["id"] not in seen_ids:
+                seen_ids.add(norm["id"])
+                normalized.append(norm)
+        except Exception as e:
+            logging.warning(f"Error normalizing entry: {e}")
 
-                    if local_only:
-                        name_lower = entry["name"].lower()
-                        if any(
-                            chain.lower() in name_lower
-                            for chain in overpass_provider.CHAIN_KEYWORDS
-                        ):
-                            continue
-                    results.append(entry)
+    # Sort by some quality heuristic (name length as proxy for specificity)
+    normalized.sort(key=lambda x: len(x.get("name", "")), reverse=True)
 
-                    if len(results) >= max_total_candidates:
-                        break
-            except Exception:
-                continue
+    return normalized[:limit]
 
-        # Cancel any slow futures that didn't finish within timeout
-        for fut in not_done:
-            try:
-                fut.cancel()
-            except Exception:
-                pass
 
-    # Deduplicate by osm_url first, then by name+proximity
-    deduped = []
-    seen_urls = set()
-    for entry in results:
-        url = (entry.get("website") or entry.get("osm_url") or "").strip()
-        if (
-            url and "openstreetmap.org" not in url
-        ):  # use real website for deduping if possible
-            if url in seen_urls:
-                continue
-            seen_urls.add(url)
+def discover_restaurants(
+    city: str,
+    cuisine: str = None,
+    limit: int = 100,
+    local_only: bool = False,
+    timeout: float = 12.0,
+) -> List[Dict]:
+    """Orchestrate multiple providers concurrently, normalize, dedupe, and rank results.
 
-        # compare by normalized name
-        name_norm = _norm_name(entry.get("name", ""))
-        merged = False
-        for e2 in deduped:
-            if _norm_name(e2.get("name", "")) == name_norm:
-                # If both have valid lat/lon, check proximity
-                lat1, lon1 = entry.get("lat"), entry.get("lon")
-                lat2, lon2 = e2.get("lat"), e2.get("lon")
-
-                if lat1 and lon1 and lat2 and lon2:
-                    d = _haversine_meters(lat1, lon1, lat2, lon2)
-                    # For places with the same name, 150m is a very safe dedupe radius.
-                    # 1km was too large and merged distinct locations with the same name.
-                    if d < 150:
-                        merged = True
-                        break
-                else:
-                    # If one or both lack spatial data, we only merge if the website matches too
-                    # Or if the name is identical and we are willing to risk it.
-                    # For web-only results, if URLs are different, keep them.
-                    u1 = (entry.get("website") or entry.get("osm_url") or "").strip()
-                    u2 = (e2.get("website") or e2.get("osm_url") or "").strip()
-                    if u1 and u2 and u1 != u2:
-                        continue  # Different websites, likely different places
-
-                    merged = True
-                    break
-        if not merged:
-            deduped.append(entry)
-
-    # Ranking: prefer entries with webpage, then OSM (usually better data), then web
-    def _score(e):
-        score = 0
-        if e.get("rating"):
-            score += float(e["rating"]) * 2
-        if e.get("website"):
-            score += 5
-        if e.get("provider") == "osm":
-            score += 10
-        if e.get("provider") == "web":
-            score += 2  # web results as backfill
-        return score
-
-    deduped.sort(key=_score, reverse=True)
-    return deduped[:limit]
+    Returns list of unified entries with at least keys: id,name,lat,lon,osm_url,provider,raw
+    """
+    return discover_pois(city, "restaurant", limit, local_only, timeout)
