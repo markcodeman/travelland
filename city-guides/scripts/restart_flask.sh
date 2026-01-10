@@ -3,15 +3,11 @@
 # Define the Flask app process name or path
 FLASK_APP="/home/markm/TravelLand/city-guides/app.py"
 
-# Ensure the virtual environment exists
-if [ ! -d "/home/markm/TravelLand/city-guides/.venv" ]; then
-  echo "Virtual environment not found. Creating one..."
-  python3 -m venv /home/markm/TravelLand/city-guides/.venv
-  echo "Virtual environment created. Installing dependencies..."
-  source /home/markm/TravelLand/city-guides/.venv/bin/activate
-  pip install -r /home/markm/TravelLand/city-guides/requirements.txt
-else
-  echo "Virtual environment found."
+# Use the main project venv where dependencies are installed
+VENV_PATH="/home/markm/TravelLand/.venv-playwright"
+if [ ! -d "$VENV_PATH" ]; then
+  echo "Virtual environment not found at $VENV_PATH"
+  exit 1
 fi
 
 # Find and kill all Flask processes
@@ -24,7 +20,7 @@ else
 fi
 
 # Activate the virtual environment
-source /home/markm/TravelLand/city-guides/.venv/bin/activate
+source "$VENV_PATH/bin/activate"
 
 # Ensure the log file is created and writable
 LOG_FILE="/home/markm/TravelLand/city-guides/scripts/flask_app.log"

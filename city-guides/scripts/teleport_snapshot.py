@@ -29,76 +29,98 @@ def get_cost_estimates_local(city, ttl_seconds=604800):
     if not city:
         return []
     try:
-        cache_dir = ROOT / 'city-guides' / '.cache' / 'teleport_prices'
+        cache_dir = ROOT / "city-guides" / ".cache" / "teleport_prices"
         cache_dir.mkdir(parents=True, exist_ok=True)
-        key = re.sub(r"[^a-z0-9]+", '_', city.strip().lower())
+        key = re.sub(r"[^a-z0-9]+", "_", city.strip().lower())
         cache_file = cache_dir / f"{key}.json"
         # return cached if fresh
         if cache_file.exists():
             try:
                 raw = json.loads(cache_file.read_text())
-                if raw.get('ts') and time.time() - raw['ts'] < ttl_seconds:
-                    return raw.get('data', [])
+                if raw.get("ts") and time.time() - raw["ts"] < ttl_seconds:
+                    return raw.get("data", [])
             except Exception:
                 pass
 
-        base = 'https://api.teleport.org'
+        base = "https://api.teleport.org"
         try:
-            s = requests.get(f"{base}/api/cities/", params={'search': city, 'limit': 5}, timeout=6, headers={"User-Agent": "city-guides-snapshot"})
+            s = requests.get(
+                f"{base}/api/cities/",
+                params={"search": city, "limit": 5},
+                timeout=6,
+                headers={"User-Agent": "city-guides-snapshot"},
+            )
             s.raise_for_status()
             j = s.json()
-            results = j.get('_embedded', {}).get('city:search-results', [])
+            results = j.get("_embedded", {}).get("city:search-results", [])
             city_item_href = None
             for r in results:
-                href = r.get('_links', {}).get('city:item', {}).get('href')
+                href = r.get("_links", {}).get("city:item", {}).get("href")
                 if href:
                     city_item_href = href
                     break
             if not city_item_href:
-                raise RuntimeError('no city item from teleport')
+                raise RuntimeError("no city item from teleport")
 
-            ci = requests.get(city_item_href, timeout=6, headers={"User-Agent": "city-guides-snapshot"})
+            ci = requests.get(
+                city_item_href,
+                timeout=6,
+                headers={"User-Agent": "city-guides-snapshot"},
+            )
             ci.raise_for_status()
             ci_j = ci.json()
-            urban_href = ci_j.get('_links', {}).get('city:urban_area', {}).get('href')
+            urban_href = ci_j.get("_links", {}).get("city:urban_area", {}).get("href")
             if not urban_href:
-                raise RuntimeError('no urban area')
+                raise RuntimeError("no urban area")
 
-            prices_href = urban_href.rstrip('/') + '/prices/'
-            p = requests.get(prices_href, timeout=6, headers={"User-Agent": "city-guides-snapshot"})
+            prices_href = urban_href.rstrip("/") + "/prices/"
+            p = requests.get(
+                prices_href, timeout=6, headers={"User-Agent": "city-guides-snapshot"}
+            )
             p.raise_for_status()
             p_j = p.json()
 
             items = []
-            for cat in p_j.get('categories', []):
-                for d in cat.get('data', []):
-                    label = d.get('label') or d.get('id')
+            for cat in p_j.get("categories", []):
+                for d in cat.get("data", []):
+                    label = d.get("label") or d.get("id")
                     val = None
-                    for k in ('usd_value', 'currency_dollar_adjusted', 'price', 'amount', 'value'):
+                    for k in (
+                        "usd_value",
+                        "currency_dollar_adjusted",
+                        "price",
+                        "amount",
+                        "value",
+                    ):
                         if k in d and isinstance(d[k], (int, float)):
-                            val = float(d[k]); break
+                            val = float(d[k])
+                            break
                     if val is None:
                         for kk in d.keys():
                             vvv = d.get(kk)
                             if isinstance(vvv, (int, float)):
-                                val = float(vvv); break
+                                val = float(vvv)
+                                break
                     if label and val is not None:
-                        items.append({'label': label, 'value': round(val, 2)})
+                        items.append({"label": label, "value": round(val, 2)})
 
-            keywords = ['coffee', 'beer', 'meal', 'taxi', 'hotel', 'apartment', 'rent']
+            keywords = ["coffee", "beer", "meal", "taxi", "hotel", "apartment", "rent"]
             selected = []
             lower_seen = set()
             for k in keywords:
                 for it in items:
-                    if k in it['label'].lower() and it['label'].lower() not in lower_seen:
+                    if (
+                        k in it["label"].lower()
+                        and it["label"].lower() not in lower_seen
+                    ):
                         selected.append(it)
-                        lower_seen.add(it['label'].lower())
+                        lower_seen.add(it["label"].lower())
                         break
             if not selected:
                 selected = items[:8]
 
             try:
-                cache_file.write_text(json.dumps({'ts': time.time(), 'data': selected}))
+                cache_file.write_text(json.dumps({"ts": time.time(), "data": selected}))
             except Exception:
                 pass
             return selected
@@ -112,75 +134,76 @@ def get_cost_estimates_local(city, ttl_seconds=604800):
             params = {"q": city, "format": "json", "limit": 1, "addressdetails": 1}
             headers = {"User-Agent": "city-guides-snapshot", "Accept-Language": "en"}
             r = requests.get(url, params=params, headers=headers, timeout=6)
-            country = ''
+            country = ""
             try:
                 r.raise_for_status()
                 data = r.json()
                 if data:
-                    addr = data[0].get('address', {})
-                    country = addr.get('country', '') or addr.get('country_code', '')
+                    addr = data[0].get("address", {})
+                    country = addr.get("country", "") or addr.get("country_code", "")
             except Exception:
-                country = ''
+                country = ""
         except Exception:
-            country = ''
+            country = ""
 
         fb = {
-            'china': [
-                {'label': 'Coffee (cafe)', 'value': 20.0},
-                {'label': 'Local beer (0.5L)', 'value': 12.0},
-                {'label': 'Meal (mid-range)', 'value': 70.0},
-                {'label': 'Taxi start (local)', 'value': 10.0},
-                {'label': 'Hotel (1 night, mid)', 'value': 350.0}
+            "china": [
+                {"label": "Coffee (cafe)", "value": 20.0},
+                {"label": "Local beer (0.5L)", "value": 12.0},
+                {"label": "Meal (mid-range)", "value": 70.0},
+                {"label": "Taxi start (local)", "value": 10.0},
+                {"label": "Hotel (1 night, mid)", "value": 350.0},
             ],
-            'russia': [
-                {'label': 'Coffee (cafe)', 'value': 200.0},
-                {'label': 'Local beer (0.5L)', 'value': 150.0},
-                {'label': 'Meal (mid-range)', 'value': 700.0},
-                {'label': 'Taxi start (local)', 'value': 100.0},
-                {'label': 'Hotel (1 night, mid)', 'value': 4000.0}
+            "russia": [
+                {"label": "Coffee (cafe)", "value": 200.0},
+                {"label": "Local beer (0.5L)", "value": 150.0},
+                {"label": "Meal (mid-range)", "value": 700.0},
+                {"label": "Taxi start (local)", "value": 100.0},
+                {"label": "Hotel (1 night, mid)", "value": 4000.0},
             ],
-            'cuba': [
-                {'label': 'Coffee (cafe)', 'value': 50.0},
-                {'label': 'Local beer (0.5L)', 'value': 60.0},
-                {'label': 'Meal (mid-range)', 'value': 200.0},
-                {'label': 'Taxi (short)', 'value': 80.0},
-                {'label': 'Hotel (1 night, mid)', 'value': 2500.0}
+            "cuba": [
+                {"label": "Coffee (cafe)", "value": 50.0},
+                {"label": "Local beer (0.5L)", "value": 60.0},
+                {"label": "Meal (mid-range)", "value": 200.0},
+                {"label": "Taxi (short)", "value": 80.0},
+                {"label": "Hotel (1 night, mid)", "value": 2500.0},
             ],
-            'portugal': [
-                {'label': 'Coffee (cafe)', 'value': 1.6},
-                {'label': 'Local beer (0.5L)', 'value': 2.0},
-                {'label': 'Meal (mid-range)', 'value': 12.0},
-                {'label': 'Taxi start (local)', 'value': 3.0},
-                {'label': 'Hotel (1 night, mid)', 'value': 80.0}
+            "portugal": [
+                {"label": "Coffee (cafe)", "value": 1.6},
+                {"label": "Local beer (0.5L)", "value": 2.0},
+                {"label": "Meal (mid-range)", "value": 12.0},
+                {"label": "Taxi start (local)", "value": 3.0},
+                {"label": "Hotel (1 night, mid)", "value": 80.0},
             ],
-            'united states': [
-                {'label': 'Coffee (cafe)', 'value': 3.5},
-                {'label': 'Local beer (0.5L)', 'value': 5.0},
-                {'label': 'Meal (mid-range)', 'value': 20.0},
-                {'label': 'Taxi start (local)', 'value': 3.0},
-                {'label': 'Hotel (1 night, mid)', 'value': 140.0}
+            "united states": [
+                {"label": "Coffee (cafe)", "value": 3.5},
+                {"label": "Local beer (0.5L)", "value": 5.0},
+                {"label": "Meal (mid-range)", "value": 20.0},
+                {"label": "Taxi start (local)", "value": 3.0},
+                {"label": "Hotel (1 night, mid)", "value": 140.0},
             ],
-            'united kingdom': [
-                {'label': 'Coffee (cafe)', 'value': 2.8},
-                {'label': 'Local beer (0.5L)', 'value': 4.0},
-                {'label': 'Meal (mid-range)', 'value': 15.0},
-                {'label': 'Taxi start (local)', 'value': 3.5},
-                {'label': 'Hotel (1 night, mid)', 'value': 120.0}
-            ]
-            ,
-            'thailand': [
-                {'label': 'Coffee (cafe)', 'value': 50.0},
-                {'label': 'Local beer (0.5L)', 'value': 60.0},
-                {'label': 'Meal (mid-range)', 'value': 250.0},
-                {'label': 'Taxi start (local)', 'value': 35.0},
-                {'label': 'Hotel (1 night, mid)', 'value': 1200.0}
-            ]
+            "united kingdom": [
+                {"label": "Coffee (cafe)", "value": 2.8},
+                {"label": "Local beer (0.5L)", "value": 4.0},
+                {"label": "Meal (mid-range)", "value": 15.0},
+                {"label": "Taxi start (local)", "value": 3.5},
+                {"label": "Hotel (1 night, mid)", "value": 120.0},
+            ],
+            "thailand": [
+                {"label": "Coffee (cafe)", "value": 50.0},
+                {"label": "Local beer (0.5L)", "value": 60.0},
+                {"label": "Meal (mid-range)", "value": 250.0},
+                {"label": "Taxi start (local)", "value": 35.0},
+                {"label": "Hotel (1 night, mid)", "value": 1200.0},
+            ],
         }
-        lookup = (country or '').strip().lower()
+        lookup = (country or "").strip().lower()
         for k in fb.keys():
             if k in lookup:
                 try:
-                    cache_file.write_text(json.dumps({'ts': time.time(), 'data': fb[k]}))
+                    cache_file.write_text(
+                        json.dumps({"ts": time.time(), "data": fb[k]})
+                    )
                 except Exception:
                     pass
                 return fb[k]
@@ -194,14 +217,20 @@ def load_cities_from_file(path):
     if not p.exists():
         return []
     with p.open() as fh:
-        return [line.strip() for line in fh if line.strip() and not line.startswith('#')]
+        return [
+            line.strip() for line in fh if line.strip() and not line.startswith("#")
+        ]
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Warm Teleport price cache for a set of cities')
-    parser.add_argument('cities', nargs='*', help='City names to fetch')
-    parser.add_argument('--file', '-f', help='File with one city per line')
-    parser.add_argument('--delay', type=float, default=1.5, help='Seconds to wait between requests')
+    parser = argparse.ArgumentParser(
+        description="Warm Teleport price cache for a set of cities"
+    )
+    parser.add_argument("cities", nargs="*", help="City names to fetch")
+    parser.add_argument("--file", "-f", help="File with one city per line")
+    parser.add_argument(
+        "--delay", type=float, default=1.5, help="Seconds to wait between requests"
+    )
     args = parser.parse_args()
 
     cities = list(args.cities or [])
@@ -211,7 +240,14 @@ def main():
     # sensible defaults if nothing provided
     if not cities:
         cities = [
-            'London', 'Paris', 'New York', 'Shanghai', 'Tokyo', 'Havana', 'Moscow', 'Lisbon'
+            "London",
+            "Paris",
+            "New York",
+            "Shanghai",
+            "Tokyo",
+            "Havana",
+            "Moscow",
+            "Lisbon",
         ]
 
     print(f"Warming Teleport cache for {len(cities)} cities")
@@ -229,5 +265,5 @@ def main():
             time.sleep(args.delay)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
