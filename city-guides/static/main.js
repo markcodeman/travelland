@@ -160,11 +160,27 @@ if (cityInput) {
       let cityCountry = el.textContent || el.innerText;
       if (selectedItem && selectedItem.address) {
         const addr = selectedItem.address;
-        const city = addr.city || addr.town || addr.village || addr.hamlet || '';
+        // Try to extract city from various address fields
+        // Prefer: city > town > village > hamlet > county > state
+        const city = addr.city || addr.town || addr.village || addr.hamlet || addr.county || addr.state || '';
         const country = addr.country || '';
-        if (city && country) cityCountry = `${city}, ${country}`;
-        else if (city) cityCountry = city;
-        else if (country) cityCountry = country;
+        // If we found a city, use it with country
+        if (city && country) {
+          cityCountry = `${city}, ${country}`;
+        } else if (city) {
+          cityCountry = city;
+        } else if (country) {
+          // Only use country if absolutely no city found
+          // But try to extract a city name from the display_name first
+          const displayName = selectedItem.display_name || '';
+          const parts = displayName.split(',').map(p => p.trim());
+          // Usually first part is the city/town name, last is the country
+          if (parts.length > 1) {
+            cityCountry = `${parts[0]}, ${country}`;
+          } else {
+            cityCountry = country;
+          }
+        }
       }
       cityInput.value = cityCountry;
       hideCitySuggestions();
