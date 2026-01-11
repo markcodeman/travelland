@@ -15,13 +15,33 @@ OVERPASS_URLS = [
 
 
 def reverse_geocode(lat, lon):
+    # Cache reverse geocodes to minimize API calls
+    cache_dir = Path(__file__).parent / ".cache" / "nominatim"
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    cache_key = f"{lat:.6f},{lon:.6f}"
+    cache_file = cache_dir / f"{hashlib.md5(cache_key.encode()).hexdigest()}.json"
+    if cache_file.exists():
+        try:
+            with cache_file.open("r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
     url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}"
     headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
     try:
         r = requests.get(url, headers=headers, timeout=10)
         r.raise_for_status()
         j = r.json()
-        return j.get("display_name", "")
+        addr = j.get("display_name", "")
+        try:
+            with cache_file.open("w", encoding="utf-8") as f:
+                json.dump(addr, f)
+        except Exception:
+            pass
+        return addr
     except Exception:
         return ""
 
@@ -356,6 +376,10 @@ def discover_restaurants(city, limit=200, cuisine=None, local_only=False):
             else:
                 return []
     elements = j.get("elements", [])
+    # Limit elements to avoid processing too many and causing timeouts
+    elements = elements[:200]
+    # For large result sets, skip reverse geocoding to avoid timeouts and API overuse
+    skip_reverse = len(elements) > 50
     out = []
     # prepare cuisine matching token (singularized)
     cuisine_token = _singularize(cuisine) if cuisine else None
@@ -380,9 +404,12 @@ def discover_restaurants(city, limit=200, cuisine=None, local_only=False):
             tags.get("addr:full")
             or f"{tags.get('addr:housenumber','')} {tags.get('addr:street','')} {tags.get('addr:city','')} {tags.get('addr:postcode','')}".strip()
         )
-        # Skip slow reverse geocoding for now to keep it dynamic and fast
+        # Use reverse geocoding for missing addresses, with caching (skip for large datasets to avoid timeouts)
         if not address:
-            address = f"{lat}, {lon}"
+            if skip_reverse:
+                address = f"{lat}, {lon}"
+            else:
+                address = reverse_geocode(lat, lon) or f"{lat}, {lon}"
 
         # Filter chains if "Local Only" is requested
         name_lower = name.lower()
@@ -586,6 +613,8 @@ def discover_pois(city, poi_type="restaurant", limit=200, local_only=False):
                 return []
 
     elements = j.get("elements", [])
+    # Limit elements to avoid processing too many and causing timeouts
+    elements = elements[:200]
     out = []
 
     for el in elements:
@@ -638,7 +667,7 @@ def discover_pois(city, poi_type="restaurant", limit=200, local_only=False):
             or f"{tags.get('addr:housenumber','')} {tags.get('addr:street','')} {tags.get('addr:city','')} {tags.get('addr:postcode','')}".strip()
         )
         if not address:
-            address = f"{lat}, {lon}"
+            address = reverse_geocode(lat, lon) or f"{lat}, {lon}"
 
         # For non-restaurant POIs, skip chain filtering (doesn't apply)
         if poi_type == "restaurant" and local_only:

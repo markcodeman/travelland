@@ -58,7 +58,9 @@ function renderSuggestionChips(chips = SUGGESTION_CHIPS) {
         searchText = `${chipText} in ${city}`;
       }
       if (queryInput) queryInput.value = searchText;
-      document.getElementById('searchBtn').click();
+      // Auto-search after setting the query
+      const searchBtn = document.getElementById('searchBtn');
+      if (searchBtn) searchBtn.click();
     };
     suggestionChipsEl.appendChild(btn);
   });
@@ -86,9 +88,13 @@ const debounce = (func, delay) => {
 
 function updateQueryEnabledState() {
   const cityVal = cityInput && cityInput.value.trim();
-  const enabled = !!cityVal;
+  const queryVal = queryInput && queryInput.value.trim();
+  // Enable search only if: city has value AND (query has value OR placeholder suggests action)
+  const hasCity = !!cityVal || (cityInput && cityInput.placeholder && cityInput.placeholder.includes('Guadalajara'));
+  const hasQuery = !!queryVal;
+  const enabled = hasCity && hasQuery; // Must have BOTH city and explicit query
   if (queryInput) {
-    queryInput.disabled = !enabled;
+    queryInput.disabled = !hasCity;
     // Dynamic placeholder
     if (cityVal) {
       queryInput.placeholder = `Try Historic sites in ${cityVal}`;
@@ -102,6 +108,9 @@ if (cityInput) {
     cityInput.addEventListener('input', updateQueryEnabledState);
     // Also run on page load
     updateQueryEnabledState();
+}
+if (queryInput) {
+    queryInput.addEventListener('input', updateQueryEnabledState);
 }
 
 function hideCitySuggestions() {
@@ -214,8 +223,10 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
       city = m[1].trim();
       const cityEl = document.getElementById('city');
       if (cityEl) cityEl.value = city;
-      updateQueryEnabledState();
-    }
+      updateQueryEnabledState();    } else {
+      // If still no city, use the placeholder default
+      const cityEl = document.getElementById('city');
+      city = (cityEl && cityEl.placeholder && cityEl.placeholder.includes('Guadalajara')) ? 'Guadalajara, Mexico' : '';    }
   }
 
   if (!city) {
@@ -223,7 +234,11 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
     if (resEl) resEl.innerHTML = '<div class="error">Please enter a city first (e.g. “Lisbon, Portugal”).</div>';
     return;
   }
-
+  if (!query || query.trim() === '') {
+    const resEl = document.getElementById('results');
+    if (resEl) resEl.innerHTML = '<div class="error">Please select a category or type a search query.</div>';
+    return;
+  }
   // Normalize for Wikivoyage food highlights: if query contains 'top food', send 'top food' to backend
   if (/top food/i.test(query)) {
     query = 'top food';
@@ -278,7 +293,8 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
       html += `<div class="wikivoyage-section"><h2>${headerText}</h2>`;
       html += wikivoyageVenues.map(v => {
         const imgUrl = v.image || v.banner_url || '/static/img/placeholder.png';
-        return `<div class="card wikivoyage-card"><img class="card-img" src="${imgUrl}" alt="${v.name}" loading="lazy" onerror="this.onerror=null;this.src='/static/img/placeholder.png'"/><h3>${v.name}</h3><p>${v.description}</p></div>`;
+        const wikivoyageLink = v.wikivoyage_url ? `<a href="${v.wikivoyage_url}" target="_blank" rel="noopener" class="wiki-link">Read on Wikivoyage →</a>` : '';
+        return `<div class="card wikivoyage-card"><img class="card-img" src="${imgUrl}" alt="${v.name}" loading="lazy" onerror="this.onerror=null;this.src='/static/img/placeholder.png'"/><h3>${v.name}</h3><p>${v.description}</p>${wikivoyageLink}</div>`;
       }).join('');
       html += '</div>';
     }

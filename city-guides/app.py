@@ -8,6 +8,8 @@ import os
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 import logging
+import uuid
+import threading
 import requests
 import re
 import time
@@ -38,6 +40,8 @@ CACHE_TTL_CITY_INFO = int(os.getenv("CACHE_TTL_CITY_INFO", 86400))  # default 1 
 
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
+
+active_searches = {}
 
 # Small mapping of known transit provider links by city (best-effort)
 PROVIDER_LINKS = {
@@ -1447,10 +1451,20 @@ def search():
                     highlights = re.split(r"<br ?/?>|\n|</p>", html)
 
                 def clean_html(raw):
-                    return re.sub(r"<[^>]+>", "", raw).strip()
+                    # Remove style tags and their content
+                    raw = re.sub(r"<style[^>]*>.*?</style>", "", raw, flags=re.DOTALL | re.IGNORECASE)
+                    # Remove script tags and their content
+                    raw = re.sub(r"<script[^>]*>.*?</script>", "", raw, flags=re.DOTALL | re.IGNORECASE)
+                    # Remove all remaining HTML tags
+                    raw = re.sub(r"<[^>]+>", "", raw)
+                    # Clean up multiple spaces
+                    raw = re.sub(r"\s+", " ", raw).strip()
+                    return raw
 
                 highlights = [clean_html(h) for h in highlights if clean_html(h)]
                 for idx, h in enumerate(highlights):
+                    city_base = city_name.split(',')[0].strip()
+                    wikivoyage_url = f"https://en.wikivoyage.org/wiki/{city_base}#" + section_keywords[0].replace(" ", "_").title() if section_keywords else f"https://en.wikivoyage.org/wiki/{city_base}"
                     items.append(
                         {
                             "id": f"wikivoyage-{section_type}-{idx}",
@@ -1464,6 +1478,7 @@ def search():
                             "longitude": None,
                             "website": "",
                             "osm_url": "",
+                            "wikivoyage_url": wikivoyage_url,
                             "amenity": section_type,
                             "budget": "",
                             "price_range": "",
@@ -1842,6 +1857,14 @@ def version():
         "SEARX_INSTANCES_set": bool(os.getenv("SEARX_INSTANCES")),
     }
     return jsonify({"commit": commit, "env": env_flags})
+
+
+@app.route("/search_status/<search_id>", methods=["GET"])
+def search_status(search_id):
+    if search_id in active_searches:
+        data = active_searches[search_id]
+        return jsonify(data)
+    return jsonify({"error": "Search not found"}), 404
 
 
 @app.route("/tools/currency", methods=["GET"])
