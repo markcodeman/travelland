@@ -171,7 +171,7 @@ function showCitySuggestions(items) {
     hideCitySuggestions();
     return;
   }
-  window.lastCitySuggestions = items;
+  window.showCitySuggestions = items;
   suggestionsEl.innerHTML = items.map(it => {
     const display = it.display_name;
     return `<div class="suggestion-item px-3 py-2 hover:bg-gray-100 cursor-pointer" data-lat="${it.lat}" data-lon="${it.lon}">${display}</div>`;
@@ -211,8 +211,8 @@ if (cityInput) {
       const lat = el.getAttribute('data-lat');
       const lon = el.getAttribute('data-lon');
       let selectedItem = null;
-      if (window.lastCitySuggestions && Array.isArray(window.lastCitySuggestions)) {
-        selectedItem = window.lastCitySuggestions.find(it => it.lat === lat && it.lon === lon);
+      if (window.showCitySuggestions && Array.isArray(window.showCitySuggestions)) {
+        selectedItem = window.showCitySuggestions.find(it => it.lat === lat && it.lon === lon);
       }
       let cityCountry = el.textContent || el.innerText;
       if (selectedItem && selectedItem.address) {
@@ -276,16 +276,19 @@ async function fetchAndRenderNeighborhoods(city, lat, lon) {
     url += `lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
   }
   try {
+    console.log('[DEBUG] fetchAndRenderNeighborhoods url=', url);
     const resp = await fetch(url);
+    console.log('[DEBUG] /neighborhoods resp ok=', resp.ok, 'status=', resp.status);
     if (!resp.ok) throw new Error('neighborhoods lookup failed');
     const j = await resp.json();
+    console.log('[DEBUG] /neighborhoods payload=', j);
     const n = j && j.neighborhoods ? j.neighborhoods : [];
     renderNeighborhoodChips(n);
   } catch (e) {
     console.warn('Neighborhoods fetch failed', e);
     if (neighborhoodsListEl) neighborhoodsListEl.innerHTML = '';
     if (neighborhoodPreviewEl) neighborhoodPreviewEl.innerHTML = '';
-    document.getElementById('neighborhoodControls').style.display = 'none';
+    const ctrl = document.getElementById('neighborhoodControls'); if (ctrl) ctrl.style.display = 'none';
   }
 }
 
@@ -550,17 +553,17 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
               const controller2 = new AbortController();
               const timeoutMs2 = 20000; // allow longer for cache/enrichment
               const tid2 = setTimeout(() => controller2.abort(), timeoutMs2);
+              // include neighborhood selection if present
+              const payload2 = {city, q: query, user_lat, user_lon, max_results: 50, timeout: 25};
+              const nbId2 = document.getElementById('neighborhood_id') ? document.getElementById('neighborhood_id').value : '';
+              const nbBbox2 = document.getElementById('neighborhood_bbox') ? document.getElementById('neighborhood_bbox').value : '';
+              if (nbId2) {
+                try { payload2.neighborhood = {id: nbId2, bbox: nbBbox2 ? JSON.parse(nbBbox2) : null}; } catch(e) { payload2.neighborhood = {id: nbId2, bbox: nbBbox2}; }
+              }
               const resp2 = await fetch(`${API_BASE}/search`, {
                 method: 'POST',
                 headers: {'Content-Type':'application/json'},
                 signal: controller2.signal,
-                // include neighborhood selection if present
-                const payload2 = {city, q: query, user_lat, user_lon, max_results: 50, timeout: 25};
-                const nbId2 = document.getElementById('neighborhood_id') ? document.getElementById('neighborhood_id').value : '';
-                const nbBbox2 = document.getElementById('neighborhood_bbox') ? document.getElementById('neighborhood_bbox').value : '';
-                if (nbId2) {
-                  try { payload2.neighborhood = {id: nbId2, bbox: nbBbox2 ? JSON.parse(nbBbox2) : null}; } catch(e) { payload2.neighborhood = {id: nbId2, bbox: nbBbox2}; }
-                }
                 body: JSON.stringify(payload2)
               });
               clearTimeout(tid2);

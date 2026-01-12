@@ -42,6 +42,9 @@ PREWARM_QUERIES = [q.strip() for q in os.getenv("SEARCH_PREWARM_QUERIES", "Top f
 PREWARM_TTL = int(os.getenv("SEARCH_PREWARM_TTL", "3600"))
 RAW_PREWARM_CITIES = [c.strip() for c in DEFAULT_PREWARM_CITIES.split(",") if c.strip()]
 NEIGHBORHOOD_CACHE_TTL = int(os.getenv("NEIGHBORHOOD_CACHE_TTL", 60 * 60 * 24 * 7))  # 7 days
+# Popular cities to prewarm neighborhoods for (background task)
+POPULAR_CITIES = [c.strip() for c in os.getenv("POPULAR_CITIES", "London,Paris,New York,Tokyo,Rome,Barcelona").split(",") if c.strip()]
+DISABLE_PREWARM = os.getenv("DISABLE_PREWARM", "false").lower() == "true"
 
 
 @app.before_serving
@@ -54,6 +57,12 @@ async def startup():
         app.logger.info("✅ Redis connected")
         if RAW_PREWARM_CITIES and PREWARM_QUERIES:
             asyncio.create_task(prewarm_popular_searches())
+        # start background prewarm of neighborhood lists for popular cities
+        try:
+            if redis_client and POPULAR_CITIES and not DISABLE_PREWARM:
+                asyncio.create_task(prewarm_neighborhoods())
+        except Exception:
+            app.logger.exception('starting prewarm_neighborhoods failed')
     except Exception:
         redis_client = None
         app.logger.warning("Redis not available; running without cache")
@@ -1821,6 +1830,49 @@ async def prewarm_search_cache_entry(city: str, q: str):
         app.logger.debug("Search prewarm failed for %s/%s: %s", city, q, exc)
 
 
+async def prewarm_neighborhood(city: str, lang: str = "en"):
+    """Fetch neighborhood lists for a city and store them in redis cache (best-effort)."""
+    if not redis_client or not city:
+        return
+    slug = re.sub(r"[^a-z0-9]+", "_", city.lower())
+    cache_key = f"neighborhoods:{slug}:{lang}"
+    try:
+        existing = await redis_client.get(cache_key)
+        if existing:
+            await redis_client.expire(cache_key, NEIGHBORHOOD_CACHE_TTL)
+            return
+    except Exception:
+        pass
+    try:
+        # Prefer async provider and pass our shared session
+        try:
+            neighborhoods = await multi_provider.async_get_neighborhoods(city=city, lang=lang, session=aiohttp_session)
+        except Exception:
+            neighborhoods = []
+        if neighborhoods:
+            await redis_client.set(cache_key, json.dumps(neighborhoods), ex=NEIGHBORHOOD_CACHE_TTL)
+            app.logger.info("Prewarmed neighborhoods for %s (%d items)", city, len(neighborhoods))
+    except Exception as exc:
+        app.logger.debug("Neighborhood prewarm failed for %s: %s", city, exc)
+
+
+async def prewarm_neighborhoods():
+    """Background task to cache popular city neighborhoods"""
+    if DISABLE_PREWARM:
+        return  # Skip in tests
+
+    for city in POPULAR_CITIES:
+        try:
+            await prewarm_neighborhood(city)
+            app.logger.info("✓ Prewarmed: %s", city)
+        except Exception as e:
+            app.logger.exception("Prewarm failed for %s: %s", city, e)
+        try:
+            await asyncio.sleep(float(os.getenv("NEIGHBORHOOD_PREWARM_PAUSE", 1.0)))
+        except Exception:
+            await asyncio.sleep(1.0)
+
+
 async def prewarm_popular_searches():
     if not redis_client or not RAW_PREWARM_CITIES or not PREWARM_QUERIES:
         return
@@ -1828,11 +1880,34 @@ async def prewarm_popular_searches():
     async def limited(city, query):
         async with sem:
             await prewarm_search_cache_entry(city, query)
+            try:
+                await prewarm_neighborhood(city)
+            except Exception:
+                pass
 
     tasks = [limited(city, query) for city in RAW_PREWARM_CITIES for query in PREWARM_QUERIES]
     if tasks:
         app.logger.info("Starting prewarm for %d popular searches", len(tasks))
         await asyncio.gather(*tasks)
+
+
+async def prewarm_popular_neighborhoods():
+    """Background worker to prewarm neighborhood lists for a short list of popular cities."""
+    if not redis_client or not POPULAR_CITIES:
+        return
+    app.logger.info("Starting background neighborhood prewarm for %d cities", len(POPULAR_CITIES))
+    for city in POPULAR_CITIES:
+        try:
+            # reuse prewarm helper which will set cache if results found
+            await prewarm_neighborhood(city)
+        except Exception:
+            app.logger.exception("prewarm_neighborhood failed for %s", city)
+        # be nice to remote APIs and avoid abrupt bursts
+        try:
+            await asyncio.sleep(float(os.getenv("NEIGHBORHOOD_PREWARM_PAUSE", 1.0)))
+        except Exception:
+            await asyncio.sleep(1.0)
+    app.logger.info("Finished background neighborhood prewarm")
 @app.route("/ingest", methods=["POST"])
 async def ingest():
     payload = await request.get_json(silent=True) or {}
