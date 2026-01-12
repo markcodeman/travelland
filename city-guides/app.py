@@ -180,6 +180,21 @@ async def neighborhoods():
         app.logger.exception("neighborhoods fetch failed")
         data = []
 
+    # If provider returned nothing for a city-only query, try geocoding the city
+    if (not data) and city and not (lat and lon):
+        try:
+            app.logger.debug("No neighborhoods for '%s', attempting geocode fallback", city)
+            g_lat, g_lon = await geocode_city(city)
+            if g_lat and g_lon:
+                try:
+                    data = await multi_provider.async_get_neighborhoods(city=None, lat=g_lat, lon=g_lon, lang=lang, session=aiohttp_session)
+                    if data:
+                        app.logger.info("Geocode fallback succeeded for '%s' -> %s,%s (%d items)", city, g_lat, g_lon, len(data))
+                except Exception:
+                    app.logger.exception("neighborhoods fetch failed on geocode fallback for %s", city)
+        except Exception:
+            app.logger.exception("geocode fallback failed for %s", city)
+
     # store in redis
     if redis_client:
         try:
