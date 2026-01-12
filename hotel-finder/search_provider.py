@@ -206,26 +206,32 @@ def searx_search_hotels(city_code, check_in, check_out, adults=1, max_results=10
     return {'hotels': offers, 'count': len(offers)}
 
 
-def searx_raw_queries(city_code, check_in, check_out, adults=1, max_instances=5):
+async def searx_raw_queries(city_code, check_in, check_out, adults=1, max_instances=5, session: aiohttp.ClientSession = None):
     """Return raw JSON responses from each searx instance for debugging."""
     instances = _get_instances_from_env()[:max_instances]
     query = f"hotel {city_code} checkin {check_in} checkout {check_out} adults {adults}"
     raw = []
+    own_session = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own_session = True
     for inst in instances:
         try:
             url = inst.rstrip('/') + '/search'
             params = {'q': query, 'format': 'json'}
-            resp = requests.get(url, params=params, timeout=8)
-            entry = {
-                'instance': inst,
-                'status_code': resp.status_code,
-                'json': None
-            }
-            try:
-                entry['json'] = resp.json()
-            except Exception:
-                entry['json'] = None
-            raw.append(entry)
+            async with session.get(url, params=params, timeout=8) as resp:
+                entry = {
+                    'instance': inst,
+                    'status_code': resp.status,
+                    'json': None
+                }
+                try:
+                    entry['json'] = await resp.json()
+                except Exception:
+                    entry['json'] = None
+                raw.append(entry)
         except Exception as e:
             raw.append({'instance': inst, 'status_code': None, 'error': str(e)})
+    if own_session:
+        await session.close()
     return raw

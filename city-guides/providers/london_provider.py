@@ -15,7 +15,7 @@ from pathlib import Path
 import os
 import time
 import json
-import requests
+import aiohttp
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUT_PATH = REPO_ROOT.parent / "data" / "transport_london.json"
@@ -23,19 +23,25 @@ OUT_PATH = REPO_ROOT.parent / "data" / "transport_london.json"
 HEADERS = {"User-Agent": "TravelLand/1.0 (fetcher)", "Accept-Language": "en"}
 
 
-def geocode_city(city_name):
+async def geocode_city(city_name, session: aiohttp.ClientSession = None):
     url = "https://nominatim.openstreetmap.org/search"
     params = {"q": city_name, "format": "json", "limit": 1, "accept-language": "en"}
-    r = requests.get(url, params=params, headers=HEADERS, timeout=10)
-    r.raise_for_status()
-    items = r.json()
+    own_session = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own_session = True
+    async with session.get(url, params=params, headers=HEADERS, timeout=10) as r:
+        r.raise_for_status()
+        items = await r.json()
+    if own_session:
+        await session.close()
     if not items:
         raise RuntimeError("geocode failed for %s" % city_name)
     item = items[0]
     return float(item["lat"]), float(item["lon"])
 
 
-def fetch_wikivoyage_summary(city_title="London"):
+async def fetch_wikivoyage_summary(city_title="London", session: aiohttp.ClientSession = None):
     url = "https://en.wikivoyage.org/w/api.php"
     params = {
         "action": "query",
@@ -46,27 +52,34 @@ def fetch_wikivoyage_summary(city_title="London"):
         "format": "json",
         "redirects": 1,
     }
-    r = requests.get(url, params=params, headers=HEADERS, timeout=10)
-    r.raise_for_status()
-    data = r.json()
+    own_session = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own_session = True
+    async with session.get(url, params=params, headers=HEADERS, timeout=10) as r:
+        r.raise_for_status()
+        data = await r.json()
+    if own_session:
+        await session.close()
     pages = data.get("query", {}).get("pages", {})
     for p in pages.values():
         return p.get("extract", "")
     return ""
 
 
-def fetch_overpass_transit(lat, lon, radius=1500):
+async def fetch_overpass_transit(lat, lon, radius=1500, session: aiohttp.ClientSession = None):
     # Find nearby public_transport stops (bus_stop, stop_position, station)
     q = f"[out:json][timeout:25];(node(around:{radius},{lat},{lon})[public_transport];node(around:{radius},{lat},{lon})[highway=bus_stop];node(around:{radius},{lat},{lon})[railway=station];);out center;"
     url = "https://overpass-api.de/api/interpreter"
-    r = requests.post(
-        url,
-        data=q.encode("utf-8"),
-        headers={**HEADERS, "Content-Type": "text/plain"},
-        timeout=30,
-    )
-    r.raise_for_status()
-    data = r.json()
+    own_session = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own_session = True
+    async with session.post(url, data=q.encode("utf-8"), headers={**HEADERS, "Content-Type": "text/plain"}, timeout=30) as r:
+        r.raise_for_status()
+        data = await r.json()
+    if own_session:
+        await session.close()
     stops = []
     for el in data.get("elements", []):
         tags = el.get("tags", {})
@@ -83,7 +96,7 @@ def fetch_overpass_transit(lat, lon, radius=1500):
     return stops
 
 
-def fetch_opentripmap_pois(lat, lon, radius=1000, apikey=None, limit=20):
+async def fetch_opentripmap_pois(lat, lon, radius=1000, apikey=None, limit=20, session: aiohttp.ClientSession = None):
     if not apikey:
         return []
     try:
@@ -95,25 +108,33 @@ def fetch_opentripmap_pois(lat, lon, radius=1000, apikey=None, limit=20):
             "apikey": apikey,
             "limit": limit,
         }
-        r = requests.get(url, params=params, headers=HEADERS, timeout=10)
-        r.raise_for_status()
-        res = r.json()
-        pois = []
-        for it in res.get("features", []):
-            props = it.get("properties", {})
-            geom = it.get("geometry", {})
-            coords = geom.get("coordinates", [None, None])
-            pois.append(
-                {
-                    "id": props.get("xid"),
-                    "name": props.get("name"),
-                    "kinds": props.get("kinds"),
-                    "lat": coords[1],
-                    "lon": coords[0],
-                }
-            )
+        own_session = False
+        if session is None:
+            session = aiohttp.ClientSession()
+            own_session = True
+        async with session.get(url, params=params, headers=HEADERS, timeout=10) as r:
+            r.raise_for_status()
+            res = await r.json()
+            pois = []
+            for it in res.get("features", []):
+                props = it.get("properties", {})
+                geom = it.get("geometry", {})
+                coords = geom.get("coordinates", [None, None])
+                pois.append(
+                    {
+                        "id": props.get("xid"),
+                        "name": props.get("name"),
+                        "kinds": props.get("kinds"),
+                        "lat": coords[1],
+                        "lon": coords[0],
+                    }
+                )
+        if own_session:
+            await session.close()
         return pois
     except Exception:
+        if 'session' in locals() and own_session:
+            await session.close()
         return []
 
 

@@ -1,7 +1,7 @@
 import os
 import time
 import math
-import requests
+import aiohttp
 from typing import List, Dict
 import asyncio
 import aiohttp
@@ -25,14 +25,20 @@ def _haversine_meters(lat1, lon1, lat2, lon2):
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-def discover_restaurants(city: str, limit: int = 50, cuisine: str = None) -> List[Dict]:
+async def discover_restaurants(city: str, limit: int = 50, cuisine: str = None, session: aiohttp.ClientSession = None) -> List[Dict]:
     """Discover POIs via OpenTripMap. Best-effort: requires OPENTRIPMAP_API_KEY in env.
 
     Returns list of dicts with keys: name,address,latitude,longitude,osm_url,place_id
     """
     if not OPENTRIPMAP_KEY:
         return []
-    bbox = geocode_city(city)
+    from overpass_provider import geocode_city
+    if session is None:
+        session = aiohttp.ClientSession()
+        own_session = True
+    else:
+        own_session = False
+    bbox = await geocode_city(city, session=session)
     if not bbox:
         return []
     south, west, north, east = bbox
@@ -53,10 +59,15 @@ def discover_restaurants(city: str, limit: int = 50, cuisine: str = None) -> Lis
     }
 
     try:
-        r = requests.get(f"{BASE}/radius", params=params, timeout=20)
-        r.raise_for_status()
-        j = r.json()
+        async with session.get(f"{BASE}/radius", params=params, timeout=20) as r:
+            if r.status != 200:
+                if own_session:
+                    await session.close()
+                return []
+            j = await r.json()
     except Exception:
+        if own_session:
+            await session.close()
         return []
 
     out = []
@@ -72,14 +83,14 @@ def discover_restaurants(city: str, limit: int = 50, cuisine: str = None) -> Lis
         detail = {}
         if xid:
             try:
-                dd = requests.get(
-                    f"{BASE}/xid/{xid}", params={"apikey": OPENTRIPMAP_KEY}, timeout=15
-                )
-                dd.raise_for_status()
-                detail = dd.json()
+                async with session.get(f"{BASE}/xid/{xid}", params={"apikey": OPENTRIPMAP_KEY}, timeout=15) as dd:
+                    if dd.status == 200:
+                        detail = await dd.json()
+                    else:
+                        detail = {}
             except Exception:
                 detail = {}
-            time.sleep(0.05)
+            await asyncio.sleep(0.05)
 
         address = detail.get("address", {})
         addr = ", ".join(
@@ -122,7 +133,7 @@ def discover_restaurants(city: str, limit: int = 50, cuisine: str = None) -> Lis
     return out
 
 
-def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50) -> List[Dict]:
+async def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, session: aiohttp.ClientSession = None) -> List[Dict]:
     """Discover POIs via OpenTripMap for different kinds of places.
 
     Args:
@@ -134,7 +145,13 @@ def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50) -> Lis
     """
     if not OPENTRIPMAP_KEY:
         return []
-    bbox = geocode_city(city)
+    from overpass_provider import geocode_city
+    if session is None:
+        session = aiohttp.ClientSession()
+        own_session = True
+    else:
+        own_session = False
+    bbox = await geocode_city(city, session=session)
     if not bbox:
         return []
     south, west, north, east = bbox
@@ -155,10 +172,15 @@ def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50) -> Lis
     }
 
     try:
-        r = requests.get(f"{BASE}/radius", params=params, timeout=20)
-        r.raise_for_status()
-        j = r.json()
+        async with session.get(f"{BASE}/radius", params=params, timeout=20) as r:
+            if r.status != 200:
+                if own_session:
+                    await session.close()
+                return []
+            j = await r.json()
     except Exception:
+        if own_session:
+            await session.close()
         return []
 
     out = []
@@ -174,14 +196,14 @@ def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50) -> Lis
         detail = {}
         if xid:
             try:
-                dd = requests.get(
-                    f"{BASE}/xid/{xid}", params={"apikey": OPENTRIPMAP_KEY}, timeout=15
-                )
-                dd.raise_for_status()
-                detail = dd.json()
+                async with session.get(f"{BASE}/xid/{xid}", params={"apikey": OPENTRIPMAP_KEY}, timeout=15) as dd:
+                    if dd.status == 200:
+                        detail = await dd.json()
+                    else:
+                        detail = {}
             except Exception:
                 detail = {}
-            time.sleep(0.05)
+            await asyncio.sleep(0.05)
 
         address = detail.get("address", {})
         addr = ", ".join(
@@ -321,9 +343,5 @@ async def async_discover_restaurants(city: str, limit: int = 50, cuisine: str = 
     return await async_discover_pois(city, "restaurants", limit, session=session)
 
 
-def discover_restaurants(city: str, limit: int = 50, cuisine: str = None) -> List[Dict]:
-    """Discover restaurant POIs via OpenTripMap. Best-effort: requires OPENTRIPMAP_API_KEY in env.
-
-    Returns list of dicts with keys: name,address,latitude,longitude,osm_url,place_id
-    """
-    return discover_pois(city, "restaurants", limit)
+async def discover_restaurants(city: str, limit: int = 50, cuisine: str = None, session: aiohttp.ClientSession = None) -> List[Dict]:
+    return await discover_pois(city, "restaurants", limit, session=session)

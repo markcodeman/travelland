@@ -1,6 +1,6 @@
 import os
 import json
-import requests
+import aiohttp
 import datetime
 import threading
 import os
@@ -73,7 +73,7 @@ def _ext_from_url(url):
     return ".jpg"
 
 
-def fetch_banner_from_wikipedia(city):
+async def fetch_banner_from_wikipedia(city, session: aiohttp.ClientSession = None):
     """Best-effort: fetch article thumbnail from Wikipedia (returns remote url and attribution)"""
     try:
         url = "https://en.wikipedia.org/w/api.php"
@@ -85,11 +85,18 @@ def fetch_banner_from_wikipedia(city):
             "redirects": 1,
             "pithumbsize": 2000,
         }
-        r = requests.get(
-            url, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8
-        )
-        r.raise_for_status()
-        data = r.json()
+        own_session = False
+        if session is None:
+            session = aiohttp.ClientSession()
+            own_session = True
+        else:
+            own_session = False
+        async with session.get(url, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8) as r:
+            if r.status != 200:
+                if own_session:
+                    await session.close()
+                return None
+            data = await r.json()
         pages = data.get("query", {}).get("pages", {})
         for p in pages.values():
             thumb = p.get("thumbnail", {}).get("source")
@@ -126,14 +133,10 @@ def fetch_banner_from_wikipedia(city):
                 "format": "json",
                 "srlimit": 5,
             }
-            r = requests.get(
-                search_url,
-                params=params,
-                headers={"User-Agent": "TravelLand/1.0"},
-                timeout=8,
-            )
-            r.raise_for_status()
-            results = r.json().get("query", {}).get("search", [])
+            async with session.get(search_url, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8) as r:
+                if r.status != 200:
+                    continue
+                results = (await r.json()).get("query", {}).get("search", [])
             titles = [r.get("title") for r in results if r.get("title")]
             if not titles:
                 continue
@@ -146,14 +149,10 @@ def fetch_banner_from_wikipedia(city):
                 "pithumbsize": 2000,
                 "redirects": 1,
             }
-            r2 = requests.get(
-                search_url,
-                params=params2,
-                headers={"User-Agent": "TravelLand/1.0"},
-                timeout=8,
-            )
-            r2.raise_for_status()
-            data2 = r2.json()
+            async with session.get(search_url, params=params2, headers={"User-Agent": "TravelLand/1.0"}, timeout=8) as r2:
+                if r2.status != 200:
+                    continue
+                data2 = await r2.json()
             pages2 = data2.get("query", {}).get("pages", {})
             for p2 in pages2.values():
                 thumb = p2.get("thumbnail", {}).get("source")
@@ -174,17 +173,30 @@ def fetch_banner_from_wikipedia(city):
     return None
 
 
-def _download_image(url, dest_path):
+async def _download_image(url, dest_path, session: aiohttp.ClientSession = None):
     tmp = dest_path.with_suffix(dest_path.suffix + ".tmp")
+    own_session = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own_session = True
+    else:
+        own_session = False
     try:
-        with requests.get(
-            url, stream=True, headers={"User-Agent": "TravelLand/1.0"}, timeout=12
-        ) as r:
-            r.raise_for_status()
+        async with session.get(url, headers={"User-Agent": "TravelLand/1.0"}, timeout=12) as r:
+            if r.status != 200:
+                if own_session:
+                    await session.close()
+                return False
             _ensure_banners_dir()
             with tmp.open("wb") as f:
-                shutil.copyfileobj(r.raw, f)
+                while True:
+                    chunk = await r.content.read(8192)
+                    if not chunk:
+                        break
+                    f.write(chunk)
         tmp.replace(dest_path)
+        if own_session:
+            await session.close()
         return True
     except Exception:
         try:
@@ -192,10 +204,12 @@ def _download_image(url, dest_path):
                 tmp.unlink()
         except Exception:
             pass
+        if own_session:
+            await session.close()
         return False
 
 
-def get_banner_for_city(city):
+async def get_banner_for_city(city, session: aiohttp.ClientSession = None):
     """Return banner info for a city.
 
     Behavior is configurable via environment variable `BANNER_STORE_LOCAL`:
@@ -235,7 +249,7 @@ def get_banner_for_city(city):
                 }
 
     # Fetch remote thumbnail metadata
-    val = fetch_banner_from_wikipedia(city)
+    val = await fetch_banner_from_wikipedia(city, session=session)
     if not val:
         return None
 
@@ -281,7 +295,7 @@ def get_banner_for_city(city):
         except Exception:
             pass
 
-    ok = _download_image(remote_url, dest_path)
+    ok = await _download_image(remote_url, dest_path, session=session)
     if not ok:
         # fallback to returning remote URL
         with _CACHE_LOCK:
