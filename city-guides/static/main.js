@@ -45,12 +45,29 @@ function renderSuggestionChips(chips = SUGGESTION_CHIPS) {
       const cityInput = document.getElementById('city');
       let city = cityInput && cityInput.value ? cityInput.value.trim() : '';
       if (!city) {
-        // Optionally, show a visual cue or shake the city input
-        if (cityInput) {
-          cityInput.classList.add('ring', 'ring-red-400');
-          setTimeout(() => cityInput.classList.remove('ring', 'ring-red-400'), 600);
+        // Prefer a non-blocking fallback: use the input placeholder if present.
+        // This avoids modal prompts which some browsers block and can appear like "nothing happened".
+        const placeholderCity = cityInput && cityInput.placeholder ? cityInput.placeholder.trim() : '';
+        if (placeholderCity) {
+          city = placeholderCity;
+          if (cityInput) cityInput.value = city;
+          try { updateQueryEnabledState(); } catch (e) {}
+        } else {
+          // Last resort: prompt the user (kept for interactive flows)
+          const prompted = window.prompt('Enter a city (e.g. "Lisbon, Portugal")');
+          if (prompted && prompted.trim()) {
+            city = prompted.trim();
+            if (cityInput) cityInput.value = city;
+            try { updateQueryEnabledState(); } catch (e) {}
+          } else {
+            // visual cue if user cancels
+            if (cityInput) {
+              cityInput.classList.add('ring', 'ring-red-400');
+              setTimeout(() => cityInput.classList.remove('ring', 'ring-red-400'), 600);
+            }
+            return;
+          }
         }
-        return;
       }
       let chipText = label;
       let searchText = chipText;
@@ -58,14 +75,45 @@ function renderSuggestionChips(chips = SUGGESTION_CHIPS) {
         searchText = `${chipText} in ${city}`;
       }
       if (queryInput) queryInput.value = searchText;
-      // Auto-search after setting the query
+      // Ensure UI state updates before auto-search
+      try { updateQueryEnabledState(); } catch(e){}
+      // Explicitly enable the button as a robust fallback, then auto-search
       const searchBtn = document.getElementById('searchBtn');
-      if (searchBtn) searchBtn.click();
+      if (searchBtn) {
+        try { searchBtn.disabled = false; } catch(e){}
+        searchBtn.click();
+      }
     };
     suggestionChipsEl.appendChild(btn);
   });
 }
 renderSuggestionChips();
+
+// Ensure chip clicks always refresh the enabled/disabled state for the Search button.
+// Some browsers or race conditions can leave the button disabled when a user clicks
+// a chip and then manually clicks Search. A delegated handler guarantees the UI
+// state is re-evaluated immediately after any chip click.
+document.addEventListener('click', (ev) => {
+  try {
+    const btn = ev.target && ev.target.closest && ev.target.closest('#suggestionChips button');
+    if (!btn) return;
+    // Run after the original click handler updates inputs
+    setTimeout(() => {
+      try { if (typeof updateQueryEnabledState === 'function') updateQueryEnabledState(); } catch (e) {}
+      // Dispatch input events so any listeners react to the programmatic change.
+      try {
+        const q = document.getElementById('query');
+        const c = document.getElementById('city');
+        if (q) q.dispatchEvent(new Event('input', {bubbles:true}));
+        if (c) c.dispatchEvent(new Event('input', {bubbles:true}));
+      } catch (e) {}
+      const s = document.getElementById('searchBtn');
+      const cityVal = document.getElementById('city') ? document.getElementById('city').value.trim() : '';
+      const queryVal = document.getElementById('query') ? document.getElementById('query').value.trim() : '';
+      if (s) s.disabled = !(cityVal && queryVal);
+    }, 0);
+  } catch (e) { /* ignore */ }
+});
 let currentVenues = [];
 let currentWeather = null;
 
@@ -556,8 +604,8 @@ if (chatSend && chatInput) {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
-          q, 
-          city: currentCity, 
+          q,
+          city: currentCity,
           mode: 'explorer',
           venues: currentVenues.slice(0, 10),
           weather: currentWeather

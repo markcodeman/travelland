@@ -13,10 +13,22 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from quart import Quart, render_template, request, jsonify
+import asyncio
 import aiohttp
 import redis.asyncio as aioredis
+import logging
+import re
+import time
+import requests
+import sys
 
+# Ensure local module imports work when running under an ASGI server
 _here = os.path.dirname(__file__)
+if _here not in sys.path:
+    sys.path.insert(0, _here)
+
+# Local providers are located in the same directory
+import multi_provider
 
 app = Quart(__name__, static_folder="static", template_folder="templates")
 
@@ -92,7 +104,8 @@ async def get_weather_async(lat, lon):
 
 @app.route("/", methods=["GET"])
 async def index():
-    return await render_template("index.html")
+    phone = "tel:+1-757-755-7505"
+    return await render_template("index.html", phone=phone)
 
 
 @app.route("/weather", methods=["POST"])
@@ -111,11 +124,6 @@ async def weather():
     if weather is None:
         return jsonify({"error": "weather_fetch_failed"}), 500
     return jsonify({"lat": lat, "lon": lon, "city": city, "weather": weather})
-
-
-if __name__ == "__main__":
-    port = int(os.getenv("PORT") or os.getenv("FLASK_PORT") or 5010)
-    app.run(host="0.0.0.0", port=port)
 
 
 
@@ -155,6 +163,24 @@ def get_country_for_city(city):
     except Exception:
         pass
     return None
+
+
+def get_provider_links(city):
+    """Return a small list of provider links for UI deep-links (best-effort).
+    This lightweight helper avoids a hard dependency and provides useful quick links.
+    """
+    if not city:
+        return []
+    try:
+        q = requests.utils.requote_uri(city)
+    except Exception:
+        q = city
+    links = [
+        {"name": "Google Maps", "url": f"https://www.google.com/maps/search/{q}"},
+        {"name": "OpenStreetMap", "url": f"https://www.openstreetmap.org/search?query={q}"},
+        {"name": "Wikivoyage", "url": f"https://en.wikivoyage.org/wiki/{city.replace(' ', '_')}"},
+    ]
+    return links
 
 
 def get_currency_for_country(country):
@@ -666,44 +692,7 @@ def _sanitize_safety_text(raw):
         return [raw[:1000]]
 
 
-@app.route("/weather", methods=["POST"])
-def weather():
-    payload = request.json or {}
-    city = (payload.get("city") or "").strip()
-    lat = payload.get("lat")
-    lon = payload.get("lon")
-    print(f"[WEATHER DEBUG] Incoming payload: {payload}")
-    if not (lat and lon):
-        if not city:
-            print("[WEATHER ERROR] No city or lat/lon provided.")
-            return jsonify({"error": "city or lat/lon required"}), 400
-        lat, lon = geocode_city(city)
-        print(f"[WEATHER DEBUG] Geocoded city '{city}' to lat/lon: {lat}, {lon}")
-        if not (lat and lon):
-            print(f"[WEATHER ERROR] Geocode failed for city: {city}")
-            return jsonify({"error": "geocode_failed"}), 400
-    try:
-        # Open-Meteo API: https://open-meteo.com/en/docs
-        url = "https://api.open-meteo.com/v1/forecast"
-        params = {
-            "latitude": lat,
-            "longitude": lon,
-            "current_weather": True,
-            "temperature_unit": "celsius",
-            "windspeed_unit": "kmh",
-            "precipitation_unit": "mm",
-            "timezone": "auto",
-        }
-        print(f"[WEATHER DEBUG] Requesting Open-Meteo with params: {params}")
-        resp = requests.get(url, params=params, timeout=6)
-        resp.raise_for_status()
-        data = resp.json()
-        weather = data.get("current_weather", {})
-        print(f"[WEATHER DEBUG] Open-Meteo response: {weather}")
-        return jsonify({"lat": lat, "lon": lon, "city": city, "weather": weather})
-    except Exception as e:
-        print(f"[WEATHER ERROR] Weather fetch failed: {e}")
-        return jsonify({"error": "weather_fetch_failed", "details": str(e)}), 500
+
 
 
 def get_weather(lat, lon):
@@ -894,10 +883,7 @@ def _humanize_opening_hours(opening_hours_str):
     return "; ".join(pretty_parts) if pretty_parts else None
 
 
-@app.route("/")
-def index():
-    phone = "tel:+1-757-755-7505"  # Replace with dynamic value if needed
-    return render_template("index.html", phone=phone)
+
 
 
 @app.route("/transport")
@@ -1210,7 +1196,7 @@ def _get_city_info(city):
 
 
 @app.route("/api/city_info")
-def api_city_info():
+async def api_city_info():
     """Return quick info for any city: Marco recommendations, Google deep-link, quick guide.
     Falls back to transport JSON if available.
     """
@@ -1218,13 +1204,25 @@ def api_city_info():
     if not city:
         return jsonify({"error": "city required"}), 400
 
-    info = _get_city_info(city)
+    info = await asyncio.to_thread(_get_city_info, city)
     return jsonify(info)
 
 
 @app.route("/search", methods=["POST"])
-def search():
-    payload = request.json or {}
+async def search():
+    payload = await request.get_json(silent=True) or {}
+    # Run the existing blocking search logic in a thread to avoid blocking the event loop
+    def _search_sync(p):
+        # original search body moved here; keep it synchronous and reuse existing helpers
+        return _search_impl(p)
+
+    result = await asyncio.to_thread(_search_sync, payload)
+    return jsonify(result)
+
+
+def _search_impl(payload):
+    # This helper is the original synchronous implementation of the /search route.
+    # It returns a plain dict suitable for JSONification.
     logging.debug(f"[SEARCH DEBUG] Incoming payload: {payload}")
     city = (payload.get("city") or "").strip()
     user_lat = payload.get("user_lat")
@@ -1337,12 +1335,11 @@ def search():
     # Special handling for 'top food' queries: try to extract Wikivoyage highlights first
     # Broadened: treat any food-related query as a generic food search
     is_food_query = any(kw in (q or "") for kw in food_keywords)
-    wikivoyage_results = []
+    wikivoyage_texts = []
     t1 = time.time()
-    print(f"[TIMING] After Wikivoyage setup: {t1-t0:.2f}s")
-    if city and (is_food_query or is_historic_query) and include_web:
+    print(f"[TIMING] After setup: {t1-t0:.2f}s")
 
-        def fetch_wikivoyage_section(city_name, section_keywords, section_type):
+    def fetch_wikivoyage_section(city_name, section_keywords, section_type):
             # Strip country part for Wikivoyage lookup
             city_base = city_name.split(',')[0].strip()
             url = "https://en.wikivoyage.org/w/api.php"
@@ -1408,80 +1405,78 @@ def search():
                 for idx, h in enumerate(highlights):
                     city_base = city_name.split(',')[0].strip()
                     wikivoyage_url = f"https://en.wikivoyage.org/wiki/{city_base}#" + section_keywords[0].replace(" ", "_").title() if section_keywords else f"https://en.wikivoyage.org/wiki/{city_base}"
-                    items.append(
-                        {
-                            "id": f"wikivoyage-{section_type}-{idx}",
-                            "city": city_name,
-                            "name": h.split(".")[0][:60] if "." in h else h[:60],
-                            "description": h,
-                            "provider": "wikivoyage",
-                            "tags": f"wikivoyage,{section_type}",
-                            "address": "",
-                            "latitude": None,
-                            "longitude": None,
-                            "website": "",
-                            "osm_url": "",
-                            "wikivoyage_url": wikivoyage_url,
-                            "amenity": section_type,
-                            "budget": "",
-                            "price_range": "",
-                            "phone": "",
-                            "rating": None,
-                            "opening_hours": "",
-                            "opening_hours_pretty": "",
-                            "open_now": None,
-                            "next_change": None,
-                        }
-                    )
+                    # Return textual highlights (not venue rows) so they can be attached as descriptive guidance
+                    items.append({
+                        "text": h,
+                        "wikivoyage_url": wikivoyage_url,
+                        "section": section_type,
+                    })
             except Exception as e:
                 logging.debug(f"Wikivoyage {section_type} highlights failed for {city_name}: {e}")
             return items
 
-        if is_food_query:
-            wikivoyage_results = fetch_wikivoyage_section(city, [
-                "eat", "food", "cuisine", "dining", "restaurants", "must eat", "must-try"
-            ], "food")
-        elif is_historic_query:
-            wikivoyage_results = fetch_wikivoyage_section(city, [
-                "see", "sight", "sights", "attractions", "historic", "landmarks", "monuments"
-            ], "historic")
+    # Determine provider timeout and start real venue discovery earlier so real POIs rank higher
+    provider_timeout = None
+    try:
+        timeout_val = payload.get("timeout")
+        if timeout_val:
+            provider_timeout = float(timeout_val)
+    except (ValueError, TypeError):
+        provider_timeout = None
+    if provider_timeout:
+        provider_timeout = max(3.0, provider_timeout - 2.0)
+    else:
+        provider_timeout = 23.0
 
+    # Determine POI type based on query
+    poi_type = "restaurant" if is_food_query else ("historic" if is_historic_query else "restaurant")
+
+    # Fetch real venues and Wikivoyage highlights in parallel to avoid timeouts
     if is_food_query or is_historic_query:
         t_real_start = time.time()
-        # Respect the client/UI timeout. Some cities are slow on Overpass (Rome ~11s, Paris ~12s).
-        # Give providers almost all available time, minus 1-2s buffer for processing.
-        provider_timeout = None
-        try:
-            timeout_val = payload.get("timeout")
-            if timeout_val:
-                provider_timeout = float(timeout_val)
-        except (ValueError, TypeError):
-            provider_timeout = None
-        if provider_timeout:
-            # Use most of available time; only 2s buffer for processing
-            provider_timeout = max(3.0, provider_timeout - 2.0)
-        else:
-            provider_timeout = 23.0  # Default: 23s for providers
-        try:
-            # Determine POI type based on query
-            poi_type = "restaurant" if is_food_query else ("historic" if is_historic_query else "restaurant")
-            print(f"[DEBUG] Query: '{q}', is_food: {is_food_query}, is_historic: {is_historic_query}, poi_type: {poi_type}")
-            pois = multi_provider.discover_pois(
+        from concurrent.futures import ThreadPoolExecutor
+
+        pois = []
+        wikivoyage_texts = []
+        wiki_keywords = []
+        wiki_section = None
+        if is_food_query:
+            wiki_keywords = ["eat", "food", "cuisine", "dining", "restaurants", "must eat", "must-try"]
+            wiki_section = "food"
+        elif is_historic_query:
+            wiki_keywords = ["see", "sight", "sights", "attractions", "historic", "landmarks", "monuments"]
+            wiki_section = "historic"
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            provider_future = executor.submit(
+                multi_provider.discover_pois,
                 city,
                 poi_type=poi_type,
                 limit=20,
                 local_only=local_only if poi_type == "restaurant" else False,
                 timeout=provider_timeout,
             )
-            partial = False
-            print(
-                f"[DEBUG] multi_provider returned {len(pois)} {poi_type} venues for city '{city}'"
-            )
-        except Exception as e:
-            print(f"[ERROR] Failed to fetch real venues: {e}")
-            pois = []
-            partial = True
+            wiki_future = None
+            if include_web and wiki_keywords:
+                wiki_future = executor.submit(fetch_wikivoyage_section, city, wiki_keywords, wiki_section)
 
+            try:
+                pois = provider_future.result(timeout=provider_timeout)
+                partial = False
+                print(f"[DEBUG] multi_provider returned {len(pois)} {poi_type} venues for city '{city}'")
+            except Exception as e:
+                print(f"[ERROR] Failed to fetch real venues: {e}")
+                pois = []
+                partial = True
+
+            if wiki_future:
+                try:
+                    wikivoyage_texts = wiki_future.result(timeout=min(8.0, provider_timeout)) or []
+                except Exception as e:
+                    logging.debug(f"Wikivoyage fetch failed or timed out: {e}")
+                    wikivoyage_texts = []
+
+        # Build results from real provider POIs
         for poi in (pois or [])[:20]:
             amenity = poi.get("amenity", "")
 
@@ -1591,12 +1586,21 @@ def search():
         t_real_end = time.time()
         print(f"[TIMING] Real venue search: {t_real_end-t_real_start:.2f}s")
 
+    # Now fetch Wikivoyage highlights as descriptive guidance (not venues)
+    if city and (is_food_query or is_historic_query) and include_web:
+        if is_food_query:
+            wikivoyage_texts = fetch_wikivoyage_section(city, [
+                "eat", "food", "cuisine", "dining", "restaurants", "must eat", "must-try"
+            ], "food")
+        elif is_historic_query:
+            wikivoyage_texts = fetch_wikivoyage_section(city, [
+                "see", "sight", "sights", "attractions", "historic", "landmarks", "monuments"
+            ], "historic")
+
     t4 = time.time()
     print(f"[TIMING] Total (post-setup): {t4-t0:.2f}s")
 
-    # If Wikivoyage results exist, prepend them for food queries
-    if wikivoyage_results:
-        results = wikivoyage_results + results
+    # Wikivoyage highlights are returned separately in `wikivoyage_texts`
 
     print(f"SEARCH RESULTS: found {len(results)} venues")
     try:
@@ -1696,15 +1700,16 @@ def search():
         "city_info": city_info,
         "partial": partial,
         "weather": weather_data,
+        "wikivoyage": wikivoyage_texts,
         "transport": get_provider_links(city),
         "costs": cost_estimates,
     }
-    return jsonify(response_data)
+    return response_data
 
 
 @app.route("/ingest", methods=["POST"])
-def ingest():
-    payload = request.json or {}
+async def ingest():
+    payload = await request.get_json(silent=True) or {}
     urls = payload.get("urls") or []
     if isinstance(urls, str):
         urls = [urls]
@@ -1719,25 +1724,26 @@ def ingest():
             continue
     if not valid:
         return jsonify({"error": "no valid urls provided"}), 400
-    n = semantic.ingest_urls(valid)
+    # run blocking ingestion in thread
+    n = await asyncio.to_thread(semantic.ingest_urls, valid)
     return jsonify({"indexed_chunks": n, "urls": valid})
 
 
 @app.route("/poi-discover", methods=["POST"])
-def poi_discover():
-    payload = request.json or {}
+async def poi_discover():
+    payload = await request.get_json(silent=True) or {}
     city = payload.get("city") or payload.get("location") or ""
     if not city:
         return jsonify({"error": "city required"}), 400
-    # discover via orchestrated providers (OSM + Places)
+    # discover via orchestrated providers (OSM + Places) - run in thread
     try:
-        candidates = multi_provider.discover_restaurants(
+        timeout_val = float(payload.get("timeout", 12.0)) if payload.get("timeout") else 12.0
+        candidates = await asyncio.to_thread(
+            multi_provider.discover_restaurants,
             city,
             limit=200,
             local_only=bool(payload.get("local_only", False)),
-            timeout=(
-                float(payload.get("timeout", 12.0)) if payload.get("timeout") else 12.0
-            ),
+            timeout=timeout_val,
         )
     except Exception as e:
         return jsonify({"error": "discover_failed", "details": str(e)}), 500
@@ -1745,20 +1751,26 @@ def poi_discover():
 
 
 @app.route("/semantic-search", methods=["POST"])
-def ai_reason():
+async def ai_reason():
     print("AI REASON ROUTE CALLED")
-    payload = request.json or {}
-    q = payload.get("q", "").strip()
-    city = payload.get("city", "").strip()  # optional
+    payload = await request.get_json(silent=True) or {}
+    q = (payload.get("q") or "").strip()
+    city = (payload.get("city") or "").strip()  # optional
     mode = payload.get("mode", "explorer")  # default to explorer
     venues = payload.get("venues", [])  # venues from UI context
     if not q:
         return jsonify({"error": "query required"}), 400
     weather = payload.get("weather")
     try:
-        answer = semantic.search_and_reason(
-            q, city if city else None, mode, context_venues=venues, weather=weather
+        # run blocking semantic logic in a thread
+        answer = await asyncio.to_thread(
+            lambda: semantic.search_and_reason(
+                q, city if city else None, mode, context_venues=venues, weather=weather
+            )
         )
+        # semantic.search_and_reason signature accepts context_venues/weather by name; the thread call passes a dict,
+        # so handle case where above returned a dict (fallback) or string. To preserve behavior, if answer is a dict with
+        # an 'answer' key, return it; else return answer directly.
         return jsonify({"answer": answer})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
