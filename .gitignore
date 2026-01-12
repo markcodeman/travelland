@@ -12,6 +12,7 @@ __pycache__/
 venv/
 .venv/
 venv_new/
+ .venv_precommit/
 
 # Editor/IDE
 .vscode/
@@ -19,6 +20,8 @@ venv_new/
 
 # OS
 .DS_Store
+node_modules/
+.secrets.baseline
 # Python
 __pycache__/
 *.py[cod]
@@ -105,3 +108,6 @@ last_search_response.json
 # Environment variables
 .env
 */.env
+
+# Wiki token (local)
+.wiki_token.json

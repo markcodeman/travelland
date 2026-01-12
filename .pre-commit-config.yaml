@@ -9,4 +9,5 @@ repos:
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.3.0
     hooks:
-      - id: detect-secrets
+    - id: detect-secrets
+      exclude: "(^|/)node_modules/"
