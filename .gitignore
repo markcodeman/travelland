@@ -1,72 +1,28 @@
-# Local environment files
-.env
-city-guides/.env
-
-# Python
-__pycache__/
-*.pyc
-.pytest_cache/
-.mypy_cache/
-
-# Virtualenvs
-venv/
-.venv/
-venv_new/
- .venv_precommit/
- .venv_async/
-
-# Editor/IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-node_modules/
-.secrets.baseline
-# Python
-__pycache__/
-*.py[cod]
-*.so
-
-# Virtual env
-city-guides/.venv/
+# Virtual environments
 .venv/
 .venv-playwright/
+venv/
+env/
 
-# Editor
-.vscode/
-.idea/
-
-# Pytest cache
-.pytest_cache/
-
-# OS / runtime
-*.pid
-*.log
-server.pid
-city-guides/server.pid
-
-# Temporary debug scripts
-/tmp_overpass_debug.py
-
-# Overpass cache
-city-guides/.cache/
-
-# Static backup folders (generated/archived)
-city-guides/static/img.bak*/
-city-guides/static/js.bak*/
-city-guides/static/webfonts.bak*/
-city-guides/static/*.bak
-
-# Misc
-*.bak
-*.swp
-*.swo
-# Python
+# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+
+# Environment files
+.env
+.env.local
+
+# Cache directories
+.cache/
+*.cache
+
+# IDE
+.vscode/
+.idea/
+
+# Python build artifacts
 .Python
 build/
 develop-eggs/
@@ -84,31 +40,45 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
-venv/
-.venv/
-ENV/
-env/
+# Testing
+.pytest_cache/
+.mypy_cache/
 
-# IDE
-.vscode/
-.idea/
+# OS files
+.DS_Store
+Thumbs.db
 *.swp
 *.swo
 *~
 
-# OS
-.DS_Store
-Thumbs.db
+# Runtime
+*.pid
+*.log
+server.pid
+
+# Node modules
+node_modules/
 
 # Project specific
 *.json
 !package.json
 last_search_response.json
+city-guides/.venv/
+city-guides/.env
+city-guides/server.pid
+city-guides/.cache/
+city-guides/static/img.bak*/
+city-guides/static/js.bak*/
+city-guides/static/webfonts.bak*/
+city-guides/static/*.bak
+venv_new/
+.venv_precommit/
+.venv_async/
 
-# Environment variables
-.env
-*/.env
-
-# Wiki token (local)
+# Secrets
+.secrets.baseline
 .wiki_token.json
+
+# Temporary files
+*.bak
+/tmp_overpass_debug.py
