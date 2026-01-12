@@ -9,6 +9,7 @@ of the original Flask app is preserved on branch `backup-before-filter`.
 
 import os
 import json
+import hashlib
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -36,6 +37,11 @@ app = Quart(__name__, static_folder="static", template_folder="templates")
 aiohttp_session: aiohttp.ClientSession | None = None
 redis_client: aioredis.Redis | None = None
 
+DEFAULT_PREWARM_CITIES = os.getenv("SEARCH_PREWARM_CITIES", "London,Paris")
+PREWARM_QUERIES = [q.strip() for q in os.getenv("SEARCH_PREWARM_QUERIES", "Top food").split(",") if q.strip()]
+PREWARM_TTL = int(os.getenv("SEARCH_PREWARM_TTL", "3600"))
+RAW_PREWARM_CITIES = [c.strip() for c in DEFAULT_PREWARM_CITIES.split(",") if c.strip()]
+
 
 @app.before_serving
 async def startup():
@@ -45,6 +51,8 @@ async def startup():
         redis_client = aioredis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
         await redis_client.ping()
         app.logger.info("✅ Redis connected")
+        if RAW_PREWARM_CITIES and PREWARM_QUERIES:
+            asyncio.create_task(prewarm_popular_searches())
     except Exception:
         redis_client = None
         app.logger.warning("Redis not available; running without cache")
@@ -1208,6 +1216,11 @@ async def api_city_info():
     return jsonify(info)
 
 
+def build_search_cache_key(city: str, q: str) -> str:
+    raw = f"search:{(city or '').strip().lower()}:{(q or '').strip().lower()}"
+    return "travelland:" + hashlib.sha1(raw.encode()).hexdigest()
+
+
 @app.route("/search", methods=["POST"])
 async def search():
     payload = await request.get_json(silent=True) or {}
@@ -1225,10 +1238,7 @@ async def search():
     cache_ttl = int(os.getenv("SEARCH_CACHE_TTL", "300"))
     if redis_client and should_cache and city and q:
         try:
-            import hashlib
-
-            raw = f"search:{city.lower()}:{q}"
-            cache_key = "travelland:" + hashlib.sha1(raw.encode()).hexdigest()
+            cache_key = build_search_cache_key(city, q)
             cached = await redis_client.get(cache_key)
             if cached:
                 try:
@@ -1745,6 +1755,38 @@ def _search_impl(payload):
     return response_data
 
 
+async def prewarm_search_cache_entry(city: str, q: str):
+    if not redis_client or not city or not q:
+        return
+    cache_key = build_search_cache_key(city, q)
+    try:
+        existing = await redis_client.get(cache_key)
+        if existing:
+            await redis_client.expire(cache_key, PREWARM_TTL)
+            return
+    except Exception:
+        pass
+    try:
+        result = await asyncio.to_thread(_search_impl, {"city": city, "q": q})
+        if result:
+            await redis_client.set(cache_key, json.dumps(result), ex=PREWARM_TTL)
+            app.logger.info("Prewarmed search cache for %s / %s", city, q)
+    except Exception as exc:
+        app.logger.debug("Search prewarm failed for %s/%s: %s", city, q, exc)
+
+
+async def prewarm_popular_searches():
+    if not redis_client or not RAW_PREWARM_CITIES or not PREWARM_QUERIES:
+        return
+    sem = asyncio.Semaphore(2)
+    async def limited(city, query):
+        async with sem:
+            await prewarm_search_cache_entry(city, query)
+
+    tasks = [limited(city, query) for city in RAW_PREWARM_CITIES for query in PREWARM_QUERIES]
+    if tasks:
+        app.logger.info("Starting prewarm for %d popular searches", len(tasks))
+        await asyncio.gather(*tasks)
 @app.route("/ingest", methods=["POST"])
 async def ingest():
     payload = await request.get_json(silent=True) or {}
@@ -1776,13 +1818,28 @@ async def poi_discover():
     # discover via orchestrated providers (OSM + Places) - run in thread
     try:
         timeout_val = float(payload.get("timeout", 12.0)) if payload.get("timeout") else 12.0
-        candidates = await asyncio.to_thread(
-            multi_provider.discover_restaurants,
-            city,
-            limit=200,
-            local_only=bool(payload.get("local_only", False)),
-            timeout=timeout_val,
-        )
+        # Prefer async provider if available
+        try:
+            candidates = await asyncio.wait_for(
+                multi_provider.async_discover_restaurants(
+                    city,
+                    cuisine=None,
+                    limit=200,
+                    local_only=bool(payload.get("local_only", False)),
+                    timeout=timeout_val,
+                    session=aiohttp_session,
+                ),
+                timeout=timeout_val + 2,
+            )
+        except AttributeError:
+            # Fallback to sync provider run in thread
+            candidates = await asyncio.to_thread(
+                multi_provider.discover_restaurants,
+                city,
+                limit=200,
+                local_only=bool(payload.get("local_only", False)),
+                timeout=timeout_val,
+            )
     except Exception as e:
         return jsonify({"error": "discover_failed", "details": str(e)}), 500
     return jsonify({"count": len(candidates), "candidates": candidates})

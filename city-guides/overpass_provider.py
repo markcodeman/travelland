@@ -5,6 +5,8 @@ import json
 import hashlib
 from pathlib import Path
 from urllib.parse import urlencode
+import asyncio
+import aiohttp
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 OVERPASS_URLS = [
@@ -46,6 +48,46 @@ def reverse_geocode(lat, lon):
         return ""
 
 
+async def async_reverse_geocode(lat, lon, session: aiohttp.ClientSession = None):
+    cache_dir = Path(__file__).parent / ".cache" / "nominatim"
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    cache_key = f"{lat:.6f},{lon:.6f}"
+    cache_file = cache_dir / f"{hashlib.md5(cache_key.encode()).hexdigest()}.json"
+    if cache_file.exists():
+        try:
+            return json.loads(cache_file.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}"
+    headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
+    own = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own = True
+    try:
+        async with session.get(url, headers=headers, timeout=10) as r:
+            if r.status != 200:
+                if own:
+                    await session.close()
+                return ""
+            j = await r.json()
+            addr = j.get("display_name", "")
+            try:
+                cache_file.write_text(json.dumps(addr), encoding="utf-8")
+            except Exception:
+                pass
+            if own:
+                await session.close()
+            return addr
+    except Exception:
+        if own:
+            await session.close()
+        return ""
+
+
 def geocode_city(city):
     params = {"q": city, "format": "json", "limit": 1}
     headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
@@ -67,6 +109,45 @@ def geocode_city(city):
         # Overpass expects south,west,north,east
         return (south, west, north, east)
     return None
+
+
+async def async_geocode_city(city, session: aiohttp.ClientSession = None):
+    params = {"q": city, "format": "json", "limit": 1}
+    headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
+    own = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own = True
+    try:
+        async with session.get(NOMINATIM_URL, params=params, headers=headers, timeout=10) as r:
+            if r.status != 200:
+                if own:
+                    await session.close()
+                return None
+            j = await r.json()
+            if not j:
+                if own:
+                    await session.close()
+                return None
+            entry = j[0]
+            bbox = entry.get("boundingbox")
+            if bbox and len(bbox) == 4:
+                south, north, west, east = (
+                    float(bbox[0]),
+                    float(bbox[1]),
+                    float(bbox[2]),
+                    float(bbox[3]),
+                )
+                if own:
+                    await session.close()
+                return (south, west, north, east)
+            if own:
+                await session.close()
+            return None
+    except Exception:
+        if own:
+            await session.close()
+        return None
 
 
 def _singularize(word: str) -> str:
@@ -466,6 +547,12 @@ def discover_restaurants(city, limit=200, cuisine=None, local_only=False):
     return out
 
 
+async def async_discover_restaurants(city, limit=200, cuisine=None, local_only=False, session: aiohttp.ClientSession = None):
+    # Use async wrapper to call async_discover_pois
+    res = await async_discover_pois(city, "restaurant", limit, local_only, session=session)
+    return res
+
+
 def discover_pois(city, poi_type="restaurant", limit=200, local_only=False):
     """Discover POIs of various types for a city using Nominatim + Overpass.
 
@@ -714,6 +801,219 @@ def discover_pois(city, poi_type="restaurant", limit=200, local_only=False):
             "ruins": 2, "archaeological_site": 2, "memorial": 1
         }.get(historic_type, 0)
 
+        return (-name_score, -type_priority, len(name))
+
+    out.sort(key=sort_key, reverse=True)
+    return out[:limit]
+
+
+async def async_discover_pois(city, poi_type="restaurant", limit=200, local_only=False, session: aiohttp.ClientSession = None):
+    bbox = await async_geocode_city(city, session=session)
+    if not bbox:
+        return []
+    south, west, north, east = bbox
+    bbox_str = f"{south},{west},{north},{east}"
+
+    poi_queries = {
+        "restaurant": '["amenity"~"restaurant|fast_food|cafe|bar|pub|food_court"]',
+        "historic": '["tourism"="attraction"]',
+        "museum": '["tourism"="museum"]',
+        "park": '["leisure"="park"]',
+        "market": '["amenity"="marketplace"]',
+        "transport": '["amenity"~"bus_station|train_station|subway_entrance|ferry_terminal|airport"]',
+        "family": '["leisure"~"playground|amusement_arcade|miniature_golf"]',
+        "event": '["amenity"~"theatre|cinema|arts_centre|community_centre"]',
+        "local": '["tourism"~"attraction"]',
+        "hidden": '["tourism"~"attraction"]',
+        "coffee": '["amenity"~"cafe|coffee_shop"]',
+    }
+
+    amenity_filter = poi_queries.get(poi_type, poi_queries["restaurant"])
+    q = f"[out:json][timeout:60];(node{amenity_filter}({bbox_str});way{amenity_filter}({bbox_str});relation{amenity_filter}({bbox_str}););out center;"
+
+    CACHE_TTL = int(os.environ.get("OVERPASS_CACHE_TTL", 60 * 60 * 6))
+    RATE_LIMIT_SECONDS = float(os.environ.get("OVERPASS_MIN_INTERVAL", 5.0))
+
+    cache_dir = Path(__file__).parent / ".cache" / "overpass"
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+
+    def _cache_path_for_query(qstr: str) -> Path:
+        h = hashlib.sha256(qstr.encode("utf-8")).hexdigest()
+        return cache_dir / f"{h}.json"
+
+    async def _read_cache(qstr: str):
+        p = _cache_path_for_query(qstr)
+        if not p.exists():
+            return None
+        try:
+            m = p.stat().st_mtime
+            age = time.time() - m
+            if age > CACHE_TTL:
+                return None
+            return json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            return None
+
+    async def _write_cache(qstr: str, data):
+        p = _cache_path_for_query(qstr)
+        try:
+            p.write_text(json.dumps(data), encoding="utf-8")
+        except Exception:
+            pass
+
+    rate_file = cache_dir / "last_request_ts"
+
+    async def _ensure_rate_limit():
+        try:
+            last = float(rate_file.read_text()) if rate_file.exists() else 0.0
+        except Exception:
+            last = 0.0
+        now = time.time()
+        wait = RATE_LIMIT_SECONDS - (now - last)
+        if wait > 0:
+            await asyncio.sleep(wait)
+        try:
+            rate_file.write_text(str(time.time()))
+        except Exception:
+            pass
+
+    headers = {"User-Agent": "CityGuides/1.0"}
+    cached = await _read_cache(q)
+    j = None
+    if cached is not None:
+        j = cached
+    else:
+        j = None
+        for base_url in OVERPASS_URLS:
+            try:
+                await _ensure_rate_limit()
+                attempts = int(os.environ.get("OVERPASS_RETRIES", 2))
+                for attempt in range(1, attempts + 1):
+                    try:
+                        own_session = False
+                        if session is None:
+                            session = aiohttp.ClientSession()
+                            own_session = True
+                        async with session.post(base_url, data={"data": q}, headers=headers, timeout=int(os.environ.get("OVERPASS_TIMEOUT", 20))) as r:
+                            r.raise_for_status()
+                            j = await r.json()
+                            await _write_cache(q, j)
+                            break
+                    except Exception:
+                        if attempt < attempts:
+                            await asyncio.sleep(1 * attempt)
+                        else:
+                            raise
+                if j is not None:
+                    break
+            except Exception:
+                continue
+
+        if j is None:
+            stale_p = _cache_path_for_query(q)
+            if stale_p.exists():
+                try:
+                    j = json.loads(stale_p.read_text(encoding="utf-8"))
+                except Exception:
+                    return []
+            else:
+                return []
+
+    elements = j.get("elements", [])
+    elements = elements[:200]
+    skip_reverse = len(elements) > 50
+    out = []
+
+    cuisine_token = _singularize(None) if None else None
+
+    for el in elements:
+        tags = el.get("tags") or {}
+        name = tags.get("name") or tags.get("operator") or "Unnamed"
+        if poi_type == "historic" and name == "Unnamed":
+            better_name = None
+            if tags.get("inscription"):
+                inscription = tags["inscription"].strip()
+                better_name = inscription[:50] + ("..." if len(inscription) > 50 else "")
+            elif tags.get("description"):
+                desc = tags["description"].strip()
+                better_name = desc[:50] + ("..." if len(desc) > 50 else "")
+            elif tags.get("memorial"):
+                memorial_type = tags["memorial"].replace("_", " ").title()
+                if tags.get("wikidata"):
+                    better_name = f"{memorial_type} Memorial"
+                else:
+                    better_name = memorial_type
+            elif tags.get("historic"):
+                historic_type = tags["historic"].replace("_", " ").title()
+                better_name = historic_type
+
+            if better_name:
+                name = better_name
+
+        if name == "Unnamed" and not any(tags.get(k) for k in ["inscription", "description", "memorial", "wikidata"]):
+            continue
+
+        if el["type"] == "node":
+            lat = el.get("lat")
+            lon = el.get("lon")
+        else:
+            center = el.get("center")
+            if center:
+                lat = center["lat"]
+                lon = center["lon"]
+            else:
+                continue
+
+        address = (
+            tags.get("addr:full")
+            or f"{tags.get('addr:housenumber','')} {tags.get('addr:street','')} {tags.get('addr:city','')} {tags.get('addr:postcode','')}".strip()
+        )
+        if not address:
+            if skip_reverse:
+                address = f"{lat}, {lon}"
+            else:
+                address = await async_reverse_geocode(lat, lon, session=session) or f"{lat}, {lon}"
+
+        if poi_type == "restaurant" and local_only:
+            name_lower = name.lower()
+            if any(chain.lower() in name_lower for chain in CHAIN_KEYWORDS):
+                continue
+
+        website = tags.get("website") or tags.get("contact:website")
+        osm_type = el.get("type")
+        osm_id = el.get("id")
+        osm_url = f"https://www.openstreetmap.org/{osm_type}/{osm_id}"
+        tags_str = ", ".join([f"{k}={v}" for k, v in tags.items()])
+
+        entry = {
+            "osm_id": osm_id,
+            "name": name,
+            "website": website,
+            "osm_url": osm_url,
+            "amenity": tags.get("amenity", ""),
+            "historic": tags.get("historic", ""),
+            "tourism": tags.get("tourism", ""),
+            "leisure": tags.get("leisure", ""),
+            "cost": tags.get("cost", ""),
+            "address": address,
+            "lat": lat,
+            "lon": lon,
+            "tags": tags_str,
+        }
+        out.append(entry)
+
+    def sort_key(entry):
+        name = entry.get("name", "")
+        historic_type = entry.get("historic", "")
+        name_score = 0 if name == "Unnamed" else 1
+        type_priority = {
+            "monument": 10, "castle": 9, "palace": 8, "church": 7, "cathedral": 7,
+            "temple": 6, "mosque": 6, "museum": 5, "fort": 4, "tower": 3,
+            "ruins": 2, "archaeological_site": 2, "memorial": 1
+        }.get(historic_type, 0)
         return (-name_score, -type_priority, len(name))
 
     out.sort(key=sort_key, reverse=True)

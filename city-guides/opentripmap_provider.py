@@ -3,6 +3,8 @@ import time
 import math
 import requests
 from typing import List, Dict
+import asyncio
+import aiohttp
 
 from overpass_provider import geocode_city
 
@@ -215,6 +217,108 @@ def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50) -> Lis
         out.append(entry)
 
     return out
+
+
+async def async_discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, session: aiohttp.ClientSession = None) -> List[Dict]:
+    if not OPENTRIPMAP_KEY:
+        return []
+    bbox = geocode_city(city)
+    if not bbox:
+        return []
+    south, west, north, east = bbox
+    lat = (south + north) / 2.0
+    lon = (west + east) / 2.0
+    d1 = _haversine_meters(lat, lon, north, west)
+    d2 = _haversine_meters(lat, lon, south, east)
+    radius = int(min(max(d1, d2) * 1.6, 20000)) or 5000
+
+    params = {
+        "apikey": OPENTRIPMAP_KEY,
+        "radius": radius,
+        "limit": limit,
+        "lon": lon,
+        "lat": lat,
+        "kinds": kinds,
+    }
+
+    own_session = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own_session = True
+
+    try:
+        async with session.get(f"{BASE}/radius", params=params, timeout=20) as r:
+            if r.status != 200:
+                if own_session:
+                    await session.close()
+                return []
+            j = await r.json()
+    except Exception:
+        if own_session:
+            await session.close()
+        return []
+
+    out = []
+    for itm in j.get("features", [])[:limit]:
+        props = itm.get("properties", {})
+        xid = props.get("xid")
+        name = props.get("name") or ""
+        point = itm.get("geometry", {}).get("coordinates") or []
+        lon2 = point[0] if len(point) > 0 else None
+        lat2 = point[1] if len(point) > 1 else None
+
+        detail = {}
+        if xid:
+            try:
+                async with session.get(f"{BASE}/xid/{xid}", params={"apikey": OPENTRIPMAP_KEY}, timeout=15) as dd:
+                    if dd.status == 200:
+                        detail = await dd.json()
+                    else:
+                        detail = {}
+            except Exception:
+                detail = {}
+            await asyncio.sleep(0.05)
+
+        address = detail.get("address", {})
+        addr = ", ".join(
+            [
+                address.get(k, "")
+                for k in ("road", "house_number", "city", "state", "country")
+                if address.get(k)
+            ]
+        )
+        osm_url = ""
+        if detail.get("url"):
+            osm_url = detail.get("url")
+
+        entry = {
+            "name": name,
+            "address": addr,
+            "latitude": lat2,
+            "longitude": lon2,
+            "place_id": xid or props.get("osm_id") or "",
+            "osm_url": osm_url,
+            "tags": (
+                ", ".join(
+                    [
+                        f"{k}={v}"
+                        for k, v in (detail.get("properties", {}) or {}).items()
+                    ]
+                )
+                if detail.get("properties")
+                else ""
+            ),
+            "rating": detail.get("rate") if detail.get("rate") else None,
+        }
+        out.append(entry)
+
+    if own_session:
+        await session.close()
+    return out
+
+
+async def async_discover_restaurants(city: str, limit: int = 50, cuisine: str = None, session: aiohttp.ClientSession = None) -> List[Dict]:
+    return await async_discover_pois(city, "restaurants", limit, session=session)
 
 
 def discover_restaurants(city: str, limit: int = 50, cuisine: str = None) -> List[Dict]:

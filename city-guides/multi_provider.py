@@ -2,6 +2,7 @@ import threading
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import asyncio
 import math
 import re
 from typing import List, Dict
@@ -213,6 +214,107 @@ def discover_pois(
     return normalized[:limit]
 
 
+async def async_discover_pois(
+    city: str,
+    poi_type: str = "restaurant",
+    limit: int = 100,
+    local_only: bool = False,
+    timeout: float = 12.0,
+    session=None,
+) -> List[Dict]:
+    """Async version of discover_pois. It will call async provider functions
+    when available, otherwise offload sync providers to a thread.
+    """
+    results = []
+
+    max_per_provider = max(int(limit) * 10, 200)
+    max_total_candidates = max(int(limit) * 20, 600)
+
+    async def _call_provider(func, provider_name, *fargs, **fkwargs):
+        start = time.time()
+        try:
+            if asyncio.iscoroutinefunction(func):
+                # pass session if provider accepts it
+                try:
+                    res = await func(*fargs, session=session, **fkwargs)
+                except TypeError:
+                    res = await func(*fargs, **fkwargs)
+            else:
+                # run blocking provider in thread to avoid blocking loop
+                res = await asyncio.to_thread(func, *fargs, **fkwargs)
+            return res
+        except Exception as e:
+            logging.warning(f"Provider {provider_name} raised: {e}")
+        finally:
+            dur = time.time() - start
+            try:
+                count = len(res) if "res" in locals() and res else 0
+            except Exception:
+                count = 0
+            logging.info(
+                f"Provider timing: {provider_name} took {dur:.2f}s and returned {count} items"
+            )
+
+    tasks = []
+    # Overpass (OSM) - supports different POI types
+    if poi_type == "restaurant":
+        func = getattr(overpass_provider, "async_discover_restaurants", overpass_provider.discover_restaurants)
+        tasks.append(asyncio.create_task(_call_provider(func, "overpass", city, limit, None, local_only)))
+    else:
+        func = getattr(overpass_provider, "async_discover_pois", overpass_provider.discover_pois)
+        tasks.append(asyncio.create_task(_call_provider(func, "overpass", city, poi_type, limit, local_only)))
+
+    # OpenTripMap (optional)
+    if opentripmap_provider:
+        try:
+            otm_kinds = {
+                "restaurant": "restaurants",
+                "historic": "historic,museums",
+                "museum": "museums",
+                "park": "parks",
+                "market": "markets",
+                "transport": "transport",
+                "family": "amusements",
+                "event": "cultural",
+                "local": "cultural",
+                "hidden": "cultural",
+                "coffee": "cafes",
+            }.get(poi_type, poi_type)
+
+            # prefer async function if available
+            func = getattr(opentripmap_provider, "async_discover_pois", opentripmap_provider.discover_pois)
+            tasks.append(asyncio.create_task(_call_provider(func, "opentripmap", city, otm_kinds, limit)))
+        except Exception:
+            pass
+
+    done, pending = await asyncio.wait(tasks)
+    for t in done:
+        try:
+            provider_results = t.result()
+            if provider_results:
+                results.extend(provider_results)
+        except Exception as e:
+            logging.warning(f"Error collecting provider results: {e}")
+
+    # Normalize and dedupe
+    normalized = []
+    seen_ids = set()
+    for e in results[:max_total_candidates]:
+        try:
+            if poi_type == "restaurant":
+                norm = _normalize_osm_entry(e)
+            else:
+                norm = _normalize_generic_entry(e)
+            if norm["id"] and norm["id"] not in seen_ids:
+                seen_ids.add(norm["id"])
+                normalized.append(norm)
+        except Exception as e:
+            logging.warning(f"Error normalizing entry: {e}")
+
+    normalized.sort(key=lambda x: len(x.get("name", "")), reverse=True)
+    return normalized[:limit]
+
+
 def discover_restaurants(
     city: str,
     cuisine: str = None,
@@ -225,3 +327,15 @@ def discover_restaurants(
     Returns list of unified entries with at least keys: id,name,lat,lon,osm_url,provider,raw
     """
     return discover_pois(city, "restaurant", limit, local_only, timeout)
+
+
+async def async_discover_restaurants(
+    city: str,
+    cuisine: str = None,
+    limit: int = 100,
+    local_only: bool = False,
+    timeout: float = 12.0,
+    session=None,
+) -> List[Dict]:
+    # multi_provider's restaurant path currently maps to discover_pois
+    return await async_discover_pois(city, "restaurant", limit, local_only, timeout, session=session)
