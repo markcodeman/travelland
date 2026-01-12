@@ -6,13 +6,6 @@ This file is automatically loaded by pytest and sets up the test environment.
 import os
 import pytest
 
-# Disable prewarm during tests to avoid race conditions
-os.environ["DISABLE_PREWARM"] = "true"
-
-# Disable Redis in tests (use in-memory fallback)
-os.environ["REDIS_URL"] = ""
-
-
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_environment():
     """Set up test environment variables before any tests run."""
