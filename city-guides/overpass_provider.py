@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import urlencode
 import asyncio
 import aiohttp
+import re
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 OVERPASS_URLS = [
@@ -148,6 +149,108 @@ async def async_geocode_city(city, session: aiohttp.ClientSession = None):
         if own:
             await session.close()
         return None
+
+
+async def async_get_neighborhoods(city: str | None = None, lat: float | None = None, lon: float | None = None, lang: str = "en", session: aiohttp.ClientSession = None):
+    """Best-effort neighborhood lookup using OSM place tags within the city area or a bbox.
+
+    Returns list of dicts: {id, name, slug, center, bbox, source}
+    """
+    own = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own = True
+    try:
+        area_id = None
+        if city:
+            params = {"q": city, "format": "json", "limit": 1, "addressdetails": 1}
+            headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": lang}
+            try:
+                async with session.get(NOMINATIM_URL, params=params, headers=headers, timeout=10) as r:
+                    if r.status == 200:
+                        j = await r.json()
+                        if j:
+                            if j[0].get("osm_type") == "relation" and j[0].get("osm_id"):
+                                area_id = 3600000000 + int(j[0]["osm_id"])  # relation -> area id
+            except Exception:
+                pass
+
+        # build query
+        if area_id:
+            q = f"""
+                [out:json][timeout:25];
+                area({area_id})->.cityArea;
+                (
+                  relation["place"~"neighbourhood|suburb|quarter|city_district"](area.cityArea);
+                  way["place"~"neighbourhood|suburb|quarter|city_district"](area.cityArea);
+                  node["place"~"neighbourhood|suburb|quarter|city_district"](area.cityArea);
+                );
+                out center tags;
+            """
+        else:
+            bbox_str = None
+            if lat and lon:
+                buf = float(os.getenv("NEIGHBORHOOD_DEFAULT_BUFFER_KM", 5.0)) / 111.0
+                minlat, minlon, maxlat, maxlon = lat - buf, lon - buf, lat + buf, lon + buf
+                bbox_str = f"{minlat},{minlon},{maxlat},{maxlon}"
+            else:
+                bb = await async_geocode_city(city, session=session)
+                if bb:
+                    south, west, north, east = bb
+                    bbox_str = f"{south},{west},{north},{east}"
+
+            if not bbox_str:
+                return []
+
+            q = f"""
+                [out:json][timeout:25];
+                (
+                  relation["place"~"neighbourhood|suburb|quarter|city_district"]({bbox_str});
+                  way["place"~"neighbourhood|suburb|quarter|city_district"]({bbox_str});
+                  node["place"~"neighbourhood|suburb|quarter|city_district"]({bbox_str});
+                );
+                out center tags;
+            """
+
+        # call overpass endpoints
+        for url in OVERPASS_URLS:
+            try:
+                async with session.post(url, data={"data": q}, timeout=30) as resp:
+                    if resp.status != 200:
+                        continue
+                    j = await resp.json()
+                    elements = j.get("elements", [])
+                    results = []
+                    for el in elements:
+                        name = el.get("tags", {}).get("name")
+                        if not name:
+                            continue
+                        el_id = f"{el.get('type')}/{el.get('id')}"
+                        bbox = None
+                        if el.get("type") == "relation":
+                            bbox = el.get("bounds") or el.get("bbox")
+                        center = None
+                        if "center" in el:
+                            center = {"lat": el["center"]["lat"], "lon": el["center"]["lon"]}
+                        elif "lat" in el and "lon" in el:
+                            center = {"lat": el["lat"], "lon": el["lon"]}
+                        results.append({
+                            "id": el_id,
+                            "name": name,
+                            "slug": re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_"),
+                            "center": center,
+                            "bbox": bbox,
+                            "source": "osm",
+                        })
+                    return results
+            except asyncio.TimeoutError:
+                continue
+            except Exception:
+                continue
+    finally:
+        if own:
+            await session.close()
+    return []
 
 
 def _singularize(word: str) -> str:

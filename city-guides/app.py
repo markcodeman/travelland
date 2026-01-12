@@ -41,6 +41,7 @@ DEFAULT_PREWARM_CITIES = os.getenv("SEARCH_PREWARM_CITIES", "London,Paris")
 PREWARM_QUERIES = [q.strip() for q in os.getenv("SEARCH_PREWARM_QUERIES", "Top food").split(",") if q.strip()]
 PREWARM_TTL = int(os.getenv("SEARCH_PREWARM_TTL", "3600"))
 RAW_PREWARM_CITIES = [c.strip() for c in DEFAULT_PREWARM_CITIES.split(",") if c.strip()]
+NEIGHBORHOOD_CACHE_TTL = int(os.getenv("NEIGHBORHOOD_CACHE_TTL", 60 * 60 * 24 * 7))  # 7 days
 
 
 @app.before_serving
@@ -133,6 +134,51 @@ async def weather():
         return jsonify({"error": "weather_fetch_failed"}), 500
     return jsonify({"lat": lat, "lon": lon, "city": city, "weather": weather})
 
+
+@app.route("/neighborhoods", methods=["GET"])
+async def neighborhoods():
+    """
+    Query params:
+      - city (preferred): city name (e.g. "Lisbon")
+      - lat, lon (optional fallback)
+      - lang (optional) e.g. en, es
+    Response: JSON list of {id, name, slug, center:{lat,lon}, bbox:{minlat,minlon,maxlat,maxlon}, source}
+    """
+    city = (request.args.get("city") or "").strip()
+    lang = (request.args.get("lang") or "en").strip()
+    lat = request.args.get("lat")
+    lon = request.args.get("lon")
+
+    if not city and not (lat and lon):
+        return jsonify({"error": "city or lat+lon required"}), 400
+
+    slug = re.sub(r"[^a-z0-9]+", "_", (city or f"{lat}_{lon}").lower())
+    cache_key = f"neighborhoods:{slug}:{lang}"
+
+    # try redis cache
+    if redis_client:
+        try:
+            raw = await redis_client.get(cache_key)
+            if raw:
+                return jsonify({"cached": True, "neighborhoods": json.loads(raw)})
+        except Exception:
+            app.logger.exception("redis get failed for neighborhoods")
+
+    # fetch from provider
+    try:
+        data = await multi_provider.async_get_neighborhoods(city=city or None, lat=float(lat) if lat else None, lon=float(lon) if lon else None, lang=lang, session=aiohttp_session)
+    except Exception:
+        app.logger.exception("neighborhoods fetch failed")
+        data = []
+
+    # store in redis
+    if redis_client:
+        try:
+            await redis_client.set(cache_key, json.dumps(data), ex=NEIGHBORHOOD_CACHE_TTL)
+        except Exception:
+            app.logger.exception("redis set failed for neighborhoods")
+
+    return jsonify({"cached": False, "neighborhoods": data})
 
 
 def get_country_for_city(city):

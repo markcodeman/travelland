@@ -339,3 +339,18 @@ async def async_discover_restaurants(
 ) -> List[Dict]:
     # multi_provider's restaurant path currently maps to discover_pois
     return await async_discover_pois(city, "restaurant", limit, local_only, timeout, session=session)
+
+
+async def async_get_neighborhoods(city: str | None = None, lat: float | None = None, lon: float | None = None, lang: str = "en", session=None):
+    """Wrapper that prefers provider async implementation and falls back to sync provider in a thread."""
+    try:
+        func = getattr(overpass_provider, "async_get_neighborhoods", None)
+        if func and asyncio.iscoroutinefunction(func):
+            return await func(city=city, lat=lat, lon=lon, lang=lang, session=session)
+        # fallback: call sync version in thread if available
+        func_sync = getattr(overpass_provider, "get_neighborhoods", None)
+        if func_sync:
+            return await asyncio.to_thread(func_sync, city, lat, lon, lang)
+    except Exception as e:
+        logging.warning(f"neighborhoods provider error: {e}")
+    return []
