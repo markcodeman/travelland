@@ -253,12 +253,116 @@ if (cityInput) {
       hfLon.value = lon;
       updateTransportLink();
       try{ updateCurrencyLink(); }catch(e){}
+      try { fetchAndRenderNeighborhoods(cityCountry, lat, lon); } catch(e) {}
       // DO NOT trigger search here!
     } else if (ev.target !== cityInput && !ev.target.closest('#city-suggestions')) {
       hideCitySuggestions();
     }
   });
 }
+
+// Neighborhood helper elements and state
+const neighborhoodsListEl = document.getElementById('neighborhoodList');
+const neighborhoodPreviewEl = document.getElementById('neighborhoodPreview');
+let selectedNeighborhood = null;
+
+async function fetchAndRenderNeighborhoods(city, lat, lon) {
+  if (!city && !(lat && lon)) return;
+  let url = `${API_BASE}/neighborhoods?`;
+  if (city) {
+    url += `city=${encodeURIComponent(city)}&`;
+  }
+  if (lat && lon) {
+    url += `lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+  }
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('neighborhoods lookup failed');
+    const j = await resp.json();
+    const n = j && j.neighborhoods ? j.neighborhoods : [];
+    renderNeighborhoodChips(n);
+  } catch (e) {
+    console.warn('Neighborhoods fetch failed', e);
+    if (neighborhoodsListEl) neighborhoodsListEl.innerHTML = '';
+    if (neighborhoodPreviewEl) neighborhoodPreviewEl.innerHTML = '';
+    document.getElementById('neighborhoodControls').style.display = 'none';
+  }
+}
+
+function renderNeighborhoodChips(neighborhoods) {
+  const container = document.getElementById('neighborhoodControls');
+  if (!container) return;
+  if (!neighborhoods || neighborhoods.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'block';
+  const list = document.getElementById('neighborhoodList');
+  list.innerHTML = '';
+  neighborhoods.forEach(nb => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'neigh-chip px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm';
+    btn.setAttribute('data-id', nb.id || '');
+    btn.setAttribute('data-name', nb.name || '');
+    btn.setAttribute('data-center', nb.center ? `${nb.center.lat},${nb.center.lon}` : '');
+    btn.setAttribute('data-bbox', nb.bbox ? JSON.stringify(nb.bbox) : '');
+    btn.textContent = nb.name;
+    list.appendChild(btn);
+  });
+  // Add "All city" fallback
+  const allBtn = document.createElement('button');
+  allBtn.type = 'button';
+  allBtn.className = 'neigh-chip px-3 py-1 rounded-full bg-blue-50 text-blue-800 font-semibold text-sm';
+  allBtn.setAttribute('data-id', '__all__');
+  allBtn.setAttribute('data-name', 'All city');
+  allBtn.textContent = 'All city';
+  list.appendChild(allBtn);
+}
+
+// Delegate clicks on neighborhood chips
+document.addEventListener('click', (ev) => {
+  const chip = ev.target && ev.target.closest && ev.target.closest('.neigh-chip');
+  if (chip) {
+    ev.preventDefault();
+    const id = chip.getAttribute('data-id');
+    const name = chip.getAttribute('data-name');
+    const center = chip.getAttribute('data-center');
+    const bbox = chip.getAttribute('data-bbox');
+    selectNeighborhood({id, name, center, bbox});
+  }
+});
+
+function selectNeighborhood(nb) {
+  selectedNeighborhood = nb && nb.id !== '__all__' ? nb : null;
+  document.querySelectorAll('.neigh-chip').forEach(el => el.classList.remove('ring','ring-blue-400','bg-blue-100'));
+  const selId = selectedNeighborhood ? selectedNeighborhood.id : '__all__';
+  const selectedBtn = Array.from(document.querySelectorAll('.neigh-chip')).find(el => el.getAttribute('data-id') === selId);
+  if (selectedBtn) selectedBtn.classList.add('ring','ring-blue-400','bg-blue-100');
+
+  let hfId = document.getElementById('neighborhood_id');
+  if (!hfId) { hfId = document.createElement('input'); hfId.type='hidden'; hfId.id='neighborhood_id'; document.body.appendChild(hfId); }
+  let hfBbox = document.getElementById('neighborhood_bbox');
+  if (!hfBbox) { hfBbox = document.createElement('input'); hfBbox.type='hidden'; hfBbox.id='neighborhood_bbox'; document.body.appendChild(hfBbox); }
+  if (selectedNeighborhood) {
+    hfId.value = selectedNeighborhood.id || '';
+    hfBbox.value = selectedNeighborhood.bbox ? selectedNeighborhood.bbox : '';
+    if (neighborhoodPreviewEl) {
+      if (selectedNeighborhood.center) {
+        const [lat, lon] = selectedNeighborhood.center.split(',');
+        neighborhoodPreviewEl.innerHTML = `<a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=14/${lat}/${lon}" target="_blank">Preview ${selectedNeighborhood.name} on map</a>`;
+      } else {
+        neighborhoodPreviewEl.textContent = selectedNeighborhood.name;
+      }
+    }
+  } else {
+    hfId.value = '';
+    hfBbox.value = '';
+    if (neighborhoodPreviewEl) neighborhoodPreviewEl.innerHTML = '<span>Searching whole city</span>';
+  }
+  updateQueryEnabledState();
+}
+
 
 document.getElementById('searchBtn').addEventListener('click', async () => {
   let city = (document.getElementById('city').value || '').trim();
@@ -301,11 +405,22 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
     // abortable fetch with client-side timeout to avoid hanging the UI when backend is slow
     const controller = new AbortController();
     const tid = setTimeout(() => controller.abort(), timeoutMs);
-    const resp = await fetch(`${API_BASE}/search`, {
+      // include neighborhood selection in payload if present
+      const payload = {city, q: query, user_lat, user_lon, max_results: 15, timeout: 25};
+      const nbId = document.getElementById('neighborhood_id') ? document.getElementById('neighborhood_id').value : '';
+      const nbBbox = document.getElementById('neighborhood_bbox') ? document.getElementById('neighborhood_bbox').value : '';
+      if (nbId) {
+        try {
+          payload.neighborhood = {id: nbId, bbox: nbBbox ? JSON.parse(nbBbox) : null};
+        } catch (e) {
+          payload.neighborhood = {id: nbId, bbox: nbBbox};
+        }
+      }
+      const resp = await fetch(`${API_BASE}/search`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       signal: controller.signal,
-      body: JSON.stringify({city, q: query, user_lat, user_lon, max_results: 15, timeout: 25})
+      body: JSON.stringify(payload)
     });
     clearTimeout(tid);
     if (!resp.ok) {
@@ -439,7 +554,14 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
                 method: 'POST',
                 headers: {'Content-Type':'application/json'},
                 signal: controller2.signal,
-                body: JSON.stringify({city, q: query, user_lat, user_lon, max_results: 50, timeout: 25})
+                // include neighborhood selection if present
+                const payload2 = {city, q: query, user_lat, user_lon, max_results: 50, timeout: 25};
+                const nbId2 = document.getElementById('neighborhood_id') ? document.getElementById('neighborhood_id').value : '';
+                const nbBbox2 = document.getElementById('neighborhood_bbox') ? document.getElementById('neighborhood_bbox').value : '';
+                if (nbId2) {
+                  try { payload2.neighborhood = {id: nbId2, bbox: nbBbox2 ? JSON.parse(nbBbox2) : null}; } catch(e) { payload2.neighborhood = {id: nbId2, bbox: nbBbox2}; }
+                }
+                body: JSON.stringify(payload2)
               });
               clearTimeout(tid2);
               const j2 = await resp2.json();
