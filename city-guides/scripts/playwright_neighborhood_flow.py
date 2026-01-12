@@ -9,6 +9,7 @@ one and take a screenshot.
 Run: python3 city-guides/scripts/playwright_neighborhood_flow.py
 Requires: playwright (and browsers installed: `playwright install chromium`)
 """
+import json
 import time
 from pathlib import Path
 from playwright.sync_api import sync_playwright, Route, Request
@@ -22,6 +23,11 @@ FAKE_NEIGHBORHOODS = {
         {"id": "relation/2", "name": "Baixa", "slug": "baixa", "center": {"lat": 38.7106, "lon": -9.1366}, "bbox": None, "source": "osm"}
     ]
 }
+
+
+def json_bytes(data):
+    """Convert dict to JSON bytes for Playwright route fulfillment."""
+    return json.dumps(data).encode('utf-8')
 
 
 def run_flow(headful=True):
@@ -70,11 +76,6 @@ def run_flow(headful=True):
         page.screenshot(path=str(out_file), full_page=True)
         print('Saved screenshot to', out_file)
         browser.close()
-
-
-def json_bytes(obj):
-    import json
-    return json.dumps(obj).encode('utf-8')
 
 
 if __name__ == '__main__':
