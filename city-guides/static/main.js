@@ -21,6 +21,7 @@ const API_BASE = (() => {
   } catch (e) {}
   return '';
 })();
+
 // --- Suggestion Chips Logic ---
 const suggestionChipsEl = document.getElementById('suggestionChips');
 const SUGGESTION_CHIPS = [
@@ -98,46 +99,145 @@ renderSuggestionChips();
 // state is re-evaluated immediately after any chip click.
 document.addEventListener('click', (ev) => {
   try {
-    const btn = ev.target && ev.target.closest && ev.target.closest('#suggestionChips button');
-    if (!btn) return;
-    // Run after the original click handler updates inputs
-    setTimeout(() => {
-      try { if (typeof updateQueryEnabledState === 'function') updateQueryEnabledState(); } catch (e) {}
-      // Dispatch input events so any listeners react to the programmatic change.
-      try {
-        const q = document.getElementById('query');
-        const c = document.getElementById('city');
-        if (q) q.dispatchEvent(new Event('input', {bubbles:true}));
-        if (c) c.dispatchEvent(new Event('input', {bubbles:true}));
-      } catch (e) {}
-      const s = document.getElementById('searchBtn');
-      const cityVal = document.getElementById('city') ? document.getElementById('city').value.trim() : '';
-      const queryVal = document.getElementById('query') ? document.getElementById('query').value.trim() : '';
-      if (s) s.disabled = !(cityVal && queryVal);
-    }, 0);
-  } catch (e) { /* ignore */ }
+    updateQueryEnabledState();
+  } catch (e) {}
 });
-let currentVenues = [];
-let currentWeather = null;
 
 // --- Nominatim autocomplete helpers ---
 
-const cityInput = document.getElementById('city');
-const queryInput = document.getElementById('query');
-const searchBtn = document.getElementById('searchBtn');
-const suggestionsEl = document.getElementById('city-suggestions');
-let nominatimTimeout = null;
+/**
+ * ⚠️ PROTECTED FILE - DO NOT MODIFY WITHOUT REVIEW
+ * City autocomplete using Nominatim
+ * Last working: Jan 12, 2026
+ */
 
-const debounce = (func, delay) => {
-    let timeout;
-    return function(...args) {
-        const context = this;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(context, args), delay);
-    };
+const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
+
+const citySearchModule = {
+    timeout: null,
+
+    init() {
+        const cityInput = document.getElementById('city');
+        const suggestionsEl = document.getElementById('city-suggestions');
+        if (!cityInput || !suggestionsEl) return;
+
+        cityInput.addEventListener('input', (e) => this.handleInput(e, suggestionsEl));
+        document.addEventListener('click', (e) => this.handleClickOutside(e, cityInput, suggestionsEl));
+    },
+
+    handleInput(e, suggestionsEl) {
+        const value = e.target.value.trim();
+        if (this.timeout) clearTimeout(this.timeout);
+
+        if (!value || value.length < 3) {
+            this.hideSuggestions(suggestionsEl);
+            return;
+        }
+
+        this.timeout = setTimeout(() => this.fetchSuggestions(value, suggestionsEl), 300);
+    },
+
+    async fetchSuggestions(query, suggestionsEl) {
+        try {
+            const url = `${NOMINATIM_URL}?format=json&addressdetails=1&limit=6&accept-language=en&q=${encodeURIComponent(query)}`;
+            const resp = await fetch(url, {
+                headers: { 'Accept': 'application/json', 'User-Agent': 'city-guides/1.0' }
+            });
+            const items = await resp.json();
+            this.showSuggestions(items, suggestionsEl);
+        } catch (err) {
+            console.warn('Nominatim error:', err);
+            this.hideSuggestions(suggestionsEl);
+        }
+    },
+
+    showSuggestions(items, suggestionsEl) {
+        if (!items || items.length === 0) {
+            this.hideSuggestions(suggestionsEl);
+            return;
+        }
+
+        window._citySuggestions = items;
+        suggestionsEl.innerHTML = items.map(it => `
+            <div class="suggestion-item px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                 data-lat="${it.lat}" data-lon="${it.lon}">
+                ${it.display_name}
+            </div>
+        `).join('');
+        suggestionsEl.style.display = 'block';
+    },
+
+    hideSuggestions(suggestionsEl) {
+        if (suggestionsEl) suggestionsEl.style.display = 'none';
+    },
+
+    handleClickOutside(e, cityInput, suggestionsEl) {
+        const suggestionItem = e.target.closest('.suggestion-item');
+
+        if (suggestionItem) {
+            this.selectCity(suggestionItem, cityInput, suggestionsEl);
+        } else if (e.target !== cityInput && !e.target.closest('#city-suggestions')) {
+            this.hideSuggestions(suggestionsEl);
+        }
+    },
+
+    selectCity(el, cityInput, suggestionsEl) {
+        const lat = el.dataset.lat;
+        const lon = el.dataset.lon;
+        const items = window._citySuggestions || [];
+        const selected = items.find(it => it.lat === lat && it.lon === lon);
+
+        let cityCountry = el.textContent.trim();
+
+        if (selected?.address) {
+            const addr = selected.address;
+            const city = addr.city || addr.town || addr.village || addr.hamlet || addr.county || addr.state || '';
+            const country = addr.country || '';
+            if (city && country) cityCountry = `${city}, ${country}`;
+            else if (city) cityCountry = city;
+        }
+
+        cityInput.value = cityCountry;
+        this.hideSuggestions(suggestionsEl);
+
+        // Store lat/lon
+        this.setHiddenField('user_lat', lat);
+        this.setHiddenField('user_lon', lon);
+
+        // Trigger neighborhood fetch
+        if (typeof fetchAndRenderNeighborhoods === 'function') {
+            fetchAndRenderNeighborhoods(cityCountry, lat, lon);
+        }
+
+        // Update other UI elements
+        if (typeof updateQueryEnabledState === 'function') updateQueryEnabledState();
+        if (typeof updateTransportLink === 'function') updateTransportLink();
+    },
+
+    setHiddenField(id, value) {
+        let field = document.getElementById(id);
+        if (!field) {
+            field = document.createElement('input');
+            field.type = 'hidden';
+            field.id = id;
+            field.name = id;
+            document.body.appendChild(field);
+        }
+        field.value = value;
+    }
 };
 
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', () => citySearchModule.init());
+
+// --- End of city search module ---
+
+// Query state management
+const queryInput = document.getElementById('query');
+const searchBtn = document.getElementById('searchBtn');
+
 function updateQueryEnabledState() {
+  const cityInput = document.getElementById('city');
   const cityVal = cityInput && cityInput.value.trim();
   const queryVal = queryInput && queryInput.value.trim();
   // Enable search only if: city has value AND (query has value OR placeholder suggests action)
@@ -155,114 +255,15 @@ function updateQueryEnabledState() {
   }
   if (searchBtn) searchBtn.disabled = !enabled;
 }
-if (cityInput) {
-    cityInput.addEventListener('input', updateQueryEnabledState);
-    // Also run on page load
-    updateQueryEnabledState();
-}
+
 if (queryInput) {
     queryInput.addEventListener('input', updateQueryEnabledState);
 }
 
-function hideCitySuggestions() {
-  if (suggestionsEl) suggestionsEl.style.display = 'none';
-}
-
-function showCitySuggestions(items) {
-  if (!suggestionsEl) return;
-  if (!items || items.length === 0) {
-    hideCitySuggestions();
-    return;
-  }
-  window.showCitySuggestions = items;
-  suggestionsEl.innerHTML = items.map(it => {
-    const display = it.display_name;
-    return `<div class="suggestion-item px-3 py-2 hover:bg-gray-100 cursor-pointer" data-lat="${it.lat}" data-lon="${it.lon}">${display}</div>`;
-  }).join('');
-  suggestionsEl.style.display = 'block';
-}
-
-function fetchCitySuggestions(q) {
-  // request English results to prefer ASCII country names
-  const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&accept-language=en&q=${encodeURIComponent(q)}`;
-  return fetch(url, {headers: {'Accept': 'application/json'}}).then(r => r.json());
-}
-
-if (cityInput) {
-  const debouncedFetch = debounce(async (value) => {
-    try {
-      const items = await fetchCitySuggestions(value);
-      showCitySuggestions(items);
-    } catch (err) {
-      hideCitySuggestions();
-      console.warn('Nominatim error', err);
-    }
-  }, 300);
-
-  cityInput.addEventListener('input', (e) => {
-    const v = e.target.value.trim();
-    if (!v || v.length < 3) {
-      hideCitySuggestions();
-      return;
-    }
-    debouncedFetch(v);
-  });
-
-  document.addEventListener('click', (ev) => {
-    const el = ev.target.closest && ev.target.closest('.suggestion-item');
-    if (el) {
-      const lat = el.getAttribute('data-lat');
-      const lon = el.getAttribute('data-lon');
-      let selectedItem = null;
-      if (window.showCitySuggestions && Array.isArray(window.showCitySuggestions)) {
-        selectedItem = window.showCitySuggestions.find(it => it.lat === lat && it.lon === lon);
-      }
-      let cityCountry = el.textContent || el.innerText;
-      if (selectedItem && selectedItem.address) {
-        const addr = selectedItem.address;
-        // Try to extract city from various address fields
-        // Prefer: city > town > village > hamlet > county > state
-        const city = addr.city || addr.town || addr.village || addr.hamlet || addr.county || addr.state || '';
-        const country = addr.country || '';
-        // If we found a city, use it with country
-        if (city && country) {
-          cityCountry = `${city}, ${country}`;
-        } else if (city) {
-          cityCountry = city;
-        } else if (country) {
-          // Only use country if absolutely no city found
-          // But try to extract a city name from the display_name first
-          const displayName = selectedItem.display_name || '';
-          const parts = displayName.split(',').map(p => p.trim());
-          // Usually first part is the city/town name, last is the country
-          if (parts.length > 1) {
-            cityCountry = `${parts[0]}, ${country}`;
-          } else {
-            cityCountry = country;
-          }
-        }
-      }
-      cityInput.value = cityCountry;
-      hideCitySuggestions();
-      let hfLat = document.getElementById('user_lat');
-      let hfLon = document.getElementById('user_lon');
-      if (!hfLat) {
-        hfLat = document.createElement('input'); hfLat.type = 'hidden'; hfLat.id = 'user_lat'; hfLat.name = 'user_lat'; document.body.appendChild(hfLat);
-      }
-      if (!hfLon) {
-        hfLon = document.createElement('input'); hfLon.type = 'hidden'; hfLon.id = 'user_lon'; hfLon.name = 'user_lon'; document.body.appendChild(hfLon);
-      }
-      hfLat.value = lat;
-      hfLon.value = lon;
-      updateTransportLink();
-      try{ updateCurrencyLink(); }catch(e){}
-      try { fetchAndRenderNeighborhoods(cityCountry, lat, lon); } catch(e) {}
-      // DO NOT trigger search here!
-    } else if (ev.target !== cityInput && !ev.target.closest('#city-suggestions')) {
-      hideCitySuggestions();
-    }
-  });
-}
+// Initialize query state on page load
+document.addEventListener('DOMContentLoaded', () => {
+  updateQueryEnabledState();
+});
 
 // Neighborhood helper elements and state
 const neighborhoodsListEl = document.getElementById('neighborhoodList');
@@ -294,669 +295,6 @@ async function fetchAndRenderNeighborhoods(city, lat, lon) {
   }
 }
 
-/**
- * Render neighborhood chips with defensive DOM creation
- * @param {Array} neighborhoods - Array of neighborhood objects
- */
-function renderNeighborhoodChips(neighborhoods) {
-  // Defensive: Create container if it doesn't exist
-  let container = document.getElementById('neighborhoodControls');
-  
-  if (!container) {
-    console.warn('[Neighborhoods] Container not found, creating dynamically');
-    container = document.createElement('div');
-    container.id = 'neighborhoodControls';
-    container.className = 'neighborhood-controls mt-4';
-    
-    // Find best insertion point
-    const insertAfter = document.getElementById('suggestionChips')
-      || document.querySelector('.search-form')
-      || document.querySelector('.page-hero');
-    
-    if (insertAfter) {
-      insertAfter.insertAdjacentElement('afterend', container);
-    } else {
-      const wrap = document.querySelector('.wrap');
-      if (wrap) wrap.prepend(container);
-    }
-  }
-  
-  // Clear existing content
-  container.innerHTML = '';
-  
-  // Handle empty results
-  if (!neighborhoods || neighborhoods.length === 0) {
-    container.innerHTML = '<p class="text-gray-500 italic text-sm">No neighborhoods found for this city</p>';
-    return;
-  }
-  
-  // Create chip wrapper
-  const chipWrapper = document.createElement('div');
-  chipWrapper.className = 'flex flex-wrap gap-2 mt-2';
-  
-  // Add "All Areas" chip (default selected)
-  const allChip = createNeighborhoodChip('All Areas', null, true);
-  chipWrapper.appendChild(allChip);
-  
-  // Add neighborhood chips
-  neighborhoods.forEach(n => {
-    const chip = createNeighborhoodChip(n.name, n, false);
-    chipWrapper.appendChild(chip);
-  });
-  
-  container.appendChild(chipWrapper);
-  console.log(`[Neighborhoods] Rendered ${neighborhoods.length} chips`);
-}
-
-/**
- * Create a single neighborhood chip button
- * @param {string} label - Text label to display on the chip
- * @param {?Object} neighborhood - Neighborhood object represented by this chip, or null for "All Areas"
- * @param {boolean} isActive - Whether this chip should be rendered in the active/selected state
- */
-function createNeighborhoodChip(label, neighborhood, isActive) {
-  const chip = document.createElement('button');
-  chip.type = 'button';
-  chip.className = `neighborhood-chip px-3 py-1 rounded-full text-sm border transition-colors cursor-pointer ${
-    isActive 
-      ? 'bg-blue-500 text-white border-blue-500' 
-      : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
-  }`;
-  chip.textContent = label;
-  chip.dataset.neighborhood = JSON.stringify(neighborhood);
-  chip.addEventListener('click', () => selectNeighborhood(neighborhood, chip));
-  return chip;
-}
-
-/**
- * Handle neighborhood chip selection
- */
-function selectNeighborhood(neighborhood, chipElement) {
-  // Remove active state from all chips
-  document.querySelectorAll('.neighborhood-chip').forEach(c => {
-    c.classList.remove('bg-blue-500', 'text-white', 'border-blue-500');
-    c.classList.add('bg-gray-100', 'border-gray-300', 'text-gray-700');
-  });
-
-  // Add active state to selected chip
-  chipElement.classList.remove('bg-gray-100', 'border-gray-300', 'text-gray-700');
-  chipElement.classList.add('bg-blue-500', 'text-white', 'border-blue-500');
-
-  // Store selection in global state
-  selectedNeighborhood = neighborhood;
-  console.log('[Neighborhoods] Selected:', neighborhood?.name || 'All Areas');
-
-  // Maintain backward compatibility: ensure hidden inputs used by the search handler exist
-  // and reflect the current neighborhood selection.
-  try {
-    // Try to attach hidden fields to the same form as the city input, if available,
-    // otherwise fall back to the first form on the page.
-    const cityInput = document.getElementById('city');
-    const form =
-      (cityInput && cityInput.form) ||
-      document.getElementById('search-form') ||
-      document.querySelector('form');
-
-    if (!form) {
-      return;
-    }
-
-    // Ensure neighborhood_id hidden input exists
-    let idInput = document.getElementById('neighborhood_id');
-    if (!idInput) {
-      idInput = document.createElement('input');
-      idInput.type = 'hidden';
-      idInput.id = 'neighborhood_id';
-      idInput.name = 'neighborhood_id';
-      form.appendChild(idInput);
-    }
-
-    // Ensure neighborhood_bbox hidden input exists
-    let bboxInput = document.getElementById('neighborhood_bbox');
-    if (!bboxInput) {
-      bboxInput = document.createElement('input');
-      bboxInput.type = 'hidden';
-      bboxInput.id = 'neighborhood_bbox';
-      bboxInput.name = 'neighborhood_bbox';
-      form.appendChild(bboxInput);
-    }
-
-    // Update hidden input values based on the selected neighborhood
-    if (neighborhood && typeof neighborhood === 'object') {
-      // Neighborhood ID
-      if ('id' in neighborhood && neighborhood.id != null) {
-        idInput.value = String(neighborhood.id);
-      } else {
-        idInput.value = '';
-      }
-
-      // Neighborhood bounding box: support both array and string formats
-      const bbox = neighborhood.bbox;
-      if (Array.isArray(bbox)) {
-        bboxInput.value = bbox.join(',');
-      } else if (typeof bbox === 'string') {
-        bboxInput.value = bbox;
-      } else {
-        bboxInput.value = '';
-      }
-    } else {
-      // "All Areas" or no specific neighborhood selected
-      idInput.value = '';
-      bboxInput.value = '';
-    }
-  } catch (e) {
-    // Fail silently if DOM manipulation is not possible; search handler will simply
-    // not filter by neighborhood in that case.
-  }
-}
-
-
-document.getElementById('searchBtn').addEventListener('click', async () => {
-  let city = (document.getElementById('city').value || '').trim();
-  let query = document.getElementById('query') ? document.getElementById('query').value : '';
-
-  // Helpful fallback: if user typed "<query> in <city>" into the query box, infer the city.
-  if (!city) {
-    const m = String(query || '').match(/\bin\s+([^,].+)$/i);
-    if (m && m[1]) {
-      city = m[1].trim();
-      const cityEl = document.getElementById('city');
-      if (cityEl) cityEl.value = city;
-      updateQueryEnabledState();    } else {
-      // If still no city, use the placeholder default
-      const cityEl = document.getElementById('city');
-      city = (cityEl && cityEl.placeholder && cityEl.placeholder.includes('Guadalajara')) ? 'Guadalajara, Mexico' : '';    }
-  }
-
-  if (!city) {
-    const resEl = document.getElementById('results');
-    if (resEl) resEl.innerHTML = '<div class="error">Please enter a city first (e.g. “Lisbon, Portugal”).</div>';
-    return;
-  }
-  if (!query || query.trim() === '') {
-    const resEl = document.getElementById('results');
-    if (resEl) resEl.innerHTML = '<div class="error">Please select a category or type a search query.</div>';
-    return;
-  }
-  // Normalize for Wikivoyage food highlights: if query contains 'top food', send 'top food' to backend
-  if (/top food/i.test(query)) {
-    query = 'top food';
-  }
-  const user_lat = document.getElementById('user_lat') ? document.getElementById('user_lat').value : undefined;
-  const user_lon = document.getElementById('user_lon') ? document.getElementById('user_lon').value : undefined;
-  const resEl = document.getElementById('results');
-  if (!resEl) return;
-  // Show a contextual spinner while searching
-  resEl.innerHTML = getContextualSpinner(query);
-  try {
-    // abortable fetch with client-side timeout to avoid hanging the UI when backend is slow
-    const controller = new AbortController();
-    const tid = setTimeout(() => controller.abort(), timeoutMs);
-      // include neighborhood selection in payload if present
-      const payload = {city, q: query, user_lat, user_lon, max_results: 15, timeout: 25};
-      const nbId = document.getElementById('neighborhood_id') ? document.getElementById('neighborhood_id').value : '';
-      const nbBbox = document.getElementById('neighborhood_bbox') ? document.getElementById('neighborhood_bbox').value : '';
-      if (nbId) {
-        try {
-          payload.neighborhood = {id: nbId, bbox: nbBbox ? JSON.parse(nbBbox) : null};
-        } catch (e) {
-          payload.neighborhood = {id: nbId, bbox: nbBbox};
-        }
-      }
-      const resp = await fetch(`${API_BASE}/search`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      signal: controller.signal,
-      body: JSON.stringify(payload)
-    });
-    clearTimeout(tid);
-    if (!resp.ok) {
-      const txt = await resp.text().catch(() => '');
-      throw new Error(`Search failed (HTTP ${resp.status}). ${txt ? txt.slice(0, 200) : ''}`);
-    }
-    const j = await resp.json();
-    console.log('[DEBUG] /search response:', j);
-    if (!j || !j.venues) {
-      resEl.innerHTML = '<div class="error">No results.</div>';
-      return;
-    }
-    // Separate Wikivoyage and real venues
-    const wikivoyageVenues = j.venues.filter(v => v.provider === 'wikivoyage');
-    const realVenues = j.venues.filter(v => v.provider !== 'wikivoyage');
-    currentVenues = realVenues;
-    const nudge = document.querySelector('.marco-nudge');
-    if (nudge) {
-      nudge.textContent = `🧭 Found ${realVenues.length} spots! Ask me which is best!`;
-      nudge.style.background = '#4CAF50';
-      nudge.style.color = 'white';
-      nudge.style.display = 'block';
-    }
-    if (wikivoyageVenues.length === 0 && realVenues.length === 0) {
-      resEl.innerHTML = '<div class="error">No venues found. Try a different city or budget.</div>';
-      return;
-    }
-    let html = '';
-    if (wikivoyageVenues.length > 0) {
-      // Determine if these are historic or food venues based on the first venue's amenity
-      const isHistoric = wikivoyageVenues[0].amenity === 'historic';
-      const headerText = isHistoric ? '🏛️ Historic Sites & Attractions (Wikivoyage)' : '🍽️ Local Food Highlights (Wikivoyage)';
-      html += `<div class="wikivoyage-section"><h2>${headerText}</h2>`;
-      html += wikivoyageVenues.map(v => {
-        const imgUrl = v.image || v.banner_url || '/static/img/placeholder.png';
-        const wikivoyageLink = v.wikivoyage_url ? `<a href="${v.wikivoyage_url}" target="_blank" rel="noopener" class="wiki-link">Read on Wikivoyage →</a>` : '';
-        return `<div class="card wikivoyage-card"><img class="card-img" src="${imgUrl}" alt="${v.name}" loading="lazy" onerror="this.onerror=null;this.src='/static/img/placeholder.png'"/><h3>${v.name}</h3><p>${v.description}</p>${wikivoyageLink}</div>`;
-      }).join('');
-      html += '</div>';
-    }
-    if (realVenues.length > 0) {
-      html += `<div class="realvenues-section"><h2>🍴 Real Venues</h2>`;
-      html += realVenues.map(v => {
-        let card = `<div class="card">`;
-        // Thumbnail (prefer venue-provided image, then fallback to banner or default placeholder)
-        try {
-          let imgUrl = (v.image || '').trim() || (v.banner_url || '').trim() || (v.thumbnail || '').trim();
-          // Ensure we don't use empty strings; default to placeholder
-          if (!imgUrl) {
-            imgUrl = DEFAULT_IMAGE;
-          }
-          // Use a safer onerror handler with proper escaping
-          const safeDefault = DEFAULT_IMAGE.replace(/'/g, "\\'");
-          card += `<img class="card-img" src="${imgUrl}" alt="${v.name}" loading="lazy" onerror="if(this.src!=='${safeDefault}') this.src='${safeDefault}'"/>`;
-        } catch (e) {
-          card += `<img class="card-img" src="${DEFAULT_IMAGE}" alt="${v.name}" loading="lazy"/>`;
-        }
-        let badgeHtml = '';
-        if (v.open_now === true) {
-          badgeHtml = `<span class="open-badge" title="Open now">Open</span>`;
-        } else if (v.open_now === false) {
-          badgeHtml = `<span class="closed-badge" title="Closed now">Closed</span>`;
-        } else {
-          badgeHtml = `<span class="unknown-badge" title="Hours unknown">Hours</span>`;
-        }
-        card += `<h3>${v.name} ${badgeHtml} <span class="tag">${v.price_range}</span></h3>`;
-        if (v.rating) {
-          const stars = '⭐'.repeat(Math.min(5, Math.ceil(v.rating)));
-          card += `<p class="meta">${stars} ${v.rating}/5</p>`;
-        }
-        if (v.address) {
-          if (v.address.includes('Found via Web Search') || v.address.includes('Found via Web')) {
-            card += `<p class="meta">${v.address}</p>`;
-          } else {
-            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name + ' ' + v.address)}`;
-            card += `<p class="meta"><a href="${mapUrl}" target="_blank" rel="noopener" class="address-link">📍 ${v.address}</a></p>`;
-          }
-        }
-        card += `<p>${v.description}</p>`;
-        if (v.opening_hours_pretty || v.opening_hours) {
-          card += `<p class="meta"><strong>Hours:</strong> ${v.opening_hours_pretty || v.opening_hours}</p>`;
-        }
-        if (v.phone) {
-          try {
-            const plain = v.phone.replace(/^tel:/i, '');
-            card += `<p><strong>Phone:</strong> <a href="${v.phone}" class="phone-link">${plain}</a></p>`;
-          } catch (e) {
-            card += `<p><strong>Phone:</strong> ${v.phone}</p>`;
-          }
-        }
-        if (v.website) {
-          card += `<p><a href="${v.website}" target="_blank" rel="noopener">Visit Website</a></p>`;
-        } else if (v.osm_url) {
-          card += `<p><a href="${v.osm_url}" target="_blank" rel="noopener">View on Map</a></p>`;
-        }
-        if (v.next_change) {
-          try {
-            const when = new Date(v.next_change).toLocaleString();
-            card += `<p class="meta"><em>Next change:</em> ${when}</p>`;
-          } catch (e) {
-            card += `<p class="meta"><em>Next change:</em> ${v.next_change}</p>`;
-          }
-        }
-        card += `</div>`;
-        return card;
-      }).join('');
-      html += '</div>';
-    }
-    // If backend indicated partial results, show a banner and a 'Load more' button
-    if (j.partial) {
-      html = `<div class="partial-banner">Partial results — more coming <button id="loadMoreBtn" class="load-more-btn">Load more</button></div>` + html;
-    }
-    resEl.innerHTML = html;
-    if (j.partial) {
-      const loadBtn = document.getElementById('loadMoreBtn');
-      if (loadBtn) {
-        loadBtn.addEventListener('click', async () => {
-          loadBtn.disabled = true;
-          loadBtn.textContent = 'Loading…';
-          // Try up to 5 times, waiting for background enrichment to populate the cache
-          const maxAttempts = 5;
-          let attempt = 0;
-          let lastResponse = null;
-          while (attempt < maxAttempts) {
-            attempt += 1;
-            try {
-              const controller2 = new AbortController();
-              const timeoutMs2 = 20000; // allow longer for cache/enrichment
-              const tid2 = setTimeout(() => controller2.abort(), timeoutMs2);
-              // include neighborhood selection if present
-              const payload2 = {city, q: query, user_lat, user_lon, max_results: 50, timeout: 25};
-              const nbId2 = document.getElementById('neighborhood_id') ? document.getElementById('neighborhood_id').value : '';
-              const nbBbox2 = document.getElementById('neighborhood_bbox') ? document.getElementById('neighborhood_bbox').value : '';
-              if (nbId2) {
-                try { payload2.neighborhood = {id: nbId2, bbox: nbBbox2 ? JSON.parse(nbBbox2) : null}; } catch(e) { payload2.neighborhood = {id: nbId2, bbox: nbBbox2}; }
-              }
-              const resp2 = await fetch(`${API_BASE}/search`, {
-                method: 'POST',
-                headers: {'Content-Type':'application/json'},
-                signal: controller2.signal,
-                body: JSON.stringify(payload2)
-              });
-              clearTimeout(tid2);
-              const j2 = await resp2.json();
-              lastResponse = j2;
-              if (!j2) break;
-              // if partial is false, render and stop
-              if (!j2.partial) {
-                // reuse rendering logic by simulating a fresh response
-                // simple approach: replace results with full payload
-                const evt = new CustomEvent('search:replaceResults', {detail: j2});
-                document.dispatchEvent(evt);
-                loadBtn.textContent = 'Done';
-                loadBtn.disabled = false;
-                return;
-              }
-            } catch (e) {
-              console.warn('Load more attempt failed', e);
-            }
-            // wait a bit before retry
-            await new Promise(r => setTimeout(r, 2000));
-          }
-          // if we reach here, either still partial or failed
-          loadBtn.textContent = 'Try again later';
-          loadBtn.disabled = false;
-          if (lastResponse && lastResponse.venues) {
-            const evt = new CustomEvent('search:replaceResults', {detail: lastResponse});
-            document.dispatchEvent(evt);
-          }
-        });
-      }
-    }
-  } catch (e) {
-    if (resEl) {
-      if (e.name === 'AbortError') resEl.innerHTML = `<div class="error">Search timed out after ${Math.round(timeoutMs/1000)}s. Try a narrower query or press Search.</div>`;
-      else resEl.innerHTML = `<div class="error">Error: ${e.message}</div>`;
-    }
-  }
-});
-
-// Return HTML for a contextual spinner based on query/category
-function getContextualSpinner(query) {
-  const q = (query || '').toLowerCase();
-  let emoji = '🔎';
-  let label = 'Searching…';
-  if (/food|eat|restaurant|cuisine|dining|coffee|coffee & tea|top food|top eats/.test(q)) { emoji = '🍽️'; label = 'Finding local eats…'; }
-  else if (/transport|transit|metro|bus|train|taxi/.test(q)) { emoji = '🚍'; label = 'Checking transit & routes…'; }
-  else if (/historic|history|museum|sites|sights/.test(q)) { emoji = '🏛️'; label = 'Uncovering historic sites…'; }
-  else if (/market|markets|shopping/.test(q)) { emoji = '🛒'; label = 'Looking for local markets…'; }
-  else if (/park|nature|hike|outdoor/.test(q)) { emoji = '🌳'; label = 'Finding parks & nature…'; }
-  else if (/event|events|concert|festival/.test(q)) { emoji = '🎉'; label = 'Searching events & happenings…'; }
-  else if (/family|kid|kids|family friendly/.test(q)) { emoji = '👪'; label = 'Looking for family-friendly spots…'; }
-  else if (/hidden|gems|local favorites|local/.test(q)) { emoji = '💎'; label = 'Hunting hidden gems…'; }
-
-  return `
-    <div class="search-spinner">
-      <div class="spinner-ring" aria-hidden="true"></div>
-      <div class="spinner-text">${emoji} ${label}</div>
-    </div>
-  `;
-}
-
-// Listener to replace results when load-more fetch returns a payload
-document.addEventListener('search:replaceResults', (ev) => {
-  const j = ev.detail;
-  const resEl = document.getElementById('results');
-  if (!resEl) return;
-  // simple re-render: reuse the same logic as above for venues display
-  // build html for wikivoyage and real venues
-  const wikivoyageVenues = j.venues.filter(v => v.provider === 'wikivoyage');
-  const realVenues = j.venues.filter(v => v.provider !== 'wikivoyage');
-  let html = '';
-  if (wikivoyageVenues.length > 0) {
-    html += `<div class="wikivoyage-section"><h2>🍽️ Local Food Highlights (Wikivoyage)</h2>`;
-    html += wikivoyageVenues.map(v => {
-      const imgUrl = v.image || v.banner_url || '/static/img/dummy-img.png';
-      return `<div class="card wikivoyage-card"><img class="card-img" src="${imgUrl}" alt="${v.name}" loading="lazy" onerror="this.onerror=null;this.src='/static/img/dummy-img.png'"/><h3>${v.name}</h3><p>${v.description}</p></div>`;
-    }).join('');
-    html += '</div>';
-  }
-  if (realVenues.length > 0) {
-    html += `<div class="realvenues-section"><h2>🍴 Real Venues</h2>`;
-    html += realVenues.map(v => {
-      try {
-        const imgUrl = v.image || v.banner_url || v.thumbnail || '/static/img/dummy-img.png';
-        return `<div class="card"><img class="card-img" src="${imgUrl}" alt="${v.name}" loading="lazy" onerror="this.onerror=null;this.src='/static/img/dummy-img.png'"/><h3>${v.name}</h3><p>${v.description || ''}</p></div>`;
-      } catch (e) { return `<div class="card"><img class="card-img" src="/static/img/dummy-img.png" alt="${v.name}" loading="lazy" onerror="this.onerror=null;this.src='/static/img/dummy-img.png'"/><h3>${v.name}</h3><p>${v.description || ''}</p></div>`; }
-    }).join('');
-    html += '</div>';
-  }
-  resEl.innerHTML = html;
-});
-
-// Marco Chat logic
-const marcoFab = document.getElementById('marcoFab');
-const marcoChat = document.getElementById('marcoChat');
-const closeChat = document.getElementById('closeChat');
-const chatInput = document.getElementById('chatInput');
-const chatSend = document.getElementById('chatSend');
-const chatMessages = document.getElementById('chatMessages');
-const chatChips = document.getElementById('chatChips');
-
-const DEFAULT_CHIPS = ["Kid friendly?", "Best view?", "Romantic?", "Open late?"];
-
-function renderChips(chips = DEFAULT_CHIPS) {
-  if (!chatChips) return;
-  chatChips.innerHTML = '';
-  chips.forEach(text => {
-    const btn = document.createElement('div');
-    btn.className = 'chat-chip';
-    btn.textContent = text;
-    btn.onclick = () => {
-      chatInput.value = `Of these results, which is ${text.toLowerCase().replace('?','')}`;
-      chatSend.click();
-    };
-    chatChips.appendChild(btn);
-  });
-}
-renderChips();
-
-if (marcoFab) {
-  marcoFab.addEventListener('click', () => {
-    marcoChat.classList.toggle('open');
-    const nudge = document.querySelector('.marco-nudge');
-    if (nudge) nudge.style.display = 'none';
-    if (marcoChat.classList.contains('open')) chatInput.focus();
-  });
-}
-if (closeChat) {
-  closeChat.addEventListener('click', () => marcoChat.classList.remove('open'));
-}
-
-function markdownToHtml(text) {
-  let html = text;
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-  html = html.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
-  return html.replace(/\n/g, '<br>');
-}
-
-function appendChat(sender, text) {
-  const div = document.createElement('div');
-  div.className = sender === 'You' ? 'message user' : 'message bot';
-  div.innerHTML = markdownToHtml(String(text));
-  chatMessages.appendChild(div);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-if (chatSend && chatInput) {
-  chatSend.addEventListener('click', async () => {
-    const q = chatInput.value.trim();
-    if (!q) return;
-    const currentCity = document.getElementById('city').value.trim();
-    appendChat('You', q);
-    chatInput.value = '';
-    const loadingMessage = document.createElement('div');
-    loadingMessage.className = 'message bot';
-    loadingMessage.textContent = 'Thinking...';
-    chatMessages.appendChild(loadingMessage);
-    try {
-      const resp = await fetch('/semantic-search', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          q,
-          city: currentCity,
-          mode: 'explorer',
-          venues: currentVenues.slice(0, 10),
-          weather: currentWeather
-        })
-      });
-      const j = await resp.json();
-      chatMessages.removeChild(loadingMessage);
-      if (j.error) appendChat('AI', `Marco here: I had a bit of trouble finding that. ${j.error}`);
-      else if (j.answer) appendChat('AI', j.answer);
-      else appendChat('AI', "I'm not quite sure about that one, partner. Try asking about local food or sights!");
-    } catch (e) {
-      chatMessages.removeChild(loadingMessage);
-      appendChat('AI', `Marco here: My explorer's compass is spinning! (Error: ${e.message})`);
-    }
-  });
-  chatInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); chatSend.click(); } });
-}
-
-// Currency converter
-document.addEventListener('DOMContentLoaded', () => {
-  const convertBtn = document.getElementById('convertBtn');
-  const convertResult = document.getElementById('convertResult');
-  if (convertBtn && convertResult) {
-    convertBtn.addEventListener('click', async () => {
-      const amountEl = document.getElementById('amount');
-      const amount = amountEl ? parseFloat(amountEl.value) : 0;
-      const fromCurr = document.getElementById('fromCurr').value;
-      const toCurr = document.getElementById('toCurr').value;
-      if (!amount || amount <= 0) { convertResult.innerHTML = '<div class="error">Valid amount required.</div>'; return; }
-      convertResult.innerHTML = '<div class="loading">Converting…</div>';
-      try {
-        const resp = await fetch('/convert', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({amount, from: fromCurr, to: toCurr}) });
-        const j = await resp.json();
-        convertResult.innerHTML = j.result ? `<div class="success">${j.result}</div>` : `<div class="error">${j.error}</div>`;
-      } catch (e) { convertResult.innerHTML = `<div class="error">Error: ${e.message}</div>`; }
-    });
-  }
-});
-
-// Weather widget
-function showWeatherWidget(data) {
-  const widget = document.getElementById('weather');
-  const icon = document.getElementById('weather-icon');
-  const summary = document.getElementById('weather-summary');
-  const details = document.getElementById('weather-details');
-  if (!widget || !icon || !summary || !details) return;
-  widget.style.display = 'flex';
-  icon.textContent = data.icon || '☀️';
-  summary.textContent = data.summary || 'Clear sky';
-  details.textContent = data.details || '';
-}
-
-async function fetchAndShowWeather(city, lat, lon) {
-  const widget = document.getElementById('weather');
-  if (!widget) return;
-  if (!city || city.trim().length < 2) {
-    showWeatherWidget({icon: '🌍', summary: 'Search for a city to see weather', details: ''});
-    return;
-  }
-  showWeatherWidget({icon: '⏳', summary: 'Loading…', details: ''});
-  try {
-    const resp = await fetch('/weather', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(lat && lon ? {lat, lon, city} : {city})
-    });
-    const j = await resp.json();
-    if (j.error || !j.weather) {
-      showWeatherWidget({icon: '❓', summary: 'Weather unavailable', details: ''});
-      currentWeather = null;
-      return;
-    }
-    const w = j.weather;
-    currentWeather = {
-      temperature_c: w.temperature,
-      temperature_f: Math.round((w.temperature * 9/5) + 32),
-      wind_kmh: w.windspeed,
-      wind_mph: Math.round(w.windspeed / 1.60934),
-      weathercode: w.weathercode
-    };
-    const code = w.weathercode;
-    const icons = {
-      0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️', 45: '🌫️', 48: '🌫️',
-      51: '🌦️', 53: '🌦️', 55: '🌦️', 56: '🌧️', 57: '🌧️',
-      61: '🌦️', 63: '🌦️', 65: '🌧️', 66: '🌧️', 67: '🌧️',
-      71: '🌨️', 73: '🌨️', 75: '❄️', 77: '❄️', 80: '🌧️', 81: '🌧️', 82: '🌧️',
-      85: '🌨️', 86: '🌨️', 95: '⛈️', 96: '⛈️', 99: '⛈️'
-    };
-    const icon = icons[code] || '❓';
-    const tempC = w.temperature;
-    const tempF = Math.round((tempC * 9/5) + 32);
-    const wind = w.windspeed;
-    const windMph = Math.round(wind / 1.60934);
-    showWeatherWidget({
-      icon,
-      summary: `Weather: ${icon}`,
-      details: `${tempC}°C / ${tempF}°F, Wind ${wind} km/h / ${windMph} mph`
-    });
-  } catch (e) { showWeatherWidget({icon: '❌', summary: 'Weather error', details: ''}); }
-}
-
-function updateTransportLink() {
-  const city = document.getElementById('city').value.trim();
-  const lat = document.getElementById('user_lat') ? document.getElementById('user_lat').value : '';
-  const lon = document.getElementById('user_lon') ? document.getElementById('user_lon').value : '';
-  const link = document.getElementById('transportLink');
-  if (link && city) {
-    link.href = `/transport?city=${encodeURIComponent(city)}&lat=${lat}&lon=${lon}`;
-  }
-}
-
-function updateCurrencyLink() {
-  const city = document.getElementById('city').value.trim();
-  const hambCurrency = document.querySelector('#hamburgerMenu a[href="/tools/currency"]');
-  if (hambCurrency) {
-    if (city) {
-      hambCurrency.href = `/tools/currency?city=${encodeURIComponent(city)}`;
-    } else {
-      hambCurrency.href = '/tools/currency';
-    }
-  }
-}
-
-const mainSearchBtn = document.getElementById('searchBtn');
-if (mainSearchBtn) {
-  const origHandler = mainSearchBtn.onclick;
-  mainSearchBtn.addEventListener('click', async () => {
-    const city = document.getElementById('city').value;
-    const user_lat = document.getElementById('user_lat') ? document.getElementById('user_lat').value : undefined;
-    const user_lon = document.getElementById('user_lon') ? document.getElementById('user_lon').value : undefined;
-    fetchAndShowWeather(city, user_lat, user_lon);
-    updateTransportLink();
-    try{ updateCurrencyLink(); }catch(e){}
-    if (typeof origHandler === 'function') origHandler();
-  });
-  // Do not trigger an automatic search on page load (prevents unexpected long searches).
-  // Still update links on load.
-  updateTransportLink();
-  try{ updateCurrencyLink(); }catch(e){}
-}
-
-// Auto-search debounce: when the user types in the query box, optionally trigger a search
 // after a short pause. Only triggers if a city is selected (to avoid empty searches).
 let searchDebounce = null;
 if (queryInput) {
@@ -1014,23 +352,385 @@ document.addEventListener('DOMContentLoaded', () => {
     cityInput.addEventListener('keydown', (ev) => {
       const items = suggestionsEl.querySelectorAll('.suggestion-item');
       if (!items || items.length === 0) return;
-      if (ev.key === 'ArrowDown') {
-        ev.preventDefault(); focused = Math.min(focused + 1, items.length - 1);
-        items.forEach((it,i)=> it.classList.toggle('focused', i===focused));
-      } else if (ev.key === 'ArrowUp') {
-        ev.preventDefault(); focused = Math.max(focused - 1, 0);
-        items.forEach((it,i)=> it.classList.toggle('focused', i===focused));
-      } else if (ev.key === 'Enter') {
-        const el = items[focused] || items[0];
-        if (el) { el.click(); ev.preventDefault(); }
-      }
-    });
-    suggestionsEl.addEventListener('mouseover', (ev) => {
-      const it = ev.target.closest && ev.target.closest('.suggestion-item');
-      if (!it) return;
-      const items = suggestionsEl.querySelectorAll('.suggestion-item');
-      items.forEach((el,i)=> el.classList.toggle('focused', el===it));
-      focused = Array.from(items).indexOf(it);
     });
   }
-})();
+});
+
+function updateTransportLink() {
+  const city = document.getElementById('city').value.trim();
+  const lat = document.getElementById('user_lat') ? document.getElementById('user_lat').value : '';
+  const lon = document.getElementById('user_lon') ? document.getElementById('user_lon').value : '';
+  const link = document.getElementById('transportLink');
+  if (link && city) {
+    link.href = `/transport?city=${encodeURIComponent(city)}&lat=${lat}&lon=${lon}`;
+  }
+}
+
+function updateCurrencyLink() {
+  const city = document.getElementById('city').value.trim();
+  const hambCurrency = document.querySelector('#hamburgerMenu a[href="/tools/currency"]');
+  if (hambCurrency) {
+    if (city) {
+      hambCurrency.href = `/tools/currency?city=${encodeURIComponent(city)}`;
+    } else {
+      hambCurrency.href = '/tools/currency';
+    }
+  }
+}
+
+/**
+ * Render neighborhoods with discovery presets + dropdown + Marco fallback
+ */
+function renderNeighborhoodChips(neighborhoods) {
+    let container = document.getElementById('neighborhoodControls');
+    
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'neighborhoodControls';
+        container.className = 'neighborhood-controls mt-4';
+        const insertAfter = document.getElementById('suggestionChips') 
+            || document.querySelector('.search-form');
+        if (insertAfter) insertAfter.insertAdjacentElement('afterend', container);
+    }
+    
+    container.innerHTML = '';
+    
+    if (!neighborhoods || neighborhoods.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 italic text-sm">No neighborhoods found</p>';
+        return;
+    }
+    
+    const count = neighborhoods.length;
+    const cityName = document.getElementById('city')?.value?.split(',')[0] || 'this city';
+    
+    console.log(`[Neighborhoods] Rendering discovery UI with ${count} areas`);
+    
+    // Build the discovery UI
+    container.innerHTML = `
+        <div class="neighborhood-discovery">
+            <!-- Header -->
+            <p class="text-sm font-medium text-gray-700 mb-2">
+                📍 Explore ${cityName}
+            </p>
+            
+            <!-- Quick Presets (Option 4) -->
+            <div class="neighborhood-presets flex flex-wrap gap-2 mb-3">
+                <button type="button" class="preset-btn px-3 py-1.5 rounded-full text-sm border border-blue-300 bg-blue-50 hover:bg-blue-100 text-blue-700 transition" data-filter="tourist">
+                    🎯 Tourist Hotspots
+                </button>
+                <button type="button" class="preset-btn px-3 py-1.5 rounded-full text-sm border border-green-300 bg-green-50 hover:bg-green-100 text-green-700 transition" data-filter="local">
+                    🏠 Local Vibes
+                </button>
+                <button type="button" class="preset-btn px-3 py-1.5 rounded-full text-sm border border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 transition" data-filter="food">
+                    🍽️ Foodie Areas
+                </button>
+                <button type="button" class="preset-btn px-3 py-1.5 rounded-full text-sm border border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-700 transition" data-filter="nightlife">
+                    🌙 Nightlife
+                </button>
+                <button type="button" class="preset-btn px-3 py-1.5 rounded-full text-sm border border-teal-300 bg-teal-50 hover:bg-teal-100 text-teal-700 transition" data-filter="budget">
+                    💰 Budget-Friendly
+                </button>
+            </div>
+            
+            <!-- Dropdown (Option 2) -->
+            <div class="neighborhood-dropdown">
+                <label class="text-xs text-gray-500 mb-1 block">Or choose a specific area:</label>
+                <select id="neighborhoodSelect" 
+                        class="w-full md:w-80 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                    <option value="">-- Select neighborhood --</option>
+                    <option value="all">🌐 All Areas (${count} total)</option>
+                    ${neighborhoods.map(n => 
+                        `<option value='${JSON.stringify(n).replace(/'/g, "&#39;")}'>${n.name}</option>`
+                    ).join('')}
+                </select>
+            </div>
+            
+            <!-- Marco Fallback -->
+            <div class="marco-help mt-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                <p class="text-xs text-gray-600">
+                    🤔 <strong>Not sure where to go?</strong>
+                    <button type="button" id="askMarcoBtn" class="text-blue-600 hover:underline ml-1">
+                        Ask Marco for a recommendation →
+                    </button>
+                </p>
+            </div>
+        </div>
+    `;
+    
+    // Store neighborhoods for filtering
+    window._neighborhoodData = neighborhoods;
+    
+    // Handle dropdown selection
+    const select = document.getElementById('neighborhoodSelect');
+    if (select) {
+        select.addEventListener('change', (e) => {
+            const val = e.target.value;
+            clearPresetSelection();
+            
+            if (val === '') {
+                selectedNeighborhood = null;
+            } else if (val === 'all') {
+                selectedNeighborhood = 'all';
+            } else {
+                try { 
+                    selectedNeighborhood = JSON.parse(val); 
+                } catch (err) { 
+                    selectedNeighborhood = val; 
+                }
+            }
+            console.log('[Neighborhoods] Selected:', selectedNeighborhood === 'all' ? 'All Areas' : selectedNeighborhood?.name);
+            updateSearchButtonState();
+        });
+    }
+    
+    // Handle preset buttons
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const filter = e.target.dataset.filter;
+            handlePresetClick(filter, neighborhoods);
+        });
+    });
+    
+    // Handle Marco button
+    const marcoBtn = document.getElementById('askMarcoBtn');
+    if (marcoBtn) {
+        marcoBtn.addEventListener('click', () => {
+            openMarcoWithNeighborhoodQuestion(cityName);
+        });
+    }
+    
+    selectedNeighborhood = null;
+    updateSearchButtonState();
+}
+
+/**
+ * Handle preset button clicks - suggest relevant neighborhoods
+ */
+function handlePresetClick(filter, neighborhoods) {
+    // Clear previous selection
+    clearPresetSelection();
+    
+    // Highlight clicked preset
+    const clickedBtn = document.querySelector(`.preset-btn[data-filter="${filter}"]`);
+    if (clickedBtn) {
+        clickedBtn.classList.add('ring-2', 'ring-offset-1', 'ring-blue-500');
+    }
+    
+    // Keywords for each filter type
+    const filterKeywords = {
+        tourist: ['centro', 'center', 'old town', 'historic', 'downtown', 'central', 'main', 'plaza', 'square', 'cathedral', 'castle', 'palace', 'museum'],
+        local: ['residential', 'village', 'local', 'authentic', 'traditional', 'neighborhood', 'barrio', 'bairro', 'quartier'],
+        food: ['market', 'mercado', 'food', 'restaurant', 'gastro', 'culinary', 'chinatown', 'little italy'],
+        nightlife: ['night', 'club', 'bar', 'party', 'entertainment', 'soho', 'downtown'],
+        budget: ['student', 'university', 'budget', 'affordable', 'cheap', 'backpack']
+    };
+    
+    const keywords = filterKeywords[filter] || [];
+    
+    // Find matching neighborhoods
+    let matches = neighborhoods.filter(n => {
+        const name = n.name.toLowerCase();
+        return keywords.some(kw => name.includes(kw));
+    });
+    
+    // If no matches, pick first 3 as "recommended"
+    if (matches.length === 0) {
+        matches = neighborhoods.slice(0, 3);
+    }
+    
+    // Show suggestion
+    showNeighborhoodSuggestion(filter, matches);
+}
+
+/**
+ * Show a suggestion based on preset selection
+ */
+function showNeighborhoodSuggestion(filter, matches) {
+    const filterLabels = {
+        tourist: '🎯 Tourist Hotspots',
+        local: '🏠 Local Vibes',
+        food: '🍽️ Foodie Areas',
+        nightlife: '🌙 Nightlife',
+        budget: '💰 Budget-Friendly'
+    };
+    
+    // Create or update suggestion area
+    let suggestionEl = document.getElementById('neighborhoodSuggestion');
+    if (!suggestionEl) {
+        suggestionEl = document.createElement('div');
+        suggestionEl.id = 'neighborhoodSuggestion';
+        suggestionEl.className = 'mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200';
+        const dropdown = document.querySelector('.neighborhood-dropdown');
+        if (dropdown) dropdown.insertAdjacentElement('beforebegin', suggestionEl);
+    }
+    
+    if (matches.length === 0) {
+        suggestionEl.innerHTML = `
+            <p class="text-sm text-gray-600">
+                No specific ${filterLabels[filter]} areas found. Try "All Areas" or 
+                <button type="button" class="text-blue-600 hover:underline" onclick="document.getElementById('askMarcoBtn').click()">ask Marco</button>!
+            </p>
+        `;
+        return;
+    }
+    
+    suggestionEl.innerHTML = `
+        <p class="text-sm font-medium text-blue-800 mb-2">
+            ${filterLabels[filter]} - Suggested areas:
+        </p>
+        <div class="flex flex-wrap gap-2">
+            ${matches.slice(0, 5).map(n => `
+                <button type="button" 
+                        class="suggestion-chip px-3 py-1 rounded-full text-sm bg-white border border-blue-300 hover:bg-blue-100 text-blue-700"
+                        data-neighborhood='${JSON.stringify(n).replace(/'/g, "&#39;")}'>
+                    ${n.name}
+                </button>
+            `).join('')}
+        </div>
+    `;
+    
+    // Add click handlers for suggestion chips
+    suggestionEl.querySelectorAll('.suggestion-chip').forEach(chip => {
+        chip.addEventListener('click', (e) => {
+            const data = e.target.dataset.neighborhood;
+            try {
+                selectedNeighborhood = JSON.parse(data);
+                // Update dropdown to match
+                const select = document.getElementById('neighborhoodSelect');
+                if (select) {
+                    select.value = data;
+                }
+                // Highlight selected chip
+                suggestionEl.querySelectorAll('.suggestion-chip').forEach(c => {
+                    c.classList.remove('bg-blue-500', 'text-white');
+                    c.classList.add('bg-white', 'text-blue-700');
+                });
+                e.target.classList.remove('bg-white', 'text-blue-700');
+                e.target.classList.add('bg-blue-500', 'text-white');
+                
+                console.log('[Neighborhoods] Selected from suggestion:', selectedNeighborhood.name);
+                updateSearchButtonState();
+            } catch (err) {
+                console.warn('Failed to parse neighborhood', err);
+            }
+        });
+    });
+}
+
+/**
+ * Clear preset button selection
+ */
+function clearPresetSelection() {
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.classList.remove('ring-2', 'ring-offset-1', 'ring-blue-500');
+    });
+}
+
+/**
+ * Open Marco chat with a neighborhood question
+ */
+function openMarcoWithNeighborhoodQuestion(cityName) {
+    // Open Marco chat
+    const marcoChat = document.getElementById('marcoChat');
+    if (marcoChat) {
+        marcoChat.classList.add('open');
+    }
+    
+    // Pre-fill the question
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) {
+        chatInput.value = `I'm visiting ${cityName} but I don't know the neighborhoods. Can you recommend the best area for me based on what I'm looking for?`;
+        chatInput.focus();
+    }
+    
+    // Add a helpful prompt in chat
+    const chatMessages = document.getElementById('chatMessages');
+    if (chatMessages) {
+        const helpMsg = document.createElement('div');
+        helpMsg.className = 'message bot';
+        helpMsg.innerHTML = `
+            <strong>Marco here! 🧭</strong><br>
+            Tell me what you're looking for in ${cityName}:<br>
+            • Historic sites & culture?<br>
+            • Best local food scene?<br>
+            • Nightlife & entertainment?<br>
+            • Family-friendly areas?<br>
+            • Budget-friendly spots?<br><br>
+            I'll suggest the perfect neighborhood for you!
+        `;
+        chatMessages.appendChild(helpMsg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+}
+
+/**
+ * Update hidden form inputs for neighborhood selection
+ */
+function updateNeighborhoodHiddenInputs(neighborhood) {
+    try {
+        const cityInput = document.getElementById('city');
+        const form = (cityInput && cityInput.form) || document.getElementById('search-form') || document.querySelector('form');
+        
+        if (!form) return;
+        
+        // Ensure hidden inputs exist
+        let idInput = document.getElementById('neighborhood_id');
+        if (!idInput) {
+            idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.id = 'neighborhood_id';
+            idInput.name = 'neighborhood_id';
+            form.appendChild(idInput);
+        }
+        
+        let bboxInput = document.getElementById('neighborhood_bbox');
+        if (!bboxInput) {
+            bboxInput = document.createElement('input');
+            bboxInput.type = 'hidden';
+            bboxInput.id = 'neighborhood_bbox';
+            bboxInput.name = 'neighborhood_bbox';
+            form.appendChild(bboxInput);
+        }
+        
+        // Update values
+        if (neighborhood && typeof neighborhood === 'object') {
+            idInput.value = neighborhood.id || '';
+            const bbox = neighborhood.bbox;
+            bboxInput.value = Array.isArray(bbox) ? bbox.join(',') : (bbox || '');
+        } else {
+            idInput.value = '';
+            bboxInput.value = '';
+        }
+    } catch (e) {
+        console.warn('[Neighborhoods] Failed to update hidden inputs:', e);
+    }
+}
+
+/**
+ * Enable/disable search button based on neighborhood state
+ */
+function updateSearchButtonState() {
+    const searchBtn = document.getElementById('searchBtn');
+    const cityInput = document.getElementById('city');
+    const queryInput = document.getElementById('query');
+    
+    const hasCity = cityInput && cityInput.value.trim();
+    const hasQuery = queryInput && queryInput.value.trim();
+    const isDropdown = !!document.getElementById('neighborhoodSearch');
+    const hasNeighborhood = !isDropdown || selectedNeighborhood !== null;
+    
+    if (searchBtn) {
+        const enabled = hasCity && hasQuery && hasNeighborhood;
+        searchBtn.disabled = !enabled;
+        
+        if (!hasNeighborhood && isDropdown) {
+            searchBtn.title = 'Select a neighborhood first';
+        } else if (!hasCity) {
+            searchBtn.title = 'Enter a city first';
+        } else if (!hasQuery) {
+            searchBtn.title = 'Select a category or enter a search query';
+        } else {
+            searchBtn.title = '';
+        }
+    }
+}
