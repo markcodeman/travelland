@@ -1211,12 +1211,50 @@ async def api_city_info():
 @app.route("/search", methods=["POST"])
 async def search():
     payload = await request.get_json(silent=True) or {}
+    # Lightweight heuristic to decide whether to cache this search (focus on food/top queries)
+    city = (payload.get("city") or "").strip()
+    q = (payload.get("q") or "").strip().lower()
+    should_cache = False
+    try:
+        if q and any(kw in q for kw in ["food", "restaurant", "top", "best", "must", "eat"]):
+            should_cache = True
+    except Exception:
+        should_cache = False
+
+    cache_key = None
+    cache_ttl = int(os.getenv("SEARCH_CACHE_TTL", "300"))
+    if redis_client and should_cache and city and q:
+        try:
+            import hashlib
+
+            raw = f"search:{city.lower()}:{q}"
+            cache_key = "travelland:" + hashlib.sha1(raw.encode()).hexdigest()
+            cached = await redis_client.get(cache_key)
+            if cached:
+                try:
+                    # cached is bytes; decode if needed
+                    if isinstance(cached, (bytes, bytearray)):
+                        cached = cached.decode("utf-8")
+                    return jsonify(json.loads(cached))
+                except Exception:
+                    # fall through to recompute if cache corrupted
+                    app.logger.warning("Cache decode failed, recomputing search")
+        except Exception:
+            app.logger.debug("Redis cache lookup failed; continuing without cache")
+
     # Run the existing blocking search logic in a thread to avoid blocking the event loop
     def _search_sync(p):
-        # original search body moved here; keep it synchronous and reuse existing helpers
         return _search_impl(p)
 
     result = await asyncio.to_thread(_search_sync, payload)
+
+    # Store in cache for subsequent fast responses
+    if redis_client and cache_key and result:
+        try:
+            await redis_client.set(cache_key, json.dumps(result), ex=cache_ttl)
+        except Exception:
+            app.logger.debug("Failed to set search cache")
+
     return jsonify(result)
 
 
