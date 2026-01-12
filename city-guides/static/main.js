@@ -350,6 +350,9 @@ function renderNeighborhoodChips(neighborhoods) {
 
 /**
  * Create a single neighborhood chip button
+ * @param {string} label - Text label to display on the chip
+ * @param {?Object} neighborhood - Neighborhood object represented by this chip, or null for "All Areas"
+ * @param {boolean} isActive - Whether this chip should be rendered in the active/selected state
  */
 function createNeighborhoodChip(label, neighborhood, isActive) {
   const chip = document.createElement('button');
