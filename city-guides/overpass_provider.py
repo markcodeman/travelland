@@ -1,4 +1,4 @@
-import requests
+import aiohttp
 import time
 import os
 import json
@@ -17,7 +17,7 @@ OVERPASS_URLS = [
 ]
 
 
-def reverse_geocode(lat, lon):
+async def reverse_geocode(lat, lon, session: aiohttp.ClientSession = None):
     # Cache reverse geocodes to minimize API calls
     cache_dir = Path(__file__).parent / ".cache" / "nominatim"
     try:
@@ -34,18 +34,28 @@ def reverse_geocode(lat, lon):
             pass
     url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}"
     headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
+    own = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own = True
     try:
-        r = requests.get(url, headers=headers, timeout=10)
-        r.raise_for_status()
-        j = r.json()
-        addr = j.get("display_name", "")
-        try:
-            with cache_file.open("w", encoding="utf-8") as f:
-                json.dump(addr, f)
-        except Exception:
-            pass
-        return addr
+        async with session.get(url, headers=headers, timeout=10) as r:
+            if r.status != 200:
+                if own:
+                    await session.close()
+                return ""
+            j = await r.json()
+            addr = j.get("display_name", "")
+            try:
+                cache_file.write_text(json.dumps(addr), encoding="utf-8")
+            except Exception:
+                pass
+            if own:
+                await session.close()
+            return addr
     except Exception:
+        if own:
+            await session.close()
         return ""
 
 
@@ -89,12 +99,43 @@ async def async_reverse_geocode(lat, lon, session: aiohttp.ClientSession = None)
         return ""
 
 
-def geocode_city(city):
+async def geocode_city(city, session: aiohttp.ClientSession = None):
     params = {"q": city, "format": "json", "limit": 1}
     headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
-    r = requests.get(NOMINATIM_URL, params=params, headers=headers, timeout=10)
-    r.raise_for_status()
-    j = r.json()
+    own = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own = True
+    try:
+        async with session.get(NOMINATIM_URL, params=params, headers=headers, timeout=10) as r:
+            if r.status != 200:
+                if own:
+                    await session.close()
+                return None
+            j = await r.json()
+            if not j:
+                if own:
+                    await session.close()
+                return None
+            entry = j[0]
+            bbox = entry.get("boundingbox")
+            if bbox and len(bbox) == 4:
+                south, north, west, east = (
+                    float(bbox[0]),
+                    float(bbox[1]),
+                    float(bbox[2]),
+                    float(bbox[3]),
+                )
+                if own:
+                    await session.close()
+                return (south, west, north, east)
+            if own:
+                await session.close()
+            return None
+    except Exception:
+        if own:
+            await session.close()
+        return None
     if not j:
         return None
     entry = j[0]
@@ -443,7 +484,7 @@ CHAIN_KEYWORDS = [
 ]
 
 
-def discover_restaurants(city=None, bbox=None, limit=200, cuisine=None, local_only=False):
+async def discover_restaurants(city=None, bbox=None, limit=200, cuisine=None, local_only=False, session: aiohttp.ClientSession = None):
     """Discover restaurant POIs for a city using Nominatim + Overpass.
     If bbox is provided, use it directly. Otherwise, geocode the city.
     We no longer force a cuisine= filter into the Overpass query because many
@@ -456,7 +497,7 @@ def discover_restaurants(city=None, bbox=None, limit=200, cuisine=None, local_on
     if bbox is None:
         if city is None:
             return []
-        bbox = geocode_city(city)
+        bbox = await geocode_city(city, session=session)
     if not bbox:
         return []
     south, west, north, east = bbox
@@ -547,16 +588,20 @@ def discover_restaurants(city=None, bbox=None, limit=200, cuisine=None, local_on
                 for attempt in range(1, attempts + 1):
                     try:
                         # shorten default Overpass timeout to 20s for interactive queries
-                        r = requests.post(
-                            base_url,
-                            data={"data": q},
-                            headers=headers,
-                            timeout=int(os.environ.get("OVERPASS_TIMEOUT", 20)),
-                        )
-                        r.raise_for_status()
-                        j = r.json()
-                        _write_cache(q, j)
-                        break
+                        own_session = False
+                        if session is None:
+                            session = aiohttp.ClientSession()
+                            own_session = True
+                        async with session.post(base_url, data={"data": q}, headers=headers, timeout=int(os.environ.get("OVERPASS_TIMEOUT", 20))) as r:
+                            if r.status != 200:
+                                if own_session:
+                                    await session.close()
+                                continue
+                            j = await r.json()
+                            _write_cache(q, j)
+                            if own_session:
+                                await session.close()
+                            break
                     except Exception:
                         if attempt < attempts:
                             time.sleep(1 * attempt)
@@ -614,7 +659,7 @@ def discover_restaurants(city=None, bbox=None, limit=200, cuisine=None, local_on
             if skip_reverse:
                 address = f"{lat}, {lon}"
             else:
-                address = reverse_geocode(lat, lon) or f"{lat}, {lon}"
+                address = await reverse_geocode(lat, lon, session=session) or f"{lat}, {lon}"
 
         # Filter chains if "Local Only" is requested
         name_lower = name.lower()
@@ -677,7 +722,7 @@ async def async_discover_restaurants(city=None, limit=200, cuisine=None, local_o
     return res
 
 
-def discover_pois(city=None, poi_type="restaurant", limit=200, local_only=False, bbox=None):
+async def discover_pois(city=None, poi_type="restaurant", limit=200, local_only=False, bbox=None, session: aiohttp.ClientSession = None):
     """Discover POIs of various types for a city using Nominatim + Overpass.
     If bbox is provided, use it directly. Otherwise, geocode the city.
 
@@ -693,7 +738,7 @@ def discover_pois(city=None, poi_type="restaurant", limit=200, local_only=False,
     if bbox is None:
         if city is None:
             return []
-        bbox = geocode_city(city)
+        bbox = await geocode_city(city, session=session)
     if not bbox:
         return []
     south, west, north, east = bbox
@@ -795,16 +840,20 @@ def discover_pois(city=None, poi_type="restaurant", limit=200, local_only=False,
                 attempts = int(os.environ.get("OVERPASS_RETRIES", 2))
                 for attempt in range(1, attempts + 1):
                     try:
-                        r = requests.post(
-                            base_url,
-                            data={"data": q},
-                            headers=headers,
-                            timeout=int(os.environ.get("OVERPASS_TIMEOUT", 20)),
-                        )
-                        r.raise_for_status()
-                        j = r.json()
-                        _write_cache(q, j)
-                        break
+                        own_session = False
+                        if session is None:
+                            session = aiohttp.ClientSession()
+                            own_session = True
+                        async with session.post(base_url, data={"data": q}, headers=headers, timeout=int(os.environ.get("OVERPASS_TIMEOUT", 20))) as r:
+                            if r.status != 200:
+                                if own_session:
+                                    await session.close()
+                                continue
+                            j = await r.json()
+                            _write_cache(q, j)
+                            if own_session:
+                                await session.close()
+                            break
                     except Exception:
                         if attempt < attempts:
                             time.sleep(1 * attempt)

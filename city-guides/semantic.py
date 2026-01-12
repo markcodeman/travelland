@@ -1,5 +1,5 @@
 import os
-import requests
+import aiohttp
 from bs4 import BeautifulSoup
 import math
 import re
@@ -115,37 +115,65 @@ def _cache_set(key, value, source="groq"):
         _write_cache(c)
 
 
-def convert_currency(amount, from_curr, to_curr):
+async def convert_currency(amount, from_curr, to_curr, session: aiohttp.ClientSession = None):
+    own_session = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own_session = True
+    else:
+        own_session = False
     try:
         url = f"https://api.exchangerate-api.com/v4/latest/{from_curr.upper()}"
-        resp = requests.get(url, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        rate = data["rates"].get(to_curr.upper())
-        if rate:
-            converted = amount * rate
-            return f"{amount} {from_curr.upper()} = {converted:.2f} {to_curr.upper()}"
-        else:
-            return "Currency not supported."
+        async with session.get(url, timeout=10) as resp:
+            if resp.status != 200:
+                if own_session:
+                    await session.close()
+                return f"Error: API request failed with status {resp.status}"
+            data = await resp.json()
+            rate = data["rates"].get(to_curr.upper())
+            if rate:
+                converted = amount * rate
+                if own_session:
+                    await session.close()
+                return f"{amount} {from_curr.upper()} = {converted:.2f} {to_curr.upper()}"
+            else:
+                if own_session:
+                    await session.close()
+                return "Currency not supported."
     except Exception as e:
+        if own_session:
+            await session.close()
         return f"Error: {str(e)}"
 
 
-def _fetch_text(url, timeout=8):
+async def _fetch_text(url, timeout=8, session: aiohttp.ClientSession = None):
+    own_session = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own_session = True
+    else:
+        own_session = False
     try:
         headers = {"User-Agent": "CityGuidesBot/1.0 (+https://example.com)"}
-        r = requests.get(url, headers=headers, timeout=timeout)
-        r.raise_for_status()
-        soup = BeautifulSoup(r.text, "html.parser")
-        # remove scripts/styles
-        for s in soup(["script", "style", "noscript"]):
-            s.decompose()
-        text = " ".join(
-            p.get_text(separator=" ", strip=True)
-            for p in soup.find_all(["p", "h1", "h2", "h3", "li"])
-        )
-        return text
+        async with session.get(url, headers=headers, timeout=timeout) as r:
+            if r.status != 200:
+                if own_session:
+                    await session.close()
+                return ""
+            text_content = await r.text()
+            soup = BeautifulSoup(text_content, "html.parser")
+            for s in soup(["script", "style", "noscript"]):
+                s.decompose()
+            text = " ".join(
+                p.get_text(separator=" ", strip=True)
+                for p in soup.find_all(["p", "h1", "h2", "h3", "li"])
+            )
+            if own_session:
+                await session.close()
+            return text
     except Exception:
+        if own_session:
+            await session.close()
         return ""
 
 
@@ -190,28 +218,38 @@ def _get_api_key():
     return os.getenv("GROQ_API_KEY")
 
 
-def _embed_with_groq(text):
+async def _embed_with_groq(text, session: aiohttp.ClientSession = None):
     # call Groq.ai embeddings endpoint (best-effort)
     key = _get_api_key()
+    own_session = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own_session = True
+    else:
+        own_session = False
     try:
         if not key:
             raise RuntimeError("no groq key")
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         payload = {"model": "embed-english-v1", "input": text}
-        r = requests.post(
-            GROQ_EMBEDDING_ENDPOINT, json=payload, headers=headers, timeout=20
-        )
-        r.raise_for_status()
-        j = r.json()
-        # expected: {'data':[{'embedding': [...]}, ...]}
-        if (
-            isinstance(j, dict)
-            and "data" in j
-            and len(j["data"]) > 0
-            and "embedding" in j["data"][0]
-        ):
-            return j["data"][0]["embedding"]
+        async with session.post(GROQ_EMBEDDING_ENDPOINT, json=payload, headers=headers, timeout=20) as r:
+            if r.status != 200:
+                if own_session:
+                    await session.close()
+                return None
+            j = await r.json()
+            if (
+                isinstance(j, dict)
+                and "data" in j
+                and len(j["data"]) > 0
+                and "embedding" in j["data"][0]
+            ):
+                if own_session:
+                    await session.close()
+                return j["data"][0]["embedding"]
     except Exception:
+        if own_session:
+            await session.close()
         pass
     return None
 
@@ -231,36 +269,35 @@ def _fallback_embedding(text, dim=128):
     return [x / norm for x in vec]
 
 
-def embed_text(text):
-    emb = _embed_with_groq(text)
+async def embed_text(text, session: aiohttp.ClientSession = None):
+    emb = await _embed_with_groq(text, session=session)
     if emb and isinstance(emb, list):
         return emb
     return _fallback_embedding(text)
 
 
-def ingest_urls(urls):
-    """Fetch pages, chunk and index them in-memory. Returns number indexed."""
+async def ingest_urls(urls, session: aiohttp.ClientSession = None):
     count = 0
     for url in urls:
-        txt = _fetch_text(url)
+        txt = await _fetch_text(url, session=session)
         if not txt:
             continue
         chunks = _chunk_text(txt)
         for i, c in enumerate(chunks):
-            emb = embed_text(c)
+            emb = await embed_text(c, session=session)
             meta = {"source": url, "snippet": c[:500], "chunk_index": i}
             INDEX.add(emb, meta)
             count += 1
     return count
 
 
-def semantic_search(query, top_k=5):
-    q_emb = embed_text(query)
+async def semantic_search(query, top_k=5, session: aiohttp.ClientSession = None):
+    q_emb = await embed_text(query, session=session)
     return INDEX.search(q_emb, top_k=top_k)
 
 
-def search_and_reason(
-    query, city=None, mode="explorer", context_venues=None, weather=None
+async def search_and_reason(
+    query, city=None, mode="explorer", context_venues=None, weather=None, session: aiohttp.ClientSession = None
 ):
     """Search the web and use Groq to reason about the query.
 
@@ -277,7 +314,7 @@ def search_and_reason(
             amount = float(match.group(1))
             from_curr = match.group(2)
             to_curr = match.group(3)
-            result = convert_currency(amount, from_curr, to_curr)
+            result = await convert_currency(amount, from_curr, to_curr, session=session)
             if mode == "explorer":
                 return f"Ahoy! 🪙 As your trusty currency converter, here's the exchange: {result}. Safe travels with your coins!"
             else:
@@ -460,7 +497,7 @@ INSTRUCTIONS FOR MARCO:
             )
             prompt = prompt[:MAX_PROMPT_CHARS] + "\n\n[TRUNCATED]"
 
-        response = requests.post(
+        async with session.post(
             "https://api.groq.com/openai/v1/chat/completions",
             headers={
                 "Authorization": f"Bearer {key}",
@@ -473,21 +510,19 @@ INSTRUCTIONS FOR MARCO:
                 "temperature": 0.7,
             },
             timeout=30,
-        )
-
-        if response.status_code != 200:
-            print(f"DEBUG: Groq API Error {response.status_code}: {response.text}")
-
-        if response.status_code == 200:
-            res_data = response.json()
-            answer = res_data["choices"][0]["message"]["content"]
-            if answer and answer.strip():
-                ans = answer.strip()
-                try:
-                    _cache_set(cache_key, ans, source="groq")
-                except Exception:
-                    pass
-                return ans
+        ) as response:
+            if response.status != 200:
+                print(f"DEBUG: Groq API Error {response.status}: {await response.text()}")
+            if response.status == 200:
+                res_data = await response.json()
+                answer = res_data["choices"][0]["message"]["content"]
+                if answer and answer.strip():
+                    ans = answer.strip()
+                    try:
+                        _cache_set(cache_key, ans, source="groq")
+                    except Exception:
+                        pass
+                    return ans
 
         # Smarter fallback if AI fails
         if context_venues:

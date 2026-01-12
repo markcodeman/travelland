@@ -1,11 +1,4 @@
-"""
-Async Quart application (replaces previous Flask synchronous app).
 
-This file runs the main app using Quart, uses an `aiohttp` ClientSession for
-outbound HTTP calls and a modern `redis.asyncio` client for caching. It's a
-compact migration of the previous synchronous app to async patterns. A backup
-of the original Flask app is preserved on branch `backup-before-filter`.
-"""
 
 import os
 import json
@@ -911,12 +904,12 @@ def _compute_open_now(lat, lon, opening_hours_str):
     except Exception:
         tzname = None
 
-    # If timezonefinder isn't available or didn't find a timezone, allow an
-    # explicit override via FLASK_TZ (useful on hosts like Render that run in UTC).
-    if not tzname:
-        tz_env = os.getenv("FLASK_TZ") or os.getenv("DEFAULT_TZ")
-        if tz_env:
-            tzname = tz_env
+        # If timezonefinder isn't available or didn't find a timezone, allow an
+        # explicit override via DEFAULT_TZ (useful on hosts like Render that run in UTC).
+        if not tzname:
+            tz_env = os.getenv("DEFAULT_TZ")
+            if tz_env:
+                tzname = tz_env
 
     from datetime import datetime, time, timedelta
 

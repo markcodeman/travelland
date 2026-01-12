@@ -22,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def get_cost_estimates_local(city, ttl_seconds=604800):
+async def get_cost_estimates_local(city, ttl_seconds=604800, session: aiohttp.ClientSession = None):
     """Standalone copy of the Teleport-fetch+cache+fallback logic used by the app.
     This avoids importing Flask/app dependencies when running as a cron job.
     """
@@ -44,40 +44,38 @@ def get_cost_estimates_local(city, ttl_seconds=604800):
 
         base = "https://api.teleport.org"
         try:
-            s = requests.get(
-                f"{base}/api/cities/",
-                params={"search": city, "limit": 5},
-                timeout=6,
-                headers={"User-Agent": "city-guides-snapshot"},
-            )
-            s.raise_for_status()
-            j = s.json()
-            results = j.get("_embedded", {}).get("city:search-results", [])
-            city_item_href = None
-            for r in results:
-                href = r.get("_links", {}).get("city:item", {}).get("href")
-                if href:
-                    city_item_href = href
-                    break
-            if not city_item_href:
-                raise RuntimeError("no city item from teleport")
-
-            ci = requests.get(
-                city_item_href,
-                timeout=6,
-                headers={"User-Agent": "city-guides-snapshot"},
-            )
-            ci.raise_for_status()
-            ci_j = ci.json()
-            urban_href = ci_j.get("_links", {}).get("city:urban_area", {}).get("href")
-            if not urban_href:
-                raise RuntimeError("no urban area")
-
+            own_session = False
+            if session is None:
+                session = aiohttp.ClientSession()
+                own_session = True
+            async with session.get(f"{base}/api/cities/", params={"search": city, "limit": 5}, timeout=6, headers={"User-Agent": "city-guides-snapshot"}) as s:
+                s.raise_for_status()
+                j = await s.json()
+                results = j.get("_embedded", {}).get("city:search-results", [])
+                city_item_href = None
+                for r in results:
+                    href = r.get("_links", {}).get("city:item", {}).get("href")
+                    if href:
+                        city_item_href = href
+                        break
+                if not city_item_href:
+                    if own_session:
+                        await session.close()
+                    raise RuntimeError("no city item from teleport")
+            async with session.get(city_item_href, timeout=6, headers={"User-Agent": "city-guides-snapshot"}) as ci:
+                ci.raise_for_status()
+                ci_j = await ci.json()
+                urban_href = ci_j.get("_links", {}).get("city:urban_area", {}).get("href")
+                if not urban_href:
+                    if own_session:
+                        await session.close()
+                    raise RuntimeError("no urban area")
             prices_href = urban_href.rstrip("/") + "/prices/"
-            p = requests.get(
-                prices_href, timeout=6, headers={"User-Agent": "city-guides-snapshot"}
-            )
-            p.raise_for_status()
+            async with session.get(prices_href, timeout=6, headers={"User-Agent": "city-guides-snapshot"}) as p:
+                p.raise_for_status()
+                # ...existing code...
+            if own_session:
+                await session.close()
             p_j = p.json()
 
             items = []

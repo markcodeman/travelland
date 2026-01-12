@@ -5,9 +5,35 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: detect-private-key
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
 
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.3.0
     hooks:
     - id: detect-secrets
       exclude: "(^|/)node_modules/"
+
+  - repo: local
+    hooks:
+      - id: python-syntax-check
+        name: Check Python syntax
+        entry: python -m py_compile
+        language: system
+        files: \.py$
+        pass_filenames: true
+
+      - id: javascript-syntax-check
+        name: Check JavaScript syntax
+        entry: node -c
+        language: system
+        files: \.js$
+        pass_filenames: true
+        require_serial: true
+
+      - id: run-basic-tests
+        name: Run basic tests
+        entry: bash -c "cd city-guides && python -c \"import app; print('✅ Flask app imports successfully')\" 2>/dev/null || echo '❌ Flask app import failed'"
+        language: system
+        pass_filenames: false

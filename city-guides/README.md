@@ -34,9 +34,9 @@ pip install -r requirements.txt
 # OPENTRIPMAP_KEY=your_key_here
 ```
 
-4. Run:
+4. Run (Quart server):
 ```bash
-python app.py
+hypercorn app.py
 ```
 
 Open http://127.0.0.1:5010
