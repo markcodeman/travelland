@@ -1,6 +1,9 @@
 // Default placeholder image (real PNG file)
 const DEFAULT_IMAGE = '/static/img/placeholder.png';
 
+// Global state for neighborhood selection
+let selectedNeighborhood = null;
+
 // Global timeout for client-side search requests (25s max; some cities are slow on Overpass)
 // Backend will return partial results within ~8s, then keep adding more if time permits
 const timeoutMs = 25000;
@@ -264,7 +267,6 @@ if (cityInput) {
 // Neighborhood helper elements and state
 const neighborhoodsListEl = document.getElementById('neighborhoodList');
 const neighborhoodPreviewEl = document.getElementById('neighborhoodPreview');
-let selectedNeighborhood = null;
 
 async function fetchAndRenderNeighborhoods(city, lat, lon) {
   if (!city && !(lat && lon)) return;
@@ -292,117 +294,94 @@ async function fetchAndRenderNeighborhoods(city, lat, lon) {
   }
 }
 
+/**
+ * Render neighborhood chips with defensive DOM creation
+ * @param {Array} neighborhoods - Array of neighborhood objects
+ */
 function renderNeighborhoodChips(neighborhoods) {
-    // Defensive: Create container if it doesn't exist
-    let container = document.getElementById('neighborhoodControls');
-
-    if (!container) {
-        console.warn('neighborhoodControls not found, creating dynamically');
-        container = document.createElement('div');
-        container.id = 'neighborhoodControls';
-        container.className = 'mt-3';
-
-        // Insert after city input or search form
-        const searchForm = document.querySelector('.search-controls')
-            || document.querySelector('.search-form')
-            || document.querySelector('#city')?.parentElement;
-
-        if (searchForm && searchForm.parentElement) {
-            searchForm.parentElement.insertBefore(container, searchForm.nextSibling);
-        } else {
-            // Fallback: append to main content area
-            const main = document.querySelector('.wrap') || document.querySelector('main') || document.body;
-            main.prepend(container);
-        }
-    }
-
-    // Clear existing chips
-    container.innerHTML = '';
-
-    if (!neighborhoods || neighborhoods.length === 0) {
-        container.innerHTML = '<p class="no-neighborhoods">No neighborhoods found</p>';
-        container.style.display = 'none';
-        return;
-    }
-
-    container.style.display = 'block';
-
-    // Create chip container
-    const chipWrapper = document.createElement('div');
-    chipWrapper.className = 'neighborhood-chips flex flex-wrap gap-2 mb-2';
-
-    // Add "All" option
-    const allChip = document.createElement('button');
-    allChip.className = 'neighborhood-chip px-3 py-1 rounded-full bg-blue-50 text-blue-800 font-semibold text-sm';
-    allChip.textContent = 'All Areas';
-    allChip.dataset.bbox = '';
-    allChip.addEventListener('click', () => selectNeighborhood(null, allChip));
-    chipWrapper.appendChild(allChip);
-
-    // Add neighborhood chips
-    neighborhoods.forEach(n => {
-        const chip = document.createElement('button');
-        chip.className = 'neighborhood-chip px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm';
-        chip.textContent = n.name;
-        chip.dataset.bbox = JSON.stringify(n.bbox || n.center || null);
-        chip.dataset.slug = n.slug || '';
-        chip.dataset.id = n.id || '';
-        chip.addEventListener('click', () => selectNeighborhood(n, chip));
-        chipWrapper.appendChild(chip);
-    });
-
-    // Add a preview area if missing
-    if (!container.querySelector('#neighborhoodPreview')) {
-        const preview = document.createElement('div');
-        preview.id = 'neighborhoodPreview';
-        preview.className = 'text-sm text-gray-600';
-        preview.textContent = 'Choose a neighborhood to narrow results';
-        container.appendChild(chipWrapper);
-        container.appendChild(preview);
+  // Defensive: Create container if it doesn't exist
+  let container = document.getElementById('neighborhoodControls');
+  
+  if (!container) {
+    console.warn('[Neighborhoods] Container not found, creating dynamically');
+    container = document.createElement('div');
+    container.id = 'neighborhoodControls';
+    container.className = 'neighborhood-controls mt-4';
+    
+    // Find best insertion point
+    const insertAfter = document.getElementById('suggestionChips')
+      || document.querySelector('.search-form')
+      || document.querySelector('.page-hero');
+    
+    if (insertAfter) {
+      insertAfter.insertAdjacentElement('afterend', container);
     } else {
-        container.appendChild(chipWrapper);
+      const wrap = document.querySelector('.wrap');
+      if (wrap) wrap.prepend(container);
     }
-    console.log(`✓ Rendered ${neighborhoods.length} neighborhood chips`);
+  }
+  
+  // Clear existing content
+  container.innerHTML = '';
+  
+  // Handle empty results
+  if (!neighborhoods || neighborhoods.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 italic text-sm">No neighborhoods found for this city</p>';
+    return;
+  }
+  
+  // Create chip wrapper
+  const chipWrapper = document.createElement('div');
+  chipWrapper.className = 'flex flex-wrap gap-2 mt-2';
+  
+  // Add "All Areas" chip (default selected)
+  const allChip = createNeighborhoodChip('All Areas', null, true);
+  chipWrapper.appendChild(allChip);
+  
+  // Add neighborhood chips
+  neighborhoods.forEach(n => {
+    const chip = createNeighborhoodChip(n.name, n, false);
+    chipWrapper.appendChild(chip);
+  });
+  
+  container.appendChild(chipWrapper);
+  console.log(`[Neighborhoods] Rendered ${neighborhoods.length} chips`);
 }
 
+/**
+ * Create a single neighborhood chip button
+ */
+function createNeighborhoodChip(label, neighborhood, isActive) {
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = `neighborhood-chip px-3 py-1 rounded-full text-sm border transition-colors cursor-pointer ${
+    isActive 
+      ? 'bg-blue-500 text-white border-blue-500' 
+      : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
+  }`;
+  chip.textContent = label;
+  chip.dataset.neighborhood = JSON.stringify(neighborhood);
+  chip.addEventListener('click', () => selectNeighborhood(neighborhood, chip));
+  return chip;
+}
+
+/**
+ * Handle neighborhood chip selection
+ */
 function selectNeighborhood(neighborhood, chipElement) {
-    // Remove active class from all chips
-    document.querySelectorAll('.neighborhood-chip').forEach(c => c.classList.remove('active','ring','ring-blue-400','bg-blue-100'));
-
-    // Add active to selected
-    if (chipElement) chipElement.classList.add('active','ring','ring-blue-400','bg-blue-100');
-
-    // Store selection globally
-    window.selectedNeighborhood = neighborhood;
-
-    // Hidden inputs for form submission / search payload
-    let hfId = document.getElementById('neighborhood_id');
-    if (!hfId) { hfId = document.createElement('input'); hfId.type='hidden'; hfId.id='neighborhood_id'; document.body.appendChild(hfId); }
-    let hfBbox = document.getElementById('neighborhood_bbox');
-    if (!hfBbox) { hfBbox = document.createElement('input'); hfBbox.type='hidden'; hfBbox.id='neighborhood_bbox'; document.body.appendChild(hfBbox); }
-
-    if (neighborhood) {
-        hfId.value = neighborhood.id || '';
-        hfBbox.value = neighborhood.bbox ? JSON.stringify(neighborhood.bbox) : (neighborhood.center ? JSON.stringify(neighborhood.center) : '');
-        const neighborhoodPreviewEl = document.getElementById('neighborhoodPreview');
-        if (neighborhoodPreviewEl) {
-            if (neighborhood.center) {
-                const lat = neighborhood.center.lat || neighborhood.center[0] || '';
-                const lon = neighborhood.center.lon || neighborhood.center[1] || '';
-                neighborhoodPreviewEl.innerHTML = `<a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=14/${lat}/${lon}" target="_blank">Preview ${neighborhood.name} on map</a>`;
-            } else {
-                neighborhoodPreviewEl.textContent = neighborhood.name;
-            }
-        }
-    } else {
-        hfId.value = '';
-        hfBbox.value = '';
-        const neighborhoodPreviewEl = document.getElementById('neighborhoodPreview');
-        if (neighborhoodPreviewEl) neighborhoodPreviewEl.innerHTML = '<span>Searching whole city</span>';
-    }
-
-    console.log('Selected neighborhood:', neighborhood ? (neighborhood.name || neighborhood.id) : 'All Areas');
-    updateQueryEnabledState();
+  // Remove active state from all chips
+  document.querySelectorAll('.neighborhood-chip').forEach(c => {
+    c.classList.remove('bg-blue-500', 'text-white', 'border-blue-500');
+    c.classList.add('bg-gray-100', 'border-gray-300', 'text-gray-700');
+  });
+  
+  // Add active state to selected chip
+  chipElement.classList.remove('bg-gray-100', 'border-gray-300', 'text-gray-700');
+  chipElement.classList.add('bg-blue-500', 'text-white', 'border-blue-500');
+  
+  // Store selection
+  selectedNeighborhood = neighborhood;
+  console.log('[Neighborhoods] Selected:', neighborhood?.name || 'All Areas');
 }
 
 
