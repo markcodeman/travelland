@@ -164,12 +164,21 @@ async def neighborhoods():
     slug = re.sub(r"[^a-z0-9]+", "_", (city or f"{lat}_{lon}").lower())
     cache_key = f"neighborhoods:{slug}:{lang}"
 
-    # try redis cache
+    # try redis cache (treat empty arrays as cache-miss to allow fallbacks)
     if redis_client:
         try:
             raw = await redis_client.get(cache_key)
             if raw:
-                return jsonify({"cached": True, "neighborhoods": json.loads(raw)})
+                try:
+                    parsed = json.loads(raw)
+                    if isinstance(parsed, list) and len(parsed) == 0:
+                        # empty neighborhoods: treat as cache miss to allow geocode fallback
+                        app.logger.debug("Empty cached neighborhoods for %s; treating as miss", cache_key)
+                    else:
+                        return jsonify({"cached": True, "neighborhoods": parsed})
+                except Exception:
+                    # fall through to re-fetch if cached value is corrupted
+                    app.logger.debug("Failed to parse cached neighborhoods for %s; refetching", cache_key)
         except Exception:
             app.logger.exception("redis get failed for neighborhoods")
 
