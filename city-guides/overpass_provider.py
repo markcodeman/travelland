@@ -443,8 +443,9 @@ CHAIN_KEYWORDS = [
 ]
 
 
-def discover_restaurants(city, limit=200, cuisine=None, local_only=False):
+def discover_restaurants(city=None, bbox=None, limit=200, cuisine=None, local_only=False):
     """Discover restaurant POIs for a city using Nominatim + Overpass.
+    If bbox is provided, use it directly. Otherwise, geocode the city.
     We no longer force a cuisine= filter into the Overpass query because many
     POIs don't set cuisine tags. Instead we fetch amenities and perform
     name/tag matching in Python. If `cuisine` is provided it is used as a
@@ -452,7 +453,10 @@ def discover_restaurants(city, limit=200, cuisine=None, local_only=False):
 
     Returns list of candidates with possible website or OSM url.
     """
-    bbox = geocode_city(city)
+    if bbox is None:
+        if city is None:
+            return []
+        bbox = geocode_city(city)
     if not bbox:
         return []
     south, west, north, east = bbox
@@ -667,24 +671,29 @@ def discover_restaurants(city, limit=200, cuisine=None, local_only=False):
     return out
 
 
-async def async_discover_restaurants(city, limit=200, cuisine=None, local_only=False, session: aiohttp.ClientSession = None):
+async def async_discover_restaurants(city=None, limit=200, cuisine=None, local_only=False, bbox=None, session: aiohttp.ClientSession = None):
     # Use async wrapper to call async_discover_pois
-    res = await async_discover_pois(city, "restaurant", limit, local_only, session=session)
+    res = await async_discover_pois(city, "restaurant", limit, local_only, bbox, session=session)
     return res
 
 
-def discover_pois(city, poi_type="restaurant", limit=200, local_only=False):
+def discover_pois(city=None, poi_type="restaurant", limit=200, local_only=False, bbox=None):
     """Discover POIs of various types for a city using Nominatim + Overpass.
+    If bbox is provided, use it directly. Otherwise, geocode the city.
 
     Args:
         city: City name to search in
         poi_type: Type of POI ("restaurant", "historic", "museum", "park", etc.)
         limit: Maximum results to return
         local_only: Filter out chains (only applies to restaurants)
+        bbox: Optional bounding box (south, west, north, east)
 
     Returns list of candidates with OSM data.
     """
-    bbox = geocode_city(city)
+    if bbox is None:
+        if city is None:
+            return []
+        bbox = geocode_city(city)
     if not bbox:
         return []
     south, west, north, east = bbox
@@ -927,8 +936,11 @@ def discover_pois(city, poi_type="restaurant", limit=200, local_only=False):
     return out[:limit]
 
 
-async def async_discover_pois(city, poi_type="restaurant", limit=200, local_only=False, session: aiohttp.ClientSession = None):
-    bbox = await async_geocode_city(city, session=session)
+async def async_discover_pois(city=None, poi_type="restaurant", limit=200, local_only=False, bbox=None, session: aiohttp.ClientSession = None):
+    if bbox is None:
+        if city is None:
+            return []
+        bbox = await async_geocode_city(city, session=session)
     if not bbox:
         return []
     south, west, north, east = bbox

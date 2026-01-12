@@ -85,6 +85,7 @@ def discover_pois(
     limit: int = 100,
     local_only: bool = False,
     timeout: float = 12.0,
+    bbox: tuple = None,
 ) -> List[Dict]:
     """Orchestrate multiple providers concurrently for different POI types.
 
@@ -94,6 +95,7 @@ def discover_pois(
         limit: Maximum results to return
         local_only: Filter out chain restaurants (only applies to restaurants)
         timeout: Timeout for provider calls
+        bbox: Optional bounding box (min_lon, min_lat, max_lon, max_lat) to restrict search
 
     Returns list of unified entries with at least keys: id,name,lat,lon,osm_url,provider,raw
     """
@@ -136,6 +138,7 @@ def discover_pois(
                     limit,
                     None,  # cuisine
                     local_only,
+                    bbox,  # bbox
                 )
             )
         else:
@@ -149,6 +152,7 @@ def discover_pois(
                     poi_type,
                     limit,
                     local_only,
+                    bbox,  # bbox
                 )
             )
 
@@ -211,6 +215,22 @@ def discover_pois(
     # Sort by some quality heuristic (name length as proxy for specificity)
     normalized.sort(key=lambda x: len(x.get("name", "")), reverse=True)
 
+    # Filter by bbox if provided
+    if bbox:
+        print(f"[BBOX FILTER] Applying bbox filter: {bbox} to {len(normalized)} venues")
+        min_lon, min_lat, max_lon, max_lat = bbox
+        filtered = []
+        for n in normalized:
+            lon = n.get('lon', 0)
+            lat = n.get('lat', 0)
+            inside = min_lon <= lon <= max_lon and min_lat <= lat <= max_lat
+            if inside:
+                filtered.append(n)
+            else:
+                print(f"[BBOX FILTER] Excluding {n.get('name', 'Unknown')} at {lat},{lon}")
+        normalized = filtered
+        print(f"[BBOX FILTER] After filtering: {len(normalized)} venues remain")
+
     return normalized[:limit]
 
 
@@ -220,6 +240,7 @@ async def async_discover_pois(
     limit: int = 100,
     local_only: bool = False,
     timeout: float = 12.0,
+    bbox: tuple = None,
     session=None,
 ) -> List[Dict]:
     """Async version of discover_pois. It will call async provider functions
@@ -312,6 +333,23 @@ async def async_discover_pois(
             logging.warning(f"Error normalizing entry: {e}")
 
     normalized.sort(key=lambda x: len(x.get("name", "")), reverse=True)
+
+    # Filter by bbox if provided
+    if bbox:
+        print(f"[BBOX FILTER] Applying bbox filter: {bbox} to {len(normalized)} venues")
+        min_lon, min_lat, max_lon, max_lat = bbox
+        filtered = []
+        for n in normalized:
+            lon = n.get('lon', 0)
+            lat = n.get('lat', 0)
+            inside = min_lon <= lon <= max_lon and min_lat <= lat <= max_lat
+            if inside:
+                filtered.append(n)
+            else:
+                print(f"[BBOX FILTER] Excluding {n.get('name', 'Unknown')} at {lat},{lon}")
+        normalized = filtered
+        print(f"[BBOX FILTER] After filtering: {len(normalized)} venues remain")
+
     return normalized[:limit]
 
 

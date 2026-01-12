@@ -96,6 +96,49 @@ async def geocode_city(city: str):
     return None, None
 
 
+async def reverse_geocode(lat, lon):
+    """Get address from coordinates using Nominatim reverse geocoding."""
+    url = "https://nominatim.openstreetmap.org/reverse"
+    params = {"lat": lat, "lon": lon, "format": "json", "zoom": 18}
+    try:
+        async with aiohttp_session.get(url, params=params, timeout=10) as resp:
+            resp.raise_for_status()
+            data = await resp.json()
+            if data and "display_name" in data:
+                return data["display_name"]
+    except Exception:
+        return None
+    return None
+
+
+def reverse_geocode_sync(lat, lon):
+    """Sync version of reverse geocoding."""
+    url = "https://nominatim.openstreetmap.org/reverse"
+    params = {"lat": lat, "lon": lon, "format": "json", "zoom": 18}
+    try:
+        resp = requests.get(url, params=params, timeout=3)
+        resp.raise_for_status()
+        data = resp.json()
+        if data and "display_name" in data:
+            return data["display_name"]
+    except Exception:
+        return None
+    return None
+
+
+def format_venue(venue):
+    address = venue.get('address', '')
+    
+    # Don't use coordinates as display address
+    if address and re.match(r'^-?\d+\.\d+,\s*-?\d+\.\d+$', address):
+        venue['display_address'] = None
+        venue['coordinates'] = address
+    else:
+        venue['display_address'] = address
+    
+    return venue
+
+
 async def get_weather_async(lat, lon):
     if lat is None or lon is None:
         return None
@@ -144,6 +187,29 @@ async def weather():
     return jsonify({"lat": lat, "lon": lon, "city": city, "weather": weather})
 
 
+def ensure_bbox(neighborhood):
+    """Generate a bbox if neighborhood is a point without one."""
+    if neighborhood.get('bbox'):
+        return neighborhood
+    
+    center = neighborhood.get('center', {})
+    lat = center.get('lat')
+    lon = center.get('lon')
+    
+    if lat and lon:
+        # Create ~2.5km radius bbox (roughly 0.025 degrees)
+        radius = 0.025
+        neighborhood['bbox'] = [
+            float(lon) - radius,  # min_lon
+            float(lat) - radius,  # min_lat
+            float(lon) + radius,  # max_lon
+            float(lat) + radius   # max_lat
+        ]
+        neighborhood['bbox_generated'] = True  # Flag for debugging
+    
+    return neighborhood
+
+
 @app.route("/neighborhoods", methods=["GET"])
 async def neighborhoods():
     """
@@ -175,6 +241,8 @@ async def neighborhoods():
                         # empty neighborhoods: treat as cache miss to allow geocode fallback
                         app.logger.debug("Empty cached neighborhoods for %s; treating as miss", cache_key)
                     else:
+                        # Ensure bbox even for cached data
+                        parsed = [ensure_bbox(n) for n in parsed]
                         return jsonify({"cached": True, "neighborhoods": parsed})
                 except Exception:
                     # fall through to re-fetch if cached value is corrupted
@@ -210,6 +278,9 @@ async def neighborhoods():
             await redis_client.set(cache_key, json.dumps(data), ex=NEIGHBORHOOD_CACHE_TTL)
         except Exception:
             app.logger.exception("redis set failed for neighborhoods")
+
+    # Ensure all neighborhoods have bbox
+    data = [ensure_bbox(n) for n in data]
 
     return jsonify({"cached": False, "neighborhoods": data})
 
@@ -1168,7 +1239,7 @@ def _get_city_info(city):
         return {}
 
     # geocode best-effort
-    lat, lon = geocode_city(city)
+    lat, lon = None, None  # Removed async call causing 500 error
 
     # Attempt to reuse existing transport data if present
     data_dir = Path(__file__).resolve().parents[1] / "data"
@@ -1356,6 +1427,11 @@ def _search_impl(payload):
     user_lon = payload.get("user_lon")
     budget = (payload.get("budget") or "").strip().lower()
     q = (payload.get("q") or "").strip().lower()
+    neighborhood = payload.get("neighborhood")
+    bbox = None
+    if neighborhood and neighborhood.get("bbox"):
+        bbox = tuple(neighborhood["bbox"])
+    logging.debug(f"[SEARCH DEBUG] bbox set to: {bbox}")
     import time
 
     t0 = time.time()
@@ -1374,6 +1450,8 @@ def _search_impl(payload):
         "top eats",
         "best food",
         "food highlights",
+        "coffee",
+        "tea",
     ]
     historic_keywords = [
         "historic",
@@ -1579,9 +1657,10 @@ def _search_impl(payload):
                 multi_provider.discover_pois,
                 city,
                 poi_type=poi_type,
-                limit=20,
+                limit=100,
                 local_only=local_only if poi_type == "restaurant" else False,
                 timeout=provider_timeout,
+                bbox=bbox,
             )
             wiki_future = None
             if include_web and wiki_keywords:
@@ -1604,6 +1683,7 @@ def _search_impl(payload):
                     wikivoyage_texts = []
 
         # Build results from real provider POIs
+        reverse_count = 0
         for poi in (pois or [])[:20]:
             amenity = poi.get("amenity", "")
 
@@ -1667,6 +1747,9 @@ def _search_impl(payload):
                     logging.debug("No valid hours found. Skipping hours display.")
 
             address = (poi.get("address") or "").strip() or None
+            if (not address or re.match(r'^-?\d+\.\d+,\s*-?\d+\.\d+$', (address or "").strip())) and poi.get("lat") and poi.get("lon") and reverse_count < 20:
+                address = reverse_geocode_sync(poi["lat"], poi["lon"])
+                reverse_count += 1
             tags_dict = dict(
                 tag.split("=", 1)
                 for tag in poi.get("tags", "").split(", ")
@@ -1708,6 +1791,7 @@ def _search_impl(payload):
                 "open_now": is_open,
                 "next_change": next_change,
             }
+            venue = format_venue(venue)
             results.append(venue)
 
         t_real_end = time.time()
