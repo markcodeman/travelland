@@ -13,6 +13,7 @@ venv/
 .venv/
 venv_new/
  .venv_precommit/
+ .venv_async/
 
 # Editor/IDE
 .vscode/
