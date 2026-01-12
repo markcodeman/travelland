@@ -293,77 +293,116 @@ async function fetchAndRenderNeighborhoods(city, lat, lon) {
 }
 
 function renderNeighborhoodChips(neighborhoods) {
-  const container = document.getElementById('neighborhoodControls');
-  if (!container) return;
-  if (!neighborhoods || neighborhoods.length === 0) {
-    container.style.display = 'none';
-    return;
-  }
-  container.style.display = 'block';
-  const list = document.getElementById('neighborhoodList');
-  list.innerHTML = '';
-  neighborhoods.forEach(nb => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'neigh-chip px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm';
-    btn.setAttribute('data-id', nb.id || '');
-    btn.setAttribute('data-name', nb.name || '');
-    btn.setAttribute('data-center', nb.center ? `${nb.center.lat},${nb.center.lon}` : '');
-    btn.setAttribute('data-bbox', nb.bbox ? JSON.stringify(nb.bbox) : '');
-    btn.textContent = nb.name;
-    list.appendChild(btn);
-  });
-  // Add "All city" fallback
-  const allBtn = document.createElement('button');
-  allBtn.type = 'button';
-  allBtn.className = 'neigh-chip px-3 py-1 rounded-full bg-blue-50 text-blue-800 font-semibold text-sm';
-  allBtn.setAttribute('data-id', '__all__');
-  allBtn.setAttribute('data-name', 'All city');
-  allBtn.textContent = 'All city';
-  list.appendChild(allBtn);
+    // Defensive: Create container if it doesn't exist
+    let container = document.getElementById('neighborhoodControls');
+
+    if (!container) {
+        console.warn('neighborhoodControls not found, creating dynamically');
+        container = document.createElement('div');
+        container.id = 'neighborhoodControls';
+        container.className = 'mt-3';
+
+        // Insert after city input or search form
+        const searchForm = document.querySelector('.search-controls')
+            || document.querySelector('.search-form')
+            || document.querySelector('#city')?.parentElement;
+
+        if (searchForm && searchForm.parentElement) {
+            searchForm.parentElement.insertBefore(container, searchForm.nextSibling);
+        } else {
+            // Fallback: append to main content area
+            const main = document.querySelector('.wrap') || document.querySelector('main') || document.body;
+            main.prepend(container);
+        }
+    }
+
+    // Clear existing chips
+    container.innerHTML = '';
+
+    if (!neighborhoods || neighborhoods.length === 0) {
+        container.innerHTML = '<p class="no-neighborhoods">No neighborhoods found</p>';
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'block';
+
+    // Create chip container
+    const chipWrapper = document.createElement('div');
+    chipWrapper.className = 'neighborhood-chips flex flex-wrap gap-2 mb-2';
+
+    // Add "All" option
+    const allChip = document.createElement('button');
+    allChip.className = 'neighborhood-chip px-3 py-1 rounded-full bg-blue-50 text-blue-800 font-semibold text-sm';
+    allChip.textContent = 'All Areas';
+    allChip.dataset.bbox = '';
+    allChip.addEventListener('click', () => selectNeighborhood(null, allChip));
+    chipWrapper.appendChild(allChip);
+
+    // Add neighborhood chips
+    neighborhoods.forEach(n => {
+        const chip = document.createElement('button');
+        chip.className = 'neighborhood-chip px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm';
+        chip.textContent = n.name;
+        chip.dataset.bbox = JSON.stringify(n.bbox || n.center || null);
+        chip.dataset.slug = n.slug || '';
+        chip.dataset.id = n.id || '';
+        chip.addEventListener('click', () => selectNeighborhood(n, chip));
+        chipWrapper.appendChild(chip);
+    });
+
+    // Add a preview area if missing
+    if (!container.querySelector('#neighborhoodPreview')) {
+        const preview = document.createElement('div');
+        preview.id = 'neighborhoodPreview';
+        preview.className = 'text-sm text-gray-600';
+        preview.textContent = 'Choose a neighborhood to narrow results';
+        container.appendChild(chipWrapper);
+        container.appendChild(preview);
+    } else {
+        container.appendChild(chipWrapper);
+    }
+    console.log(`✓ Rendered ${neighborhoods.length} neighborhood chips`);
 }
 
-// Delegate clicks on neighborhood chips
-document.addEventListener('click', (ev) => {
-  const chip = ev.target && ev.target.closest && ev.target.closest('.neigh-chip');
-  if (chip) {
-    ev.preventDefault();
-    const id = chip.getAttribute('data-id');
-    const name = chip.getAttribute('data-name');
-    const center = chip.getAttribute('data-center');
-    const bbox = chip.getAttribute('data-bbox');
-    selectNeighborhood({id, name, center, bbox});
-  }
-});
+function selectNeighborhood(neighborhood, chipElement) {
+    // Remove active class from all chips
+    document.querySelectorAll('.neighborhood-chip').forEach(c => c.classList.remove('active','ring','ring-blue-400','bg-blue-100'));
 
-function selectNeighborhood(nb) {
-  selectedNeighborhood = nb && nb.id !== '__all__' ? nb : null;
-  document.querySelectorAll('.neigh-chip').forEach(el => el.classList.remove('ring','ring-blue-400','bg-blue-100'));
-  const selId = selectedNeighborhood ? selectedNeighborhood.id : '__all__';
-  const selectedBtn = Array.from(document.querySelectorAll('.neigh-chip')).find(el => el.getAttribute('data-id') === selId);
-  if (selectedBtn) selectedBtn.classList.add('ring','ring-blue-400','bg-blue-100');
+    // Add active to selected
+    if (chipElement) chipElement.classList.add('active','ring','ring-blue-400','bg-blue-100');
 
-  let hfId = document.getElementById('neighborhood_id');
-  if (!hfId) { hfId = document.createElement('input'); hfId.type='hidden'; hfId.id='neighborhood_id'; document.body.appendChild(hfId); }
-  let hfBbox = document.getElementById('neighborhood_bbox');
-  if (!hfBbox) { hfBbox = document.createElement('input'); hfBbox.type='hidden'; hfBbox.id='neighborhood_bbox'; document.body.appendChild(hfBbox); }
-  if (selectedNeighborhood) {
-    hfId.value = selectedNeighborhood.id || '';
-    hfBbox.value = selectedNeighborhood.bbox ? selectedNeighborhood.bbox : '';
-    if (neighborhoodPreviewEl) {
-      if (selectedNeighborhood.center) {
-        const [lat, lon] = selectedNeighborhood.center.split(',');
-        neighborhoodPreviewEl.innerHTML = `<a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=14/${lat}/${lon}" target="_blank">Preview ${selectedNeighborhood.name} on map</a>`;
-      } else {
-        neighborhoodPreviewEl.textContent = selectedNeighborhood.name;
-      }
+    // Store selection globally
+    window.selectedNeighborhood = neighborhood;
+
+    // Hidden inputs for form submission / search payload
+    let hfId = document.getElementById('neighborhood_id');
+    if (!hfId) { hfId = document.createElement('input'); hfId.type='hidden'; hfId.id='neighborhood_id'; document.body.appendChild(hfId); }
+    let hfBbox = document.getElementById('neighborhood_bbox');
+    if (!hfBbox) { hfBbox = document.createElement('input'); hfBbox.type='hidden'; hfBbox.id='neighborhood_bbox'; document.body.appendChild(hfBbox); }
+
+    if (neighborhood) {
+        hfId.value = neighborhood.id || '';
+        hfBbox.value = neighborhood.bbox ? JSON.stringify(neighborhood.bbox) : (neighborhood.center ? JSON.stringify(neighborhood.center) : '');
+        const neighborhoodPreviewEl = document.getElementById('neighborhoodPreview');
+        if (neighborhoodPreviewEl) {
+            if (neighborhood.center) {
+                const lat = neighborhood.center.lat || neighborhood.center[0] || '';
+                const lon = neighborhood.center.lon || neighborhood.center[1] || '';
+                neighborhoodPreviewEl.innerHTML = `<a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=14/${lat}/${lon}" target="_blank">Preview ${neighborhood.name} on map</a>`;
+            } else {
+                neighborhoodPreviewEl.textContent = neighborhood.name;
+            }
+        }
+    } else {
+        hfId.value = '';
+        hfBbox.value = '';
+        const neighborhoodPreviewEl = document.getElementById('neighborhoodPreview');
+        if (neighborhoodPreviewEl) neighborhoodPreviewEl.innerHTML = '<span>Searching whole city</span>';
     }
-  } else {
-    hfId.value = '';
-    hfBbox.value = '';
-    if (neighborhoodPreviewEl) neighborhoodPreviewEl.innerHTML = '<span>Searching whole city</span>';
-  }
-  updateQueryEnabledState();
+
+    console.log('Selected neighborhood:', neighborhood ? (neighborhood.name || neighborhood.id) : 'All Areas');
+    updateQueryEnabledState();
 }
 
 
