@@ -5,3 +5,9 @@ beautifulsoup4>=4.12.0
 duckduckgo-search
 timezonefinder>=6.1.0
 tzdata
+
+# Async server + http client + redis
+quart>=0.18.0
+aiohttp>=3.9.0
+redis>=5.0.0
+hypercorn>=0.14.0

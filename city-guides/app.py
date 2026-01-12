@@ -1,179 +1,122 @@
-from flask import Flask, render_template, request, jsonify
-from rich.traceback import install as rich_traceback_install
+"""
+Async Quart application (replaces previous Flask synchronous app).
 
-rich_traceback_install()
-from pathlib import Path
-import json
+This file runs the main app using Quart, uses an `aiohttp` ClientSession for
+outbound HTTP calls and a modern `redis.asyncio` client for caching. It's a
+compact migration of the previous synchronous app to async patterns. A backup
+of the original Flask app is preserved on branch `backup-before-filter`.
+"""
+
 import os
+import json
+from pathlib import Path
 from urllib.parse import urlparse
-from dotenv import load_dotenv
-import logging
-import uuid
-import threading
-import requests
-import re
-import time
+
+from quart import Quart, render_template, request, jsonify
+import aiohttp
+import redis.asyncio as aioredis
 
 _here = os.path.dirname(__file__)
-# load local .env placed inside the city-guides folder (keeps keys out of repo root)
-load_dotenv(dotenv_path=os.path.join(_here, ".env"))
 
-import semantic
-import overpass_provider
-from overpass_provider import _singularize
-import multi_provider
-import image_provider
+app = Quart(__name__, static_folder="static", template_folder="templates")
 
-# Configure logging
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
-# Gate very verbose per-venue opening-hours debug logging behind an env flag so
-# we can avoid huge log noise during searches. Set VERBOSE_OPEN_HOURS=1 to
-# enable the old behaviour for debugging.
-VERBOSE_OPEN_HOURS = os.getenv("VERBOSE_OPEN_HOURS", "0") == "1"
-
-# Allow configuring cache TTLs via environment variables with sane defaults
-CACHE_TTL_TELEPORT = int(os.getenv("CACHE_TTL_TELEPORT", 604800))  # default 1 week
-CACHE_TTL_CITY_INFO = int(os.getenv("CACHE_TTL_CITY_INFO", 86400))  # default 1 day
+# Global async clients
+aiohttp_session: aiohttp.ClientSession | None = None
+redis_client: aioredis.Redis | None = None
 
 
-app = Flask(__name__, static_folder="static", template_folder="templates")
-
-active_searches = {}
-
-# Small mapping of known transit provider links by city (best-effort)
-PROVIDER_LINKS = {
-    "london": [
-        {"name": "TfL (official)", "url": "https://tfl.gov.uk"},
-        {
-            "name": "Google Transit (TfL)",
-            "url": "https://www.google.com/maps/place/London+Underground",
-        },
-    ],
-    "paris": [
-        {"name": "RATP (official)", "url": "https://www.ratp.fr/en"},
-        {"name": "SNCF (regional)", "url": "https://www.sncf.com/en"},
-    ],
-    "new york": [
-        {"name": "MTA (official)", "url": "https://new.mta.info"},
-        {
-            "name": "NYC Subway map (Google)",
-            "url": "https://www.google.com/maps/place/New+York+City+Subway",
-        },
-    ],
-    "shanghai": [
-        {"name": "Shanghai Metro (official)", "url": "http://service.shmetro.com"},
-        {
-            "name": "Metro / Transit info",
-            "url": "https://www.travelchinaguide.com/cityguides/shanghai/transportation.htm",
-        },
-    ],
-    "tokyo": [
-        {"name": "Tokyo Metro (official)", "url": "https://www.tokyometro.jp/en/"},
-    ],
-    "default": [{"name": "Google Transit", "url": "https://www.google.com/maps"}],
-}
-
-
-def get_provider_links(city_name):
-    if not city_name:
-        return PROVIDER_LINKS.get("default")
-    key = city_name.strip().lower()
-    # try full match then substring match
-    if key in PROVIDER_LINKS:
-        return PROVIDER_LINKS[key]
-    for k, v in PROVIDER_LINKS.items():
-        if k != "default" and k in key:
-            return v
-    return PROVIDER_LINKS.get("default")
-
-
-def shorten_place(name):
-    """Return a compact display name for a possibly long place string.
-    Strategy:
-      - split on commas and examine tokens right-to-left
-      - skip tokens that look like generic regions (e.g. 'Região', 'Region', 'Metropolitana', 'Southeast Region', country names)
-      - prefer the first non-generic token from the right; fallback to the first token
-    """
-    if not name:
-        return name
+@app.before_serving
+async def startup():
+    global aiohttp_session, redis_client
+    aiohttp_session = aiohttp.ClientSession(headers={"User-Agent": "city-guides-async"})
     try:
-        toks = [t.strip() for t in name.split(",") if t.strip()]
-        if not toks:
-            return name.strip()
-        generic = [
-            "região",
-            "regiao",
-            "region",
-            "metropolitana",
-            "metropolitan",
-            "região metropolitana",
-            "região geográfica",
-            "região geográfica intermediária",
-            "southeast region",
-            "north",
-            "south",
-            "east",
-            "west",
-            "region",
-            "state",
-            "country",
-        ]
-        # Prefer a non-generic token that looks like a city (contains accented chars or multiple words or is reasonably long).
-        preferred = None
-        for t in reversed(toks):
-            tl = t.lower()
-            skip = any(g in tl for g in generic)
-            if skip:
-                continue
-            # heuristics for a good city token
-            if (
-                re.search(r"[àáâãäåéèêíïóôõöúçñ]", t.lower())
-                or len(t.split()) > 1
-                or len(t) > 6
-            ):
-                return t
-            if not preferred:
-                preferred = t
-        if preferred:
-            return preferred
-
-        # fallback: prefer a token that contains accented characters or longer words
-        def score_token(x):
-            s = 0
-            if re.search(r"[àáâãäåéèêíïóôõöúçñ]", x.lower()):
-                s += 5
-            s += len(x.split())
-            return s
-
-        best = max(toks, key=score_token)
-        return best
+        redis_client = aioredis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
+        await redis_client.ping()
+        app.logger.info("✅ Redis connected")
     except Exception:
-        return name
+        redis_client = None
+        app.logger.warning("Redis not available; running without cache")
 
 
-# Expose whether Groq API key is configured to templates
+@app.after_serving
+async def shutdown():
+    global aiohttp_session, redis_client
+    if aiohttp_session:
+        await aiohttp_session.close()
+    if redis_client:
+        await redis_client.close()
+
+
 @app.context_processor
 def inject_feature_flags():
     return {"GROQ_ENABLED": bool(os.getenv("GROQ_API_KEY"))}
 
 
-def geocode_city(city):
-    """Geocode a city name to (lat, lon) using Nominatim."""
+async def geocode_city(city: str):
     url = "https://nominatim.openstreetmap.org/search"
     params = {"q": city, "format": "json", "limit": 1}
     try:
-        headers = {"User-Agent": "city-guides-app", "Accept-Language": "en"}
-        resp = requests.get(url, params=params, headers=headers, timeout=5)
-        resp.raise_for_status()
-        data = resp.json()
-        if data:
-            return float(data[0]["lat"]), float(data[0]["lon"])
-    except Exception as e:
-        print(f"Geocoding failed: {e}")
+        async with aiohttp_session.get(url, params=params, timeout=10) as resp:
+            resp.raise_for_status()
+            data = await resp.json()
+            if data:
+                return float(data[0]["lat"]), float(data[0]["lon"])
+    except Exception:
+        return None, None
     return None, None
+
+
+async def get_weather_async(lat, lon):
+    if lat is None or lon is None:
+        return None
+    try:
+        url = "https://api.open-meteo.com/v1/forecast"
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "current_weather": True,
+            "temperature_unit": "celsius",
+            "windspeed_unit": "kmh",
+            "precipitation_unit": "mm",
+            "timezone": "auto",
+        }
+        # coerce boolean params to strings
+        coerced = {k: (str(v).lower() if isinstance(v, bool) else v) for k, v in params.items()}
+        async with aiohttp_session.get(url, params=coerced, timeout=10) as resp:
+            resp.raise_for_status()
+            data = await resp.json()
+            return data.get("current_weather", {})
+    except Exception:
+        return None
+
+
+@app.route("/", methods=["GET"])
+async def index():
+    return await render_template("index.html")
+
+
+@app.route("/weather", methods=["POST"])
+async def weather():
+    payload = await request.get_json(silent=True) or {}
+    city = (payload.get("city") or "").strip()
+    lat = payload.get("lat")
+    lon = payload.get("lon")
+    if not (lat and lon):
+        if not city:
+            return jsonify({"error": "city or lat/lon required"}), 400
+        lat, lon = await geocode_city(city)
+        if not (lat and lon):
+            return jsonify({"error": "geocode_failed"}), 400
+    weather = await get_weather_async(lat, lon)
+    if weather is None:
+        return jsonify({"error": "weather_fetch_failed"}), 500
+    return jsonify({"lat": lat, "lon": lon, "city": city, "weather": weather})
+
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT") or os.getenv("FLASK_PORT") or 5010)
+    app.run(host="0.0.0.0", port=port)
+
 
 
 def get_country_for_city(city):
