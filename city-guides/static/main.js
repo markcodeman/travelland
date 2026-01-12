@@ -374,14 +374,77 @@ function selectNeighborhood(neighborhood, chipElement) {
     c.classList.remove('bg-blue-500', 'text-white', 'border-blue-500');
     c.classList.add('bg-gray-100', 'border-gray-300', 'text-gray-700');
   });
-  
+
   // Add active state to selected chip
   chipElement.classList.remove('bg-gray-100', 'border-gray-300', 'text-gray-700');
   chipElement.classList.add('bg-blue-500', 'text-white', 'border-blue-500');
-  
-  // Store selection
+
+  // Store selection in global state
   selectedNeighborhood = neighborhood;
   console.log('[Neighborhoods] Selected:', neighborhood?.name || 'All Areas');
+
+  // Maintain backward compatibility: ensure hidden inputs used by the search handler exist
+  // and reflect the current neighborhood selection.
+  try {
+    // Try to attach hidden fields to the same form as the city input, if available,
+    // otherwise fall back to the first form on the page.
+    const cityInput = document.getElementById('city');
+    const form =
+      (cityInput && cityInput.form) ||
+      document.getElementById('search-form') ||
+      document.querySelector('form');
+
+    if (!form) {
+      return;
+    }
+
+    // Ensure neighborhood_id hidden input exists
+    let idInput = document.getElementById('neighborhood_id');
+    if (!idInput) {
+      idInput = document.createElement('input');
+      idInput.type = 'hidden';
+      idInput.id = 'neighborhood_id';
+      idInput.name = 'neighborhood_id';
+      form.appendChild(idInput);
+    }
+
+    // Ensure neighborhood_bbox hidden input exists
+    let bboxInput = document.getElementById('neighborhood_bbox');
+    if (!bboxInput) {
+      bboxInput = document.createElement('input');
+      bboxInput.type = 'hidden';
+      bboxInput.id = 'neighborhood_bbox';
+      bboxInput.name = 'neighborhood_bbox';
+      form.appendChild(bboxInput);
+    }
+
+    // Update hidden input values based on the selected neighborhood
+    if (neighborhood && typeof neighborhood === 'object') {
+      // Neighborhood ID
+      if ('id' in neighborhood && neighborhood.id != null) {
+        idInput.value = String(neighborhood.id);
+      } else {
+        idInput.value = '';
+      }
+
+      // Neighborhood bounding box: support both array and string formats
+      const bbox = neighborhood.bbox;
+      if (Array.isArray(bbox)) {
+        bboxInput.value = bbox.join(',');
+      } else if (typeof bbox === 'string') {
+        bboxInput.value = bbox;
+      } else {
+        bboxInput.value = '';
+      }
+    } else {
+      // "All Areas" or no specific neighborhood selected
+      idInput.value = '';
+      bboxInput.value = '';
+    }
+  } catch (e) {
+    // Fail silently if DOM manipulation is not possible; search handler will simply
+    // not filter by neighborhood in that case.
+  }
 }
 
 
