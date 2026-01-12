@@ -242,11 +242,28 @@ async def async_get_neighborhoods(city: str | None = None, lat: float | None = N
                             "bbox": bbox,
                             "source": "osm",
                         })
-                    return results
+                    if results:
+                        return results
             except asyncio.TimeoutError:
                 continue
             except Exception:
                 continue
+
+    # If Overpass produced no results, try GeoNames as a best-effort fallback
+    try:
+        geonames_user = os.getenv("GEONAMES_USERNAME")
+        if geonames_user:
+            try:
+                # import lazily to avoid import-time cost when not used
+                import geonames_provider
+                geores = await geonames_provider.async_get_neighborhoods_geonames(city=city, lat=lat, lon=lon, session=session)
+                if geores:
+                    return geores
+            except Exception:
+                pass
+    except Exception:
+        pass
+
     finally:
         if own:
             await session.close()
