@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import asyncio
 import math
 import re
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 try:
     import overpass_provider
@@ -93,7 +93,7 @@ def discover_pois(
     limit: int = 100,
     local_only: bool = False,
     timeout: float = 12.0,
-    bbox: tuple = None,
+    bbox: Optional[tuple] = None,
 ) -> List[Dict]:
     """Orchestrate multiple providers concurrently for different POI types.
 
@@ -130,6 +130,9 @@ def discover_pois(
         finally:
             dur = time.time() - start
             try:
+                # Await coroutine if needed before calling len
+                if asyncio.iscoroutine(res):
+                    res = asyncio.run(res)
                 count = len(res) if res else 0
             except Exception:
                 count = 0
@@ -140,36 +143,41 @@ def discover_pois(
     calls = []
     with ThreadPoolExecutor(max_workers=4) as ex:
         # Overpass (OSM) - supports different POI types
-        if poi_type == "restaurant":
-            calls.append(
-                ex.submit(
-                    _timed_call,
-                    overpass_provider.discover_restaurants,
-                    "overpass",
-                    city,
-                    limit,
-                    None,  # cuisine
-                    local_only,
-                    bbox,  # bbox
-                )
-            )
+        if overpass_provider is None:
+            logging.error("overpass_provider is None! Cannot fetch POIs.")
         else:
-            # For other POI types, use the general discover_pois function
-            calls.append(
-                ex.submit(
-                    _timed_call,
-                    overpass_provider.discover_pois,
-                    "overpass",
-                    city,
-                    poi_type,
-                    limit,
-                    local_only,
-                    bbox,  # bbox
+            if poi_type == "restaurant":
+                calls.append(
+                    ex.submit(
+                        _timed_call,
+                        overpass_provider.discover_restaurants,
+                        "overpass",
+                        city,
+                        limit,
+                        None,  # cuisine
+                        local_only,
+                        bbox,  # bbox
+                    )
                 )
-            )
+            else:
+                # For other POI types, use the general discover_pois function
+                calls.append(
+                    ex.submit(
+                        _timed_call,
+                        overpass_provider.discover_pois,
+                        "overpass",
+                        city,
+                        poi_type,
+                        limit,
+                        local_only,
+                        bbox,  # bbox
+                    )
+                )
 
         # OpenTripMap (optional) - supports different kinds
-        if opentripmap_provider:
+        if opentripmap_provider is None:
+            logging.warning("opentripmap_provider is None! Skipping OpenTripMap POIs.")
+        else:
             try:
                 # Map poi_type to OpenTripMap kinds
                 otm_kinds = {
@@ -196,8 +204,8 @@ def discover_pois(
                         limit,
                     )
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logging.warning(f"Error submitting OpenTripMap provider: {e}")
 
     # Collect results from all providers
     for call in as_completed(calls):
@@ -205,6 +213,8 @@ def discover_pois(
             provider_results = call.result()
             if provider_results:
                 results.extend(provider_results)
+            else:
+                logging.info("Provider returned no results.")
         except Exception as e:
             logging.warning(f"Error collecting provider results: {e}")
 
@@ -222,7 +232,7 @@ def discover_pois(
                 seen_ids.add(norm["id"])
                 normalized.append(norm)
         except Exception as e:
-            logging.warning(f"Error normalizing entry: {e}")
+            logging.warning(f"Error normalizing entry: {e}. Entry: {e}")
 
     # Sort by some quality heuristic (name length as proxy for specificity)
     normalized.sort(key=lambda x: len(x.get("name", "")), reverse=True)
@@ -233,7 +243,7 @@ def discover_pois(
     
 
     # Filter by bbox if provided
-    if bbox:
+    if bbox is not None:
         print(f"[BBOX FILTER] Applying bbox filter: {bbox} to {len(normalized)} venues")
         min_lon, min_lat, max_lon, max_lat = bbox
         filtered = []
@@ -257,7 +267,7 @@ async def async_discover_pois(
     limit: int = 100,
     local_only: bool = False,
     timeout: float = 12.0,
-    bbox: tuple = None,
+    bbox: Optional[tuple] = None,
     session=None,
 ) -> List[Dict]:
     """Async version of discover_pois. It will call async provider functions
@@ -291,7 +301,11 @@ async def async_discover_pois(
         finally:
             dur = time.time() - start
             try:
-                count = len(res) if res else 0
+                # Only call len() if res is not a coroutine
+                if res is not None and not asyncio.iscoroutine(res):
+                    count = len(res)
+                else:
+                    count = 0
             except Exception:
                 count = 0
             logging.info(
@@ -300,12 +314,18 @@ async def async_discover_pois(
 
     tasks = []
     # Overpass (OSM) - supports different POI types
-    if poi_type == "restaurant":
-        func = getattr(overpass_provider, "async_discover_restaurants", overpass_provider.discover_restaurants)
-        tasks.append(asyncio.create_task(_call_provider(func, "overpass", city, limit, None, local_only)))
+    # Ensure city and poi_type are strings, not None
+    city = city or ""
+    poi_type = poi_type or "restaurant"
+    if overpass_provider is not None:
+        if poi_type == "restaurant":
+            func = getattr(overpass_provider, "async_discover_restaurants", overpass_provider.discover_restaurants)
+            tasks.append(asyncio.create_task(_call_provider(func, "overpass", city, limit, None, local_only)))
+        else:
+            func = getattr(overpass_provider, "async_discover_pois", overpass_provider.discover_pois)
+            tasks.append(asyncio.create_task(_call_provider(func, "overpass", city, poi_type, limit, local_only)))
     else:
-        func = getattr(overpass_provider, "async_discover_pois", overpass_provider.discover_pois)
-        tasks.append(asyncio.create_task(_call_provider(func, "overpass", city, poi_type, limit, local_only)))
+        logging.error("overpass_provider is None! Cannot fetch POIs.")
 
     # OpenTripMap (optional)
     if opentripmap_provider:
@@ -375,7 +395,7 @@ async def async_discover_pois(
         pass
 
     # Filter by bbox if provided
-    if bbox:
+    if bbox is not None:
         print(f"[BBOX FILTER] Applying bbox filter: {bbox} to {len(normalized)} venues")
         min_lon, min_lat, max_lon, max_lat = bbox
         filtered = []
@@ -395,7 +415,7 @@ async def async_discover_pois(
 
 def discover_restaurants(
     city: str,
-    cuisine: str = None,
+    cuisine: Optional[str] = None,
     limit: int = 100,
     local_only: bool = False,
     timeout: float = 12.0,
@@ -404,31 +424,40 @@ def discover_restaurants(
 
     Returns list of unified entries with at least keys: id,name,lat,lon,osm_url,provider,raw
     """
+    # Ensure city is a string, not None
+    city = city or ""
     return discover_pois(city, "restaurant", limit, local_only, timeout)
 
 
 async def async_discover_restaurants(
     city: str,
-    cuisine: str = None,
+    cuisine: Optional[str] = None,
     limit: int = 100,
     local_only: bool = False,
     timeout: float = 12.0,
     session=None,
 ) -> List[Dict]:
     # multi_provider's restaurant path currently maps to discover_pois
+    # Ensure city is a string, not None
+    city = city or ""
     return await async_discover_pois(city, "restaurant", limit, local_only, timeout, session=session)
 
 
 async def async_get_neighborhoods(city: str | None = None, lat: float | None = None, lon: float | None = None, lang: str = "en", session=None):
     """Wrapper that prefers provider async implementation and falls back to sync provider in a thread."""
     try:
-        func = getattr(overpass_provider, "async_get_neighborhoods", None)
-        if func and asyncio.iscoroutinefunction(func):
-            return await func(city=city, lat=lat, lon=lon, lang=lang, session=session)
-        # fallback: call sync version in thread if available
-        func_sync = getattr(overpass_provider, "get_neighborhoods", None)
-        if func_sync:
-            return await asyncio.to_thread(func_sync, city, lat, lon, lang)
+        city_safe = city if city is not None else ""
+        lang_safe = lang if lang is not None else "en"
+        if overpass_provider is not None:
+            func = getattr(overpass_provider, "async_get_neighborhoods", None)
+            if func and asyncio.iscoroutinefunction(func):
+                return await func(city=city_safe, lat=lat, lon=lon, lang=lang_safe, session=session)
+            # fallback: call sync version in thread if available
+            func_sync = getattr(overpass_provider, "get_neighborhoods", None)
+            if func_sync:
+                return await asyncio.to_thread(func_sync, city_safe, lat, lon, lang_safe)
+        else:
+            logging.error("overpass_provider is None! Cannot fetch neighborhoods.")
     except Exception as e:
         logging.warning(f"neighborhoods provider error: {e}")
     return []
