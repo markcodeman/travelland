@@ -1,3 +1,23 @@
+def test_multi_provider_bbox_search():
+    """Test multi_provider.discover_pois with a London neighborhood bbox"""
+    print("✓ Testing multi_provider.discover_pois with bbox...")
+    try:
+        import multi_provider
+        # Larger bbox: central London
+        bbox = (-0.16, 51.48, -0.07, 51.54)  # Covers much of central London
+        results = multi_provider.discover_pois(
+            city="London, United Kingdom",
+            poi_type="restaurant",
+            limit=5,
+            bbox=bbox
+        )
+        print(f"  ✓ Got {len(results)} results")
+        for r in results:
+            print(f"    - {r.get('name')} ({r.get('lat')}, {r.get('lon')})")
+        assert results, "No venues returned for neighborhood bbox"
+    except Exception as e:
+        print(f"  ✗ Error: {e}")
+        assert False, f"Exception occurred: {e}"
 """
 Integration tests to validate the structure and functionality of the Google Places integration.
 """
@@ -20,10 +40,10 @@ def test_imports():
         import search_provider
 
         print("  ✓ All modules imported successfully")
-        return True
+        assert True
     except ImportError as e:
         print(f"  ✗ Import error: {e}")
-        return False
+        assert False, f"Import error: {e}"
 
 
 def test_multi_provider_functions():
@@ -39,12 +59,12 @@ def test_multi_provider_functions():
                 print(f"  ✓ {func_name} exists")
             else:
                 print(f"  ✗ {func_name} missing")
-                return False
+                assert False, f"{func_name} missing"
 
-        return True
+        assert True
     except Exception as e:
         print(f"  ✗ Error: {e}")
-        return False
+        assert False, f"Exception: {e}"
 
 
 def test_app_routes():
@@ -70,12 +90,12 @@ def test_app_routes():
                 print(f"  ✓ Route {route} exists")
             else:
                 print(f"  ✗ Route {route} missing")
-                return False
+                assert False, f"Route {route} missing"
 
-        return True
+        assert True
     except Exception as e:
         print(f"  ✗ Error: {e}")
-        return False
+        assert False, f"Exception: {e}"
 
 
 def test_search_endpoint_accepts_provider():
@@ -86,13 +106,13 @@ def test_search_endpoint_accepts_provider():
             content = f.read()
             if "provider" in content and "'provider'" in content:
                 print("  ✓ /search endpoint supports provider parameter")
-                return True
+                assert True
             else:
                 print("  ✗ /search endpoint missing provider parameter")
-                return False
+                assert False, "/search endpoint missing provider parameter"
     except Exception as e:
         print(f"  ✗ Error: {e}")
-        return False
+        assert False, f"Exception: {e}"
 
 
 def test_expanded_cuisines():
@@ -123,10 +143,10 @@ def test_expanded_cuisines():
                 print(f"  ✗ {cuisine.capitalize()} cuisine not found")
                 all_found = False
 
-        return all_found
+        assert all_found, "Not all expanded cuisines found"
     except Exception as e:
         print(f"  ✗ Error: {e}")
-        return False
+        assert False, f"Exception: {e}"
 
 
 def test_requirements_file():
@@ -145,12 +165,12 @@ def test_requirements_file():
                 print(f"  ✓ {package} in requirements.txt")
             else:
                 print(f"  ✗ {package} missing from requirements.txt")
-                return False
+                assert False, f"{package} missing from requirements.txt"
 
-        return True
+        assert True
     except Exception as e:
         print(f"  ✗ Error: {e}")
-        return False
+        assert False, f"Exception: {e}"
 
 
 if __name__ == "__main__":
@@ -162,6 +182,7 @@ if __name__ == "__main__":
         test_app_routes(),
         test_expanded_cuisines(),
         test_requirements_file(),
+        test_multi_provider_bbox_search(),
     ]
 
     print("\n=== Test Results ===")

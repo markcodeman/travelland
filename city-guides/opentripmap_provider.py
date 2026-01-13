@@ -242,9 +242,12 @@ async def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, 
 
 
 async def async_discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, session: aiohttp.ClientSession = None) -> List[Dict]:
+    print(f"[DEBUG opentripmap discover_pois] Called with city={city}, kinds={kinds}, API key present: {bool(OPENTRIPMAP_KEY)}")
     if not OPENTRIPMAP_KEY:
+        print(f"[DEBUG opentripmap discover_pois] No API key, returning empty")
         return []
     bbox = geocode_city(city)
+    print(f"[DEBUG opentripmap discover_pois] Geocoded bbox: {bbox}")
     if not bbox:
         return []
     south, west, north, east = bbox
@@ -269,12 +272,20 @@ async def async_discover_pois(city: str, kinds: str = "restaurants", limit: int 
         own_session = True
 
     try:
+        print(f"[DEBUG opentripmap async_discover_pois] Requesting {BASE}/radius with params: radius={params['radius']}, lat={params['lat']}, lon={params['lon']}")
         async with session.get(f"{BASE}/radius", params=params, timeout=20) as r:
+            print(f"[DEBUG opentripmap async_discover_pois] HTTP status: {r.status}")
             if r.status != 200:
+                try:
+                    error_text = await r.text()
+                    print(f"[DEBUG opentripmap async_discover_pois] Error response: {error_text[:200]}")
+                except:
+                    pass
                 if own_session:
                     await session.close()
                 return []
             j = await r.json()
+            print(f"[DEBUG opentripmap async_discover_pois] Response features: {len(j.get('features', []))}")
     except Exception:
         if own_session:
             await session.close()

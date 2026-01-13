@@ -94,6 +94,7 @@ def discover_pois(
     local_only: bool = False,
     timeout: float = 12.0,
     bbox: Optional[tuple] = None,
+    neighborhood: Optional[str] = None,
 ) -> List[Dict]:
     """Orchestrate multiple providers concurrently for different POI types.
 
@@ -103,120 +104,74 @@ def discover_pois(
         limit: Maximum results to return
         local_only: Filter out chain restaurants (only applies to restaurants)
         timeout: Timeout for provider calls
-        bbox: Optional bounding box (min_lon, min_lat, max_lon, max_lat) to restrict search
+        bbox: Optional bounding box (west, south, east, north) to restrict search
+        neighborhood: Optional neighborhood name to geocode to bbox (e.g., "Soho, London")
 
     Returns list of unified entries with at least keys: id,name,lat,lon,osm_url,provider,raw
     """
     results = []
+    
+    # If neighborhood is provided, geocode it to bbox
+    if neighborhood and not bbox:
+        print(f"[DEBUG] Geocoding neighborhood: {neighborhood}")
+        try:
+            bbox = asyncio.run(overpass_provider.geocode_city(neighborhood))
+            if bbox:
+                print(f"[DEBUG] Neighborhood geocoded to bbox: {bbox}")
+            else:
+                print(f"[DEBUG] Could not geocode neighborhood: {neighborhood}")
+        except Exception as e:
+            logging.warning(f"Failed to geocode neighborhood {neighborhood}: {e}")
+    
+    print("[DEBUG] Starting discover_pois with city=", city, "bbox=", bbox, "neighborhood=", neighborhood, "poi_type=", poi_type)
 
     # Heuristic: process at most ~10x the requested limit per provider and cap the
     # combined candidate pool too.
     max_per_provider = max(int(limit) * 10, 200)
     max_total_candidates = max(int(limit) * 20, 600)
 
-    # Helper to wrap provider calls and record timings for instrumentation.
-    def _timed_call(func, provider_name, *fargs, **fkwargs):
-        start = time.time()
-        res = None
-        try:
-            res = func(*fargs, **fkwargs)
-            # If the result is a coroutine, run it in a new event loop
-            if asyncio.iscoroutine(res):
-                res = asyncio.run(res)
-            return res
-        except Exception as e:
-            logging.warning(f"Provider {provider_name} raised: {e}")
-            return None
-        finally:
-            dur = time.time() - start
-            try:
-                # Await coroutine if needed before calling len
-                if asyncio.iscoroutine(res):
-                    res = asyncio.run(res)
-                count = len(res) if res else 0
-            except Exception:
-                count = 0
-            logging.info(
-                f"Provider timing: {provider_name} took {dur:.2f}s and returned {count} items"
-            )
-
-    calls = []
-    with ThreadPoolExecutor(max_workers=4) as ex:
-        # Overpass (OSM) - supports different POI types
+    # Run async providers in a single event loop
+    async def _gather_providers():
+        """Run all async provider calls concurrently in a single event loop.
+        Uses the unified discover_pois which calls Overpass, Geoapify, 
+        Opentripmap, Wikivoyage, and Mapillary in parallel."""
+        
         if overpass_provider is None:
             logging.error("overpass_provider is None! Cannot fetch POIs.")
-        else:
-            if poi_type == "restaurant":
-                calls.append(
-                    ex.submit(
-                        _timed_call,
-                        overpass_provider.discover_restaurants,
-                        "overpass",
-                        city,
-                        limit,
-                        None,  # cuisine
-                        local_only,
-                        bbox,  # bbox
-                    )
-                )
-            else:
-                # For other POI types, use the general discover_pois function
-                calls.append(
-                    ex.submit(
-                        _timed_call,
-                        overpass_provider.discover_pois,
-                        "overpass",
-                        city,
-                        poi_type,
-                        limit,
-                        local_only,
-                        bbox,  # bbox
-                    )
-                )
-
-        # OpenTripMap (optional) - supports different kinds
-        if opentripmap_provider is None:
-            logging.warning("opentripmap_provider is None! Skipping OpenTripMap POIs.")
-        else:
-            try:
-                # Map poi_type to OpenTripMap kinds
-                otm_kinds = {
-                    "restaurant": "restaurants",
-                    "historic": "historic,museums",
-                    "museum": "museums",
-                    "park": "parks",
-                    "market": "markets",
-                    "transport": "transport",
-                    "family": "amusements",  # closest match
-                    "event": "cultural",
-                    "local": "cultural",
-                    "hidden": "cultural",
-                    "coffee": "cafes",
-                }.get(poi_type, poi_type)
-
-                calls.append(
-                    ex.submit(
-                        _timed_call,
-                        opentripmap_provider.discover_pois,
-                        "opentripmap",
-                        city,
-                        otm_kinds,
-                        limit,
-                    )
-                )
-            except Exception as e:
-                logging.warning(f"Error submitting OpenTripMap provider: {e}")
-
-    # Collect results from all providers
-    for call in as_completed(calls):
+            return []
+        
         try:
-            provider_results = call.result()
-            if provider_results:
-                results.extend(provider_results)
-            else:
-                logging.info("Provider returned no results.")
+            # Use the unified discover_pois which runs ALL providers in parallel:
+            # - Overpass (OSM data)
+            # - Geoapify (places API)
+            # - Opentripmap (tourism attractions)
+            # - Wikivoyage (city summaries)
+            # - Mapillary (image enrichment)
+            all_results = await overpass_provider.discover_pois(
+                city=city,
+                poi_type=poi_type,
+                limit=max_per_provider,
+                local_only=local_only,
+                bbox=bbox,
+                neighborhood=neighborhood
+            )
+            print(f"[DEBUG] Unified discover_pois returned {len(all_results)} results from all providers")
+            return all_results
         except Exception as e:
-            logging.warning(f"Error collecting provider results: {e}")
+            logging.error(f"Error in unified discover_pois: {e}")
+            return []
+    
+    # Run all async providers in a single event loop
+    try:
+        print(f"[DEBUG] About to call asyncio.run(_gather_providers())")
+        provider_results = asyncio.run(_gather_providers())
+        print(f"[DEBUG] Got {len(provider_results) if provider_results else 0} results from providers")
+        if provider_results:
+            results.extend(provider_results)
+    except Exception as e:
+        logging.error(f"Error gathering provider results: {e}")
+        import traceback
+        traceback.print_exc()
 
     # Normalize and dedupe
     normalized = []
@@ -227,6 +182,7 @@ def discover_pois(
                 norm = _normalize_osm_entry(e)
             else:
                 norm = _normalize_generic_entry(e)
+            print(f"[DEBUG] Normalized entry: {norm}")
             # Skip duplicates by ID
             if norm["id"] and norm["id"] not in seen_ids:
                 seen_ids.add(norm["id"])
