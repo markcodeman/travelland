@@ -498,7 +498,8 @@ async def discover_restaurants(city=None, bbox=None, limit=200, cuisine=None, lo
         if city is None:
             return []
         bbox = await geocode_city(city, session=session)
-    if not bbox:
+    # Validate bbox is a tuple/list of 4 numbers
+    if not (isinstance(bbox, (tuple, list)) and len(bbox) == 4 and all(isinstance(x, (int, float)) for x in bbox)):
         return []
     south, west, north, east = bbox
     # Overpass bbox format: south,west,north,east
@@ -719,6 +720,91 @@ async def discover_restaurants(city=None, bbox=None, limit=200, cuisine=None, lo
 async def async_discover_restaurants(city=None, limit=200, cuisine=None, local_only=False, bbox=None, session: aiohttp.ClientSession = None):
     # Use async wrapper to call async_discover_pois
     res = await async_discover_pois(city, "restaurant", limit, local_only, bbox, session=session)
+    if not res and city:
+        # Try area-based Overpass query if bbox returns nothing
+        # Get OSM relation id for city
+        import logging
+        params = {"q": city, "format": "json", "limit": 1, "addressdetails": 1}
+        headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
+        own = False
+        if session is None:
+            session = aiohttp.ClientSession()
+            own = True
+        area_id = None
+        try:
+            async with session.get(NOMINATIM_URL, params=params, headers=headers, timeout=10) as r:
+                if r.status == 200:
+                    j = await r.json()
+                    if j and j[0].get("osm_type") == "relation" and j[0].get("osm_id"):
+                        area_id = 3600000000 + int(j[0]["osm_id"])
+        except Exception:
+            pass
+        if area_id:
+            # Build broader Overpass area query: include all amenities, tourism, and leisure
+            q = f"""
+            [out:json][timeout:60];
+            area({area_id})->.searchArea;
+            (
+              node["amenity"](area.searchArea);
+              way["amenity"](area.searchArea);
+              relation["amenity"](area.searchArea);
+              node["tourism"](area.searchArea);
+              way["tourism"](area.searchArea);
+              relation["tourism"](area.searchArea);
+              node["leisure"](area.searchArea);
+              way["leisure"](area.searchArea);
+              relation["leisure"](area.searchArea);
+            );
+            out center;
+            """
+            logging.warning(f"[Overpass] Area fallback query for {city}: {q}")
+            for base_url in OVERPASS_URLS:
+                try:
+                    async with session.post(base_url, data={"data": q}, timeout=30) as resp:
+                        logging.warning(f"[Overpass] Area fallback POST {base_url} status={resp.status}")
+                        if resp.status == 200:
+                            j = await resp.json()
+                            elements = j.get("elements", [])
+                            logging.warning(f"[Overpass] Area fallback returned {len(elements)} elements for {city}")
+                            out = []
+                            for el in elements:
+                                tags = el.get("tags") or {}
+                                name = tags.get("name") or tags.get("operator") or "Unnamed"
+                                if el["type"] == "node":
+                                    lat = el.get("lat")
+                                    lon = el.get("lon")
+                                else:
+                                    center = el.get("center")
+                                    if center:
+                                        lat = center["lat"]
+                                        lon = center["lon"]
+                                    else:
+                                        continue
+                                address = tags.get("addr:full") or f"{tags.get('addr:housenumber','')} {tags.get('addr:street','')} {tags.get('addr:city','')} {tags.get('addr:postcode','')}",
+                                entry = {
+                                    "osm_id": el.get("id"),
+                                    "name": name,
+                                    "website": tags.get("website") or tags.get("contact:website"),
+                                    "osm_url": f"https://www.openstreetmap.org/{el.get('type')}/{el.get('id')}",
+                                    "amenity": tags.get("amenity", ""),
+                                    "cost": tags.get("cost", ""),
+                                    "address": address,
+                                    "lat": lat,
+                                    "lon": lon,
+                                    "tags": ", ".join([f"{k}={v}" for k, v in tags.items()]),
+                                }
+                                out.append(entry)
+                            if out:
+                                res = out
+                                break
+                        else:
+                            logging.warning(f"[Overpass] Area fallback non-200 status: {resp.status}")
+                    # Log any exceptions
+                except Exception as e:
+                    logging.warning(f"[Overpass] Area fallback error: {e}")
+                    continue
+        if own:
+            await session.close()
     return res
 
 
@@ -739,7 +825,8 @@ async def discover_pois(city=None, poi_type="restaurant", limit=200, local_only=
         if city is None:
             return []
         bbox = await geocode_city(city, session=session)
-    if not bbox:
+    # Validate bbox is a tuple/list of 4 numbers
+    if not (isinstance(bbox, (tuple, list)) and len(bbox) == 4 and all(isinstance(x, (int, float)) for x in bbox)):
         return []
     south, west, north, east = bbox
     # Overpass bbox format: south,west,north,east

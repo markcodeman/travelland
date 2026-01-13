@@ -7,7 +7,15 @@ import math
 import re
 from typing import List, Dict
 
-import overpass_provider
+try:
+    import overpass_provider
+except Exception:
+    # Fall back to a lightweight stub if the real provider fails to import
+    import importlib
+    try:
+        overpass_provider = importlib.import_module("overpass_provider_stub")
+    except Exception:
+        overpass_provider = None
 
 try:
     import opentripmap_provider
@@ -109,8 +117,12 @@ def discover_pois(
     # Helper to wrap provider calls and record timings for instrumentation.
     def _timed_call(func, provider_name, *fargs, **fkwargs):
         start = time.time()
+        res = None
         try:
             res = func(*fargs, **fkwargs)
+            # If the result is a coroutine, run it in a new event loop
+            if asyncio.iscoroutine(res):
+                res = asyncio.run(res)
             return res
         except Exception as e:
             logging.warning(f"Provider {provider_name} raised: {e}")
@@ -118,7 +130,7 @@ def discover_pois(
         finally:
             dur = time.time() - start
             try:
-                count = len(res) if "res" in locals() and res else 0
+                count = len(res) if res else 0
             except Exception:
                 count = 0
             logging.info(
@@ -215,6 +227,11 @@ def discover_pois(
     # Sort by some quality heuristic (name length as proxy for specificity)
     normalized.sort(key=lambda x: len(x.get("name", "")), reverse=True)
 
+
+    
+
+    
+
     # Filter by bbox if provided
     if bbox:
         print(f"[BBOX FILTER] Applying bbox filter: {bbox} to {len(normalized)} venues")
@@ -253,6 +270,7 @@ async def async_discover_pois(
 
     async def _call_provider(func, provider_name, *fargs, **fkwargs):
         start = time.time()
+        res = None
         try:
             if asyncio.iscoroutinefunction(func):
                 # pass session if provider accepts it
@@ -263,13 +281,17 @@ async def async_discover_pois(
             else:
                 # run blocking provider in thread to avoid blocking loop
                 res = await asyncio.to_thread(func, *fargs, **fkwargs)
+                # If the result is a coroutine, await it
+                if asyncio.iscoroutine(res):
+                    res = await res
             return res
         except Exception as e:
             logging.warning(f"Provider {provider_name} raised: {e}")
+            return None
         finally:
             dur = time.time() - start
             try:
-                count = len(res) if "res" in locals() and res else 0
+                count = len(res) if res else 0
             except Exception:
                 count = 0
             logging.info(
@@ -312,6 +334,9 @@ async def async_discover_pois(
     for t in done:
         try:
             provider_results = t.result()
+            # If provider_results is a coroutine, await it
+            if asyncio.iscoroutine(provider_results) or asyncio.isfuture(provider_results):
+                provider_results = await provider_results
             if provider_results:
                 results.extend(provider_results)
         except Exception as e:
@@ -333,6 +358,21 @@ async def async_discover_pois(
             logging.warning(f"Error normalizing entry: {e}")
 
     normalized.sort(key=lambda x: len(x.get("name", "")), reverse=True)
+
+    # Optionally enrich async results with Mapillary thumbnails if configured and session provided.
+    try:
+        import os
+        if session and os.getenv("MAPILLARY_TOKEN"):
+            try:
+                import city_guides.mapillary_provider as mapillary_provider  # type: ignore
+                try:
+                    await mapillary_provider.async_enrich_venues(normalized, session=session, radius_m=50, limit=3)
+                except Exception:
+                    pass
+            except Exception:
+                pass
+    except Exception:
+        pass
 
     # Filter by bbox if provided
     if bbox:
