@@ -378,7 +378,7 @@ async def geocode_city(city: str, session: Optional[aiohttp.ClientSession] = Non
                         )
                         if own:
                             await session.close()
-                        return (south, west, north, east)
+                        return (west, south, east, north)
     except Exception:
         pass
     # Fallback to Geoapify
@@ -418,7 +418,7 @@ async def async_geocode_city(city: str, session: Optional[aiohttp.ClientSession]
                 )
                 if own:
                     await session.close()
-                return (south, west, north, east)
+                return (west, south, east, north)
             if own:
                 await session.close()
             return None
