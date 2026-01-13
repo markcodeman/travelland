@@ -3,6 +3,11 @@ import os
 from quart import Quart, render_template, request, jsonify
 import aiohttp
 import redis.asyncio as aioredis
+import asyncio
+import os
+from quart import Quart, render_template, request, jsonify
+import aiohttp
+import redis.asyncio as aioredis
 
 app = Quart(__name__, static_folder="static", template_folder="templates")
 
@@ -92,6 +97,30 @@ async def weather():
             return jsonify({"lat": lat, "lon": lon, "city": city, "weather": weather})
     except Exception as e:
         return jsonify({"error": "weather_fetch_failed", "details": str(e)}), 500
+
+
+@app.route("/neighborhoods", methods=["GET"])
+async def neighborhoods():
+    city = request.args.get("city", type=str)
+    lat = request.args.get("lat", type=float)
+    lon = request.args.get("lon", type=float)
+    lang = request.args.get("lang", default="en", type=str)
+    # Prefer city, but allow lat/lon fallback
+    # Ensure the repository root is on sys.path so we can import the sibling
+    # `city_guides` package (it's located at ../city_guides).
+    import sys
+    from pathlib import Path
+    repo_root = Path(__file__).resolve().parents[1]
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    from city_guides import multi_provider
+    try:
+        # Use async_get_neighborhoods from multi_provider
+        neighborhoods = await multi_provider.async_get_neighborhoods(city=city, lat=lat, lon=lon, lang=lang, session=aiohttp_session)
+        return jsonify({"neighborhoods": neighborhoods})
+    except Exception as e:
+        app.logger.warning(f"Neighborhoods fetch failed: {e}")
+        return jsonify({"neighborhoods": [], "error": str(e)}), 500
 
 
 if __name__ == "__main__":
