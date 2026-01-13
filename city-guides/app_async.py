@@ -43,17 +43,12 @@ async def neighborhoods_csv():
 
     neighborhoods = filtered.to_dict(orient="records")
     return jsonify({"neighborhoods": neighborhoods})
-import asyncio
-import os
-import sys
-from pathlib import Path
-from typing import Optional, Any, cast
-from quart import Quart, render_template, request, jsonify
-import aiohttp
-from aiohttp import ClientTimeout
-import redis.asyncio as aioredis
 
-# Add repository root to sys.path for city_guides imports
+
+# ============================================================
+# REST API ENDPOINTS
+# ============================================================
+
 repo_root = Path(__file__).resolve().parents[1]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))

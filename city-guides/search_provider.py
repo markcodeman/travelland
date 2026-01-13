@@ -1,10 +1,10 @@
 import aiohttp
 import os
 import re
-import time
-import random
 from datetime import datetime
 from urllib.parse import quote
+from bs4 import BeautifulSoup
+
 
 OPENTRIPMAP_KEY = os.getenv("OPENTRIPMAP_KEY")
 
@@ -16,7 +16,10 @@ async def get_restaurant_rating(name, city):
     if not GROQ_API_KEY:
         return "Rating unavailable"
 
-    prompt = f"What is the general customer rating (out of 5 stars) for {name} in {city}? Provide just the rating number, or 'Unknown' if not known."
+    prompt = (
+        f"What is the general customer rating (out of 5 stars) for {name} in {city}? "
+        "Provide just the rating number, or 'Unknown' if not known."
+    )
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -62,14 +65,18 @@ DEFAULT_INSTANCES = [
     "https://searx.kitsune.dev",
 ]
 
+
 PRICE_RE = re.compile(
-    r"(?:(?:\$|€|£|¥)\s?[0-9,]+(?:\.[0-9]+)?)|(?:[0-9,]+(?:\.[0-9]+)?\s?(?:USD|EUR|GBP|JPY))",
+    r"(?:(?:\$|€|£|¥)\s?[0-9,]+(?:\.[0-9]+)?)|"
+    r"(?:[0-9,]+(?:\.[0-9]+)?\s?(?:USD|EUR|GBP|JPY))",
     re.IGNORECASE,
 )
 
 # Additional permissive numeric regex (captures numbers like '120/night', 'from 120', 'from $120')
+
 NUM_RE = re.compile(
-    r"(?:from\s*)?(?:\$|USD)?\s?([0-9]{1,3}(?:[0-9,]*)(?:\.[0-9]+)?)(?:\s*(?:/night|per night|a night|night))?",
+    r"(?:from\s*)?(?:\$|USD)?\s?([0-9]{1,3}(?:[0-9,]*)(?:\.[0-9]+)?)"
+    r"(?:\s*(?:/night|per night|a night|night))?",
     re.IGNORECASE,
 )
 
@@ -115,7 +122,8 @@ def _parse_price_from_text(text):
             return None, None
 
     # 3) fallback: look for reversed order like '120 USD'
-    m3 = re.search(r"([0-9,]+(?:\.[0-9]+)?)\s?(USD|EUR|GBP|JPY)", text, re.IGNORECASE)
+    m3 = re.search(
+        r"([0-9,]+(?:\.[0-9]+)?)\s?(USD|EUR|GBP|JPY)", text, re.IGNORECASE)
     if m3:
         amt = float(m3.group(1).replace(",", ""))
         cur = m3.group(2).upper()
@@ -124,13 +132,17 @@ def _parse_price_from_text(text):
     return None, None
 
 
-async def searx_search_hotels(city_code, check_in, check_out, adults=1, max_results=100):
+async def searx_search_hotels(
+    city_code, check_in, check_out, adults=1, max_results=100
+):
     """Query multiple public searxng instances and return normalized hotel offers.
 
     This is a best-effort scraper of SERP snippets and is intended for prototyping only.
     """
     instances = _get_instances_from_env()
-    query = f"hotel {city_code} checkin {check_in} checkout {check_out} adults {adults}"
+    query = (
+        f"hotel {city_code} checkin {check_in} checkout {check_out} adults {adults}"
+    )
     offers = []
 
     # compute nights
@@ -149,7 +161,10 @@ async def searx_search_hotels(city_code, check_in, check_out, adults=1, max_resu
     # Use aiohttp for async requests
     # Friendly headers to reduce blocks
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+        ),
         "Accept": "application/json, text/javascript, */*; q=0.01",
     }
 
@@ -163,70 +178,67 @@ async def searx_search_hotels(city_code, check_in, check_out, adults=1, max_resu
     ]
 
     for inst in instances:
-        try:
-            url = inst.rstrip("/") + "/search"
-            # try multiple query patterns per instance
-            for q in query_variants:
-                params = {"q": q, "format": "json"}
-                # basic retry/backoff per-instance
-                resp = None
-                for attempt in range(3):
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(url, params=params, headers=headers, timeout=8) as resp:
-                                if resp.status == 200:
-                                    j = await resp.json()
-                                else:
-                                    continue
-                results = j.get("results") or []
-                # proceed to process results for this query
-                for r in results:
-                    title = r.get("title") or ""
-                    link = r.get("url") or r.get("id") or ""
-                    snippet = r.get("content") or r.get("snippet") or ""
-
-                    key = (link or title).strip()
-                    if not key or key in seen:
-                        continue
-                    seen.add(key)
+        url = inst.rstrip("/") + "/search"
+        # try multiple query patterns per instance
+        for q in query_variants:
+            params = {"q": q, "format": "json"}
             # basic retry/backoff per-instance
             resp = None
             for attempt in range(3):
                 try:
-                    # ...existing code...
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(
+                            url, params=params, headers=headers, timeout=8
+                        ) as resp:
+                            if resp.status == 200:
+                                j = await resp.json()
+                            else:
+                                continue
+                    results = j.get("results") or []
+                    # proceed to process results for this query
+                    for r in results:
+                        title = r.get("title") or ""
+                        link = r.get("url") or r.get("id") or ""
+                        snippet = r.get("content") or r.get("snippet") or ""
 
-                    amt, cur = _parse_price_from_text(snippet + " " + title)
+                        key = (link or title).strip()
+                        if not key or key in seen:
+                            continue
+                        seen.add(key)
 
-                    if amt is None:
-                        # skip entries without a parsed price for now
-                        continue
+                        amt, cur = _parse_price_from_text(
+                            snippet + " " + title)
 
-                    total_price = round(amt, 2)
-                    hotelspec = {
-                        "name": title or "Hotel",
-                        "hotel_id": None,
-                        "base_price": round((total_price) / nights, 2),
-                        "taxes": 0.0,
-                        "total_price": total_price,
-                        "nights": nights,
-                        "total_per_night": round(total_price / nights, 2),
-                        "currency": cur or "USD",
-                        "room_type": None,
-                        "description": snippet or title,
-                        "check_in": check_in,
-                        "check_out": check_out,
-                        "cancellation": "Unknown",
-                        "breakfast_included": False,
-                        "source": link,
-                        "provider": inst,
-                    }
-                    offers.append(hotelspec)
-                    if len(offers) >= max_results:
-                        break
-        except Exception:
-            continue
-        if len(offers) >= max_results:
-            break
+                        if amt is None:
+                            # skip entries without a parsed price for now
+                            continue
+
+                        total_price = round(amt, 2)
+                        hotelspec = {
+                            "name": title or "Hotel",
+                            "hotel_id": None,
+                            "base_price": round((total_price) / nights, 2),
+                            "taxes": 0.0,
+                            "total_price": total_price,
+                            "nights": nights,
+                            "total_per_night": round(total_price / nights, 2),
+                            "currency": cur or "USD",
+                            "room_type": None,
+                            "description": snippet or title,
+                            "check_in": check_in,
+                            "check_out": check_out,
+                            "cancellation": "Unknown",
+                            "breakfast_included": False,
+                            "source": link,
+                            "provider": inst,
+                        }
+                        offers.append(hotelspec)
+                        if len(offers) >= max_results:
+                            break
+                except Exception:
+                    continue
+            if len(offers) >= max_results:
+                break
 
     # sort cheapest first
     offers.sort(key=lambda x: x["total_price"])
@@ -236,7 +248,9 @@ async def searx_search_hotels(city_code, check_in, check_out, adults=1, max_resu
 async def searx_raw_queries(city_code, check_in, check_out, adults=1, max_instances=5):
     """Return raw JSON responses from each searx instance for debugging."""
     instances = _get_instances_from_env()[:max_instances]
-    query = f"hotel {city_code} checkin {check_in} checkout {check_out} adults {adults}"
+    query = (
+        f"hotel {city_code} checkin {check_in} checkout {check_out} adults {adults}"
+    )
     raw = []
     for inst in instances:
         try:
@@ -244,14 +258,19 @@ async def searx_raw_queries(city_code, check_in, check_out, adults=1, max_instan
             params = {"q": query, "format": "json"}
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, params=params, timeout=8) as resp:
-                    entry = {"instance": inst, "status_code": resp.status, "json": None}
+                    entry = {
+                        "instance": inst,
+                        "status_code": resp.status,
+                        "json": None,
+                    }
                     try:
                         entry["json"] = await resp.json()
                     except Exception:
                         entry["json"] = None
                     raw.append(entry)
         except Exception as e:
-            raw.append({"instance": inst, "status_code": None, "error": str(e)})
+            raw.append(
+                {"instance": inst, "status_code": None, "error": str(e)})
 
 
 async def searx_search(query, max_results=10, city=None):
@@ -337,10 +356,18 @@ async def searx_search(query, max_results=10, city=None):
                 rating = "Rating unavailable"
                 address = r.get("address", "")
                 cost = r.get("cost", "")
-                maps_link = f"https://maps.google.com/maps?q={quote(r['name'] + ' ' + city)}&ll={r['lat']},{r['lon']}"
+                maps_link = (
+                    f"https://maps.google.com/maps?q={
+                        quote(r['name'] + ' ' + city)}"
+                    f"&ll={r['lat']},{r['lon']}"
+                )
                 # Return plain URL instead of markdown to avoid double-processing
-                snippet = f"{r['amenity']} - Address: {address} - Price: {cost} - Rating: {rating} - Google Maps: {maps_link} - {r['tags']}"
-                results.append({"title": title, "url": url, "snippet": snippet})
+                snippet = (
+                    f"{r['amenity']} - Address: {address} - Price: {cost} - Rating: {rating} "
+                    f"- Google Maps: {maps_link} - {r['tags']}"
+                )
+                results.append(
+                    {"title": title, "url": url, "snippet": snippet})
             if results:
                 return results
         except Exception:
@@ -427,24 +454,35 @@ async def searx_search(query, max_results=10, city=None):
                 for attempt in range(1):  # only 1 attempt for speed
                     try:
                         async with aiohttp.ClientSession() as session:
-                            async with session.get(url, params=params, headers=headers, timeout=5) as resp:
+                            async with session.get(
+                                url, params=params, headers=headers, timeout=5
+                            ) as resp:
                                 if resp.status == 200:
                                     j = await resp.json()
                                 else:
                                     continue
-                for r in j.get("results", []):
-                    title = r.get("title", "")
-                    link = r.get("url", "") or r.get("id", "")
-                    snippet = r.get("content", "") or r.get("snippet", "")
-                    key = (link or title).strip()
-                    if not key or key in seen:
+                        for r in j.get("results", []):
+                            title = r.get("title", "")
+                            link = r.get("url", "") or r.get("id", "")
+                            snippet = r.get("content", "") or r.get(
+                                "snippet", "")
+                            key = (link or title).strip()
+                            if not key or key in seen:
+                                continue
+                            seen.add(key)
+                            results.append(
+                                {
+                                    "title": title,
+                                    "url": link,
+                                    "snippet": snippet,
+                                }
+                            )
+                            if len(results) >= max_results:
+                                break
+                        if len(results) >= max_results:
+                            break
+                    except Exception:
                         continue
-                    seen.add(key)
-                    results.append({"title": title, "url": link, "snippet": snippet})
-                    if len(results) >= max_results:
-                        break
-                if len(results) >= max_results:
-                    break
             except Exception:
                 continue
         if len(results) >= max_results:
@@ -462,7 +500,12 @@ async def duckduckgo_search(query, max_results=10):
     """Fallback search using DuckDuckGo instant answers API."""
     try:
         url = "https://api.duckduckgo.com/"
-        params = {"q": query, "format": "json", "no_html": 1, "skip_disambig": 1}
+        params = {
+            "q": query,
+            "format": "json",
+            "no_html": 1,
+            "skip_disambig": 1,
+        }
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params, timeout=5) as resp:
                 if resp.status != 200:
@@ -480,7 +523,8 @@ async def duckduckgo_search(query, max_results=10):
                 key = url
                 if key not in seen:
                     seen.add(key)
-                    results.append({"title": title, "url": url, "snippet": snippet})
+                    results.append(
+                        {"title": title, "url": url, "snippet": snippet})
 
         # Add related topics
         for topic in data.get("RelatedTopics", []):
@@ -496,7 +540,8 @@ async def duckduckgo_search(query, max_results=10):
                     key = url
                     if key not in seen:
                         seen.add(key)
-                        results.append({"title": title, "url": url, "snippet": snippet})
+                        results.append(
+                            {"title": title, "url": url, "snippet": snippet})
                         if len(results) >= max_results:
                             break
 
@@ -521,18 +566,21 @@ async def google_search(query, max_results=10):
             # Fetch title and snippet
             try:
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(url, timeout=3, headers={"User-Agent": "Mozilla/5.0"}) as resp:
+                    async with session.get(
+                        url, timeout=3, headers={"User-Agent": "Mozilla/5.0"}
+                    ) as resp:
                         if resp.status == 200:
                             text = await resp.text()
                             soup = BeautifulSoup(text, "html.parser")
                             title = soup.title.string if soup.title else url
-                            meta_desc = soup.find("meta", attrs={"name": "description"})
+                            meta_desc = soup.find(
+                                "meta", attrs={"name": "description"})
                             snippet = meta_desc["content"] if meta_desc else ""
                             results.append(
                                 {
                                     "title": title[:100] if title else url,
                                     "url": url,
-                                    "snippet": snippet[:200] if snippet else "",
+                                    "snippet": (snippet[:200] if snippet else ""),
                                 }
                             )
             except Exception:

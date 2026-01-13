@@ -516,7 +516,7 @@ function renderResults(data, city) {
     <div class="results-header mb-4">
       <h2 class="text-lg font-semibold text-gray-800">Found ${venues.length} places</h2>
     </div>
-    <div class="results">
+    <div class="results-grid">
       ${venues.map(v => renderVenueCard(v, city)).join('')}
     </div>
   `;

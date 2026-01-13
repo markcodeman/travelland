@@ -110,14 +110,9 @@ async def geoapify_discover_pois(
 ) -> list[dict]:
     """Discover POIs using Geoapify Places API, normalized to Overpass-like output."""
     api_key = get_geoapify_key()
-    if not api_key:
-        print("[DEBUG] Geoapify API key missing!")
-    if not bbox or len(bbox) != 4:
-        print(f"[DEBUG] Invalid bbox for geoapify_discover_pois: {bbox}")
     if not api_key or not bbox or len(bbox) != 4:
         return []
-    # bbox format: (west, south, east, north)
-    west, south, east, north = bbox
+    south, west, north, east = bbox
     params = {
         "filter": f"rect:{west},{south},{east},{north}",
         "limit": str(limit),
@@ -135,7 +130,6 @@ async def geoapify_discover_pois(
         timeout = aiohttp.ClientTimeout(total=15)
         async with session.get(GEOAPIFY_PLACES_URL, params=params, headers=headers, timeout=timeout) as r:
             if r.status != 200:
-                print(f"[DEBUG] Geoapify HTTP error: status={r.status} url={r.url}")
                 if own:
                     await session.close()
                 return []
@@ -167,92 +161,10 @@ async def geoapify_discover_pois(
             if own:
                 await session.close()
             return out
-    except Exception as e:
-        print(f"[DEBUG] Exception in geoapify_discover_pois: {e}")
+    except Exception:
         if own:
             await session.close()
         return []
-
-        # --- OPENTRIPMAP POI SEARCH ---
-        OPENTRIPMAP_API_URL = "https://api.opentripmap.com/0.1/en/places/bbox"
-
-        def get_opentripmap_key() -> Optional[str]:
-            return os.getenv("OPENTRIPMAP_KEY")
-
-        async def opentripmap_discover_pois(
-            bbox: Optional[Union[list[float], tuple[float, float, float, float]]],
-            kinds: Optional[str] = None,
-            limit: int = 200,
-            session: Optional[aiohttp.ClientSession] = None,
-        ) -> list[dict]:
-            """Discover POIs using Opentripmap API, normalized to Overpass-like output."""
-            api_key = get_opentripmap_key()
-            if not api_key:
-                print("[DEBUG] Opentripmap API key missing!")
-            if not bbox or len(bbox) != 4:
-                print(f"[DEBUG] Invalid bbox for opentripmap_discover_pois: {bbox}")
-            if not api_key or not bbox or len(bbox) != 4:
-                return []
-            # bbox format: (west, south, east, north)
-            west, south, east, north = bbox
-            params = {
-                "lon_min": west,
-                "lat_min": south,
-                "lon_max": east,
-                "lat_max": north,
-                "apikey": api_key,
-                "limit": str(limit),
-                "format": "json",
-            }
-            if kinds:
-                params["kinds"] = kinds
-            headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
-            own = False
-            if session is None:
-                session = await aiohttp.ClientSession().__aenter__()
-                own = True
-            try:
-                timeout = aiohttp.ClientTimeout(total=15)
-                async with session.get(OPENTRIPMAP_API_URL, params=params, headers=headers, timeout=timeout) as r:
-                    if r.status != 200:
-                        print(f"[DEBUG] Opentripmap HTTP error: status={r.status} url={r.url}")
-                        if own:
-                            await session.close()
-                        return []
-                    j = await r.json()
-                    features = j.get("features", []) if isinstance(j, dict) else j
-                    out = []
-                    for feat in features:
-                        prop = feat.get("properties", feat)  # sometimes flat
-                        name = prop.get("name") or prop.get("address_line1") or "Unnamed"
-                        lat = prop.get("lat") or prop.get("point", {}).get("lat") or prop.get("geometry", {}).get("coordinates", [None, None])[1]
-                        lon = prop.get("lon") or prop.get("point", {}).get("lon") or prop.get("geometry", {}).get("coordinates", [None, None])[0]
-                        address = prop.get("address") or prop.get("address_line1")
-                        website = prop.get("url") or prop.get("website")
-                        kinds_str = prop.get("kinds", "")
-                        xid = prop.get("xid") or prop.get("id")
-                        osm_url = f"https://opentripmap.com/en/card/{xid}" if xid else None
-                        entry = {
-                            "osm_id": xid,
-                            "name": name,
-                            "website": website,
-                            "osm_url": osm_url,
-                            "amenity": kinds_str,
-                            "address": address,
-                            "lat": lat,
-                            "lon": lon,
-                            "tags": kinds_str,
-                            "source": "opentripmap",
-                        }
-                        out.append(entry)
-                    if own:
-                        await session.close()
-                    return out
-            except Exception as e:
-                print(f"[DEBUG] Exception in opentripmap_discover_pois: {e}")
-                if own:
-                    await session.close()
-                return []
 
 # Expanded list of public Overpass API endpoints for global, robust failover
 OVERPASS_URLS = [
@@ -513,17 +425,6 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
                             center = {"lat": el["center"]["lat"], "lon": el["center"]["lon"]}
                         elif "lat" in el and "lon" in el:
                             center = {"lat": el["lat"], "lon": el["lon"]}
-                        # If bbox not available from bounds, generate from center with a buffer
-                        if bbox is None and center:
-                            # Create a bbox around the center point (0.01 degrees ≈ 1.1 km buffer)
-                            buf = 0.01
-                            bbox = [
-                                center["lon"] - buf,  # west
-                                center["lat"] - buf,  # south
-                                center["lon"] + buf,  # east
-                                center["lat"] + buf,  # north
-                            ]
-                        
                         results.append({
                             "id": el_id,
                             "name": name,
@@ -544,7 +445,7 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
         if geonames_user:
             try:
                 # import lazily to avoid import-time cost when not used
-                import geonames_provider
+                from . import geonames_provider
                 geores = await geonames_provider.async_get_neighborhoods_geonames(
                     city=city, lat=lat, lon=lon, session=session
                 )
@@ -740,43 +641,19 @@ async def discover_restaurants(
     limit: int = 200,
     cuisine: Optional[str] = None,
     local_only: bool = False,
-    neighborhood: Optional[str] = None,
     session: Optional[aiohttp.ClientSession] = None,
 ) -> list[dict]:
-    """Discover restaurant POIs for a city or neighborhood using Nominatim + Overpass.
-    
-    Args:
-        city: City name
-        bbox: Bounding box (west, south, east, north)
-        limit: Max results
-        cuisine: Cuisine type filter
-        local_only: Exclude chains
-        neighborhood: Neighborhood name to geocode (e.g., "Soho, London")
-    """
-    print(f"[DEBUG discover_restaurants] Called with city={city}, bbox={bbox}, neighborhood={neighborhood}, limit={limit}")
-    
-    # Store original bbox for filtering later
-    filter_bbox = bbox
-    
-    # If bbox is not provided, geocode neighborhood or city
+    """Discover restaurant POIs for a city using Nominatim + Overpass."""
+    # If bbox is not provided, geocode the city
     if bbox is None:
-        if neighborhood:
-            bbox = await geocode_city(neighborhood, session=session)
-            print(f"[DEBUG discover_restaurants] Geocoded neighborhood to bbox={bbox}")
-        elif city:
-            bbox = await geocode_city(city, session=session)
-            print(f"[DEBUG discover_restaurants] Geocoded city to bbox={bbox}")
-        else:
-            print(f"[DEBUG discover_restaurants] No city, neighborhood, or bbox, returning empty")
+        if city is None:
             return []
+        bbox = await geocode_city(city, session=session)
     # Validate bbox is a tuple/list of 4 numbers
     if not (isinstance(bbox, (tuple, list)) and len(bbox) == 4 and all(isinstance(x, (int, float)) for x in bbox)):
-        print(f"[DEBUG discover_restaurants] Invalid bbox format, returning empty")
         return []
-    
-    # bbox format: (west, south, east, north) - unpack and convert to Overpass format
-    west, south, east, north = bbox
-    bbox_str = f"{south},{west},{north},{east}"  # Overpass expects (south, west, north, east)
+    south, west, north, east = bbox
+    bbox_str = f"{south},{west},{north},{east}"
     amenity_filter = '["amenity"~"restaurant|fast_food|cafe|bar|pub|food_court"]'
     q = f"[out:json][timeout:60];(node{amenity_filter}({bbox_str});way{amenity_filter}({bbox_str});relation{amenity_filter}({bbox_str}););out center;"
     # --- DEBUG/LOGGING: Log Overpass QL query and bbox for troubleshooting ---
@@ -798,21 +675,17 @@ async def discover_restaurants(
         h = hashlib.sha256(qstr.encode("utf-8")).hexdigest()
         return cache_dir / f"{h}.json"
 
-    def _read_cache(qstr: str, allow_expired=False):
-        """Read cache, optionally returning expired data if allow_expired=True"""
+    def _read_cache(qstr: str):
         p = _cache_path_for_query(qstr)
         if not p.exists():
             return None
         try:
             m = p.stat().st_mtime
             age = time.time() - m
-            if age > CACHE_TTL and not allow_expired:
+            if age > CACHE_TTL:
                 return None
             with p.open("r", encoding="utf-8") as fh:
-                data = json.load(fh)
-                if age > CACHE_TTL:
-                    print(f"[Overpass CACHE] Using expired cache ({age/3600:.1f}h old)")
-                return data
+                return json.load(fh)
         except Exception:
             return None
 
@@ -841,7 +714,7 @@ async def discover_restaurants(
             pass
 
     headers = {"User-Agent": "CityGuides/1.0"}
-    cached = _read_cache(q, allow_expired=False)
+    cached = _read_cache(q)
     if cached is not None:
         try:
             j = cached
@@ -895,80 +768,20 @@ async def discover_restaurants(
                 tried.append(base_url)
                 continue
 
-        # If all live requests failed, try to use expired cache as fallback
         if j is None:
-            print("[Overpass] All live requests failed, trying expired cache...")
-            expired_cache = _read_cache(q, allow_expired=True)
-            if expired_cache is not None:
-                j = expired_cache
-            elif filter_bbox is not None:
-                # Try to find any cached file that covers the requested bbox
-                print(f"[Overpass] No cached data for bbox, searching all cache files...")
-                f_west, f_south, f_east, f_north = filter_bbox
-                
+            stale_p = _cache_path_for_query(q)
+            if stale_p.exists():
                 try:
-                    # Iterate through all cache files
-                    for cache_file in cache_dir.glob("*.json"):
-                        try:
-                            # Check if cache file is not too old (allow up to 7 days)
-                            age = time.time() - cache_file.stat().st_mtime
-                            if age > 60 * 60 * 24 * 7:  # 7 days
-                                continue
-                            
-                            with cache_file.open("r", encoding="utf-8") as fh:
-                                cached_data = json.load(fh)
-                                elements = cached_data.get("elements", [])
-                                if not elements:
-                                    continue
-                                
-                                # Sample first 50 elements to check bbox coverage
-                                sample = elements[:50]
-                                lats = []
-                                lons = []
-                                for el in sample:
-                                    if el.get("type") == "node":
-                                        lat, lon = el.get("lat"), el.get("lon")
-                                    else:
-                                        center = el.get("center")
-                                        if center:
-                                            lat, lon = center.get("lat"), center.get("lon")
-                                        else:
-                                            continue
-                                    if lat and lon:
-                                        lats.append(lat)
-                                        lons.append(lon)
-                                
-                                if lats and lons:
-                                    # Check if this cache covers the requested bbox
-                                    cache_south, cache_north = min(lats), max(lats)
-                                    cache_west, cache_east = min(lons), max(lons)
-                                    
-                                    # Check for overlap
-                                    overlaps = (
-                                        cache_south <= f_north and cache_north >= f_south and
-                                        cache_west <= f_east and cache_east >= f_west
-                                    )
-                                    
-                                    if overlaps:
-                                        print(f"[Overpass] Found cache covering bbox ({cache_south:.2f},{cache_west:.2f},{cache_north:.2f},{cache_east:.2f}), age {age/3600:.1f}h")
-                                        j = cached_data
-                                        break
-                        except Exception as e:
-                            continue
-                    
-                    if j is None:
-                        print(f"[Overpass] No suitable cached data found covering bbox={filter_bbox}")
-                except Exception as e:
-                    print(f"[Overpass] Error searching cache files: {e}")
-            
-            if j is None:
+                    with stale_p.open("r", encoding="utf-8") as fh:
+                        j = json.load(fh)
+                except Exception:
+                    return []
+            else:
                 return []
 
     if j is None:
-        print(f"[DEBUG discover_restaurants] No JSON response after all attempts, returning empty")
         return []
     elements = j.get("elements", [])
-    print(f"[DEBUG discover_restaurants] Got {len(elements)} elements from Overpass")
     elements = elements[:200]
     skip_reverse = len(elements) > 50
     out = []
@@ -1038,20 +851,6 @@ async def discover_restaurants(
         return (amenity_score, cost_score)
 
     out.sort(key=sort_key)
-    
-    # Filter by original bbox if we used city-level cache
-    if filter_bbox is not None and filter_bbox != bbox:
-        f_west, f_south, f_east, f_north = filter_bbox
-        filtered_out = []
-        for entry in out:
-            lat, lon = entry.get("lat"), entry.get("lon")
-            if lat is not None and lon is not None:
-                if f_south <= lat <= f_north and f_west <= lon <= f_east:
-                    filtered_out.append(entry)
-        print(f"[DEBUG discover_restaurants] Filtered from {len(out)} to {len(filtered_out)} POIs using bbox={filter_bbox}")
-        out = filtered_out
-    
-    print(f"[DEBUG discover_restaurants] Returning {len(out)} POIs after filtering")
     return out
 
 
@@ -1148,176 +947,282 @@ async def async_discover_restaurants(city: Optional[str] = None, limit: int = 20
     return res
 
 
-async def discover_pois(city: Optional[str] = None, poi_type: str = "restaurant", limit: int = 200, local_only: bool = False, bbox: Optional[Union[list[float], tuple[float, float, float, float]]] = None, neighborhood: Optional[str] = None, session: Optional[aiohttp.ClientSession] = None):
+async def discover_pois(city: Optional[str] = None, poi_type: str = "restaurant", limit: int = 200, local_only: bool = False, bbox: Optional[Union[list[float], tuple[float, float, float, float]]] = None, session: Optional[aiohttp.ClientSession] = None):
     """Discover POIs of various types for a city using Nominatim + Overpass.
-    If bbox is provided, use it directly. If neighborhood is provided, geocode it.
-    Otherwise, geocode the city.
+    If bbox is provided, use it directly. Otherwise, geocode the city.
 
     Args:
         city: City name to search in
         poi_type: Type of POI ("restaurant", "historic", "museum", "park", etc.)
         limit: Maximum results to return
         local_only: Filter out chains (only applies to restaurants)
-        bbox: Optional bounding box (west, south, east, north)
-        neighborhood: Optional neighborhood name to geocode (e.g., "Soho, London", "Chelsea")
+        bbox: Optional bounding box (south, west, north, east)
 
     Returns list of candidates with OSM data.
     """
-    # --- Unified POI discovery: Overpass, Geoapify, Opentripmap ---
     if bbox is None:
-        # Try neighborhood first, then city
-        if neighborhood:
-            bbox = await geocode_city(neighborhood, session=session)
-        elif city:
-            bbox = await geocode_city(city, session=session)
-        else:
+        if city is None:
             return []
+        bbox = await geocode_city(city, session=session)
+    # Validate bbox is a tuple/list of 4 numbers
     if not (isinstance(bbox, (tuple, list)) and len(bbox) == 4 and all(isinstance(x, (int, float)) for x in bbox)):
         return []
+    south, west, north, east = bbox
+    # Overpass bbox format: south,west,north,east
+    bbox_str = f"{south},{west},{north},{east}"
 
-    # Map POI type to provider-specific categories/kinds
-    poi_type_map = {
-        "restaurant": {
-            "geoapify": "catering.restaurant,catering.cafe,catering.fast_food,catering.food_court,bar,pub",
-            "opentripmap": "restaurants,cafes,fast_food,food_court,bar,pub",
-        },
-        "historic": {
-            "geoapify": "historic",
-            "opentripmap": "historic",
-        },
-        "museum": {
-            "geoapify": "entertainment.museum",
-            "opentripmap": "museums",
-        },
-        "park": {
-            "geoapify": "leisure.park",
-            "opentripmap": "parks",
-        },
-        "market": {
-            "geoapify": "commercial.marketplace",
-            "opentripmap": "marketplaces",
-        },
-        "transport": {
-            "geoapify": "transport",
-            "opentripmap": "public_transport,airports,railway_stations,subway_stations,bus_stations,ferry_terminals",
-        },
-        "family": {
-            "geoapify": "leisure.playground,leisure.amusement_arcade,leisure.miniature_golf",
-            "opentripmap": "playgrounds,amusement_arcades,miniature_golf",
-        },
-        "event": {
-            "geoapify": "entertainment.theatre,entertainment.cinema,entertainment.arts_centre,community_centre",
-            "opentripmap": "theatres,cinemas,arts_centres,community_centres",
-        },
-        "local": {
-            "geoapify": "tourism.attraction",
-            "opentripmap": "attractions",
-        },
-        "hidden": {
-            "geoapify": "tourism.attraction",
-            "opentripmap": "attractions",
-        },
-        "coffee": {
-            "geoapify": "catering.cafe,catering.coffee_shop",
-            "opentripmap": "cafes,coffee_shops",
-        },
+    # Define queries for different POI types
+    poi_queries = {
+        "restaurant": '["amenity"~"restaurant|fast_food|cafe|bar|pub|food_court"]',
+        "historic": '["tourism"="attraction"]',
+        "museum": '["tourism"="museum"]',
+        "park": '["leisure"="park"]',
+        "market": '["amenity"="marketplace"]',
+        "transport": '["amenity"~"bus_station|train_station|subway_entrance|ferry_terminal|airport"]',
+        "family": '["leisure"~"playground|amusement_arcade|miniature_golf"]',
+        "event": '["amenity"~"theatre|cinema|arts_centre|community_centre"]',
+        "local": '["tourism"~"attraction"]',  # generic attractions
+        "hidden": '["tourism"~"attraction"]',  # same as local
+        "coffee": '["amenity"~"cafe|coffee_shop"]',
     }
-    geoapify_kinds = poi_type_map.get(poi_type, {}).get("geoapify")
-    opentripmap_kinds = poi_type_map.get(poi_type, {}).get("opentripmap")
 
-    # Run all providers in parallel (Overpass, Geoapify, Opentripmap)
-    tasks = []
-    
-    # Overpass - use the core async function that does direct Overpass queries
-    tasks.append(async_discover_pois(city, poi_type, limit, local_only, bbox, session=session))
-    
-    # Geoapify
-    if geoapify_kinds:
-        tasks.append(geoapify_discover_pois(bbox, kinds=geoapify_kinds, limit=limit, session=session))
-    
-    # Opentripmap
-    if opentripmap_kinds:
-        try:
-            from city_guides import opentripmap_provider as otm_provider
-            tasks.append(otm_provider.discover_pois(city, kinds=opentripmap_kinds, limit=limit, session=session))
-        except Exception as e:
-            print(f"[DEBUG] Could not add opentripmap: {e}")
-            pass
+    # Default to restaurant if unknown type
+    amenity_filter = poi_queries.get(poi_type, poi_queries["restaurant"])
 
-    # Add Wikivoyage summary as a POI if available
-    async def fetch_wikivoyage_poi(city_name, session=None):
-        try:
-            from city_guides.providers.london_provider import fetch_wikivoyage_summary
-        except ImportError:
-            return None
-        try:
-            summary = await fetch_wikivoyage_summary(city_name, session=session)
-            if summary and summary.strip():
-                return {
-                    "name": f"Wikivoyage: {city_name}",
-                    "address": city_name,
-                    "lat": None,
-                    "lon": None,
-                    "website": f"https://en.wikivoyage.org/wiki/{city_name.replace(' ', '_')}",
-                    "osm_url": f"https://en.wikivoyage.org/wiki/{city_name.replace(' ', '_')}",
-                    "tags": "wikivoyage,guide,summary",
-                    "source": "wikivoyage",
-                    "summary": summary,
-                }
-        except Exception:
-            return None
-        return None
+    q = f"[out:json][timeout:60];(node{amenity_filter}({bbox_str});way{amenity_filter}({bbox_str});relation{amenity_filter}({bbox_str}););out center;"
 
-    if city:
-        tasks.append(fetch_wikivoyage_poi(city, session=session))
+    # ---- CACHING & RATE LIMIT -------------------------------------------------
+    CACHE_TTL = int(
+        os.environ.get("OVERPASS_CACHE_TTL", 60 * 60 * 6)
+    )  # 6 hours default
+    RATE_LIMIT_SECONDS = float(
+        os.environ.get("OVERPASS_MIN_INTERVAL", 5.0)
+    )  # min seconds between requests
 
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    all_pois = []
-    for res in results:
-        if isinstance(res, list):
-            all_pois.extend(res)
-        elif isinstance(res, dict):
-            all_pois.append(res)
-
-    # Deduplicate by (name, lat, lon)
-    seen = set()
-    deduped = []
-    for poi in all_pois:
-        key = (poi.get("name"), poi.get("lat"), poi.get("lon"))
-        if key in seen:
-            continue
-        seen.add(key)
-        deduped.append(poi)
-
-    # Enrich with Mapillary images if token is set
+    cache_dir = Path(__file__).parent / ".cache" / "overpass"
     try:
-        if os.getenv("MAPILLARY_TOKEN") and deduped:
-            import city_guides.mapillary_provider as mapillary_provider
-            await mapillary_provider.async_enrich_venues(deduped, session=session, radius_m=50, limit=3)
+        cache_dir.mkdir(parents=True, exist_ok=True)
     except Exception:
         pass
 
-    return deduped[:limit]
+    def _cache_path_for_query(qstr: str) -> Path:
+        h = hashlib.sha256(qstr.encode("utf-8")).hexdigest()
+        return cache_dir / f"{h}.json"
+
+    def _read_cache(qstr: str):
+        p = _cache_path_for_query(qstr)
+        if not p.exists():
+            return None
+        try:
+            m = p.stat().st_mtime
+            age = time.time() - m
+            if age > CACHE_TTL:
+                return None
+            with p.open("r", encoding="utf-8") as fh:
+                return json.load(fh)
+        except Exception:
+            return None
+
+    def _write_cache(qstr: str, data):
+        p = _cache_path_for_query(qstr)
+        try:
+            with p.open("w", encoding="utf-8") as fh:
+                json.dump(data, fh)
+        except Exception:
+            pass
+
+    # simple global rate limiter persisted to a file so separate runs share it
+    rate_file = cache_dir / "last_request_ts"
+
+    def _ensure_rate_limit():
+        try:
+            last = float(rate_file.read_text()) if rate_file.exists() else 0.0
+        except Exception:
+            last = 0.0
+        now = time.time()
+        wait = RATE_LIMIT_SECONDS - (now - last)
+        if wait > 0:
+            time.sleep(wait)
+        try:
+            rate_file.write_text(str(time.time()))
+        except Exception:
+            pass
+
+    headers = {"User-Agent": "CityGuides/1.0"}
+    # try cache first
+    cached = _read_cache(q)
+    if cached is not None:
+        try:
+            j = cached
+        except Exception:
+            j = None
+    else:
+        # Try multiple Overpass endpoints with retries/backoff to reduce 504s
+        tried = []
+        j = None
+        for base_url in OVERPASS_URLS:
+            try:
+                _ensure_rate_limit()
+                attempts = int(os.environ.get("OVERPASS_RETRIES", 2))
+                for attempt in range(1, attempts + 1):
+                    try:
+                        own_session = False
+                        if session is None:
+                            session = aiohttp.ClientSession()
+                            own_session = True
+                        timeout = aiohttp.ClientTimeout(total=int(os.environ.get("OVERPASS_TIMEOUT", 20)))
+                        async with session.post(base_url, data={"data": q}, headers=headers, timeout=timeout) as r:
+                            if r.status != 200:
+                                if own_session:
+                                    await session.close()
+                                continue
+                            j = await r.json()
+                            _write_cache(q, j)
+                            if own_session:
+                                await session.close()
+                            break
+                    except Exception:
+                        if attempt < attempts:
+                            time.sleep(1 * attempt)
+                        else:
+                            raise
+                if j is not None:
+                    break
+            except Exception:
+                tried.append(base_url)
+                continue
+
+        if j is None:
+            # on failure, try to fall back to stale cache if available
+            stale_p = _cache_path_for_query(q)
+            if stale_p.exists():
+                try:
+                    with stale_p.open("r", encoding="utf-8") as fh:
+                        j = json.load(fh)
+                except Exception:
+                    return []
+            else:
+                return []
+
+    if j is None:
+        return []
+    elements = j.get("elements", [])
+    # Limit elements to avoid processing too many and causing timeouts
+    elements = elements[:200]
+    out = []
+
+    for el in elements:
+        tags = el.get("tags") or {}
+        name = tags.get("name") or tags.get("operator") or "Unnamed"
+
+        # For historic sites, try to generate better names from tags
+        if poi_type == "historic" and name == "Unnamed":
+            # Try various tag fields for better names
+            better_name = None
+            if tags.get("inscription"):
+                # Use first 50 chars of inscription as name
+                inscription = tags["inscription"].strip()
+                better_name = inscription[:50] + ("..." if len(inscription) > 50 else "")
+            elif tags.get("description"):
+                desc = tags["description"].strip()
+                better_name = desc[:50] + ("..." if len(desc) > 50 else "")
+            elif tags.get("memorial"):
+                memorial_type = tags["memorial"].replace("_", " ").title()
+                if tags.get("wikidata"):
+                    better_name = f"{memorial_type} Memorial"
+                else:
+                    better_name = memorial_type
+            elif tags.get("historic"):
+                historic_type = tags["historic"].replace("_", " ").title()
+                better_name = historic_type
+
+            if better_name:
+                name = better_name
+
+        # Skip if still unnamed and no useful information
+        if name == "Unnamed" and not any(tags.get(k) for k in ["inscription", "description", "memorial", "wikidata"]):
+            continue
+
+        # Get lat/lon
+        if el["type"] == "node":
+            lat = el.get("lat")
+            lon = el.get("lon")
+        else:
+            center = el.get("center")
+            if center:
+                lat = center["lat"]
+                lon = center["lon"]
+            else:
+                continue
+
+        # Build address
+        address = (
+            tags.get("addr:full")
+            or f"{tags.get('addr:housenumber','')} {tags.get('addr:street','')} {tags.get('addr:city','')} {tags.get('addr:postcode','')}".strip()
+        )
+        if not address:
+            address = reverse_geocode(lat, lon) or f"{lat}, {lon}"
+
+        # For non-restaurant POIs, skip chain filtering (doesn't apply)
+        if poi_type == "restaurant" and local_only:
+            name_lower = name.lower()
+            if any(chain.lower() in name_lower for chain in CHAIN_KEYWORDS):
+                continue
+
+        website = tags.get("website") or tags.get("contact:website")
+        osm_type = el.get("type")
+        osm_id = el.get("id")
+        osm_url = f"https://www.openstreetmap.org/{osm_type}/{osm_id}"
+
+        tags_str = ", ".join([f"{k}={v}" for k, v in tags.items()])
+
+        entry = {
+            "osm_id": osm_id,
+            "name": name,
+            "website": website,
+            "osm_url": osm_url,
+            "amenity": tags.get("amenity", ""),
+            "historic": tags.get("historic", ""),
+            "tourism": tags.get("tourism", ""),
+            "leisure": tags.get("leisure", ""),
+            "cost": tags.get("cost", ""),
+            "address": address,
+            "lat": lat,
+            "lon": lon,
+            "tags": tags_str,
+        }
+        out.append(entry)
+
+    # Sort by relevance (prioritize named entries, then by type significance)
+    def sort_key(entry):
+        name = entry.get("name", "")
+        historic_type = entry.get("historic", "")
+
+        # Primary: Prefer named entries over unnamed
+        name_score = 0 if name == "Unnamed" else 1
+
+        # Secondary: Prefer more significant historic types
+        type_priority = {
+            "monument": 10, "castle": 9, "palace": 8, "church": 7, "cathedral": 7,
+            "temple": 6, "mosque": 6, "museum": 5, "fort": 4, "tower": 3,
+            "ruins": 2, "archaeological_site": 2, "memorial": 1
+        }.get(historic_type, 0)
+
+        return (-name_score, -type_priority, len(name))
+
+    out.sort(key=sort_key, reverse=True)
+    return out[:limit]
 
 
 async def async_discover_pois(city: Optional[str] = None, poi_type: str = "restaurant", limit: int = 200, local_only: bool = False, bbox: Optional[Union[list[float], tuple[float, float, float, float]]] = None, session: Optional[aiohttp.ClientSession] = None):
-    print(f"[async_discover_pois] Called with city={city}, bbox={bbox}, poi_type={poi_type}")
-    # Store original bbox for filtering later
-    filter_bbox = bbox
-    
     if bbox is None:
         if city is None:
-            print("[async_discover_pois] No city or bbox, returning empty")
             return []
         bbox = await async_geocode_city(city, session=session)
-        print(f"[async_discover_pois] Geocoded to bbox={bbox}")
     if not bbox:
-        print("[async_discover_pois] bbox is falsy, returning empty")
         return []
-    # bbox format: (west, south, east, north) - unpack and convert to Overpass format
-    west, south, east, north = bbox
-    bbox_str = f"{south},{west},{north},{east}"  # Overpass expects (south, west, north, east)
-    print(f"[async_discover_pois] Using bbox_str={bbox_str}")
+    south, west, north, east = bbox
+    bbox_str = f"{south},{west},{north},{east}"
 
     poi_queries = {
         "restaurant": '["amenity"~"restaurant|fast_food|cafe|bar|pub|food_court"]',
@@ -1418,71 +1323,14 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
             except Exception:
                 continue
 
-        # If all live requests failed, try to use cache as fallback
         if j is None:
-            print("[async_discover_pois] All live requests failed, trying cache fallback...")
-            # First try exact query cache (even if expired)
             stale_p = _cache_path_for_query(q)
             if stale_p.exists():
                 try:
                     j = json.loads(stale_p.read_text(encoding="utf-8"))
-                    age = time.time() - stale_p.stat().st_mtime
-                    print(f"[async_discover_pois] Using expired cache ({age/3600:.1f}h old)")
                 except Exception:
-                    pass
-            
-            # If no exact cache, search all cache files for one covering the bbox
-            if j is None and filter_bbox is not None:
-                print(f"[async_discover_pois] Searching all cache files for coverage...")
-                f_west, f_south, f_east, f_north = filter_bbox
-                
-                try:
-                    for cache_file in cache_dir.glob("*.json"):
-                        try:
-                            age = time.time() - cache_file.stat().st_mtime
-                            if age > 60 * 60 * 24 * 7:  # 7 days
-                                continue
-                            
-                            cached_data = json.loads(cache_file.read_text(encoding="utf-8"))
-                            elements = cached_data.get("elements", [])
-                            if not elements:
-                                continue
-                            
-                            # Sample to check coverage
-                            sample = elements[:50]
-                            lats, lons = [], []
-                            for el in sample:
-                                if el.get("type") == "node":
-                                    lat, lon = el.get("lat"), el.get("lon")
-                                else:
-                                    center = el.get("center")
-                                    if center:
-                                        lat, lon = center.get("lat"), center.get("lon")
-                                    else:
-                                        continue
-                                if lat and lon:
-                                    lats.append(lat)
-                                    lons.append(lon)
-                            
-                            if lats and lons:
-                                cache_south, cache_north = min(lats), max(lats)
-                                cache_west, cache_east = min(lons), max(lons)
-                                
-                                overlaps = (
-                                    cache_south <= f_north and cache_north >= f_south and
-                                    cache_west <= f_east and cache_east >= f_west
-                                )
-                                
-                                if overlaps:
-                                    print(f"[async_discover_pois] Found cache covering bbox, age {age/3600:.1f}h")
-                                    j = cached_data
-                                    break
-                        except Exception:
-                            continue
-                except Exception as e:
-                    print(f"[async_discover_pois] Error searching cache: {e}")
-            
-            if j is None:
+                    return []
+            else:
                 return []
 
     elements = j.get("elements", [])
@@ -1580,17 +1428,4 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
         return (-name_score, -type_priority, len(name))
 
     out.sort(key=sort_key, reverse=True)
-    
-    # Filter by original bbox if we used city-level cache
-    if filter_bbox is not None and filter_bbox != bbox:
-        f_west, f_south, f_east, f_north = filter_bbox
-        filtered_out = []
-        for entry in out:
-            lat, lon = entry.get("lat"), entry.get("lon")
-            if lat is not None and lon is not None:
-                if f_south <= lat <= f_north and f_west <= lon <= f_east:
-                    filtered_out.append(entry)
-        print(f"[async_discover_pois] Filtered from {len(out)} to {len(filtered_out)} POIs using bbox={filter_bbox}")
-        out = filtered_out
-    
     return out[:limit]

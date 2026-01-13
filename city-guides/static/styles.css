@@ -152,21 +152,27 @@ body {
 
 /* Results Grid */
 .results {
+  display: block;
+}
+
+/* Grid for venue cards - this is the actual container for cards */
+.results-grid {
   display: grid;
   grid-template-columns: repeat(1, 1fr); /* Mobile: stacked */
-  gap: 30px;
+  gap: 20px;
+  width: 100%;
 }
 
 /* Tablet: 2 columns */
 @media (min-width: 768px) {
-  .results {
+  .results-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 /* Desktop: 4 columns */
 @media (min-width: 1024px) {
-  .results {
+  .results-grid {
     grid-template-columns: repeat(4, 1fr);
   }
 }
@@ -241,6 +247,8 @@ body {
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: flex;
   flex-direction: column;
+  width: 100%;
+  height: 100%;
 }
 
 /* Thumbnail inside a card */
