@@ -36,20 +36,24 @@ async def geoapify_geocode_city(city: str, session: Optional[aiohttp.ClientSessi
                     await session.close()
                 return None
             j = await r.json()
-            features = j.get("features", [])
-            if not features:
+            results = j.get("results", [])
+            if not results:
                 if own:
                     await session.close()
                 return None
-            prop = features[0].get("properties", {})
-            bbox = features[0].get("bbox")
-            if bbox and len(bbox) == 4:
-                # Geoapify bbox: [minlon, minlat, maxlon, maxlat]
-                minlon, minlat, maxlon, maxlat = bbox
-                if own:
-                    await session.close()
-                # Overpass expects south,west,north,east
-                return (minlat, minlon, maxlat, maxlon)
+            result = results[0]
+            bbox_dict = result.get("bbox")
+            if bbox_dict:
+                # Geoapify bbox: {'lon1': minlon, 'lat1': minlat, 'lon2': maxlon, 'lat2': maxlat}
+                minlon = bbox_dict.get("lon1")
+                minlat = bbox_dict.get("lat1")
+                maxlon = bbox_dict.get("lon2")
+                maxlat = bbox_dict.get("lat2")
+                if all(x is not None for x in [minlon, minlat, maxlon, maxlat]):
+                    if own:
+                        await session.close()
+                    # Overpass expects south,west,north,east
+                    return (minlat, minlon, maxlat, maxlon)
             # fallback: use lat/lon with small buffer
             lat = prop.get("lat")
             lon = prop.get("lon")
@@ -126,6 +130,9 @@ async def geoapify_discover_pois(
     }
     if kinds:
         params["categories"] = kinds
+    else:
+        # Default categories for general POI discovery
+        params["categories"] = "tourism,catering,entertainment,leisure,commercial,healthcare,education"
     headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
     own = False
     if session is None:
@@ -1231,9 +1238,8 @@ async def discover_pois(city: Optional[str] = None, poi_type: str = "restaurant"
     # Overpass - use the core async function that does direct Overpass queries
     tasks.append(async_discover_pois(city, poi_type, limit, local_only, bbox, session=session))
     
-    # Geoapify
-    if geoapify_kinds:
-        tasks.append(geoapify_discover_pois(bbox, kinds=geoapify_kinds, limit=limit, session=session))
+    # Geoapify - always call with specific kinds if available, otherwise use defaults
+    tasks.append(geoapify_discover_pois(bbox, kinds=geoapify_kinds, limit=limit, session=session))
     
     # Opentripmap
     if opentripmap_kinds:
