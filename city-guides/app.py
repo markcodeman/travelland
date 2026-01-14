@@ -16,15 +16,85 @@ import time
 import requests
 import sys
 
-# Load environment variables from .env file manually
-env_file = Path(__file__).parent.parent / ".env"
-if env_file.exists():
-    with open(env_file) as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                key, value = line.split("=", 1)
-                os.environ[key.strip()] = value.strip()
+# Load environment variables from .env file
+# Get the directory where this script is running
+script_dir = Path(__file__).parent
+env_paths = [
+    script_dir / ".env",
+    script_dir.parent / ".env",
+    Path("/home/markm/TravelLand/.env"),
+]
+
+_env_file_used = None
+for env_file in env_paths:
+    if env_file.exists():
+        print(f"Loading .env from {env_file.resolve()}")
+        with open(env_file) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ[key.strip()] = value.strip()
+        _env_file_used = env_file
+        # Verify key was loaded
+        if os.getenv("GROQ_API_KEY"):
+            print(f"✓ GROQ_API_KEY loaded successfully")
+        break
+else:
+    print("Warning: .env file not found in any expected location")
+
+# Auto-update Groq model if deprecated (runs once at startup)
+if os.getenv("GROQ_API_KEY") and _env_file_used:
+    try:
+        from groq import Groq
+        current_model = os.getenv("GROQ_MODEL", "mixtral-8x7b-32768")
+        print(f"🔍 Checking Groq model availability: {current_model}", file=sys.stderr)
+        sys.stderr.flush()
+        
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        
+        # Quick check: try to list models
+        models_list = client.models.list()
+        available_models = [m.id for m in models_list.data]
+        print(f"✓ Found {len(available_models)} available Groq models", file=sys.stderr)
+        sys.stderr.flush()
+        
+        # If current model not available, find a working one
+        if current_model not in available_models:
+            print(f"⚠ Model '{current_model}' is deprecated!", file=sys.stderr)
+            sys.stderr.flush()
+            fallback_models = [
+                "llama-3.1-8b-instant",
+                "mixtral-8x7b-32768",
+                "llama-3.1-70b-versatile",
+                "gemma-7b-it",
+                "llama2-70b-4096",
+            ]
+            new_model = None
+            for model in fallback_models:
+                if model in available_models:
+                    new_model = model
+                    break
+            
+            if new_model and new_model != current_model:
+                print(f"🔄 Updating GROQ_MODEL: {current_model} → {new_model}", file=sys.stderr)
+                sys.stderr.flush()
+                os.environ["GROQ_MODEL"] = new_model
+                
+                # Update .env file
+                with open(_env_file_used) as f:
+                    content = f.read()
+                content = re.sub(
+                    r'^GROQ_MODEL=.*$',
+                    f'GROQ_MODEL={new_model}',
+                    content,
+                    flags=re.MULTILINE
+                )
+                with open(_env_file_used, 'w') as f:
+                    f.write(content)
+                print(f"✓ Updated GROQ_MODEL in {_env_file_used}")
+    except Exception as e:
+        print(f"ℹ Groq model check skipped: {e}")
 
 # Ensure local module imports work when running under an ASGI server
 _here = os.path.dirname(__file__)
@@ -33,12 +103,35 @@ if _here not in sys.path:
 
 # Local providers are located in the same directory
 import multi_provider
+import semantic
+
+# ============ CONSTANTS ============
+CACHE_TTL_TELEPORT = int(os.getenv("CACHE_TTL_TELEPORT", "86400"))  # 24 hours
+VERBOSE_OPEN_HOURS = os.getenv("VERBOSE_OPEN_HOURS", "false").lower() == "true"
+
+# Import local providers and utilities
+try:
+    import image_provider
+except ImportError:
+    image_provider = None
+
+try:
+    from semantic import shorten_place
+except ImportError:
+    def shorten_place(city_name):
+        """Fallback: shorten city name by taking first part before comma."""
+        if not city_name:
+            return city_name
+        return city_name.split(',')[0].strip()
 
 app = Quart(__name__, static_folder="static", template_folder="templates")
 
 # Global async clients
 aiohttp_session: aiohttp.ClientSession | None = None
 redis_client: aioredis.Redis | None = None
+
+# Track active long-running searches (search_id -> metadata)
+active_searches = {}
 
 DEFAULT_PREWARM_CITIES = os.getenv("SEARCH_PREWARM_CITIES", "London,Paris")
 PREWARM_QUERIES = [q.strip() for q in os.getenv("SEARCH_PREWARM_QUERIES", "Top food").split(",") if q.strip()]
@@ -89,7 +182,7 @@ async def geocode_city(city: str):
     url = "https://nominatim.openstreetmap.org/search"
     params = {"q": city, "format": "json", "limit": 1}
     try:
-        async with aiohttp_session.get(url, params=params, timeout=10) as resp:
+        async with aiohttp_session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
             resp.raise_for_status()
             data = await resp.json()
             if data:
@@ -104,7 +197,7 @@ async def reverse_geocode(lat, lon):
     url = "https://nominatim.openstreetmap.org/reverse"
     params = {"lat": lat, "lon": lon, "format": "json", "zoom": 18}
     try:
-        async with aiohttp_session.get(url, params=params, timeout=10) as resp:
+        async with aiohttp_session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
             resp.raise_for_status()
             data = await resp.json()
             if data and "display_name" in data:
@@ -158,7 +251,7 @@ async def get_weather_async(lat, lon):
         }
         # coerce boolean params to strings
         coerced = {k: (str(v).lower() if isinstance(v, bool) else v) for k, v in params.items()}
-        async with aiohttp_session.get(url, params=coerced, timeout=10) as resp:
+        async with aiohttp_session.get(url, params=coerced, timeout=aiohttp.ClientTimeout(total=10)) as resp:
             resp.raise_for_status()
             data = await resp.json()
             return data.get("current_weather", {})
@@ -168,8 +261,7 @@ async def get_weather_async(lat, lon):
 
 @app.route("/", methods=["GET"])
 async def index():
-    phone = "tel:+1-757-755-7505"
-    return await render_template("index.html", phone=phone)
+    return await render_template("index.html")
 
 
 @app.route("/weather", methods=["POST"])
@@ -1159,7 +1251,7 @@ def transport():
 
 
 @app.route("/api/transport")
-def api_transport():
+async def api_transport():
     """Return a transport JSON for a requested city.
     Searches files named data/transport_*.json and matches by city substring if provided.
     """
@@ -1195,7 +1287,7 @@ def api_transport():
     # return a best-effort minimal payload using geocoding + Wikivoyage extract so
     # the frontend can at least deep-link to Google and show a local quick guide.
     if city_q:
-        lat, lon = geocode_city(city_q_raw)
+        lat, lon = await geocode_city(city_q_raw)
         quick = ""
         try:
             url = "https://en.wikivoyage.org/w/api.php"
@@ -1369,8 +1461,12 @@ async def api_city_info():
     return jsonify(info)
 
 
-def build_search_cache_key(city: str, q: str) -> str:
-    raw = f"search:{(city or '').strip().lower()}:{(q or '').strip().lower()}"
+def build_search_cache_key(city: str, q: str, neighborhood: dict | None = None) -> str:
+    nh_key = ""
+    if neighborhood:
+        nh_id = neighborhood.get("id", "")
+        nh_key = f":{nh_id}"
+    raw = f"search:{(city or '').strip().lower()}:{(q or '').strip().lower()}{nh_key}"
     return "travelland:" + hashlib.sha1(raw.encode()).hexdigest()
 
 
@@ -1380,6 +1476,7 @@ async def search():
     # Lightweight heuristic to decide whether to cache this search (focus on food/top queries)
     city = (payload.get("city") or "").strip()
     q = (payload.get("q") or "").strip().lower()
+    neighborhood = payload.get("neighborhood")
     should_cache = False
     try:
         if q and any(kw in q for kw in ["food", "restaurant", "top", "best", "must", "eat"]):
@@ -1391,7 +1488,7 @@ async def search():
     cache_ttl = int(os.getenv("SEARCH_CACHE_TTL", "300"))
     if redis_client and should_cache and city and q:
         try:
-            cache_key = build_search_cache_key(city, q)
+            cache_key = build_search_cache_key(city, q, neighborhood)
             cached = await redis_client.get(cache_key)
             if cached:
                 try:
@@ -1637,10 +1734,10 @@ def _search_impl(payload):
         provider_timeout = 23.0
 
     # Determine POI type based on query
-    poi_type = "restaurant" if is_food_query else ("historic" if is_historic_query else "restaurant")
+    poi_type = "restaurant" if is_food_query else ("historic" if is_historic_query else "general")
 
     # Fetch real venues and Wikivoyage highlights in parallel to avoid timeouts
-    if is_food_query or is_historic_query:
+    if q and (is_food_query or is_historic_query or poi_type == "general"):
         t_real_start = time.time()
         from concurrent.futures import ThreadPoolExecutor
 
@@ -1664,6 +1761,7 @@ def _search_impl(payload):
                 local_only=local_only if poi_type == "restaurant" else False,
                 timeout=provider_timeout,
                 bbox=bbox,
+                query=q_norm if poi_type == "general" else None,
             )
             wiki_future = None
             if include_web and wiki_keywords:
@@ -2089,18 +2187,41 @@ async def ai_reason():
         return jsonify({"error": "query required"}), 400
     weather = payload.get("weather")
     try:
-        # run blocking semantic logic in a thread
-        answer = await asyncio.to_thread(
-            lambda: semantic.search_and_reason(
-                q, city if city else None, mode, context_venues=venues, weather=weather
-            )
+        # If the frontend didn't include any venues, try to suggest neighborhoods
+        if not venues:
+            try:
+                lat = payload.get("user_lat") or payload.get("lat")
+                lon = payload.get("user_lon") or payload.get("lon")
+                latf = float(lat) if lat not in (None, "") else None
+                lonf = float(lon) if lon not in (None, "") else None
+            except Exception:
+                latf = lonf = None
+
+            try:
+                nbh = await multi_provider.async_get_neighborhoods(city=city or None, lat=latf, lon=lonf, lang=payload.get("lang", "en"), session=aiohttp_session)
+            except Exception:
+                nbh = []
+
+            if nbh:
+                # build a friendly short answer and include the neighborhoods list
+                names = [n.get("name") for n in nbh if n.get("name")]
+                short = ", ".join(names[:6])
+                answer_text = f"I don't have venue details yet — here are some neighborhoods you might consider: {short}. You can click a neighborhood to load venues or ask me to suggest areas for a specific interest."
+                return jsonify({"answer": answer_text, "neighborhoods": nbh[:10]})
+            else:
+                # fallback: run semantic reasoning without venue context
+                answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather)
+                return jsonify({"answer": answer})
+
+        # Call async semantic logic directly when venues are present
+        answer = await semantic.search_and_reason(
+            q, city if city else None, mode, context_venues=venues, weather=weather
         )
-        # semantic.search_and_reason signature accepts context_venues/weather by name; the thread call passes a dict,
-        # so handle case where above returned a dict (fallback) or string. To preserve behavior, if answer is a dict with
-        # an 'answer' key, return it; else return answer directly.
+        # semantic.search_and_reason returns either a string or dict with 'answer' key
+        # Preserve behavior by returning it as-is
         return jsonify({"answer": answer})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"answer": "Ahoy! 🪙 My explorer's eyes are tired. - Marco"}), 200
 
 
 @app.route("/convert", methods=["POST"])
@@ -2259,7 +2380,18 @@ def tools_currency():
 
 
 if __name__ == "__main__":
+    # Load environment variables from .env file manually
+    env_file = Path("/home/markm/TravelLand/.env")
+    print(f"[DEBUG] Loading .env from {env_file}")
+    if env_file.exists():
+        with open(env_file) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ[key.strip()] = value.strip()
+    
     # Prefer standard env vars used by many hosts (Render/Heroku/etc.), but
     # default to 5010 to match project docs and avoid UI/port mismatches.
-    port = int(os.getenv("PORT") or os.getenv("FLASK_PORT") or 5010)
+    port = int(os.getenv("PORT") or os.getenv("QUART_PORT") or 5010)
     app.run(host="0.0.0.0", port=port)
