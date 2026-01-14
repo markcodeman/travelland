@@ -77,6 +77,11 @@ function selectCategory(query, chipElement) {
 
   console.log('[Category] Selected:', query);
   updateSearchButtonState();
+  
+  // Auto-search if neighborhood is selected
+  if (selectedNeighborhood) {
+    performSearch();
+  }
 }
 
 function disableCategoryChips() {
@@ -258,6 +263,26 @@ function renderNeighborhoodDiscovery(neighborhoods, cityName) {
   const count = neighborhoods.length;
   const displayCity = cityName?.split(',')[0] || 'this city';
 
+  if (count === 0) {
+    container.innerHTML = `
+      <div class="neighborhood-discovery bg-gray-50 rounded-lg p-4">
+        <p class="text-sm font-medium text-gray-700 mb-2">🏘️ Explore ${displayCity}</p>
+        <p class="text-xs text-gray-500 mb-3">
+          No specific neighborhoods found for this city in our data. You can still search the entire area!
+        </p>
+        <div class="marco-help mt-3 pt-4 border-t border-gray-200">
+          <div class="flex items-center justify-between">
+            <p class="text-sm text-gray-700">🤔 Not sure where to go?</p>
+            <button type="button" id="askMarcoBtn" class="ml-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold shadow">Ask Marco for a recommendation →</button>
+          </div>
+        </div>
+      </div>
+    `;
+    selectedNeighborhood = 'all';
+    updateSearchButtonState();
+    return;
+  }
+
   container.innerHTML = `
     <div class="neighborhood-discovery bg-gray-50 rounded-lg p-4">
       <p class="text-sm font-medium text-gray-700 mb-3">🏘️ Explore ${displayCity}</p>
@@ -280,10 +305,11 @@ function renderNeighborhoodDiscovery(neighborhoods, cityName) {
         </select>
       </div>
       
-      <div class="marco-help mt-3 pt-3 border-t border-gray-200">
-        <p class="text-xs text-gray-500">🤔 Not sure where to go?
-          <button type="button" id="askMarcoBtn" class="text-blue-600 hover:underline font-medium">Ask Marco for a recommendation →</button>
-        </p>
+      <div class="marco-help mt-3 pt-4 border-t border-gray-200">
+        <div class="flex items-center justify-between">
+          <p class="text-sm text-gray-700">🤔 Not sure where to go?</p>
+          <button type="button" id="askMarcoBtn" class="ml-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold shadow">Ask Marco for a recommendation →</button>
+        </div>
       </div>
     </div>
   `;
@@ -292,7 +318,7 @@ function renderNeighborhoodDiscovery(neighborhoods, cityName) {
 
   const select = document.getElementById('neighborhoodSelect');
   if (select) {
-    select.addEventListener('change', (e) => {
+    select.addEventListener('change', async (e) => {
       clearPresetSelection();
       const val = e.target.value;
       if (val === 'all') {
@@ -303,6 +329,11 @@ function renderNeighborhoodDiscovery(neighborhoods, cityName) {
       }
       console.log('[Neighborhood] Selected:', selectedNeighborhood === 'all' ? 'All Areas' : selectedNeighborhood?.name);
       updateSearchButtonState();
+      
+      // Auto-search if category is selected
+      if (selectedCategory) {
+        await performSearch();
+      }
     });
   }
 
@@ -405,6 +436,10 @@ function openMarcoWithNeighborhoodQuestion(cityName) {
   if (chatInput) {
     chatInput.value = `I'm visiting ${cityName} but don't know the neighborhoods. What area would you recommend?`;
     chatInput.focus();
+    // Ensure input and send button are enabled so user can send the prefilled question
+    chatInput.disabled = false;
+    const chatSend = document.getElementById('chatSend');
+    if (chatSend) chatSend.disabled = false;
   }
 }
 
@@ -438,6 +473,11 @@ function updateSearchButtonState() {
 // SEARCH HANDLER - GLOBAL SCOPE
 // ============================================================
 document.getElementById('searchBtn')?.addEventListener('click', async () => {
+  await performSearch();
+});
+
+// Extracted search function
+async function performSearch() {
   const cityInputEl = document.getElementById('city');
   const city = cityInputEl?.value?.trim() || '';
   const query = selectedCategory || '';
@@ -471,7 +511,8 @@ document.getElementById('searchBtn')?.addEventListener('click', async () => {
       user_lat: lat,
       user_lon: lon,
       max_results: 15,
-      timeout: 25
+      // reduce timeout to prefer faster responses; providers will return partial results
+      timeout: 12
     };
 
     if (selectedNeighborhood && selectedNeighborhood !== 'all') {
@@ -495,7 +536,7 @@ document.getElementById('searchBtn')?.addEventListener('click', async () => {
   } catch (err) {
     resEl.innerHTML = `<div class="text-red-500 p-4">Error: ${err.message}</div>`;
   }
-});
+}
 
 // ============================================================
 // RESULTS RENDERING - GLOBAL SCOPE
@@ -506,11 +547,37 @@ function renderResults(data, city) {
 
   const venues = data.venues;
   currentVenues = venues;
-
+  
+  // Update Marco chat state based on whether venues were found
+  const chatInput = document.getElementById('chatInput');
+  const chatSend = document.getElementById('chatSend');
+  
   if (venues.length === 0) {
-    resEl.innerHTML = '<div class="text-gray-500 p-4">No results found. Try a different search.</div>';
+    // Disable Marco when no results
+    const marcoFab = document.getElementById('marcoFab');
+    if (marcoFab) marcoFab.classList.add('hidden');
+    
+    if (chatInput) {
+      chatInput.disabled = true;
+      chatInput.placeholder = 'No venues found - try another category';
+    }
+    if (chatSend) chatSend.disabled = true;
+    if (window.updateChatChips) window.updateChatChips(); // Disable chips too
+    
+    resEl.innerHTML = '<div class="text-gray-500 p-4 text-center"><p>No results found in our data sources.</p><p class="text-sm mt-2">Try a different category or check <a href="https://maps.google.com" target="_blank" class="text-blue-600 hover:underline">Google Maps</a> for more options.</p></div>';
     return;
   }
+  
+  // Enable Marco when venues are loaded
+  const marcoFab = document.getElementById('marcoFab');
+  if (marcoFab) marcoFab.classList.remove('hidden');
+  
+  if (chatInput) {
+    chatInput.disabled = false;
+    chatInput.placeholder = 'Ask me anything about these venues...';
+  }
+  if (chatSend) chatSend.disabled = false;
+  if (window.updateChatChips) window.updateChatChips(); // Enable chips too
 
   resEl.innerHTML = `
     <div class="results-header mb-4">
@@ -570,6 +637,215 @@ function renderVenueCard(v, city) {
 document.addEventListener('DOMContentLoaded', () => {
   renderCategoryChips();
   updateSearchButtonState();
+
+  // Chat functionality
+  const marcoFab = document.getElementById('marcoFab');
+  const marcoChat = document.getElementById('marcoChat');
+  const closeChat = document.getElementById('closeChat');
+  const chatInput = document.getElementById('chatInput');
+  const chatSend = document.getElementById('chatSend');
+  const chatMessages = document.getElementById('chatMessages');
+
+  // Hide Marco FAB initially - only show after venues are found
+  if (marcoFab) {
+    marcoFab.classList.add('hidden');
+    marcoFab.addEventListener('click', () => {
+      marcoChat.classList.add('open');
+    });
+  }
+
+  if (closeChat) {
+    closeChat.addEventListener('click', () => {
+      marcoChat.classList.remove('open');
+    });
+  }
+
+  function sendChatMessage() {
+    console.log('Send button clicked');
+    const message = chatInput.value.trim();
+    if (!message) return;
+
+    // Allow sending even when venues are not yet loaded. The backend can respond without venue context.
+
+    // Add user message
+    addChatMessage('user', message);
+    chatInput.value = '';
+
+    // Send to backend with a typing indicator while waiting
+    const typingId = showBotTyping();
+    fetch(`${API_BASE}/semantic-search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        q: message,
+        city: selectedCity?.name || document.getElementById('city')?.value?.trim(),
+        venues: currentVenues.slice(0, 10), // Send current venues context
+        weather: currentWeather
+      })
+    })
+    .then(resp => resp.json())
+    .then(data => {
+      removeBotTyping(typingId);
+      addChatMessage('bot', data.answer || 'Sorry, I couldn\'t process that.');
+      // If backend returned neighborhood suggestions, render them as quick chips
+      if (data.neighborhoods && Array.isArray(data.neighborhoods) && data.neighborhoods.length > 0) {
+        renderChatNeighborhoodSuggestions(data.neighborhoods);
+      }
+    })
+    .catch(err => {
+      removeBotTyping(typingId);
+      console.error('Chat error:', err);
+      addChatMessage('bot', 'Error: ' + err.message);
+    });
+  }
+
+  if (chatSend) {
+    console.log('Chat send button found');
+    chatSend.addEventListener('click', sendChatMessage);
+    chatSend.disabled = true; // Initially disabled until venues loaded
+  } else {
+    console.log('Chat send button not found');
+  }
+
+  if (chatInput) {
+    chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendChatMessage();
+    });
+    // Initially disabled - enable only when venues are loaded
+    chatInput.disabled = true;
+    chatInput.placeholder = 'Select a neighborhood first...';
+  }
+
+  if (chatSend) {
+    chatSend.disabled = true;
+  }
+
+  function addChatMessage(type, text) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `message ${type}`;
+    msgDiv.textContent = text;
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  // Typing / thinking indicator helpers
+  function showBotTyping() {
+    const id = `bot-typing-${Date.now()}`;
+    const container = document.createElement('div');
+    container.className = 'message bot typing';
+    container.id = id;
+    container.innerHTML = `
+      <div class="flex items-center gap-2 text-sm text-gray-600 p-2">
+        <svg class="animate-spin h-4 w-4 text-blue-500" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        <span>Thinking…</span>
+      </div>
+    `.trim();
+    chatMessages.appendChild(container);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return id;
+  }
+
+  function removeBotTyping(id) {
+    try {
+      const el = document.getElementById(id);
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  function renderChatNeighborhoodSuggestions(neighborhoods) {
+    const container = document.createElement('div');
+    container.className = 'chat-neighborhood-suggestions p-2';
+
+    const title = document.createElement('div');
+    title.className = 'text-sm text-gray-600 mb-2';
+    title.textContent = 'Neighborhood suggestions:';
+    container.appendChild(title);
+
+    const row = document.createElement('div');
+    row.className = 'flex flex-wrap gap-2';
+
+    neighborhoods.slice(0, 8).forEach(n => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'px-3 py-1 rounded-full text-sm bg-white border border-blue-200 text-blue-700 hover:bg-blue-100 transition';
+      btn.textContent = n.name || (n.slug || 'unknown');
+      btn.dataset.neighborhood = JSON.stringify(n);
+      btn.addEventListener('click', (e) => {
+        try {
+          const nd = JSON.parse(e.currentTarget.dataset.neighborhood);
+          selectedNeighborhood = nd;
+          const select = document.getElementById('neighborhoodSelect');
+          if (select) {
+            // try to set select to matching option (stringified) if present
+            const optVal = JSON.stringify(nd).replace(/'/g, "&#39;");
+            const found = Array.from(select.options).find(o => o.value === optVal || o.text === nd.name);
+            if (found) select.value = found.value;
+          }
+          updateSearchButtonState();
+          // Auto-search if a category is already selected
+          if (selectedCategory) performSearch();
+          // Ensure chat input/send are enabled and focused so user can follow up immediately
+          const chatInput = document.getElementById('chatInput');
+          const chatSend = document.getElementById('chatSend');
+          if (chatInput) {
+            chatInput.disabled = false;
+            chatInput.focus();
+          }
+          if (chatSend) chatSend.disabled = false;
+          console.log('[Chat] Neighborhood chip clicked:', nd.name);
+          addChatMessage('bot', `Selected neighborhood: ${nd.name}`);
+        } catch (err) {
+          console.warn('Failed to apply neighborhood suggestion', err);
+        }
+      });
+      row.appendChild(btn);
+    });
+
+    container.appendChild(row);
+    chatMessages.appendChild(container);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  // Chat chips
+  const chatChips = document.getElementById('chatChips');
+  if (chatChips) {
+    const chips = [
+      "What's the best neighborhood for food?",
+      "Any romantic spots?",
+      "Where can I find coffee?",
+      "Suggest a family-friendly activity"
+    ];
+    chatChips.innerHTML = chips.map(chip => `<button class="chat-chip" disabled>${chip}</button>`).join('');
+    
+    // Chips are initially disabled - enabled only when venues load
+    const updateChips = () => {
+      chatChips.querySelectorAll('.chat-chip').forEach(btn => {
+        // Enable chips if we have venues OR a selected neighborhood (so users can ask neighborhood-level questions)
+        const enabled = currentVenues.length > 0 || !!selectedNeighborhood;
+        btn.disabled = !enabled;
+        btn.style.opacity = enabled ? '1' : '0.5';
+        btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
+
+        // Use onclick assignment to avoid stacking multiple listeners
+        btn.onclick = () => {
+          // Fill input and trigger send regardless of whether venues are loaded; backend will handle empty venues
+          if (chatInput) {
+            chatInput.value = btn.textContent;
+          }
+          sendChatMessage();
+        };
+      });
+    };
+    
+    updateChips();
+    // Re-run updateChips whenever venues change (override renderResults to call this)
+    window.updateChatChips = updateChips;
+  }
 
   document.getElementById('toggleSearchArea')?.addEventListener('click', () => {
     const citySection = document.querySelector('.city-input-section');
