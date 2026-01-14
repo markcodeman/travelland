@@ -3,12 +3,6 @@ import json
 import aiohttp
 import datetime
 import threading
-import os
-import json
-import requests
-import datetime
-import threading
-import shutil
 from pathlib import Path
 from urllib.parse import urlparse
 import re
@@ -75,6 +69,12 @@ def _ext_from_url(url):
 
 async def fetch_banner_from_wikipedia(city, session: aiohttp.ClientSession = None):
     """Best-effort: fetch article thumbnail from Wikipedia (returns remote url and attribution)"""
+    # Create a session if caller didn't provide one, and ensure it's closed.
+    own_session = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own_session = True
+
     try:
         url = "https://en.wikipedia.org/w/api.php"
         params = {
@@ -85,37 +85,27 @@ async def fetch_banner_from_wikipedia(city, session: aiohttp.ClientSession = Non
             "redirects": 1,
             "pithumbsize": 2000,
         }
-        own_session = False
-        if session is None:
-            session = aiohttp.ClientSession()
-            own_session = True
-        else:
-            own_session = False
-        async with session.get(url, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8) as r:
-            if r.status != 200:
-                if own_session:
-                    await session.close()
-                return None
-            data = await r.json()
-        pages = data.get("query", {}).get("pages", {})
-        for p in pages.values():
-            thumb = p.get("thumbnail", {}).get("source")
-            if thumb:
-                pageid = p.get("pageid")
-                pageurl = (
-                    f"https://en.wikipedia.org/?curid={pageid}"
-                    if pageid
-                    else "https://en.wikipedia.org/"
-                )
-                return {
-                    "remote_url": thumb,
-                    "attribution": f"Image via Wikimedia/Wikipedia ({pageurl})",
-                }
-    except Exception:
-        pass
 
-    # Fallback strategy: try searching for skyline / aerial images related to the city
-    try:
+        # Try direct page thumbnail first
+        try:
+            async with session.get(url, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8) as r:
+                if r.status == 200:
+                    data = await r.json()
+                    pages = data.get("query", {}).get("pages", {})
+                    for p in pages.values():
+                        thumb = p.get("thumbnail", {}).get("source")
+                        if thumb:
+                            pageid = p.get("pageid")
+                            pageurl = f"https://en.wikipedia.org/?curid={pageid}" if pageid else "https://en.wikipedia.org/"
+                            return {
+                                "remote_url": thumb,
+                                "attribution": f"Image via Wikimedia/Wikipedia ({pageurl})",
+                            }
+        except Exception:
+            # fall through to fallback search
+            pass
+
+        # Fallback strategy: search for skyline / panorama variants
         search_url = "https://en.wikipedia.org/w/api.php"
         search_queries = [
             f"{city} skyline",
@@ -126,51 +116,56 @@ async def fetch_banner_from_wikipedia(city, session: aiohttp.ClientSession = Non
             city,
         ]
         for q in search_queries:
-            params = {
-                "action": "query",
-                "list": "search",
-                "srsearch": q,
-                "format": "json",
-                "srlimit": 5,
-            }
-            async with session.get(search_url, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8) as r:
-                if r.status != 200:
-                    continue
-                results = (await r.json()).get("query", {}).get("search", [])
-            titles = [r.get("title") for r in results if r.get("title")]
-            if not titles:
-                continue
-            # Request thumbnails for the candidate titles
-            params2 = {
-                "action": "query",
-                "prop": "pageimages",
-                "titles": "|".join(titles[:5]),
-                "format": "json",
-                "pithumbsize": 2000,
-                "redirects": 1,
-            }
-            async with session.get(search_url, params=params2, headers={"User-Agent": "TravelLand/1.0"}, timeout=8) as r2:
-                if r2.status != 200:
-                    continue
-                data2 = await r2.json()
-            pages2 = data2.get("query", {}).get("pages", {})
-            for p2 in pages2.values():
-                thumb = p2.get("thumbnail", {}).get("source")
-                if thumb:
-                    pageid = p2.get("pageid")
-                    pageurl = (
-                        f"https://en.wikipedia.org/?curid={pageid}"
-                        if pageid
-                        else "https://en.wikipedia.org/"
-                    )
-                    return {
-                        "remote_url": thumb,
-                        "attribution": f"Image via Wikimedia/Wikipedia ({pageurl})",
-                    }
-    except Exception:
-        pass
+            try:
+                params = {
+                    "action": "query",
+                    "list": "search",
+                    "srsearch": q,
+                    "format": "json",
+                    "srlimit": 5,
+                }
+                async with session.get(search_url, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8) as r:
+                    if r.status != 200:
+                        continue
+                    results = (await r.json()).get("query", {}).get("search", [])
 
-    return None
+                titles = [r_.get("title") for r_ in results if r_.get("title")]
+                if not titles:
+                    continue
+
+                params2 = {
+                    "action": "query",
+                    "prop": "pageimages",
+                    "titles": "|".join(titles[:5]),
+                    "format": "json",
+                    "pithumbsize": 2000,
+                    "redirects": 1,
+                }
+                async with session.get(search_url, params=params2, headers={"User-Agent": "TravelLand/1.0"}, timeout=8) as r2:
+                    if r2.status != 200:
+                        continue
+                    data2 = await r2.json()
+                pages2 = data2.get("query", {}).get("pages", {})
+                for p2 in pages2.values():
+                    thumb = p2.get("thumbnail", {}).get("source")
+                    if thumb:
+                        pageid = p2.get("pageid")
+                        pageurl = f"https://en.wikipedia.org/?curid={pageid}" if pageid else "https://en.wikipedia.org/"
+                        return {
+                            "remote_url": thumb,
+                            "attribution": f"Image via Wikimedia/Wikipedia ({pageurl})",
+                        }
+            except Exception:
+                # ignore and try next query
+                continue
+
+        return None
+    finally:
+        if own_session:
+            try:
+                await session.close()
+            except Exception:
+                pass
 
 
 async def _download_image(url, dest_path, session: aiohttp.ClientSession = None):
