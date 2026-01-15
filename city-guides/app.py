@@ -1761,7 +1761,6 @@ def _search_impl(payload):
                 local_only=local_only if poi_type == "restaurant" else False,
                 timeout=provider_timeout,
                 bbox=bbox,
-                query=q_norm if poi_type == "general" else None,
             )
             wiki_future = None
             if include_web and wiki_keywords:
