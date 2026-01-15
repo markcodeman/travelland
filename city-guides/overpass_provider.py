@@ -272,6 +272,45 @@ OVERPASS_URLS = [
     "https://overpass.private.coffee/api/interpreter",
 ]
 
+# Mock data for fallback when all external providers fail
+# Used to ensure the application still provides results for testing/demo
+MOCK_POI_DATA = {
+    "restaurant": [
+        {"name": "The Golden Fork", "amenity": "restaurant", "cuisine": "italian"},
+        {"name": "Café Central", "amenity": "cafe", "cuisine": "coffee_shop"},
+        {"name": "Spice Garden", "amenity": "restaurant", "cuisine": "indian"},
+        {"name": "The Local Pub", "amenity": "pub", "cuisine": "british"},
+        {"name": "Sushi Master", "amenity": "restaurant", "cuisine": "japanese"},
+    ],
+    "historic": [
+        {"name": "Historic Monument", "tourism": "attraction", "historic": "monument"},
+        {"name": "Old Town Hall", "tourism": "attraction", "historic": "building"},
+        {"name": "City Museum", "tourism": "museum", "historic": "museum"},
+        {"name": "Ancient Castle", "tourism": "attraction", "historic": "castle"},
+        {"name": "Memorial Square", "tourism": "attraction", "historic": "memorial"},
+    ],
+    "museum": [
+        {"name": "Art Museum", "tourism": "museum", "museum": "art"},
+        {"name": "History Museum", "tourism": "museum", "museum": "history"},
+        {"name": "Science Center", "tourism": "museum", "museum": "science"},
+    ],
+    "park": [
+        {"name": "Central Park", "leisure": "park", "park": "public"},
+        {"name": "Botanical Gardens", "leisure": "park", "park": "botanical"},
+        {"name": "River Walk", "leisure": "park", "park": "riverside"},
+    ],
+    "market": [
+        {"name": "Central Market", "amenity": "marketplace", "shop": "market"},
+        {"name": "Farmers Market", "amenity": "marketplace", "shop": "farm"},
+        {"name": "Flea Market", "amenity": "marketplace", "shop": "second_hand"},
+    ],
+    "coffee": [
+        {"name": "Morning Brew", "amenity": "cafe", "cuisine": "coffee_shop"},
+        {"name": "The Daily Grind", "amenity": "cafe", "cuisine": "coffee_shop"},
+        {"name": "Espresso Bar", "amenity": "cafe", "cuisine": "coffee_shop"},
+    ],
+}
+
 
 async def reverse_geocode(lat, lon, session: Optional[aiohttp.ClientSession] = None):
     # Cache reverse geocodes to minimize API calls
@@ -1570,47 +1609,10 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
             
             if j is None:
                 # Ultimate fallback: use mock data when all external services fail
-                # This ensures the application still provides results for testing/demo
                 print(f"[async_discover_pois] All providers failed, using mock data fallback for poi_type={poi_type}")
-                mock_data = {
-                    "restaurant": [
-                        {"name": "The Golden Fork", "amenity": "restaurant", "cuisine": "italian"},
-                        {"name": "Café Central", "amenity": "cafe", "cuisine": "coffee_shop"},
-                        {"name": "Spice Garden", "amenity": "restaurant", "cuisine": "indian"},
-                        {"name": "The Local Pub", "amenity": "pub", "cuisine": "british"},
-                        {"name": "Sushi Master", "amenity": "restaurant", "cuisine": "japanese"},
-                    ],
-                    "historic": [
-                        {"name": "Historic Monument", "tourism": "attraction", "historic": "monument"},
-                        {"name": "Old Town Hall", "tourism": "attraction", "historic": "building"},
-                        {"name": "City Museum", "tourism": "museum", "historic": "museum"},
-                        {"name": "Ancient Castle", "tourism": "attraction", "historic": "castle"},
-                        {"name": "Memorial Square", "tourism": "attraction", "historic": "memorial"},
-                    ],
-                    "museum": [
-                        {"name": "Art Museum", "tourism": "museum", "museum": "art"},
-                        {"name": "History Museum", "tourism": "museum", "museum": "history"},
-                        {"name": "Science Center", "tourism": "museum", "museum": "science"},
-                    ],
-                    "park": [
-                        {"name": "Central Park", "leisure": "park", "park": "public"},
-                        {"name": "Botanical Gardens", "leisure": "park", "park": "botanical"},
-                        {"name": "River Walk", "leisure": "park", "park": "riverside"},
-                    ],
-                    "market": [
-                        {"name": "Central Market", "amenity": "marketplace", "shop": "market"},
-                        {"name": "Farmers Market", "amenity": "marketplace", "shop": "farm"},
-                        {"name": "Flea Market", "amenity": "marketplace", "shop": "second_hand"},
-                    ],
-                    "coffee": [
-                        {"name": "Morning Brew", "amenity": "cafe", "cuisine": "coffee_shop"},
-                        {"name": "The Daily Grind", "amenity": "cafe", "cuisine": "coffee_shop"},
-                        {"name": "Espresso Bar", "amenity": "cafe", "cuisine": "coffee_shop"},
-                    ],
-                }
                 
                 # Get mock data for the specific poi_type, fallback to generic attractions
-                mock_elements = mock_data.get(poi_type, [
+                mock_elements = MOCK_POI_DATA.get(poi_type, [
                     {"name": "Local Attraction", "tourism": "attraction"},
                     {"name": "Points of Interest", "tourism": "attraction"},
                     {"name": "Notable Landmark", "tourism": "attraction"},
