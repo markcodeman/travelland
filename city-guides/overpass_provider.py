@@ -444,10 +444,16 @@ async def geocode_city(city: str, session: Optional[aiohttp.ClientSession] = Non
         "boston": (-71.19, 42.23, -71.00, 42.40),
     }
     
-    # Normalize city name for lookup
+    # Normalize city name for exact or prefix lookup
     city_normalized = city.lower().strip()
+    # First try exact match
+    if city_normalized in CITY_FALLBACKS:
+        if own:
+            await session.close()
+        return CITY_FALLBACKS[city_normalized]
+    # Then try prefix match (handles "London, UK" matching "london")
     for city_key, city_bbox in CITY_FALLBACKS.items():
-        if city_key in city_normalized:
+        if city_normalized.startswith(city_key + ",") or city_normalized.startswith(city_key + " "):
             if own:
                 await session.close()
             return city_bbox
@@ -1565,20 +1571,50 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
             if j is None:
                 # Ultimate fallback: use mock data when all external services fail
                 # This ensures the application still provides results for testing/demo
-                print(f"[async_discover_pois] All providers failed, using mock data fallback")
-                mock_restaurants = [
-                    {"name": "The Golden Fork", "amenity": "restaurant", "cuisine": "italian"},
-                    {"name": "Café Central", "amenity": "cafe", "cuisine": "coffee_shop"},
-                    {"name": "Spice Garden", "amenity": "restaurant", "cuisine": "indian"},
-                    {"name": "The Local Pub", "amenity": "pub", "cuisine": "british"},
-                    {"name": "Sushi Master", "amenity": "restaurant", "cuisine": "japanese"},
-                ]
-                mock_historic = [
-                    {"name": "Historic Monument", "tourism": "attraction", "historic": "monument"},
-                    {"name": "Old Town Hall", "tourism": "attraction", "historic": "building"},
-                    {"name": "City Museum", "tourism": "museum", "historic": "museum"},
-                ]
-                mock_elements = mock_restaurants if poi_type == "restaurant" else (mock_historic if poi_type == "historic" else mock_restaurants)
+                print(f"[async_discover_pois] All providers failed, using mock data fallback for poi_type={poi_type}")
+                mock_data = {
+                    "restaurant": [
+                        {"name": "The Golden Fork", "amenity": "restaurant", "cuisine": "italian"},
+                        {"name": "Café Central", "amenity": "cafe", "cuisine": "coffee_shop"},
+                        {"name": "Spice Garden", "amenity": "restaurant", "cuisine": "indian"},
+                        {"name": "The Local Pub", "amenity": "pub", "cuisine": "british"},
+                        {"name": "Sushi Master", "amenity": "restaurant", "cuisine": "japanese"},
+                    ],
+                    "historic": [
+                        {"name": "Historic Monument", "tourism": "attraction", "historic": "monument"},
+                        {"name": "Old Town Hall", "tourism": "attraction", "historic": "building"},
+                        {"name": "City Museum", "tourism": "museum", "historic": "museum"},
+                        {"name": "Ancient Castle", "tourism": "attraction", "historic": "castle"},
+                        {"name": "Memorial Square", "tourism": "attraction", "historic": "memorial"},
+                    ],
+                    "museum": [
+                        {"name": "Art Museum", "tourism": "museum", "museum": "art"},
+                        {"name": "History Museum", "tourism": "museum", "museum": "history"},
+                        {"name": "Science Center", "tourism": "museum", "museum": "science"},
+                    ],
+                    "park": [
+                        {"name": "Central Park", "leisure": "park", "park": "public"},
+                        {"name": "Botanical Gardens", "leisure": "park", "park": "botanical"},
+                        {"name": "River Walk", "leisure": "park", "park": "riverside"},
+                    ],
+                    "market": [
+                        {"name": "Central Market", "amenity": "marketplace", "shop": "market"},
+                        {"name": "Farmers Market", "amenity": "marketplace", "shop": "farm"},
+                        {"name": "Flea Market", "amenity": "marketplace", "shop": "second_hand"},
+                    ],
+                    "coffee": [
+                        {"name": "Morning Brew", "amenity": "cafe", "cuisine": "coffee_shop"},
+                        {"name": "The Daily Grind", "amenity": "cafe", "cuisine": "coffee_shop"},
+                        {"name": "Espresso Bar", "amenity": "cafe", "cuisine": "coffee_shop"},
+                    ],
+                }
+                
+                # Get mock data for the specific poi_type, fallback to generic attractions
+                mock_elements = mock_data.get(poi_type, [
+                    {"name": "Local Attraction", "tourism": "attraction"},
+                    {"name": "Points of Interest", "tourism": "attraction"},
+                    {"name": "Notable Landmark", "tourism": "attraction"},
+                ])
                 
                 # Generate mock elements with center coordinates based on bbox
                 if bbox:
