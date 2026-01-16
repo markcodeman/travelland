@@ -1,5 +1,7 @@
 # Quick Start Guide - Marco's Micro City Guides by Travel Land LLC
 
+AI-powered neighborhood recommendations and local exploration guides.
+
 ## 🚀 Deploy in 2 Minutes
 
 ### Prerequisites

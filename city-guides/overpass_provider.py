@@ -52,16 +52,25 @@ async def geoapify_geocode_city(city: str, session: Optional[aiohttp.ClientSessi
                 if all(x is not None for x in [minlon, minlat, maxlon, maxlat]):
                     if own:
                         await session.close()
-                    # Overpass expects south,west,north,east
-                    return (minlat, minlon, maxlat, maxlon)
-            # fallback: use lat/lon with small buffer
-            lat = prop.get("lat")
-            lon = prop.get("lon")
+                    # Return bbox in (west, south, east, north) order to match geocode_city/discover_pois
+                    return (minlon, minlat, maxlon, maxlat)
+            # fallback: use lat/lon with small buffer (ensure ordering: west, south, east, north)
+            # 'result' is the geocoding result dict
+            lat = result.get("lat") if isinstance(result, dict) else None
+            lon = result.get("lon") if isinstance(result, dict) else None
+            try:
+                if lat is not None:
+                    lat = float(lat)
+                if lon is not None:
+                    lon = float(lon)
+            except Exception:
+                lat = None
+                lon = None
             if lat is not None and lon is not None:
                 buf = 0.05
                 if own:
                     await session.close()
-                return (lat-buf, lon-buf, lat+buf, lon+buf)
+                return (lon-buf, lat-buf, lon+buf, lat+buf)
             if own:
                 await session.close()
             return None
@@ -122,63 +131,88 @@ async def geoapify_discover_pois(
         return []
     # bbox format: (west, south, east, north)
     west, south, east, north = bbox
-    params = {
+    # Prepare pagination-aware requests: Geoapify enforces max limit=500 per request.
+    requested_limit = int(limit)
+    per_request_max = 500
+    params_base = {
         "filter": f"rect:{west},{south},{east},{north}",
-        "limit": str(limit),
         "apiKey": api_key,
         "format": "json",
     }
     if kinds:
-        params["categories"] = kinds
+        params_base["categories"] = kinds
     else:
-        # Default categories for general POI discovery
-        params["categories"] = "tourism,catering,entertainment,leisure,commercial,healthcare,education"
+        params_base["categories"] = "tourism,catering,entertainment,leisure,commercial,healthcare,education"
+
     headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
     own = False
     if session is None:
         session = await aiohttp.ClientSession().__aenter__()
         own = True
+
+    out = []
     try:
         timeout = aiohttp.ClientTimeout(total=15)
-        async with session.get(GEOAPIFY_PLACES_URL, params=params, headers=headers, timeout=timeout) as r:
-            if r.status != 200:
-                print(f"[DEBUG] Geoapify HTTP error: status={r.status} url={r.url}")
-                if own:
-                    await session.close()
-                return []
-            j = await r.json()
-            features = j.get("features", [])
-            out = []
-            for feat in features:
-                prop = feat.get("properties", {})
-                name = prop.get("name") or prop.get("address_line1") or "Unnamed"
-                lat = prop.get("lat")
-                lon = prop.get("lon")
-                address = prop.get("formatted") or prop.get("address_line1")
-                website = prop.get("website")
-                kinds_str = prop.get("categories", "")
-                osm_url = prop.get("datasource", {}).get("url")
-                entry = {
-                    "osm_id": prop.get("place_id"),
-                    "name": name,
-                    "website": website,
-                    "osm_url": osm_url,
-                    "amenity": kinds_str,
-                    "address": address,
-                    "lat": lat,
-                    "lon": lon,
-                    "tags": kinds_str,
-                    "source": "geoapify",
-                }
-                out.append(entry)
-            if own:
-                await session.close()
-            return out
+        offset = 0
+        remaining = requested_limit
+        while remaining > 0:
+            per_request = per_request_max if remaining > per_request_max else remaining
+            params = params_base.copy()
+            params["limit"] = str(per_request)
+            if offset:
+                params["offset"] = str(offset)
+
+            async with session.get(GEOAPIFY_PLACES_URL, params=params, headers=headers, timeout=timeout) as r:
+                if r.status != 200:
+                    print(f"[DEBUG] Geoapify HTTP error: status={r.status} url={r.url}")
+                    if own:
+                        await session.close()
+                    return out
+                j = await r.json()
+                features = j.get("features", [])
+                if not features:
+                    # no more results
+                    break
+                for feat in features:
+                    prop = feat.get("properties", {})
+                    name = prop.get("name") or prop.get("address_line1") or "Unnamed"
+                    lat = prop.get("lat")
+                    lon = prop.get("lon")
+                    address = prop.get("formatted") or prop.get("address_line1")
+                    website = prop.get("website")
+                    kinds_str = prop.get("categories", "")
+                    osm_url = prop.get("datasource", {}).get("url")
+                    entry = {
+                        "osm_id": prop.get("place_id"),
+                        "name": name,
+                        "website": website,
+                        "osm_url": osm_url,
+                        "amenity": kinds_str,
+                        "address": address,
+                        "lat": lat,
+                        "lon": lon,
+                        "tags": kinds_str,
+                        "source": "geoapify",
+                    }
+                    out.append(entry)
+
+                fetched = len(features)
+                # advance offset and remaining
+                offset += fetched
+                remaining -= fetched
+                if fetched < per_request:
+                    # fewer results than requested; end pagination
+                    break
+
+        if own:
+            await session.close()
+        # return up to the originally requested limit
+        return out[:requested_limit]
     except Exception as e:
         print(f"[DEBUG] Exception in geoapify_discover_pois: {e}")
         if own:
             await session.close()
-        return []
+        return out
 
         # --- OPENTRIPMAP POI SEARCH ---
         OPENTRIPMAP_API_URL = "https://api.opentripmap.com/0.1/en/places/bbox"

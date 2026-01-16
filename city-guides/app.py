@@ -1,5 +1,6 @@
 
 
+
 import os
 import json
 import hashlib
@@ -104,6 +105,11 @@ if _here not in sys.path:
 # Local providers are located in the same directory
 import multi_provider
 import semantic
+
+# Enable remote debugging
+import debugpy
+debugpy.listen(("0.0.0.0", 5678))
+print("🐛 Debugpy listening on 0.0.0.0:5678")
 
 # ============ CONSTANTS ============
 CACHE_TTL_TELEPORT = int(os.getenv("CACHE_TTL_TELEPORT", "86400"))  # 24 hours
@@ -1333,6 +1339,9 @@ def _get_city_info(city):
     if not city:
         return {}
 
+    # Clean city name for API calls (remove country suffix)
+    title = city.split(",")[0].strip()
+
     # geocode best-effort
     lat, lon = None, None  # Removed async call causing 500 error
 
@@ -1361,7 +1370,7 @@ def _get_city_info(city):
             "prop": "extracts",
             "exintro": True,
             "explaintext": True,
-            "titles": city,
+            "titles": title,
             "format": "json",
             "redirects": 1,
         }
@@ -1385,7 +1394,7 @@ def _get_city_info(city):
                 "prop": "extracts",
                 "exintro": True,
                 "explaintext": True,
-                "titles": city,
+                "titles": title,
                 "format": "json",
                 "redirects": 1,
             }
@@ -1768,6 +1777,7 @@ def _search_impl(payload):
 
             try:
                 pois = provider_future.result(timeout=provider_timeout)
+                print(f"[DEBUG] multi_provider returned {len(pois)} {poi_type} venues for city '{city}'")
                 partial = False
                 print(f"[DEBUG] multi_provider returned {len(pois)} {poi_type} venues for city '{city}'")
             except Exception as e:
@@ -2182,11 +2192,19 @@ async def ai_reason():
     city = (payload.get("city") or "").strip()  # optional
     mode = payload.get("mode", "explorer")  # default to explorer
     venues = payload.get("venues", [])  # venues from UI context
+    neighborhoods = payload.get("neighborhoods", [])  # neighborhoods from UI context
+    print(f"DEBUG: Received q='{q}', city='{city}', venues_count={len(venues)}, neighborhoods_count={len(neighborhoods)}")
     if not q:
         return jsonify({"error": "query required"}), 400
     weather = payload.get("weather")
     try:
-        # If the frontend didn't include any venues, try to suggest neighborhoods
+        # Check if neighborhoods were provided in the payload
+        if neighborhoods:
+            print(f"DEBUG: Using neighborhoods from payload: {len(neighborhoods)}")
+            answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=venues, weather=weather, neighborhoods=neighborhoods, session=aiohttp_session)
+            return jsonify({"answer": answer})
+        
+        # If the frontend didn't include any venues or neighborhoods, try to suggest neighborhoods
         if not venues:
             try:
                 lat = payload.get("user_lat") or payload.get("lat")
@@ -2198,23 +2216,24 @@ async def ai_reason():
 
             try:
                 nbh = await multi_provider.async_get_neighborhoods(city=city or None, lat=latf, lon=lonf, lang=payload.get("lang", "en"), session=aiohttp_session)
+                print(f"DEBUG: Fetched neighborhoods from provider: {len(nbh)}")
             except Exception:
                 nbh = []
 
             if nbh:
-                # build a friendly short answer and include the neighborhoods list
-                names = [n.get("name") for n in nbh if n.get("name")]
-                short = ", ".join(names[:6])
-                answer_text = f"I don't have venue details yet — here are some neighborhoods you might consider: {short}. You can click a neighborhood to load venues or ask me to suggest areas for a specific interest."
-                return jsonify({"answer": answer_text, "neighborhoods": nbh[:10]})
+                # Use AI to recommend neighborhoods instead of just listing them
+                print(f"DEBUG: Calling search_and_reason with neighborhoods")
+                answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, neighborhoods=nbh, session=aiohttp_session)
+                return jsonify({"answer": answer})
             else:
                 # fallback: run semantic reasoning without venue context
-                answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather)
+                print(f"DEBUG: No neighborhoods found, calling search_and_reason without neighborhoods")
+                answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, session=aiohttp_session)
                 return jsonify({"answer": answer})
 
         # Call async semantic logic directly when venues are present
         answer = await semantic.search_and_reason(
-            q, city if city else None, mode, context_venues=venues, weather=weather
+            q, city if city else None, mode, context_venues=venues, weather=weather, session=aiohttp_session
         )
         # semantic.search_and_reason returns either a string or dict with 'answer' key
         # Preserve behavior by returning it as-is

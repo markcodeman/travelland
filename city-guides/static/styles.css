@@ -721,3 +721,75 @@ body {
   background-color: #e5e7eb;
   border-color: #9ca3af;
 }
+
+/* Expanded Marco Chat */
+.marco-chat-expanded {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+}
+
+.marco-chat-header-expanded {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem;
+}
+
+.chat-messages-expanded {
+  padding: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.chat-messages-expanded .message {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  max-width: 80%;
+  line-height: 1.5;
+}
+
+.chat-messages-expanded .message.user {
+  background-color: #3b82f6;
+  color: white;
+  margin-left: auto;
+  text-align: right;
+}
+
+.chat-messages-expanded .message.bot {
+  background-color: #f3f4f6;
+  color: #374151;
+  margin-right: auto;
+}
+
+.chat-messages-expanded .message.typing {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.chat-chips {
+  padding: 0 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chat-chip {
+  padding: 0.5rem 1rem;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #374151;
+}
+
+.chat-chip:hover {
+  background-color: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.chat-input-group {
+  border-top: 1px solid #e5e7eb;
+  padding: 1rem;
+}
