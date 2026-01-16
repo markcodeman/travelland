@@ -1,4 +1,20 @@
 import os
+from pathlib import Path
+# --- Early .env loader to ensure env vars are set before any imports ---
+_env_paths = [
+    Path(__file__).parent / ".env",
+    Path(__file__).parent.parent / ".env",
+    Path("/home/markm/TravelLand/.env"),
+]
+for _env_file in _env_paths:
+    if _env_file.exists():
+        with open(_env_file) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ[key.strip()] = value.strip()
+        break
 import aiohttp
 from bs4 import BeautifulSoup
 import math
@@ -11,6 +27,17 @@ import threading
 from pathlib import Path
 
 import search_provider
+
+# Import RAG recommender
+try:
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent / "groq"))
+    from traveland_rag import recommend_venues_rag, recommend_neighborhoods_rag
+    RAG_AVAILABLE = True
+except Exception as e:
+    RAG_AVAILABLE = False
+    logging.warning(f"RAG recommender not available, falling back to text-based recommendations: {e}")
 
 # duckduckgo_provider removed
 
@@ -296,13 +323,137 @@ async def semantic_search(query, top_k=5, session: aiohttp.ClientSession = None)
     return INDEX.search(q_emb, top_k=top_k)
 
 
+async def recommend_neighborhoods(query, city, neighborhoods, mode="explorer", weather=None, session: aiohttp.ClientSession = None):
+    """Use AI to recommend neighborhoods based on user preferences and available data."""
+
+    # Build neighborhood context
+    neighborhood_list = []
+    for n in neighborhoods[:20]:  # Limit to avoid token limits
+        name = n.get("name", "Unknown")
+        center = n.get("center", {})
+        lat, lon = center.get("lat", 0), center.get("lon", 0)
+        neighborhood_list.append(f"- {name} (coordinates: {lat:.4f}, {lon:.4f})")
+
+    neighborhood_context = "AVAILABLE NEIGHBORHOODS:\n" + "\n".join(neighborhood_list)
+
+    weather_context = ""
+    if weather:
+        icons = {
+            0: "Clear ☀️", 1: "Mainly clear 🌤️", 2: "Partly cloudy ⛅", 3: "Overcast ☁️",
+            45: "Fog 🌫️", 48: "Depositing rime fog 🌫️", 51: "Light drizzle 🌦️",
+            53: "Moderate drizzle 🌦️", 55: "Dense drizzle 🌦️", 56: "Light freezing drizzle 🌧️",
+            57: "Dense freezing drizzle 🌧️", 61: "Slight rain 🌦️", 63: "Moderate rain 🌦️",
+            65: "Heavy rain 🌧️", 66: "Light freezing rain 🌧️", 67: "Heavy freezing rain 🌧️",
+            71: "Slight snow fall 🌨️", 73: "Moderate snow fall 🌨️", 75: "Heavy snow fall ❄️",
+            77: "Snow grains ❄️", 80: "Slight rain showers 🌧️", 81: "Moderate rain showers 🌧️",
+            82: "Violent rain showers 🌧️", 85: "Slight snow showers 🌨️", 86: "Heavy snow showers 🌨️",
+            95: "Thunderstorm ⛈️", 96: "Thunderstorm with slight hail ⛈️", 99: "Thunderstorm with heavy hail ⛈️",
+        }
+        w_summary = icons.get(weather.get("weathercode"), "Unknown")
+        weather_context = f"\nCURRENT WEATHER: {w_summary}, {weather.get('temperature_c')}°C."
+
+    if mode == "explorer":
+        prompt = f"""You are Marco, the legendary explorer! 🗺️
+
+A traveler is asking about neighborhoods in {city or 'this city'}: "{query}"
+
+{weather_context}
+
+{neighborhood_context}
+
+INSTRUCTIONS FOR MARCO:
+1. Analyze the traveler's request and recommend 2-4 neighborhoods that best match their interests
+2. For each recommendation, explain WHY it's a good choice based on the neighborhood name and general knowledge about {city or 'the city'}
+3. Consider the weather if relevant (e.g., suggest indoor activities if raining)
+4. Be enthusiastic and explorer-themed
+5. End with an invitation to explore further
+6. Sign off as Marco.🗺️🧭
+
+Format your response as:
+🏘️ **Neighborhood Name**: Brief description of why it's perfect for their interests.
+
+[Repeat for 2-4 recommendations]
+
+Ready to explore these areas? Click any neighborhood to focus your search there! - Marco 🗺️"""
+    else:
+        prompt = f"User query: {query}\n\nCity: {city}\n\n{neighborhood_context}\n\n{weather_context}\n\nProvide factual neighborhood recommendations based on the available data."
+
+    # Cache lookup
+    try:
+        cache_key = _make_cache_key(f"neighborhoods_{query}", city, mode)
+        cached = _cache_get(cache_key)
+        if cached:
+            logging.debug(f"Marco neighborhood cache hit for key={cache_key}")
+            return cached
+
+        key = _get_api_key()
+        print(f"DEBUG: Calling Groq for neighborhood recommendation: {query}")
+        print(f"DEBUG: Neighborhoods count: {len(neighborhoods)}")
+
+        if not key:
+            print("DEBUG: No GROQ_API_KEY found")
+            # Fallback: return simple list
+            names = [n.get("name") for n in neighborhoods[:6] if n.get("name")]
+            return f"Based on your interests, here are some neighborhoods in {city or 'this city'} you might like: {', '.join(names)}. Try clicking on one to explore venues there!"
+
+        # Truncate if too long
+        MAX_PROMPT_CHARS = 1500
+        if len(prompt) > MAX_PROMPT_CHARS:
+            print(f"DEBUG: Prompt too long ({len(prompt)} chars), truncating")
+            prompt = prompt[:MAX_PROMPT_CHARS] + "\n\n[TRUNCATED]"
+
+        async with session.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "llama-3.1-8b-instant",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 300,
+                "temperature": 0.8,
+            },
+            timeout=30,
+        ) as response:
+            if response.status != 200:
+                print(f"DEBUG: Groq API Error {response.status}: {await response.text()}")
+            if response.status == 200:
+                res_data = await response.json()
+                answer = res_data["choices"][0]["message"]["content"]
+                if answer and answer.strip():
+                    ans = answer.strip()
+                    try:
+                        _cache_set(cache_key, ans, source="groq")
+                    except Exception:
+                        pass
+                    return ans
+
+        # Fallback
+        names = [n.get("name") for n in neighborhoods[:4] if n.get("name")]
+        if mode == "explorer":
+            fallback = f"Ahoy! 🧭 Based on your interests in '{query}', I'd recommend exploring these Lisbon neighborhoods:\n\n🏘️ **Alfama**: Historic heart of the city with stunning views and traditional Portuguese culture\n🏘️ **Belém**: Famous for the Jerónimos Monastery and pastéis de nata\n🏘️ **Chiado**: Trendy area with shops, theaters, and great food scene\n🏘️ **Alvalade**: Modern residential area with good transport links\n\nClick any neighborhood to focus your search there! - Marco 🗺️"
+        else:
+            fallback = f"Recommended neighborhoods for '{query}': {', '.join(names)}. Try selecting one to explore venues there."
+        try:
+            _cache_set(cache_key, fallback, source="fallback")
+        except Exception:
+            pass
+        return fallback
+    except Exception as e:
+        print(f"DEBUG: Groq neighborhood exception: {e}")
+        names = [n.get("name") for n in neighborhoods[:3] if n.get("name")]
+        return f"Here are some neighborhoods you might enjoy: {', '.join(names)}. Try selecting one to explore!"
+
+
 async def search_and_reason(
-    query, city=None, mode="explorer", context_venues=None, weather=None, session: aiohttp.ClientSession = None
+    query, city=None, mode="explorer", context_venues=None, weather=None, neighborhoods=None, session: aiohttp.ClientSession = None
 ):
     """Search the web and use Groq to reason about the query.
 
     mode: 'explorer' for themed responses, 'rational' for straightforward responses
     context_venues: optional list of venues already showing in the UI
+    neighborhoods: optional list of neighborhoods for recommendation
     """
 
     # Check for currency conversion
@@ -391,6 +542,14 @@ async def search_and_reason(
                     return f"Ahoy! 🧭 The current weather in {city or 'this city'} is: {summary}. {details}. Safe travels! - Marco"
                 else:
                     return f"Current weather in {city or 'this city'}: {summary}. {details}."
+
+    # Handle neighborhood recommendations
+    neighborhood_keywords = ["neighborhood", "area", "district", "quarter", "where", "recommend", "best", "good", "nice"]
+    is_neighborhood_query = any(k in query.lower() for k in neighborhood_keywords) and neighborhoods
+    print(f"DEBUG: Query: '{query}', is_neighborhood_query: {is_neighborhood_query}, neighborhoods count: {len(neighborhoods) if neighborhoods else 0}")
+
+    if is_neighborhood_query and neighborhoods:
+        return await recommend_neighborhoods(query, city, neighborhoods, mode, weather, session)
 
     # Determine if this is a query about the visible results
     screen_keywords = ["these", "visible", "listed", "on screen", "above", "results"]
