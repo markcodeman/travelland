@@ -1,4 +1,20 @@
 import os
+from pathlib import Path
+# --- Early .env loader to ensure env vars are set before any imports ---
+_env_paths = [
+    Path(__file__).parent / ".env",
+    Path(__file__).parent.parent / ".env",
+    Path("/home/markm/TravelLand/.env"),
+]
+for _env_file in _env_paths:
+    if _env_file.exists():
+        with open(_env_file) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ[key.strip()] = value.strip()
+        break
 import aiohttp
 from bs4 import BeautifulSoup
 import math
@@ -14,11 +30,14 @@ import search_provider
 
 # Import RAG recommender
 try:
-    from groq.traveland_rag import recommend_venues_rag, recommend_neighborhoods_rag
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent / "groq"))
+    from traveland_rag import recommend_venues_rag, recommend_neighborhoods_rag
     RAG_AVAILABLE = True
-except ImportError:
+except Exception as e:
     RAG_AVAILABLE = False
-    logging.warning("RAG recommender not available, falling back to text-based recommendations")
+    logging.warning(f"RAG recommender not available, falling back to text-based recommendations: {e}")
 
 # duckduckgo_provider removed
 

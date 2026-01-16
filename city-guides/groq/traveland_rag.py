@@ -12,9 +12,16 @@ import logging
 # Configure logging
 logger = logging.getLogger(__name__)
 
+
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL = "llama-3.1-8b-instant"
+
+# Debug logging for RAG availability
+if not GROQ_API_KEY:
+    logger.warning("[traveland_rag] GROQ_API_KEY is not set in environment!")
+else:
+    logger.info(f"[traveland_rag] GROQ_API_KEY loaded: {GROQ_API_KEY[:6]}... (length: {len(GROQ_API_KEY)})")
 
 class TravelLandRecommender:
     """RAG-based recommender adapted for TravelLand's venue/neighborhood system"""
@@ -134,6 +141,7 @@ class TravelLandRecommender:
         raw = ""
         try:
             raw = resp["choices"][0]["message"]["content"]
+            logger.debug(f"Groq model raw response: {raw}")
         except (KeyError, IndexError) as e:
             logger.error(f"Unexpected GROQ response format: {e}")
             return []
@@ -157,6 +165,7 @@ class TravelLandRecommender:
             return out
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse GROQ response as JSON: {e}")
+            logger.error(f"Groq model raw response (for debug): {raw}")
             return []
 
 # Global instance for use in semantic.py

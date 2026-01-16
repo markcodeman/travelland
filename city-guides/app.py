@@ -1,12 +1,32 @@
 
 
 
+
+
+# --- EARLY .env loader ---
 import os
+from pathlib import Path
+_env_paths = [
+    Path(__file__).parent / ".env",
+    Path(__file__).parent.parent / ".env",
+    Path("/home/markm/TravelLand/.env"),
+]
+for _env_file in _env_paths:
+    if _env_file.exists():
+        with open(_env_file) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ[key.strip()] = value.strip()
+        break
+
+import sys
+sys.path.insert(0, str(Path(__file__).parent / "groq"))
+import traveland_rag
 import json
 import hashlib
-from pathlib import Path
 from urllib.parse import urlparse
-
 from quart import Quart, render_template, request, jsonify
 import asyncio
 import aiohttp
@@ -15,7 +35,6 @@ import logging
 import re
 import time
 import requests
-import sys
 
 # Load environment variables from .env file
 # Get the directory where this script is running
@@ -39,7 +58,9 @@ for env_file in env_paths:
         _env_file_used = env_file
         # Verify key was loaded
         if os.getenv("GROQ_API_KEY"):
-            print(f"✓ GROQ_API_KEY loaded successfully")
+            print(f"✓ GROQ_API_KEY loaded successfully: {os.getenv('GROQ_API_KEY')[:6]}... (length: {len(os.getenv('GROQ_API_KEY'))})")
+        else:
+            print("✗ GROQ_API_KEY NOT FOUND in environment after .env load!")
         break
 else:
     print("Warning: .env file not found in any expected location")
@@ -130,7 +151,36 @@ except ImportError:
             return city_name
         return city_name.split(',')[0].strip()
 
+
+
 app = Quart(__name__, static_folder="static", template_folder="templates")
+
+# --- /recommend route for RAG recommender ---
+from quart import request, jsonify
+@app.route("/recommend", methods=["POST"])
+async def recommend():
+    """RAG-based venue recommendation endpoint"""
+    payload = await request.get_json(silent=True) or {}
+    city = payload.get("city")
+    neighborhood = payload.get("neighborhood")
+    q = payload.get("q")
+    preferences = payload.get("preferences", {})
+    candidates = payload.get("candidates", [])
+    user_context = {
+        "city": city,
+        "neighborhood": neighborhood,
+        "q": q,
+        "preferences": preferences
+    }
+    # Optionally pass weather if present
+    if "weather" in payload:
+        user_context["weather"] = payload["weather"]
+    # Call the RAG recommender
+    try:
+        recs = traveland_rag.recommend_venues_rag(user_context, candidates)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    return jsonify(recs)
 
 # Global async clients
 aiohttp_session: aiohttp.ClientSession | None = None
