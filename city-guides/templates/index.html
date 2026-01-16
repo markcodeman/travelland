@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>City Microguides — Budget Picks</title>
-  <link rel="stylesheet" href="/static/styles.css?v=5">
+  <link rel="stylesheet" href="/static/styles.css?v=6">
   <!-- Tailwind Play CDN (for rapid prototyping, replace with built CSS for production) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Optional: DaisyUI base styles via CDN (useful for components) -->
@@ -26,8 +26,8 @@
         <a href="/version" class="block py-2 px-2 hover:bg-gray-100">🔎 Debug /version</a>
       </div>
     <div class="page-hero">
-      <h1>Powered by TravelAnd LLC</h1>
-      <p>Discover real local gems, affordable eats, and hidden spots—powered by live data.</p>
+      <h1>AI-Powered City Exploration</h1>
+      <p>Chat with Marco, your AI travel guide, to discover neighborhoods and get personalized recommendations for your perfect city adventure!</p>
     </div>
 
    <!-- Search Section - Reorganized Flow -->
@@ -73,31 +73,47 @@
   <input type="hidden" id="neighborhood_id" name="neighborhood_id" />
   <input type="hidden" id="neighborhood_bbox" name="neighborhood_bbox" />
   
-  <!-- Step 4: Search Button -->
-  <div class="search-button-section mt-4">
-    <button 
-      type="button" 
-      id="searchBtn" 
+  <!-- Step 4: Ask Marco Button -->
+  <div class="ask-marco-section mt-4">
+    <button
+      type="button"
+      id="askMarcoBtn"
       disabled
-      class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+      class="w-full md:w-auto px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
     >
-      🔍 Search
+      🧭 Ask Marco
     </button>
-    <p id="searchHint" class="text-xs text-gray-500 mt-1">
-      Select a city and category to search
+    <p id="marcoHint" class="text-xs text-gray-500 mt-1">
+      Select a city to start chatting with Marco
     </p>
   </div>
-  
+
   <!-- Collapse Button -->
   <div class="text-center mt-4">
     <button id="toggleSearchArea" class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 hover:text-gray-900 transition">
       Minimize Search
     </button>
   </div>
-  
+
 </section>
 
-    <!-- Weather Widget -->
+<!-- Expanded Marco Chat (replaces results section) -->
+<section id="marcoChatSection" class="marco-chat-expanded bg-white rounded-lg shadow-md p-6 mb-6" style="display:none;">
+  <div class="marco-chat-header-expanded mb-4">
+    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+      🧭 Marco the Explorer
+      <span class="text-sm font-normal text-gray-600">- Your AI travel guide</span>
+    </h2>
+  </div>
+  <div id="chatMessagesExpanded" class="chat-messages-expanded bg-gray-50 rounded-lg p-4 mb-4 min-h-[300px] max-h-[500px] overflow-y-auto">
+    <div class="message bot">Hello! I'm Marco, your AI travel guide. Select a city above and ask me anything about your destination!</div>
+  </div>
+  <div id="chatChipsExpanded" class="chat-chips mb-4"></div>
+  <div class="chat-input-group flex gap-2">
+    <input id="chatInputExpanded" placeholder="Ask Marco about neighborhoods, food, activities..." class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" />
+    <button id="chatSendExpanded" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition">Send</button>
+  </div>
+</section>
     <section id="weather" class="weather-section max-w-xl mx-auto mt-4 mb-6 bg-white/80 border border-blue-100 rounded-xl shadow p-4 flex items-center gap-4" style="display:none;">
       <div id="weather-icon" style="font-size:2.2em;"></div>
       <div>
@@ -106,35 +122,12 @@
       </div>
     </section>
 
-    <section id="results" class="results"></section>
-
     <section id="contact-info" class="contact-info">
       <h2>Contact Information</h2>
       <p>If you need to reach us, call:</p>
       <p><a href="{{ phone }}" class="phone-link">{{ phone }}</a></p>
     </section>
   </div>
-
-  <!-- Marco Floating Chat -->
-  <div id="marcoChat" class="marco-chat-container">
-    <div class="marco-chat-header">
-      <span>🧭 Marco the Explorer</span>
-      <button id="closeChat" class="close-chat">&times;</button>
-    </div>
-    <div id="chatMessages" class="chat-messages">
-      <div class="message bot">Hello! I'm Marco. Ask me anything about the city you're exploring!</div>
-    </div>
-    <div id="chatChips" class="chat-chips"></div>
-    <div class="chat-input-group">
-      <input id="chatInput" placeholder="Ask Marco... (e.g. 'romantic spots')" />
-      <button id="chatSend">Send</button>
-    </div>
-  </div>
-
-  <button id="marcoFab" class="marco-fab" title="Ask Marco">
-    <div class="marco-nudge">🧭 Ask Marco for local tips!</div>
-    <span>M</span>
-  </button>
 
   <div style="position:fixed;bottom:18px;left:18px;z-index:60;font-size:12px;color:#666;">
     {% if GROQ_ENABLED %}
@@ -144,6 +137,6 @@
     {% endif %}
   </div>
 
-  <script src="/static/main.js?v=5"></script>
+  <script src="/static/main.js?v=6"></script>
 </body>
 </html>
