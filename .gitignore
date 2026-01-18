@@ -48,6 +48,9 @@ wheels/
 .DS_Store
 Thumbs.db
 *.swp
+.continue/
+.playwright-mcp/
+reliable_server_start.sh
 *.swo
 *~
 
