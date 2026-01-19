@@ -332,8 +332,9 @@ async def get_weather_async(lat, lon):
         params = {
             "latitude": lat,
             "longitude": lon,
-            # keep the response small: only request current weather for the UI
+            # include current weather and today's sunrise/sunset (small payload)
             "current_weather": True,
+            "daily": ",".join(["sunrise", "sunset"]),
             "temperature_unit": "celsius",
             "windspeed_unit": "kmh",
             "precipitation_unit": "mm",
@@ -346,8 +347,14 @@ async def get_weather_async(lat, lon):
                 print(f"[DEBUG app.py] get_weather_async HTTP error: {resp.status}")
             resp.raise_for_status()
             data = await resp.json()
-            # return only the current weather to minimize payload size
-            return data.get("current_weather", {})
+            # return a compact payload containing current weather and today's daily fields
+            return {
+                'current_weather': data.get('current_weather'),
+                'daily': data.get('daily'),
+                'timezone': data.get('timezone'),
+                'timezone_abbreviation': data.get('timezone_abbreviation'),
+                'utc_offset_seconds': data.get('utc_offset_seconds')
+            }
     except Exception as e:
         print(f"[DEBUG app.py] get_weather_async Exception: {e}")
         return None
