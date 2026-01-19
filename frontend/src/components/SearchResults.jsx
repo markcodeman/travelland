@@ -7,10 +7,11 @@ export default function SearchResults({ results }) {
   if (results.error) return <div className="results-error">Error: {results.error}</div>;
 
   const quick = results.quick_guide || results.quickGuide || results.summary || null;
+  const images = results.mapillary_images || results.images || null;
 
   return (
     <div className="search-results">
-      {quick && <QuickGuide guide={quick} source={results.source} source_url={results.source_url} />}
+      {quick && <QuickGuide guide={quick} images={images} source={results.source} source_url={results.source_url} />}
 
       {results.weather && (
         <section>
