@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-cd /home/markm/TravelLand/city-guides
+cd /home/markm/TravelLand/city_guides
 
 # Verify we're in WSL
 if ! grep -qi microsoft /proc/version 2>/dev/null; then

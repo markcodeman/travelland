@@ -28,12 +28,17 @@ from pathlib import Path
 
 import search_provider
 
+# Import Wikipedia provider
+try:
+    from wikipedia_provider import fetch_wikipedia_summary, fetch_wikipedia_full
+    WIKI_AVAILABLE = True
+except Exception as e:
+    WIKI_AVAILABLE = False
+    logging.warning(f"Wikipedia provider not available: {e}")
+
 # Import RAG recommender
 try:
-    import sys
-    from pathlib import Path
-    sys.path.insert(0, str(Path(__file__).parent / "groq"))
-    from traveland_rag import recommend_venues_rag, recommend_neighborhoods_rag
+    from groq.traveland_rag import recommend_venues_rag, recommend_neighborhoods_rag
     RAG_AVAILABLE = True
 except Exception as e:
     RAG_AVAILABLE = False
@@ -142,7 +147,9 @@ def _cache_set(key, value, source="groq"):
         _write_cache(c)
 
 
-async def convert_currency(amount, from_curr, to_curr, session: aiohttp.ClientSession = None):
+from typing import Optional
+
+async def convert_currency(amount, from_curr, to_curr, session: Optional[aiohttp.ClientSession] = None):
     own_session = False
     if session is None:
         session = aiohttp.ClientSession()
@@ -151,7 +158,7 @@ async def convert_currency(amount, from_curr, to_curr, session: aiohttp.ClientSe
         own_session = False
     try:
         url = f"https://api.exchangerate-api.com/v4/latest/{from_curr.upper()}"
-        async with session.get(url, timeout=10) as resp:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
             if resp.status != 200:
                 if own_session:
                     await session.close()
@@ -173,7 +180,9 @@ async def convert_currency(amount, from_curr, to_curr, session: aiohttp.ClientSe
         return f"Error: {str(e)}"
 
 
-async def _fetch_text(url, timeout=8, session: aiohttp.ClientSession = None):
+from typing import Optional
+
+async def _fetch_text(url, timeout=8, session: Optional[aiohttp.ClientSession] = None):
     own_session = False
     if session is None:
         session = aiohttp.ClientSession()
@@ -182,7 +191,8 @@ async def _fetch_text(url, timeout=8, session: aiohttp.ClientSession = None):
         own_session = False
     try:
         headers = {"User-Agent": "CityGuidesBot/1.0 (+https://example.com)"}
-        async with session.get(url, headers=headers, timeout=timeout) as r:
+        aio_timeout = aiohttp.ClientTimeout(total=timeout) if isinstance(timeout, (int, float)) else timeout
+        async with session.get(url, headers=headers, timeout=aio_timeout) as r:
             if r.status != 200:
                 if own_session:
                     await session.close()
@@ -245,7 +255,9 @@ def _get_api_key():
     return os.getenv("GROQ_API_KEY")
 
 
-async def _embed_with_groq(text, session: aiohttp.ClientSession = None):
+from typing import Optional
+
+async def _embed_with_groq(text, session: Optional[aiohttp.ClientSession] = None):
     # call Groq.ai embeddings endpoint (best-effort)
     key = _get_api_key()
     own_session = False
@@ -259,7 +271,7 @@ async def _embed_with_groq(text, session: aiohttp.ClientSession = None):
             raise RuntimeError("no groq key")
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         payload = {"model": "embed-english-v1", "input": text}
-        async with session.post(GROQ_EMBEDDING_ENDPOINT, json=payload, headers=headers, timeout=20) as r:
+        async with session.post(GROQ_EMBEDDING_ENDPOINT, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=20)) as r:
             if r.status != 200:
                 if own_session:
                     await session.close()
@@ -296,14 +308,18 @@ def _fallback_embedding(text, dim=128):
     return [x / norm for x in vec]
 
 
-async def embed_text(text, session: aiohttp.ClientSession = None):
+from typing import Optional
+
+async def embed_text(text, session: Optional[aiohttp.ClientSession] = None):
     emb = await _embed_with_groq(text, session=session)
     if emb and isinstance(emb, list):
         return emb
     return _fallback_embedding(text)
 
 
-async def ingest_urls(urls, session: aiohttp.ClientSession = None):
+from typing import Optional
+
+async def ingest_urls(urls, session: Optional[aiohttp.ClientSession] = None):
     count = 0
     for url in urls:
         txt = await _fetch_text(url, session=session)
@@ -318,12 +334,16 @@ async def ingest_urls(urls, session: aiohttp.ClientSession = None):
     return count
 
 
-async def semantic_search(query, top_k=5, session: aiohttp.ClientSession = None):
+from typing import Optional
+
+async def semantic_search(query, top_k=5, session: Optional[aiohttp.ClientSession] = None):
     q_emb = await embed_text(query, session=session)
     return INDEX.search(q_emb, top_k=top_k)
 
 
-async def recommend_neighborhoods(query, city, neighborhoods, mode="explorer", weather=None, session: aiohttp.ClientSession = None):
+from typing import Optional
+
+async def recommend_neighborhoods(query, city, neighborhoods, mode="explorer", weather=None, session: Optional[aiohttp.ClientSession] = None):
     """Use AI to recommend neighborhoods based on user preferences and available data."""
 
     # Build neighborhood context
@@ -407,51 +427,61 @@ Ready to explore these areas? Click any neighborhood to focus your search there!
             print(f"DEBUG: Prompt too long ({len(prompt)} chars), truncating")
             prompt = prompt[:MAX_PROMPT_CHARS] + "\n\n[TRUNCATED]"
 
-        async with session.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": "llama-3.1-8b-instant",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 700,  # Increased for longer responses
-                "temperature": 0.8,
-            },
-            timeout=30,
-        ) as response:
-            if response.status != 200:
-                print(f"DEBUG: Groq API Error {response.status}: {await response.text()}")
-            if response.status == 200:
-                res_data = await response.json()
-                answer = res_data["choices"][0]["message"]["content"]
-                if answer and answer.strip():
-                    ans = answer.strip()
-                    # --- Post-process to add Google Maps links if missing ---
-                    import re
-                    import urllib.parse
-                    def add_gmaps_links(text, neighborhoods, city):
-                        for n in neighborhoods[:4]:
-                            name = n.get("name")
-                            if not name:
-                                continue
-                            # If the neighborhood name appears in the answer but no link is present, add a link after the first mention
-                            pattern = re.compile(rf"(\*\*{re.escape(name)}\*\*|{re.escape(name)})", re.IGNORECASE)
-                            # Properly URL-encode the search query
-                            search_query = f"{name} {city}".strip()
-                            maps_url = f"https://www.google.com/maps/search/{urllib.parse.quote_plus(search_query)}"
-                            link = f" ([Google Maps]({maps_url}))"
-                            # Only add if not already present
-                            if name in text and maps_url not in text:
-                                text = pattern.sub(r"\\1" + link, text, count=1)
-                        return text
-                    ans = add_gmaps_links(ans, neighborhoods, city)
-                    try:
-                        _cache_set(cache_key, ans, source="groq")
-                    except Exception:
-                        pass
-                    return ans
+        own_session = False
+        if session is None:
+            session = aiohttp.ClientSession()
+            own_session = True
+        try:
+            async with session.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "llama-3.1-8b-instant",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 700,  # Increased for longer responses
+                    "temperature": 0.8,
+                },
+                timeout=aiohttp.ClientTimeout(total=30),
+            ) as response:
+                if response.status != 200:
+                    print(f"DEBUG: Groq API Error {response.status}: {await response.text()}")
+                if response.status == 200:
+                    res_data = await response.json()
+                    answer = res_data["choices"][0]["message"]["content"]
+                    if answer and answer.strip():
+                        ans = answer.strip()
+                        # --- Post-process to add Google Maps links if missing ---
+                        import re
+                        import urllib.parse
+                        def add_gmaps_links(text, neighborhoods, city):
+                            for n in neighborhoods[:4]:
+                                name = n.get("name")
+                                if not name:
+                                    continue
+                                # If the neighborhood name appears in the answer but no link is present, add a link after the first mention
+                                pattern = re.compile(rf"(\*\*{re.escape(name)}\*\*|{re.escape(name)})", re.IGNORECASE)
+                                # Properly URL-encode the search query
+                                search_query = f"{name} {city}".strip()
+                                maps_url = f"https://www.google.com/maps/search/{urllib.parse.quote_plus(search_query)}"
+                                link = f" ([Google Maps]({maps_url}))"
+                                # Only add if not already present
+                                if name in text and maps_url not in text:
+                                    text = pattern.sub(r"\1" + link, text, count=1)
+                            return text
+                        ans = add_gmaps_links(ans, neighborhoods, city)
+                        try:
+                            _cache_set(cache_key, ans, source="groq")
+                        except Exception:
+                            pass
+                        if own_session:
+                            await session.close()
+                        return ans
+        finally:
+            if own_session:
+                await session.close()
 
         # Fallback
         names = [n.get("name") for n in neighborhoods[:4] if n.get("name")]
@@ -470,8 +500,10 @@ Ready to explore these areas? Click any neighborhood to focus your search there!
         return f"Here are some neighborhoods you might enjoy: {', '.join(names)}. Try selecting one to explore!"
 
 
+from typing import Optional
+
 async def search_and_reason(
-    query, city=None, mode="explorer", context_venues=None, weather=None, neighborhoods=None, session: aiohttp.ClientSession = None, wikivoyage=None
+    query, city=None, mode="explorer", context_venues=None, weather=None, neighborhoods=None, session: Optional[aiohttp.ClientSession] = None, wikivoyage=None
 ):
     """Search the web and use Groq to reason about the query.
 
@@ -659,11 +691,48 @@ INSTRUCTIONS FOR MARCO:
         # 1. Try to answer with public data first (WikiVoyage, OSM, venues, etc.)
         # If there are venues, neighborhoods, or Wikivoyage data, use that for a direct answer
         # (This is a simplified heuristic; you can expand this logic as needed)
+
         if PUBLIC_DATA_ONLY or not _get_api_key():
-            # Only use public data, never call Groq
-            # Synthesize a helpful answer from all available public data
+            # Always synthesize a full answer for neighborhood queries using public data
             summary_parts = []
-            # Always include city-level WikiVoyage summary for neighborhood queries
+            # Try Wikipedia provider for the main neighborhood
+
+            # Always attempt to fetch Wikipedia summary for the user's query, even if not in neighborhoods list
+            if WIKI_AVAILABLE:
+                # Use the query as the Wikipedia title
+                wiki_debug_logs = []
+                query_title = query.strip()
+                logging.debug(f"[Marco DEBUG] Attempting Wikipedia fetch for user query: {query_title}")
+                wiki_summary = await fetch_wikipedia_summary(query_title, lang="pt", city=city or "", debug_logs=wiki_debug_logs)
+                if not wiki_summary and neighborhoods and len(neighborhoods) > 0:
+                    # Fallback: try the main neighborhood name
+                    main_nh = neighborhoods[0].get("name")
+                    logging.debug(f"[Marco DEBUG] Attempting fallback Wikipedia fetch for: {main_nh}")
+                    wiki_summary = await fetch_wikipedia_summary(main_nh, lang="pt", city=city or "", debug_logs=wiki_debug_logs)
+                if wiki_summary:
+                    logging.debug(f"[Marco DEBUG] Wikipedia summary found for: {query_title} or fallback neighborhood")
+                    summary_parts.append(f"**Wikipedia:** {wiki_summary}")
+                else:
+                    logging.debug(f"[Marco DEBUG] Wikipedia summary NOT found for: {query_title} or fallback neighborhood")
+                # Always include debug logs in the response for debugging
+                if wiki_debug_logs:
+                    summary_parts.append(f"**Wikipedia Debug Logs:**\n" + "\n".join(wiki_debug_logs))
+                # Sections: try query title, then fallback
+                wiki_sections = await fetch_wikipedia_full(query_title)
+                if not wiki_sections and neighborhoods and len(neighborhoods) > 0:
+                    main_nh = neighborhoods[0].get("name")
+                    wiki_sections = await fetch_wikipedia_full(main_nh)
+                if wiki_sections:
+                    logging.debug(f"[Marco DEBUG] Wikipedia sections found for: {query_title} or fallback neighborhood")
+                    for title, content in wiki_sections.items():
+                        summary_parts.append(f"**{title}**: {content}")
+                else:
+                    logging.debug(f"[Marco DEBUG] Wikipedia sections NOT found for: {query_title} or fallback neighborhood")
+            # Use the explorer-themed recommender for neighborhoods
+            if neighborhoods and len(neighborhoods) > 0:
+                marco_answer = await recommend_neighborhoods(query, city, neighborhoods, mode=mode, weather=weather, session=session)
+                summary_parts.append(marco_answer)
+            # Blend all other public data as before
             if wikivoyage:
                 if isinstance(wikivoyage, list):
                     for section in wikivoyage:
@@ -675,7 +744,6 @@ INSTRUCTIONS FOR MARCO:
                             summary_parts.append(content)
                 elif isinstance(wikivoyage, str):
                     summary_parts.append(wikivoyage)
-            # Always blend in venues and neighborhoods
             if context_venues and len(context_venues) > 0:
                 venue_lines = [f"- {v.get('name')} ({v.get('address') or 'no address'}) — {v.get('description') or ''}" for v in context_venues[:5] if v.get('name')]
                 if venue_lines:
@@ -684,12 +752,8 @@ INSTRUCTIONS FOR MARCO:
                 nh_names = [n.get("name") for n in neighborhoods[:5] if n.get("name")]
                 if nh_names:
                     summary_parts.append("\n**Other neighborhoods to explore:** " + ", ".join(nh_names))
-            # If this is a neighborhood query and the selected neighborhood is not found in WikiVoyage, always include the city-level summary
-            if (neighborhoods and len(neighborhoods) > 0 and wikivoyage and len(summary_parts) > 0):
-                return "\n\n".join(summary_parts)
             if summary_parts:
                 return "\n\n".join(summary_parts)
-            # Fallback
             return "Ahoy! 🪙 My explorer's eyes are tired. Try searching for a specific place above first! - Marco"
 
         # 2. Otherwise, call Groq as before
@@ -707,32 +771,40 @@ INSTRUCTIONS FOR MARCO:
             print(f"DEBUG: Prompt too long ({len(prompt)} chars), truncating to {MAX_PROMPT_CHARS}")
             prompt = prompt[:MAX_PROMPT_CHARS] + "\n\n[TRUNCATED]"
 
-        async with session.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": "llama-3.1-8b-instant",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 256,
-                "temperature": 0.7,
-            },
-            timeout=30,
-        ) as response:
-            if response.status != 200:
-                print(f"DEBUG: Groq API Error {response.status}: {await response.text()}")
-            if response.status == 200:
-                res_data = await response.json()
-                answer = res_data["choices"][0]["message"]["content"]
-                if answer and answer.strip():
-                    ans = answer.strip()
-                    try:
-                        _cache_set(cache_key, ans, source="groq")
-                    except Exception:
-                        pass
-                    return ans
+        own_session = False
+        if session is None:
+            session = aiohttp.ClientSession()
+            own_session = True
+        try:
+            async with session.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "llama-3.1-8b-instant",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 256,
+                    "temperature": 0.7,
+                },
+                timeout=aiohttp.ClientTimeout(total=30),
+            ) as response:
+                if response.status != 200:
+                    print(f"DEBUG: Groq API Error {response.status}: {await response.text()}")
+                if response.status == 200:
+                    res_data = await response.json()
+                    answer = res_data["choices"][0]["message"]["content"]
+                    if answer and answer.strip():
+                        ans = answer.strip()
+                        try:
+                            _cache_set(cache_key, ans, source="groq")
+                        except Exception:
+                            pass
+                        return ans
+        finally:
+            if own_session:
+                await session.close()
 
         # Smarter fallback if AI fails
         if context_venues:

@@ -35,6 +35,7 @@ async def async_search_images_near(
     if session is None:
         session = aiohttp.ClientSession(headers={"User-Agent": "city-guides-mapillary"})
         own_session = True
+        print("[DEBUG mapillary] Created internal aiohttp session for async_search_images_near")
 
     try:
         # Build bbox around point
@@ -58,17 +59,19 @@ async def async_search_images_near(
 
         async with session.get(url, params=params, timeout=10) as resp:
             if resp.status != 200:
+                print(f"[DEBUG mapillary] async_search_images_near HTTP error: {resp.status}")
+                if own_session:
+                    await session.close()
+                    print("[DEBUG mapillary] Closed internal aiohttp session after error")
                 return []
             data = await resp.json()
             items = data.get("data") or data.get("images") or []
             out = []
             for it in items:
                 geom = it.get("computed_geometry") or {}
-                # computed_geometry may contain coordinates
                 lat_i = None
                 lon_i = None
                 if isinstance(geom, dict):
-                    # try common shapes
                     c = geom.get("coordinates")
                     if isinstance(c, (list, tuple)) and len(c) >= 2:
                         lon_i, lat_i = float(c[0]), float(c[1])
@@ -76,12 +79,16 @@ async def async_search_images_near(
                 if not thumb:
                     continue
                 out.append({"id": it.get("id"), "url": thumb, "lat": lat_i, "lon": lon_i, "raw": it})
+            if own_session:
+                await session.close()
+                print("[DEBUG mapillary] Closed internal aiohttp session after success")
             return out
-    except Exception:
-        return []
-    finally:
+    except Exception as e:
+        print(f"[DEBUG mapillary] async_search_images_near Exception: {e}")
         if own_session:
             await session.close()
+            print("[DEBUG mapillary] Closed internal aiohttp session after exception")
+        return []
 
 
 async def async_enrich_venues(
@@ -104,6 +111,7 @@ async def async_enrich_venues(
     if session is None:
         session = _aiohttp.ClientSession(headers={"User-Agent": "city-guides-mapillary"})
         own_session = True
+        print("[DEBUG mapillary] Created internal aiohttp session for async_enrich_venues")
 
     try:
         sem = asyncio.Semaphore(8)
@@ -126,3 +134,4 @@ async def async_enrich_venues(
     finally:
         if own_session:
             await session.close()
+            print("[DEBUG mapillary] Closed internal aiohttp session after async_enrich_venues")

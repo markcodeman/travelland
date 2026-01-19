@@ -36,6 +36,7 @@ async def discover_restaurants(city: str, limit: int = 50, cuisine: str = None, 
     if session is None:
         session = aiohttp.ClientSession()
         own_session = True
+        print("[DEBUG opentripmap] Created internal aiohttp session for discover_restaurants")
     else:
         own_session = False
     bbox = await geocode_city(city, session=session)
@@ -61,13 +62,17 @@ async def discover_restaurants(city: str, limit: int = 50, cuisine: str = None, 
     try:
         async with session.get(f"{BASE}/radius", params=params, timeout=20) as r:
             if r.status != 200:
+                print(f"[DEBUG opentripmap] discover_restaurants HTTP error: {r.status}")
                 if own_session:
                     await session.close()
+                    print("[DEBUG opentripmap] Closed internal aiohttp session after error")
                 return []
             j = await r.json()
-    except Exception:
+    except Exception as e:
+        print(f"[DEBUG opentripmap] discover_restaurants Exception: {e}")
         if own_session:
             await session.close()
+            print("[DEBUG opentripmap] Closed internal aiohttp session after exception")
         return []
 
     out = []
@@ -87,8 +92,10 @@ async def discover_restaurants(city: str, limit: int = 50, cuisine: str = None, 
                     if dd.status == 200:
                         detail = await dd.json()
                     else:
+                        print(f"[DEBUG opentripmap] discover_restaurants detail HTTP error: {dd.status}")
                         detail = {}
-            except Exception:
+            except Exception as e:
+                print(f"[DEBUG opentripmap] discover_restaurants detail Exception: {e}")
                 detail = {}
             await asyncio.sleep(0.05)
 
@@ -130,6 +137,9 @@ async def discover_restaurants(city: str, limit: int = 50, cuisine: str = None, 
                 continue
         out.append(entry)
 
+    if own_session:
+        await session.close()
+        print("[DEBUG opentripmap] Closed internal aiohttp session after success")
     return out
 
 
@@ -149,6 +159,7 @@ async def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, 
     if session is None:
         session = aiohttp.ClientSession()
         own_session = True
+        print("[DEBUG opentripmap] Created internal aiohttp session for discover_pois")
     else:
         own_session = False
     bbox = await geocode_city(city, session=session)
@@ -174,13 +185,17 @@ async def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, 
     try:
         async with session.get(f"{BASE}/radius", params=params, timeout=20) as r:
             if r.status != 200:
+                print(f"[DEBUG opentripmap] discover_pois HTTP error: {r.status}")
                 if own_session:
                     await session.close()
+                    print("[DEBUG opentripmap] Closed internal aiohttp session after error")
                 return []
             j = await r.json()
-    except Exception:
+    except Exception as e:
+        print(f"[DEBUG opentripmap] discover_pois Exception: {e}")
         if own_session:
             await session.close()
+            print("[DEBUG opentripmap] Closed internal aiohttp session after exception")
         return []
 
     out = []
@@ -200,8 +215,10 @@ async def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, 
                     if dd.status == 200:
                         detail = await dd.json()
                     else:
+                        print(f"[DEBUG opentripmap] discover_pois detail HTTP error: {dd.status}")
                         detail = {}
-            except Exception:
+            except Exception as e:
+                print(f"[DEBUG opentripmap] discover_pois detail Exception: {e}")
                 detail = {}
             await asyncio.sleep(0.05)
 
@@ -238,6 +255,9 @@ async def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, 
         }
         out.append(entry)
 
+    if own_session:
+        await session.close()
+        print("[DEBUG opentripmap] Closed internal aiohttp session after success")
     return out
 
 

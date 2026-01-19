@@ -5,7 +5,7 @@
 pkill -f app.py || pkill -f hypercorn || pkill -f quart || pkill -f python3 || true
 
 # Start the app in the background, output to app.log
-nohup python3 city-guides/app.py > app.log 2>&1 &
+nohup /home/markm/TravelLand/venv/bin/python city_guides/app.py > app.log 2>&1 &
 
 # Wait a moment for the app to start
 sleep 2

@@ -22,6 +22,13 @@ let selectedNeighborhood = null;
 let selectedCategory = null;
 let currentVenues = [];
 let currentWeather = null;
+
+// Always update weather before sending chat
+async function ensureWeatherUpToDate() {
+  if (selectedCity && selectedCity.lat && selectedCity.lon) {
+    currentWeather = await fetchWeatherForCity(selectedCity.name, selectedCity.lat, selectedCity.lon);
+  }
+}
 // Fetch weather for a city (by lat/lon) using Open-Meteo (no API key needed)
 async function fetchWeatherForCity(cityName, lat = null, lon = null) {
   try {
@@ -899,30 +906,32 @@ async function sendExpandedChatMessage() {
   const typingId = showExpandedBotTyping();
   console.log('[Expanded Chat] Sending message with neighborhoods:', currentNeighborhoods ? currentNeighborhoods.length : 0, 'actual value:', currentNeighborhoods);
   // Always send up to 10 venues if available, even if not on screen
-  fetch(`${API_BASE}/semantic-search`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      q: message,
-      city: cityName,
-      venues: (Array.isArray(currentVenues) && currentVenues.length > 0) ? currentVenues.slice(0, 10) : [],
-      neighborhoods: currentNeighborhoods,
-      weather: currentWeather
+  ensureWeatherUpToDate().then(() => {
+    fetch(`${API_BASE}/semantic-search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        q: message,
+        city: cityName,
+        venues: (Array.isArray(currentVenues) && currentVenues.length > 0) ? currentVenues.slice(0, 10) : [],
+        neighborhoods: currentNeighborhoods,
+        weather: currentWeather
+      })
     })
-  })
-  .then(resp => resp.json())
-  .then(data => {
-    removeExpandedBotTyping(typingId);
-    addExpandedChatMessage('bot', data.answer || 'Sorry, I couldn\'t process that.');
-    // If backend returned neighborhood suggestions, render them as quick chips
-    if (data.neighborhoods && Array.isArray(data.neighborhoods) && data.neighborhoods.length > 0) {
-      renderExpandedChatNeighborhoodSuggestions(data.neighborhoods);
-    }
-  })
-  .catch(err => {
-    removeExpandedBotTyping(typingId);
-    console.error('Expanded chat error:', err);
-    addExpandedChatMessage('bot', 'Error: ' + err.message);
+    .then(resp => resp.json())
+    .then(data => {
+      removeExpandedBotTyping(typingId);
+      addExpandedChatMessage('bot', data.answer || 'Sorry, I couldn\'t process that.');
+      // If backend returned neighborhood suggestions, render them as quick chips
+      if (data.neighborhoods && Array.isArray(data.neighborhoods) && data.neighborhoods.length > 0) {
+        renderExpandedChatNeighborhoodSuggestions(data.neighborhoods);
+      }
+    })
+    .catch(err => {
+      removeExpandedBotTyping(typingId);
+      console.error('Expanded chat error:', err);
+      addExpandedChatMessage('bot', 'Error: ' + err.message);
+    });
   });
 }
 
