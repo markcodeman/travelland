@@ -36,6 +36,18 @@ export default function WeatherDisplay({ weather }) {
   const icon = weather.icon ?? weatherEmoji(code);
   const summary = weather.summary ?? weather.weather ?? current.weather ?? null;
 
+  function formatLocal(iso) {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString();
+    } catch (e) {
+      return iso;
+    }
+  }
+
+  const sunrise = (weather.daily && weather.daily.sunrise && weather.daily.sunrise[0]) || null;
+  const sunset = (weather.daily && weather.daily.sunset && weather.daily.sunset[0]) || null;
+
   return (
     <div className="weather-display hero-weather">
       <div className="weather-left">
@@ -58,6 +70,9 @@ export default function WeatherDisplay({ weather }) {
         </div>
 
         {summary && <div className="weather-summary">{summary}</div>}
+        {current.time && <div className="weather-localtime">Local time: {formatLocal(current.time)}</div>}
+        {sunrise && <div className="weather-sun">Sunrise: {formatLocal(sunrise)}</div>}
+        {sunset && <div className="weather-sun">Sunset: {formatLocal(sunset)}</div>}
         {windKph !== null && (
           <div className="weather-wind">Wind: {unit === 'C' ? `${Math.round(windKph)} km/h` : `${windMph} mph`}</div>
         )}
