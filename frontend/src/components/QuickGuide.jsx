@@ -9,9 +9,14 @@ export default function QuickGuide({ guide, images, source, source_url }) {
       {images && images.length > 0 && (
         <div className="quick-guide-images">
           {images.slice(0, 8).map((img, i) => (
-            <a key={`${img.id || i}`} href={img.url} target="_blank" rel="noreferrer" className="quick-thumb">
-              <img src={img.url} alt={`Image ${i + 1}`} loading="lazy" />
-            </a>
+            <figure key={`${img.id || i}`} className="quick-thumb">
+              <a href={img.source_url || img.url} target="_blank" rel="noreferrer">
+                <img src={img.url} alt={img.attribution || `Image ${i + 1}`} loading="lazy" />
+              </a>
+              {img.attribution && (
+                <figcaption className="quick-thumb-attribution">{img.attribution}</figcaption>
+              )}
+            </figure>
           ))}
         </div>
       )}
