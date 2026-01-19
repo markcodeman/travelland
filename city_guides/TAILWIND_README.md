@@ -8,7 +8,7 @@ Quick steps:
 1. Install dependencies (requires Node.js & npm):
 
 ```bash
-cd city-guides
+cd city_guides
 npm install
 ```
 
@@ -18,7 +18,7 @@ npm install
 npm run build:css
 ```
 
-The generated, minified stylesheet will be written to `city-guides/static/tailwind.css`.
+The generated, minified stylesheet will be written to `city_guides/static/tailwind.css`.
 
 3. For development watch mode:
 

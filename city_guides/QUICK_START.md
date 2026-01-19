@@ -31,7 +31,7 @@ AI-powered neighborhood recommendations and local exploration guides.
 
 ### Setup
 ```bash
-cd city-guides
+cd city_guides
 pip install -r requirements.txt
 # Create a `.env` file in this directory and add your API keys
 # Example:

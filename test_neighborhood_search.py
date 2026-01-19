@@ -15,7 +15,7 @@ if os.path.exists(env_file):
                 os.environ[key.strip()] = value.strip()
 
 # Add to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'city-guides'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'city_guides'))
 
 from city_guides.overpass_provider import discover_pois, async_get_neighborhoods
 

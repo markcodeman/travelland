@@ -30,11 +30,20 @@ async def geocode_city(city_name, session: aiohttp.ClientSession = None):
     if session is None:
         session = aiohttp.ClientSession()
         own_session = True
-    async with session.get(url, params=params, headers=HEADERS, timeout=10) as r:
-        r.raise_for_status()
-        items = await r.json()
+        print("[DEBUG london_provider] Created internal aiohttp session for geocode_city")
+    try:
+        async with session.get(url, params=params, headers=HEADERS, timeout=10) as r:
+            r.raise_for_status()
+            items = await r.json()
+    except Exception as e:
+        print(f"[DEBUG london_provider] geocode_city Exception: {e}")
+        if own_session:
+            await session.close()
+            print("[DEBUG london_provider] Closed internal aiohttp session after exception")
+        raise
     if own_session:
         await session.close()
+        print("[DEBUG london_provider] Closed internal aiohttp session after success")
     if not items:
         raise RuntimeError("geocode failed for %s" % city_name)
     item = items[0]
@@ -56,11 +65,20 @@ async def fetch_wikivoyage_summary(city_title="London", session: aiohttp.ClientS
     if session is None:
         session = aiohttp.ClientSession()
         own_session = True
-    async with session.get(url, params=params, headers=HEADERS, timeout=10) as r:
-        r.raise_for_status()
-        data = await r.json()
+        print("[DEBUG london_provider] Created internal aiohttp session for fetch_wikivoyage_summary")
+    try:
+        async with session.get(url, params=params, headers=HEADERS, timeout=10) as r:
+            r.raise_for_status()
+            data = await r.json()
+    except Exception as e:
+        print(f"[DEBUG london_provider] fetch_wikivoyage_summary Exception: {e}")
+        if own_session:
+            await session.close()
+            print("[DEBUG london_provider] Closed internal aiohttp session after exception")
+        return ""
     if own_session:
         await session.close()
+        print("[DEBUG london_provider] Closed internal aiohttp session after success")
     pages = data.get("query", {}).get("pages", {})
     for p in pages.values():
         return p.get("extract", "")
@@ -75,11 +93,20 @@ async def fetch_overpass_transit(lat, lon, radius=1500, session: aiohttp.ClientS
     if session is None:
         session = aiohttp.ClientSession()
         own_session = True
-    async with session.post(url, data=q.encode("utf-8"), headers={**HEADERS, "Content-Type": "text/plain"}, timeout=30) as r:
-        r.raise_for_status()
-        data = await r.json()
+        print("[DEBUG london_provider] Created internal aiohttp session for fetch_overpass_transit")
+    try:
+        async with session.post(url, data=q.encode("utf-8"), headers={**HEADERS, "Content-Type": "text/plain"}, timeout=30) as r:
+            r.raise_for_status()
+            data = await r.json()
+    except Exception as e:
+        print(f"[DEBUG london_provider] fetch_overpass_transit Exception: {e}")
+        if own_session:
+            await session.close()
+            print("[DEBUG london_provider] Closed internal aiohttp session after exception")
+        return []
     if own_session:
         await session.close()
+        print("[DEBUG london_provider] Closed internal aiohttp session after success")
     stops = []
     for el in data.get("elements", []):
         tags = el.get("tags", {})
@@ -112,6 +139,7 @@ async def fetch_opentripmap_pois(lat, lon, radius=1000, apikey=None, limit=20, s
         if session is None:
             session = aiohttp.ClientSession()
             own_session = True
+            print("[DEBUG london_provider] Created internal aiohttp session for fetch_opentripmap_pois")
         async with session.get(url, params=params, headers=HEADERS, timeout=10) as r:
             r.raise_for_status()
             res = await r.json()
@@ -131,10 +159,13 @@ async def fetch_opentripmap_pois(lat, lon, radius=1000, apikey=None, limit=20, s
                 )
         if own_session:
             await session.close()
+            print("[DEBUG london_provider] Closed internal aiohttp session after success")
         return pois
-    except Exception:
+    except Exception as e:
+        print(f"[DEBUG london_provider] fetch_opentripmap_pois Exception: {e}")
         if 'session' in locals() and own_session:
             await session.close()
+            print("[DEBUG london_provider] Closed internal aiohttp session after exception")
         return []
 
 

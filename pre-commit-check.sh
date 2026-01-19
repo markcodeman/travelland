@@ -29,7 +29,7 @@ fi
 
 # Test Flask app import
 echo "🌶️  Testing Flask app import..."
-cd city-guides
+cd city_guides
 if python -c "import app; print('✅ Flask app imports successfully')" 2>/dev/null; then
     echo "✅ Flask app import OK"
 else
@@ -40,7 +40,7 @@ cd ..
 
 # Check for obvious issues
 echo "🔍 Checking for common issues..."
-if grep -r "console.log" city-guides/static/ --include="*.js" | grep -v "DEBUG\|console.log.*error\|console.log.*warn"; then
+if grep -r "console.log" city_guides/static/ --include="*.js" | grep -v "DEBUG\|console.log.*error\|console.log.*warn"; then
     echo "⚠️  Found console.log statements (consider removing for production)"
 fi
 

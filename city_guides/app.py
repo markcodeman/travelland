@@ -155,6 +155,30 @@ except ImportError:
 
 app = Quart(__name__, static_folder="static", template_folder="templates")
 
+
+# Simple CORS support for development: allow frontend dev server to call API
+@app.after_request
+async def _add_cors_headers(response):
+    try:
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET,POST,OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    except Exception:
+        pass
+    return response
+
+
+@app.before_request
+async def _handle_options_preflight():
+    # Respond to OPTIONS preflight requests with the proper CORS headers.
+    if request.method == 'OPTIONS':
+        from quart import make_response
+        resp = await make_response(('', 204))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Access-Control-Allow-Methods'] = 'GET,POST,OPTIONS'
+        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return resp
+
 # --- /recommend route for RAG recommender ---
 from quart import request, jsonify
 @app.route("/recommend", methods=["POST"])
@@ -239,11 +263,14 @@ async def geocode_city(city: str):
     params = {"q": city, "format": "json", "limit": 1}
     try:
         async with aiohttp_session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            if resp.status != 200:
+                print(f"[DEBUG app.py] geocode_city_async HTTP error: {resp.status}")
             resp.raise_for_status()
             data = await resp.json()
             if data:
                 return float(data[0]["lat"]), float(data[0]["lon"])
-    except Exception:
+    except Exception as e:
+        print(f"[DEBUG app.py] geocode_city_async Exception: {e}")
         return None, None
     return None, None
 
@@ -254,11 +281,14 @@ async def reverse_geocode(lat, lon):
     params = {"lat": lat, "lon": lon, "format": "json", "zoom": 18}
     try:
         async with aiohttp_session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            if resp.status != 200:
+                print(f"[DEBUG app.py] reverse_geocode HTTP error: {resp.status}")
             resp.raise_for_status()
             data = await resp.json()
             if data and "display_name" in data:
                 return data["display_name"]
-    except Exception:
+    except Exception as e:
+        print(f"[DEBUG app.py] reverse_geocode Exception: {e}")
         return None
     return None
 
@@ -269,11 +299,14 @@ def reverse_geocode_sync(lat, lon):
     params = {"lat": lat, "lon": lon, "format": "json", "zoom": 18}
     try:
         resp = requests.get(url, params=params, timeout=3)
+        if resp.status_code != 200:
+            print(f"[DEBUG app.py] reverse_geocode_sync HTTP error: {resp.status_code}")
         resp.raise_for_status()
         data = resp.json()
         if data and "display_name" in data:
             return data["display_name"]
-    except Exception:
+    except Exception as e:
+        print(f"[DEBUG app.py] reverse_geocode_sync Exception: {e}")
         return None
     return None
 
@@ -299,6 +332,7 @@ async def get_weather_async(lat, lon):
         params = {
             "latitude": lat,
             "longitude": lon,
+            # keep the response small: only request current weather for the UI
             "current_weather": True,
             "temperature_unit": "celsius",
             "windspeed_unit": "kmh",
@@ -308,10 +342,14 @@ async def get_weather_async(lat, lon):
         # coerce boolean params to strings
         coerced = {k: (str(v).lower() if isinstance(v, bool) else v) for k, v in params.items()}
         async with aiohttp_session.get(url, params=coerced, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            if resp.status != 200:
+                print(f"[DEBUG app.py] get_weather_async HTTP error: {resp.status}")
             resp.raise_for_status()
             data = await resp.json()
+            # return only the current weather to minimize payload size
             return data.get("current_weather", {})
-    except Exception:
+    except Exception as e:
+        print(f"[DEBUG app.py] get_weather_async Exception: {e}")
         return None
 
 
@@ -375,6 +413,7 @@ async def neighborhoods():
     lat = request.args.get("lat")
     lon = request.args.get("lon")
 
+
     if not city and not (lat and lon):
         return jsonify({"error": "city or lat+lon required"}), 400
 
@@ -434,6 +473,107 @@ async def neighborhoods():
     data = [ensure_bbox(n) for n in data]
 
     return jsonify({"cached": False, "neighborhoods": data})
+
+
+@app.route('/generate_quick_guide', methods=['POST'])
+async def generate_quick_guide():
+    """Generate a neighborhood quick_guide using Wikipedia and local data-first heuristics.
+    POST payload: { city: "City Name", neighborhood: "Neighborhood Name" }
+    Returns: { quick_guide: str, source: 'cache'|'wikipedia'|'data-first', cached: bool, source_url?: str }
+    """
+    payload = await request.get_json(silent=True) or {}
+    city = (payload.get('city') or '').strip()
+    neighborhood = (payload.get('neighborhood') or '').strip()
+    if not city or not neighborhood:
+        return jsonify({'error': 'city and neighborhood required'}), 400
+
+    def slug(s):
+        return re.sub(r'[^a-z0-9_-]', '_', s.lower().replace(' ', '_'))
+
+    cache_dir = Path(__file__).parent / 'data' / 'neighborhood_quick_guides' / slug(city)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cache_file = cache_dir / (slug(neighborhood) + '.json')
+
+    # Return cached if exists
+    if cache_file.exists():
+        try:
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return jsonify({'quick_guide': data.get('quick_guide'), 'source': data.get('source', 'cache'), 'cached': True, 'source_url': data.get('source_url')} )
+        except Exception:
+            pass
+
+    # Try Wikipedia summary first
+    wiki_title_candidates = [f"{neighborhood}, {city}", f"{neighborhood}"]
+    wiki_summary = None
+    wiki_url = None
+    for title in wiki_title_candidates:
+        try:
+            safe_title = title.replace(' ', '_')
+            url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{safe_title}"
+            async with aiohttp_session.get(url, timeout=aiohttp.ClientTimeout(total=6)) as resp:
+                if resp.status == 200:
+                    j = await resp.json()
+                    # extract summary if available
+                    extract = j.get('extract') or j.get('description')
+                    if extract:
+                        wiki_summary = extract
+                        wiki_url = j.get('content_urls', {}).get('desktop', {}).get('page') or j.get('canonical') or url
+                        break
+        except Exception:
+            continue
+
+    synthesized = None
+    source = None
+    source_url = None
+    if wiki_summary:
+        synthesized = f"{wiki_summary}"
+        source = 'wikipedia'
+        source_url = wiki_url
+
+    # If Wikipedia didn't provide, fall back to city_info and simple template
+    if not synthesized:
+        try:
+            data_dir = Path(__file__).parent.parent / 'data'
+            for p in data_dir.glob('city_info_*'):
+                name = p.name.lower()
+                if slug(city) in name or city.lower().split(',')[0] in name:
+                    try:
+                        with open(p, 'r', encoding='utf-8') as f:
+                            cj = json.load(f)
+                        for key in ('quick_guide', 'quickGuide', 'summary', 'description'):
+                            if key in cj and cj[key]:
+                                txt = cj[key]
+                                if neighborhood.lower() in txt.lower():
+                                    parts = re.split(r'(?<=[.!?])\s+', txt)
+                                    matched = [s for s in parts if neighborhood.lower() in s.lower()]
+                                    if matched:
+                                        synthesized = ' '.join(matched[:2])
+                                        source = 'data-first'
+                                        break
+                                if not synthesized:
+                                    synthesized = f"{neighborhood} is a neighborhood in {city}. {str(txt).strip()}"
+                                    source = 'data-first'
+                                    break
+                    except Exception:
+                        continue
+                if synthesized:
+                    break
+        except Exception:
+            synthesized = None
+
+    if not synthesized:
+        synthesized = f"{neighborhood} is a neighborhood in {city}. It's known locally for its character and points of interest — try searching for food, parks, or nightlife to discover highlights." 
+        source = 'data-first'
+
+    out = {'quick_guide': synthesized, 'source': source or 'data-first', 'cached': False, 'generated_at': time.time(), 'source_url': source_url}
+    try:
+        with open(cache_file, 'w', encoding='utf-8') as f:
+            json.dump(out, f, ensure_ascii=False, indent=2)
+    except Exception:
+        app.logger.exception('failed to write quick_guide cache')
+
+    return jsonify({'quick_guide': synthesized, 'source': source or 'data-first', 'cached': False, 'source_url': source_url})
 
 
 def get_country_for_city(city):

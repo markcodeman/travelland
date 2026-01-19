@@ -1032,7 +1032,14 @@ async def discover_restaurants(
                     "-H", "Content-Type: application/x-www-form-urlencoded",
                     "--data-urlencode", f"data={q}"
                 ]
-                result = subprocess.run(curl_cmd, capture_output=True, text=True, timeout=30)
+                try:
+                    result = subprocess.run(curl_cmd, capture_output=True, text=True, timeout=30)
+                except subprocess.TimeoutExpired as te:
+                    print(f"[Overpass CURL Primary] Subprocess timeout expired: {te}")
+                    continue
+                except Exception as e:
+                    print(f"[Overpass CURL Primary] Subprocess exception: {e}")
+                    continue
                 if result.returncode == 0 and result.stdout:
                     try:
                         j = json.loads(result.stdout)
