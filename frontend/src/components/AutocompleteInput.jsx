@@ -15,7 +15,9 @@ export default function AutocompleteInput({ label, options, value, setValue, pla
     setValue(input);
     if (input.length > 0) {
       const filtered = options.filter(opt => opt.toLowerCase().includes(input.toLowerCase()));
-      setSuggestions(filtered);
+      // remove duplicates while preserving order
+      const unique = Array.from(new Set(filtered));
+      setSuggestions(unique);
       setShowSuggestions(true);
     } else {
       setSuggestions([]);
@@ -69,7 +71,7 @@ export default function AutocompleteInput({ label, options, value, setValue, pla
         <ul className="suggestions-list">
           {suggestions.map((s, i) => (
             <li
-              key={s}
+              key={`${s}-${i}`}
               className={i === activeIndex ? 'active' : ''}
               onMouseDown={() => handleSuggestionClick(s)}
             >
