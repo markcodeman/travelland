@@ -96,7 +96,7 @@ export default function NeighborhoodSelect({ options = [], value = '', onChange 
                 <div className="ns-group-header">{k}</div>
                 {groups[k].map((it, i) => (
                   <div
-                    key={it}
+                    key={`${k}-${i}-${it}`}
                     className={`ns-item ${value === it ? 'selected' : ''}`}
                     data-value={it}
                     onClick={() => handleSelect(it)}

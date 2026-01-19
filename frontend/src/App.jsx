@@ -25,6 +25,7 @@ function App() {
   const [neighborhoodOptions, setNeighborhoodOptions] = useState([]);
   const [category, setCategory] = useState('');
   const [weather, setWeather] = useState(null);
+  const [weatherError, setWeatherError] = useState(null);
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -40,7 +41,9 @@ function App() {
         if (data && Array.isArray(data.neighborhoods) && data.neighborhoods.length > 0) {
           const names = data.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
           if (names.length > 0) {
-            setNeighborhoodOptions(names);
+            // remove duplicate neighborhood names while preserving order
+            const uniqueNames = Array.from(new Set(names));
+            setNeighborhoodOptions(uniqueNames);
             return;
           }
         }
@@ -126,26 +129,72 @@ function App() {
     return () => { mounted = false; clearTimeout(timer); };
   }, [city, neighborhood]);
 
-  // Fetch weather when city changes (best-effort using backend endpoint)
+  // Fetch weather when city (or neighborhood) changes — prefer lat/lon by calling /geocode first
   useEffect(() => {
     async function fetchWeather() {
       setWeather(null);
+      setWeatherError(null);
       if (!city) return;
       try {
+        // ask the backend to resolve coordinates for the city/neighborhood
+        const gresp = await fetch('http://localhost:5010/geocode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ city, neighborhood })
+        });
+        if (!gresp.ok) {
+          // backend may not have /geocode available (404). Fall back to the previous
+          // behavior of POSTing city to /weather so the app keeps working.
+          try {
+            const fallbackResp = await fetch('http://localhost:5010/weather', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ city })
+            });
+            if (fallbackResp.ok) {
+              const fdata = await fallbackResp.json();
+              if (fdata && fdata.weather) {
+                setWeather(fdata.weather);
+                return;
+              }
+            }
+            setWeatherError('Unable to determine coordinates for this location. Try a different neighborhood or search.');
+          } catch (e) {
+            setWeatherError('Unable to determine coordinates for this location. Try a different neighborhood or search.');
+          }
+          return;
+        }
+        const gdata = await gresp.json();
+        const lat = gdata && (gdata.lat || gdata.latitude);
+        const lon = gdata && (gdata.lon || gdata.longitude || gdata.lng);
+        if (!lat || !lon) {
+          setWeatherError('Could not find coordinates for this location.');
+          return;
+        }
+
         const resp = await fetch('http://localhost:5010/weather', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ city })
+          body: JSON.stringify({ lat: Number(lat), lon: Number(lon) })
         });
+        if (!resp.ok) {
+          setWeatherError('Weather service is temporarily unavailable. Please try again.');
+          return;
+        }
         const data = await resp.json();
-        // keep full payload so we can use hourly/daily
-        if (data && data.weather) setWeather(data.weather);
+        if (data && data.weather) {
+          setWeather(data.weather);
+        } else {
+          setWeatherError('No weather data available for this location.');
+        }
       } catch (err) {
+        console.error('fetchWeather error', err);
+        setWeatherError('Failed to fetch weather. Check your connection or try again.');
         setWeather(null);
       }
     }
     fetchWeather();
-  }, [city]);
+  }, [city, neighborhood]);
 
   const handleSearch = async () => {
     setLoading(true);
@@ -220,6 +269,11 @@ function App() {
           </div>
           <div style={{ minWidth: 220 }}>
             <WeatherDisplay weather={weather} />
+            {weatherError && (
+              <div style={{ marginTop: 8, color: '#9b2c2c', fontSize: 13 }}>
+                {weatherError}
+              </div>
+            )}
           </div>
         </div>
       </div>

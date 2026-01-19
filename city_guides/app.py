@@ -259,19 +259,108 @@ def inject_feature_flags():
 
 
 async def geocode_city(city: str):
-    url = "https://nominatim.openstreetmap.org/search"
-    params = {"q": city, "format": "json", "limit": 1}
+    """Resolve a city name to (lat, lon).
+
+     Strategy (in order):
+     1. Local lookup in `data/city_info_*.json` files shipped with the project.
+     2. External provider(s) selected by environment variables (GEOAPIFY_API_KEY,
+        OPENCAGE_API_KEY, LOCATIONIQ_KEY) in that order.
+    3. As a last resort, fall back to Nominatim (kept for compatibility).
+
+    This makes geocoding more reliable and allows operators to provide paid API keys.
+    """
+    if not city:
+        return None, None
+
+    # 1) Local data lookup
     try:
+        data_dir = Path(__file__).parent.parent / "data"
+        slug = re.sub(r"[^a-z0-9]+", "_", city.lower()).strip("_")
+        candidate = data_dir / f"city_info_{slug}.json"
+        if candidate.exists():
+            try:
+                with open(candidate, "r", encoding="utf-8") as f:
+                    j = json.load(f)
+                    # prefer top-level lat/lon, else try transport.center
+                    lat = j.get("lat") or (j.get("transport") or {}).get("center", {}).get("lat")
+                    lon = j.get("lon") or (j.get("transport") or {}).get("center", {}).get("lon")
+                    if lat and lon:
+                        return float(lat), float(lon)
+            except Exception:
+                pass
+
+        # also attempt a best-effort scan of city_info_*.json to match by name
+        for p in data_dir.glob("city_info_*.json"):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    j = json.load(f)
+                    name = (j.get("city") or j.get("city_display") or "").lower()
+                    if name and name == city.lower():
+                        lat = j.get("lat") or (j.get("transport") or {}).get("center", {}).get("lat")
+                        lon = j.get("lon") or (j.get("transport") or {}).get("center", {}).get("lon")
+                        if lat and lon:
+                            return float(lat), float(lon)
+            except Exception:
+                continue
+    except Exception:
+        pass
+
+    # Helper to try an external provider
+    async def try_provider(url, params=None, headers=None, extract_latlon=None):
+        try:
+            async with aiohttp_session.get(url, params=params, headers=(headers or {}), timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                if resp.status != 200:
+                    return None, None
+                data = await resp.json()
+                if not extract_latlon:
+                    return None, None
+                return extract_latlon(data)
+        except Exception:
+            return None, None
+
+    # 2) Geoapify (preferred when key present)
+    geoapify_key = os.getenv("GEOAPIFY_API_KEY")
+    if geoapify_key:
+        url = "https://api.geoapify.com/v1/geocode/search"
+        params = {"text": city, "apiKey": geoapify_key, "limit": 1}
+        lat, lon = await try_provider(url, params=params, extract_latlon=lambda d: (
+            (d.get("features")[0].get("properties").get("lat"), d.get("features")[0].get("properties").get("lon"))
+        ) if d.get("features") else (None, None))
+        if lat and lon:
+            return float(lat), float(lon)
+
+    # 3) OpenCage
+    opencage_key = os.getenv("OPENCAGE_API_KEY")
+    if opencage_key:
+        url = "https://api.opencagedata.com/geocode/v1/json"
+        params = {"q": city, "key": opencage_key, "limit": 1}
+        lat, lon = await try_provider(url, params=params, extract_latlon=lambda d: (d["results"][0]["geometry"]["lat"], d["results"][0]["geometry"]["lng"]) if d.get("results") else (None, None))
+        if lat and lon:
+            return float(lat), float(lon)
+
+    # 4) LocationIQ
+    locationiq_key = os.getenv("LOCATIONIQ_KEY") or os.getenv("LOCATIONIQ_TOKEN")
+    if locationiq_key:
+        url = "https://us1.locationiq.com/v1/search.php"
+        params = {"key": locationiq_key, "q": city, "format": "json", "limit": 1}
+        lat, lon = await try_provider(url, params=params, extract_latlon=lambda d: (float(d[0]["lat"]), float(d[0]["lon"])) if isinstance(d, list) and d else (None, None))
+        if lat and lon:
+            return float(lat), float(lon)
+
+    # 5) Last-resort: Nominatim (leave as fallback but deprioritised)
+    try:
+        url = "https://nominatim.openstreetmap.org/search"
+        params = {"q": city, "format": "json", "limit": 1}
         async with aiohttp_session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
             if resp.status != 200:
-                print(f"[DEBUG app.py] geocode_city_async HTTP error: {resp.status}")
+                app.logger.debug(f"geocode_city nominatim HTTP {resp.status}")
             resp.raise_for_status()
             data = await resp.json()
             if data:
                 return float(data[0]["lat"]), float(data[0]["lon"])
     except Exception as e:
-        print(f"[DEBUG app.py] geocode_city_async Exception: {e}")
-        return None, None
+        app.logger.debug(f"geocode_city fallback nominatim failed: {e}")
+
     return None, None
 
 
@@ -574,13 +663,45 @@ async def generate_quick_guide():
         source = 'data-first'
 
     out = {'quick_guide': synthesized, 'source': source or 'data-first', 'cached': False, 'generated_at': time.time(), 'source_url': source_url}
+    # Try to enrich quick guide with Mapillary thumbnails (if available)
+    mapillary_images = []
+    try:
+        try:
+            import city_guides.mapillary_provider as mapillary_provider  # type: ignore
+        except Exception:
+            mapillary_provider = None
+
+        if mapillary_provider:
+            # Try neighborhood+city first, then city fallback
+            latlon = await geocode_city(f"{neighborhood}, {city}")
+            if not latlon or not latlon[0]:
+                latlon = await geocode_city(city)
+            if latlon and latlon[0]:
+                try:
+                    imgs = await mapillary_provider.async_search_images_near(latlon[0], latlon[1], radius_m=400, limit=6, session=aiohttp_session)
+                    for it in imgs:
+                        mapillary_images.append({
+                            'id': it.get('id'),
+                            'url': it.get('url'),
+                            'lat': it.get('lat'),
+                            'lon': it.get('lon')
+                        })
+                except Exception:
+                    app.logger.debug('mapillary image fetch failed for quick_guide')
+    except Exception:
+        pass
+
+    out['mapillary_images'] = mapillary_images
     try:
         with open(cache_file, 'w', encoding='utf-8') as f:
             json.dump(out, f, ensure_ascii=False, indent=2)
     except Exception:
         app.logger.exception('failed to write quick_guide cache')
 
-    return jsonify({'quick_guide': synthesized, 'source': source or 'data-first', 'cached': False, 'source_url': source_url})
+    resp = {'quick_guide': synthesized, 'source': source or 'data-first', 'cached': False, 'source_url': source_url}
+    if mapillary_images:
+        resp['mapillary_images'] = mapillary_images
+    return jsonify(resp)
 
 
 def get_country_for_city(city):
@@ -637,6 +758,30 @@ def get_provider_links(city):
         {"name": "Wikivoyage", "url": f"https://en.wikivoyage.org/wiki/{city.replace(' ', '_')}"},
     ]
     return links
+
+
+@app.route('/geocode', methods=['POST'])
+async def geocode():
+    """Simple geocode endpoint that returns lat/lon for a city or neighborhood.
+    POST payload: { city: 'City Name', neighborhood?: 'Neighborhood Name' }
+    Returns: { lat: float, lon: float } or 400 on failure
+    """
+    payload = await request.get_json(silent=True) or {}
+    city = (payload.get('city') or '').strip()
+    neighborhood = (payload.get('neighborhood') or '').strip()
+    if not city:
+        return jsonify({'error': 'city required'}), 400
+
+    lat = None
+    lon = None
+    # try neighborhood scoped first
+    if neighborhood:
+        lat, lon = await geocode_city(f"{neighborhood}, {city}")
+    if not lat:
+        lat, lon = await geocode_city(city)
+    if not lat:
+        return jsonify({'error': 'geocode_failed'}), 400
+    return jsonify({'lat': lat, 'lon': lon})
 
 
 def get_currency_for_country(country):
