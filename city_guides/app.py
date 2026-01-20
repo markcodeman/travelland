@@ -457,7 +457,17 @@ async def get_weather_async(lat, lon):
 
 @app.route("/", methods=["GET"])
 async def index():
-    return await render_template("index.html")
+    return await app.send_static_file("index.html")
+
+
+@app.route("/<path:path>", methods=["GET"])
+async def catch_all(path):
+    # Serve React app for client-side routing
+    if path.startswith("api/") or path.startswith("static/"):
+        # Let Quart handle API and static routes normally
+        from quart import abort
+        abort(404)
+    return await app.send_static_file("index.html")
 
 
 @app.route("/weather", methods=["POST"])
