@@ -276,7 +276,7 @@ async def geocode_city(city: str):
     This makes geocoding more reliable and allows operators to provide paid API keys.
     """
     if not city:
-        return None, None
+        return None
 
     # 1) Local data lookup
     try:
@@ -291,7 +291,7 @@ async def geocode_city(city: str):
                     lat = j.get("lat") or (j.get("transport") or {}).get("center", {}).get("lat")
                     lon = j.get("lon") or (j.get("transport") or {}).get("center", {}).get("lon")
                     if lat and lon:
-                        return float(lat), float(lon)
+                        return {"lat": float(lat), "lon": float(lon), "display_name": j.get("display_name") or j.get("name") or city}
             except Exception:
                 pass
 
@@ -305,7 +305,7 @@ async def geocode_city(city: str):
                         lat = j.get("lat") or (j.get("transport") or {}).get("center", {}).get("lat")
                         lon = j.get("lon") or (j.get("transport") or {}).get("center", {}).get("lon")
                         if lat and lon:
-                            return float(lat), float(lon)
+                            return {"lat": float(lat), "lon": float(lon), "display_name": j.get("display_name") or j.get("name") or city}
             except Exception:
                 continue
     except Exception:
@@ -333,7 +333,7 @@ async def geocode_city(city: str):
             (d.get("features")[0].get("properties").get("lat"), d.get("features")[0].get("properties").get("lon"))
         ) if d.get("features") else (None, None))
         if lat and lon:
-            return float(lat), float(lon)
+            return {"lat": float(lat), "lon": float(lon), "display_name": city}
 
     # 3) OpenCage
     opencage_key = os.getenv("OPENCAGE_API_KEY")
@@ -342,7 +342,7 @@ async def geocode_city(city: str):
         params = {"q": city, "key": opencage_key, "limit": 1}
         lat, lon = await try_provider(url, params=params, extract_latlon=lambda d: (d["results"][0]["geometry"]["lat"], d["results"][0]["geometry"]["lng"]) if d.get("results") else (None, None))
         if lat and lon:
-            return float(lat), float(lon)
+            return {"lat": float(lat), "lon": float(lon), "display_name": city}
 
     # 4) LocationIQ
     locationiq_key = os.getenv("LOCATIONIQ_KEY") or os.getenv("LOCATIONIQ_TOKEN")
@@ -351,7 +351,7 @@ async def geocode_city(city: str):
         params = {"key": locationiq_key, "q": city, "format": "json", "limit": 1}
         lat, lon = await try_provider(url, params=params, extract_latlon=lambda d: (float(d[0]["lat"]), float(d[0]["lon"])) if isinstance(d, list) and d else (None, None))
         if lat and lon:
-            return float(lat), float(lon)
+            return {"lat": float(lat), "lon": float(lon), "display_name": city}
 
     # 5) Last-resort: Nominatim (leave as fallback but deprioritised)
     try:
@@ -363,11 +363,11 @@ async def geocode_city(city: str):
             resp.raise_for_status()
             data = await resp.json()
             if data:
-                return float(data[0]["lat"]), float(data[0]["lon"])
+                return {"lat": float(data[0]["lat"]), "lon": float(data[0]["lon"]), "display_name": data[0]["display_name"]}
     except Exception as e:
         app.logger.debug(f"geocode_city fallback nominatim failed: {e}")
 
-    return None, None
+    return None
 
 
 async def reverse_geocode(lat, lon):
@@ -479,9 +479,11 @@ async def weather():
     if not (lat and lon):
         if not city:
             return jsonify({"error": "city or lat/lon required"}), 400
-        lat, lon = await geocode_city(city)
-        if not (lat and lon):
+        result = await geocode_city(city)
+        if not result:
             return jsonify({"error": "geocode_failed"}), 400
+        lat = result['lat']
+        lon = result['lon']
     weather = await get_weather_async(lat, lon)
     if weather is None:
         return jsonify({"error": "weather_fetch_failed"}), 500
@@ -825,7 +827,7 @@ def get_provider_links(city):
 async def geocode():
     """Simple geocode endpoint that returns lat/lon for a city or neighborhood.
     POST payload: { city: 'City Name', neighborhood?: 'Neighborhood Name' }
-    Returns: { lat: float, lon: float } or 400 on failure
+    Returns: { lat: float, lon: float, display_name: str } or 400 on failure
     """
     payload = await request.get_json(silent=True) or {}
     city = (payload.get('city') or '').strip()
@@ -835,14 +837,23 @@ async def geocode():
 
     lat = None
     lon = None
+    display_name = None
     # try neighborhood scoped first
     if neighborhood:
-        lat, lon = await geocode_city(f"{neighborhood}, {city}")
+        result = await geocode_city(f"{neighborhood}, {city}")
+        if result:
+            lat = result['lat']
+            lon = result['lon']
+            display_name = result['display_name']
     if not lat:
-        lat, lon = await geocode_city(city)
+        result = await geocode_city(city)
+        if result:
+            lat = result['lat']
+            lon = result['lon']
+            display_name = result['display_name']
     if not lat:
         return jsonify({'error': 'geocode_failed'}), 400
-    return jsonify({'lat': lat, 'lon': lon})
+    return jsonify({'lat': lat, 'lon': lon, 'display_name': display_name})
 
 
 def get_currency_for_country(country):
@@ -1703,7 +1714,10 @@ async def api_transport():
     # return a best-effort minimal payload using geocoding + Wikivoyage extract so
     # the frontend can at least deep-link to Google and show a local quick guide.
     if city_q:
-        lat, lon = await geocode_city(city_q_raw)
+        result = await geocode_city(city_q_raw)
+        if result:
+            lat = result['lat']
+            lon = result['lon']
         quick = ""
         try:
             url = "https://en.wikivoyage.org/w/api.php"

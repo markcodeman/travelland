@@ -28,6 +28,7 @@ function App() {
   const [weatherError, setWeatherError] = useState(null);
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [country, setCountry] = useState('');
 
   // Fetch neighborhoods from backend when city changes
   useEffect(() => {
@@ -167,6 +168,10 @@ function App() {
           return;
         }
         const gdata = await gresp.json();
+        if (gdata.display_name) {
+          const parts = gdata.display_name.split(', ');
+          setCountry(parts[parts.length - 1]);
+        }
         const lat = gdata && (gdata.lat || gdata.latitude);
         const lon = gdata && (gdata.lon || gdata.longitude || gdata.lng);
         if (!lat || !lon) {
@@ -288,6 +293,11 @@ function App() {
           setValue={val => { setCity(val); setNeighborhood(''); }}
           placeholder="Type or select a city"
         />
+        {country && (
+          <div style={{ marginTop: 4, fontSize: 14, color: '#666' }}>
+            Located in: {country}
+          </div>
+        )}
         {city && (
           <AutocompleteInput
             label="Neighborhood:"
