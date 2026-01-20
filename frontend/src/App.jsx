@@ -114,7 +114,9 @@ function App() {
             const gdata = await gresp.json();
             if (!mounted) return;
             if (gdata && gdata.quick_guide) {
-              setResults({ quick_guide: gdata.quick_guide, source: gdata.source, cached: gdata.cached, source_url: gdata.source_url });
+              const resObj = { quick_guide: gdata.quick_guide, source: gdata.source, cached: gdata.cached, source_url: gdata.source_url };
+              if (gdata.mapillary_images) resObj.mapillary_images = gdata.mapillary_images;
+              setResults(resObj);
             }
           } catch (err) {
             // ignore
