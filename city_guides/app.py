@@ -127,10 +127,16 @@ if _here not in sys.path:
 import multi_provider
 import semantic
 
-# Enable remote debugging
-import debugpy
-debugpy.listen(("0.0.0.0", 5678))
-print("🐛 Debugpy listening on 0.0.0.0:5678")
+# Enable remote debugging only when explicitly requested via env var
+if os.getenv("ENABLE_DEBUGPY", "0") == "1":
+    try:
+        import debugpy
+        dbg_port = int(os.getenv("DEBUGPY_PORT", "5678"))
+        debugpy.listen(("0.0.0.0", dbg_port))
+        print(f"🐛 Debugpy listening on 0.0.0.0:{dbg_port}")
+    except Exception as e:
+        # Don't fail startup if debugpy cannot start in the environment
+        print(f"⚠️ debugpy failed to start: {e}")
 
 # ============ CONSTANTS ============
 CACHE_TTL_TELEPORT = int(os.getenv("CACHE_TTL_TELEPORT", "86400"))  # 24 hours
