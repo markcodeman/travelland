@@ -11,7 +11,7 @@ export default function QuickGuide({ guide, images, source, source_url }) {
           {images.slice(0, 8).map((img, i) => (
             <figure key={`${img.id || i}`} className="quick-thumb">
               <a href={img.source_url || img.url} target="_blank" rel="noreferrer">
-                <img src={img.url} alt={img.attribution || `Image ${i + 1}`} loading="lazy" style={{ maxWidth: '200px', height: 'auto' }} />
+                <img src={img.url} alt={img.attribution || `Image ${i + 1}`} loading="lazy" style={{ maxWidth: '300px', height: 'auto' }} />
               </a>
               {img.attribution && (
                 <figcaption className="quick-thumb-attribution">{img.attribution}</figcaption>
