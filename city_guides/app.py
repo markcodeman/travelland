@@ -595,7 +595,18 @@ async def generate_quick_guide():
         try:
             with open(cache_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            return jsonify({'quick_guide': data.get('quick_guide'), 'source': data.get('source', 'cache'), 'cached': True, 'source_url': data.get('source_url')} )
+            # Preserve any enriched fields (e.g. mapillary_images) stored in the cache
+            resp = {
+                'quick_guide': data.get('quick_guide'),
+                'source': data.get('source', 'cache'),
+                'cached': True,
+                'source_url': data.get('source_url'),
+            }
+            if data.get('mapillary_images'):
+                resp['mapillary_images'] = data.get('mapillary_images')
+            if data.get('generated_at'):
+                resp['generated_at'] = data.get('generated_at')
+            return jsonify(resp)
         except Exception:
             pass
 
@@ -690,6 +701,40 @@ async def generate_quick_guide():
                     app.logger.debug('mapillary image fetch failed for quick_guide')
     except Exception:
         pass
+
+    # If no Mapillary images found, try a Wikimedia Commons fallback (best-effort)
+    if not mapillary_images and image_provider:
+        try:
+            wik_img = None
+            # Try neighborhood+city first
+            try:
+                wik_img = await image_provider.fetch_banner_from_wikipedia(f"{neighborhood}, {city}")
+            except Exception:
+                wik_img = None
+            # Fallback to neighborhood alone
+            if not wik_img:
+                try:
+                    wik_img = await image_provider.fetch_banner_from_wikipedia(neighborhood)
+                except Exception:
+                    wik_img = None
+            # Fallback to city banner
+            if not wik_img:
+                try:
+                    wik_img = await image_provider.fetch_banner_from_wikipedia(city)
+                except Exception:
+                    wik_img = None
+            if wik_img and (wik_img.get('remote_url') or wik_img.get('url')):
+                remote = wik_img.get('remote_url') or wik_img.get('url')
+                attr = wik_img.get('attribution')
+                mapillary_images.append({
+                    'id': None,
+                    'url': remote,
+                    'provider': 'wikimedia',
+                    'attribution': attr,
+                    'source_url': remote,
+                })
+        except Exception:
+            app.logger.debug('wikimedia fallback failed for quick_guide')
 
     out['mapillary_images'] = mapillary_images
     try:
