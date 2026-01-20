@@ -264,7 +264,7 @@ def inject_feature_flags():
     return {"GROQ_ENABLED": bool(os.getenv("GROQ_API_KEY"))}
 
 
-async def geocode_city(city: str):
+async def geocode_city(city: str, country: str = ''):
     """Resolve a city name to (lat, lon).
 
      Strategy (in order):
@@ -277,6 +277,10 @@ async def geocode_city(city: str):
     """
     if not city:
         return None
+
+    query = city
+    if country:
+        query = f"{city}, {country}"
 
     # 1) Local data lookup
     try:
@@ -565,8 +569,10 @@ async def neighborhoods():
     if (not data) and city and not (lat and lon):
         try:
             app.logger.debug("No neighborhoods for '%s', attempting geocode fallback", city)
-            g_lat, g_lon = await geocode_city(city)
-            if g_lat and g_lon:
+            result = await geocode_city(city)
+            if result:
+                g_lat = result['lat']
+                g_lon = result['lon']
                 try:
                     data = await multi_provider.async_get_neighborhoods(city=None, lat=g_lat, lon=g_lon, lang=lang, session=aiohttp_session)
                     if data:
@@ -831,6 +837,7 @@ async def geocode():
     """
     payload = await request.get_json(silent=True) or {}
     city = (payload.get('city') or '').strip()
+    country = (payload.get('country') or '').strip()
     neighborhood = (payload.get('neighborhood') or '').strip()
     if not city:
         return jsonify({'error': 'city required'}), 400
@@ -840,13 +847,13 @@ async def geocode():
     display_name = None
     # try neighborhood scoped first
     if neighborhood:
-        result = await geocode_city(f"{neighborhood}, {city}")
+        result = await geocode_city(f"{neighborhood}, {city}", country)
         if result:
             lat = result['lat']
             lon = result['lon']
             display_name = result['display_name']
     if not lat:
-        result = await geocode_city(city)
+        result = await geocode_city(city, country)
         if result:
             lat = result['lat']
             lon = result['lon']

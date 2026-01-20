@@ -19,8 +19,11 @@ const categories = [
   'Food', 'Nightlife', 'Culture', 'Outdoors', 'Shopping', 'Family', 'History', 'Beaches'
 ];
 
+const countries = ['USA', 'Mexico', 'Spain', 'UK', 'France', 'Germany', 'Italy', 'Canada', 'Australia', 'Japan', 'China', 'India', 'Brazil', 'Argentina', 'South Africa', 'Netherlands', 'Portugal', 'Sweden', 'Norway', 'Denmark'];
+
 function App() {
   const [city, setCity] = useState('');
+  const [country, setCountry] = useState('');
   const [neighborhood, setNeighborhood] = useState('');
   const [neighborhoodOptions, setNeighborhoodOptions] = useState([]);
   const [category, setCategory] = useState('');
@@ -28,7 +31,6 @@ function App() {
   const [weatherError, setWeatherError] = useState(null);
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [country, setCountry] = useState('');
 
   // Fetch neighborhoods from backend when city changes
   useEffect(() => {
@@ -240,7 +242,85 @@ function App() {
     if (city) await handleSearch();
   };
 
-  const [generating, setGenerating] = React.useState(false);
+  const handleSearch = async () => {
+    if (!city) return;
+    setLoading(true);
+    setWeatherError(null);
+    try {
+      // Geocode with city and country
+      const gresp = await fetch('http://localhost:5010/geocode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ city, neighborhood: '', country })
+      });
+      if (!gresp.ok) {
+        setWeatherError('Geocode failed: Could not find the location.');
+        return;
+      }
+      const gdata = await gresp.json();
+      const lat = gdata.lat;
+      const lon = gdata.lon;
+      // Update country from geocode result
+      if (gdata.display_name) {
+        const parts = gdata.display_name.split(', ');
+        setCountry(parts[parts.length - 1]);
+      }
+      // Fetch neighborhoods
+      try {
+        const resp = await fetch(`http://localhost:5010/neighborhoods?city=${encodeURIComponent(city)}&lang=en`);
+        const data = await resp.json();
+        if (data && Array.isArray(data.neighborhoods) && data.neighborhoods.length > 0) {
+          const names = data.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
+          const uniqueNames = Array.from(new Set(names));
+          setNeighborhoodOptions(uniqueNames);
+        } else {
+          const fallback = {
+            'Rio de Janeiro': ['Copacabana', 'Ipanema', 'Leblon', 'Santa Teresa', 'Barra da Tijuca', 'Lapa', 'Botafogo', 'Jardim Botânico', 'Gamboa', 'Leme', 'Vidigal'],
+            'London': ['Camden', 'Chelsea', 'Greenwich', 'Soho', 'Shoreditch'],
+            'New York': ['Manhattan', 'Brooklyn', 'Harlem', 'Queens', 'Bronx'],
+            'Lisbon': ['Baixa', 'Chiado', 'Alfama', 'Bairro Alto', 'Belém']
+          };
+          setNeighborhoodOptions(fallback[city] || []);
+        }
+      } catch (err) {
+        // ignore
+      }
+      // Fetch weather
+      try {
+        const wresp = await fetch('http://localhost:5010/weather', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat, lon })
+        });
+        if (wresp.ok) {
+          const wdata = await wresp.json();
+          setWeather(wdata.weather);
+        } else {
+          setWeatherError('Weather fetch failed.');
+        }
+      } catch (e) {
+        setWeatherError('Weather fetch failed.');
+      }
+      // Fetch quick guide
+      try {
+        const qresp = await fetch('http://localhost:5010/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ city })
+        });
+        const qdata = await qresp.json();
+        if (qdata && (qdata.quick_guide || qdata.summary || qdata.quickGuide)) {
+          setResults(qdata);
+        }
+      } catch (err) {
+        // ignore
+      }
+    } catch (e) {
+      setWeatherError('Search failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const generateQuickGuide = async () => {
     if (!city || !neighborhood) return;
@@ -290,15 +370,22 @@ function App() {
           label="City:"
           options={cityList}
           value={city}
-          setValue={val => { setCity(val); setNeighborhood(''); }}
+          setValue={setCity}
           placeholder="Type or select a city"
         />
-        {country && (
-          <div style={{ marginTop: 4, fontSize: 14, color: '#666' }}>
-            Located in: {country}
-          </div>
-        )}
-        {city && (
+        <div style={{ marginTop: 8 }}>
+          <label style={{ display: 'block', marginBottom: 4 }}>Country:</label>
+          <select value={country} onChange={(e) => setCountry(e.target.value)} style={{ width: '100%', padding: 8, border: '1px solid #ccc', borderRadius: 4 }}>
+            <option value="">Select Country (optional)</option>
+            {countries.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div style={{ marginTop: 8 }}>
+          <button onClick={handleSearch} disabled={loading} style={{ padding: '8px 16px', background: '#007bff', color: 'white', border: 'none', borderRadius: 4, cursor: loading ? 'not-allowed' : 'pointer' }}>
+            {loading ? 'Searching...' : 'Search'}
+          </button>
+        </div>
+        {neighborhoodOptions.length > 0 && (
           <AutocompleteInput
             label="Neighborhood:"
             options={neighborhoodOptions}
