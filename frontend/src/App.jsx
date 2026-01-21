@@ -88,7 +88,7 @@ function App() {
         const resp = await fetch('http://localhost:5010/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ city })
+          body: JSON.stringify({ query: city })
         });
         const data = await resp.json();
         if (!mounted) return;
@@ -225,7 +225,7 @@ function App() {
   };
 
   const handleSearch = async (overrideCategory) => {
-    if (!city) return;
+    if (!city || !String(city).trim()) { setWeatherError('Please select a city before searching.'); return; }
     // Set loading message
     let displayCategory = overrideCategory || category;
     let msg = 'Loading...';
@@ -299,21 +299,26 @@ function App() {
       }
       // Fetch quick guide
       try {
-        const searchPayload = { city };
+        // Backend expects `query` for the city and `category` for the search term
+        const searchPayload = { query: city };
         if (neighborhood) searchPayload.neighborhood = neighborhood;
-        let q = category;
-        if (q) searchPayload.q = q;
+        let q = overrideCategory || category;
+        if (q) searchPayload.category = q;
+        console.debug('search payload', searchPayload);
         const qresp = await fetch('http://localhost:5010/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(searchPayload)
         });
         const qdata = await qresp.json();
-        if (qdata && (qdata.quick_guide || qdata.summary || qdata.quickGuide || qdata.wikivoyage || qdata.venues || qdata.costs)) {
+        console.debug('search response', qdata);
+        if (qdata && qdata.error) {
+          setWeatherError(qdata.error + (qdata.debug_info ? ` — ${JSON.stringify(qdata.debug_info)}` : ''));
+        } else if (qdata && (qdata.quick_guide || qdata.summary || qdata.quickGuide || qdata.wikivoyage || qdata.venues || qdata.costs)) {
           setResults(qdata);
         }
       } catch (err) {
-        // ignore
+        console.error('search quick guide failed', err);
       }
     } catch (e) {
       setWeatherError('Search failed.');
@@ -344,21 +349,15 @@ function App() {
   return (
     <div>
 
-      {/* Weather moved to top so it's visible in the hero area */}
-      <div className="hero">
-        <div className="hero-inner">
-          <div className="logo-wrap">
-            {/* Header handles brand image/title */}
+      {/* Header restored */}
+      <Header />
+      <div style={{ minWidth: 220, margin: '0 auto', maxWidth: 600 }}>
+        <WeatherDisplay weather={weather} city={city} />
+        {weatherError && (
+          <div style={{ marginTop: 8, color: '#9b2c2c', fontSize: 13 }}>
+            {weatherError}
           </div>
-          <div style={{ minWidth: 220 }}>
-            <WeatherDisplay weather={weather} city={city} />
-            {weatherError && (
-              <div style={{ marginTop: 8, color: '#9b2c2c', fontSize: 13 }}>
-                {weatherError}
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
       {/* hourly forecast removed to reduce UI data — keep hero focused on current */}
       <div className="app-container">

@@ -5,8 +5,8 @@ export default function Header() {
     <header className="hero">
       <div className="hero-inner">
         <div className="logo-wrap">
-          {/* Use the backend static PNG to preserve branding and avoid SVG transition artifacts */}
-          <img src="http://localhost:5010/static/marcos.png" alt="Marco's logo" style={{ width: 92, height: 'auto', borderRadius: 8 }} />
+          {/* Use the new logo from the public directory */}
+          <img src="/marcos.png" alt="Marco's Microguide logo" style={{ width: 180, height: 'auto', borderRadius: 12, background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }} />
           <div className="brand">
             <div className="brand-title">Marco's</div>
             <div className="brand-sub">Micro City Guides</div>

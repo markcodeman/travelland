@@ -20,32 +20,47 @@ export default function SearchResults({ results }) {
 
       {venues.length > 0 && (
         <section>
-          <h2>Venues</h2>
-          <ul>
+          <h2>Venues <span className="section-sub">({results.debug_info && results.debug_info.venues_source === 'osm' ? 'Local data' : 'Results'})</span></h2>
+          <div className="venues-grid">
             {venues.map((v, i) => (
-              <li key={i}>
-                <strong>
-                  {v.lat && v.lon ? (
-                    <a href={`https://maps.google.com/maps?q=${v.lat},${v.lon}`} target="_blank" rel="noopener noreferrer">
-                      {v.name}
-                    </a>
-                  ) : (
-                    v.name
-                  )}
-                </strong> - {v.description || v.address || v.type}
-                {v.url && <a href={v.url} target="_blank" rel="noopener noreferrer"> (link)</a>}
-              </li>
+              <article key={i} className="venue-card">
+                <div className="venue-card-head">
+                  <div className="venue-title">
+                    {v.latitude && v.longitude ? (
+                      <a href={`https://www.google.com/maps/search/?api=1&query=${v.latitude},${v.longitude}`} target="_blank" rel="noopener noreferrer">{v.name}</a>
+                    ) : v.lat && v.lon ? (
+                      <a href={`https://www.google.com/maps/search/?api=1&query=${v.lat},${v.lon}`} target="_blank" rel="noopener noreferrer">{v.name}</a>
+                    ) : (
+                      <span>{v.name}</span>
+                    )}
+                    {v.provider === 'wikivoyage' && <span className="badge-wikivoyage">WIKIVOYAGE</span>}
+                  </div>
+                  <div className="venue-price">{v.price_range || ''}</div>
+                </div>
+                <div className="venue-body">
+                  <p className="venue-text">{v.description && v.description.length > 240 ? v.description.slice(0,240) + '…' : (v.description || v.address || '')}</p>
+                </div>
+                <div className="venue-actions">
+                  {v.website && <a className="btn-link" href={v.website} target="_blank" rel="noopener noreferrer">Website</a>}
+                  {/* Directions always link to Google Maps */}
+                  <a className="btn-link" href={
+                    (v.latitude && v.longitude) || (v.lat && v.lon) ?
+                      `https://www.google.com/maps/search/?api=1&query=${v.latitude||v.lat},${v.longitude||v.lon}` :
+                      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name + ' ' + v.city)}`
+                  } target="_blank" rel="noopener noreferrer">Directions</a>
+                </div>
+              </article>
             ))}
-          </ul>
+          </div>
         </section>
       )}
 
       {wikivoyage.length > 0 && (
         <section>
-          <h2>Travel Info</h2>
+          <h2>Wikivoyage highlights <span className="section-sub">(context)</span></h2>
           {wikivoyage.map((w, i) => (
             <div key={i} className="wikivoyage-section">
-              <h3>{w.title || w.section}</h3>
+              <h3>{w.title || w.section} <span className="source-badge source-wikivoyage">WIKIVOYAGE</span></h3>
               <p>{w.content || w.text}</p>
               {w.wikivoyage_url && <a href={w.wikivoyage_url} target="_blank" rel="noopener noreferrer">Read more on Wikivoyage</a>}
             </div>

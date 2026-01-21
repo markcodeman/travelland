@@ -334,6 +334,7 @@ button:disabled {
   font-size: 1.2em;
   margin-bottom: 10px;
 }
+.search-results h2 .section-sub { font-size: 0.85em; color: #6b7a86; margin-left: 8px; font-weight: 500 }
 .search-results h3 {
   color: #3b556f;
   font-size: 1em;
@@ -350,6 +351,20 @@ button:disabled {
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+.venue-row { display: block }
+.venue-main { display: flex; align-items: center; gap: 10px }
+.venue-name { font-size: 1.05em; color: #163a6a }
+.badge-wikivoyage { font-size: 0.7em; padding: 4px 8px; border-radius: 10px; background: #fff5e6; color: #7a4b14; margin-left: 8px }
+.venues-grid { display: grid; grid-template-columns: 1fr; gap: 12px }
+.venue-card { background: #ffffff; border-radius: 8px; box-shadow: 0 1px 6px rgba(16,24,40,0.06); padding: 12px }
+.venue-card-head { display:flex; justify-content: space-between; align-items: center; gap: 12px }
+.venue-title { font-weight: 700; color: #163a6a; display:flex; align-items:center; gap:8px }
+.venue-price { color: #6b7a86; font-size: 0.9em }
+.venue-text { color: #334e68; line-height: 1.45; margin: 8px 0 }
+.venue-actions { display:flex; gap: 10px }
+.btn-link { background: #eaf6ff; color: #1769aa; padding: 8px 10px; border-radius: 6px; text-decoration: none; font-weight: 600 }
+.btn-link:hover { background: #d9efff }
+
 .wikivoyage-section {
   background: #ffffff;
   padding: 12px;
