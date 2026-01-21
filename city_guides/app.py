@@ -2011,14 +2011,45 @@ def _search_impl(payload):
             debug_info['neighborhood_bbox'] = bbox
         else:
             try:
-                nb_lat, nb_lon = asyncio.run(geocode_city(nb_full))
-                if nb_lat and nb_lon:
-                    # Create a bbox around the neighborhood, ~10km radius
-                    delta = 0.1  # approx 10km
-                    bbox = [nb_lon - delta, nb_lat - delta, nb_lon + delta, nb_lat + delta]
-                    debug_info['neighborhood_bbox'] = bbox
+                # Use synchronous HTTP call to our /geocode endpoint instead of asyncio.run
+                # because _search_impl executes synchronously inside the app event loop.
+                georesp = requests.post(
+                    'http://localhost:5010/geocode',
+                    json={'city': city, 'neighborhood': neighborhood_name},
+                    timeout=6,
+                )
+                if georesp.ok:
+                    gj = georesp.json()
+                    nb_lat = gj.get('lat')
+                    nb_lon = gj.get('lon')
+                    if nb_lat and nb_lon:
+                        # Create a bbox around the neighborhood, ~2km radius
+                        delta = 0.02  # approx 2km
+                        bbox = [nb_lon - delta, nb_lat - delta, nb_lon + delta, nb_lat + delta]
+                        debug_info['neighborhood_bbox'] = bbox
+                else:
+                    logging.debug(f"Neighborhood geocode HTTP {georesp.status_code} for {nb_full}")
             except Exception as e:
-                logging.debug(f"Failed to geocode neighborhood {neighborhood_name}: {e}")
+                logging.debug(f"Failed to geocode neighborhood {neighborhood_name} via internal endpoint: {e}")
+
+            # If /geocode failed, try a direct Nominatim lookup as a best-effort fallback
+            if bbox is None:
+                try:
+                    url = 'https://nominatim.openstreetmap.org/search'
+                    params = {'q': nb_full, 'format': 'json', 'limit': 1, 'accept-language': 'en'}
+                    resp = requests.get(url, params=params, headers={'User-Agent': 'TravelLand/1.0'}, timeout=6)
+                    resp.raise_for_status()
+                    items = resp.json() or []
+                    if items:
+                        item = items[0]
+                        nb_lat = float(item.get('lat'))
+                        nb_lon = float(item.get('lon'))
+                        delta = 0.02
+                        bbox = [nb_lon - delta, nb_lat - delta, nb_lon + delta, nb_lat + delta]
+                        debug_info['neighborhood_bbox'] = bbox
+                        logging.debug(f"Nominatim geocoded neighborhood {neighborhood_name} to {nb_lat},{nb_lon}")
+                except Exception as e:
+                    logging.debug(f"Nominatim geocode fallback failed for {neighborhood_name}: {e}")
     logging.debug(f"[SEARCH DEBUG] (city-level) bbox set to: {bbox}, neighborhood_name: {neighborhood_name}, debug_info: {debug_info}")
     import time
 
@@ -2132,8 +2163,8 @@ def _search_impl(payload):
     t1 = time.time()
     print(f"[TIMING] After setup: {t1-t0:.2f}s")
 
-    def fetch_wikivoyage_section(city_name, section_keywords, section_type):
-            print(f"Fetching wikivoyage for city: {city_name}, keywords: {section_keywords}")
+    def fetch_wikivoyage_section(city_name, section_keywords, section_type, neighborhood=None):
+            print(f"Fetching wikivoyage for city: {city_name}, keywords: {section_keywords}, neighborhood: {neighborhood}")
             # Strip country part for Wikivoyage lookup
             city_base = city_name.split(',')[0].strip()
             url = "https://en.wikivoyage.org/w/api.php"
@@ -2145,7 +2176,7 @@ def _search_impl(payload):
                 "redirects": 1,
             }
             items = []
-            logging.debug(f"Trying Wikivoyage {section_type} highlights for city: '{city_name}'")
+            logging.debug(f"Trying Wikivoyage {section_type} highlights for city: '{city_name}' (neighborhood: {neighborhood})")
             try:
                 resp = requests.get(
                     url,
@@ -2164,50 +2195,75 @@ def _search_impl(payload):
                         target_section_idx = s.get("index")
                         print(f"Matched! target_section_idx = {target_section_idx}")
                         break
+
+                # If no exact 'Food' section found, try a broader scan of the full page
+                def _extract_from_html(html, section_anchor=None):
+                    highlights = re.findall(r"<li>(.*?)</li>", html, re.DOTALL)
+                    if not highlights:
+                        highlights = re.split(r"<br ?/?>|\n|</p>", html)
+
+                    def clean_html(raw):
+                        # Remove style tags and their content
+                        raw = re.sub(r"<style[^>]*>.*?</style>", "", raw, flags=re.DOTALL | re.IGNORECASE)
+                        # Remove script tags and their content
+                        raw = re.sub(r"<script[^>]*>.*?</script>", "", raw, flags=re.DOTALL | re.IGNORECASE)
+                        # Remove all remaining HTML tags
+                        raw = re.sub(r"<[^>]+>", "", raw)
+                        # Clean up multiple spaces
+                        raw = re.sub(r"\s+", " ", raw).strip()
+                        return raw
+
+                    cleaned = [clean_html(h) for h in highlights if clean_html(h)]
+                    out = []
+                    for h in cleaned:
+                        # Only keep lines that mention likely food/drink keywords or neighborhood name
+                        combined_check = (neighborhood or '') + ' ' + ' '.join(section_keywords)
+                        if any(kw.lower() in h.lower() for kw in section_keywords) or (neighborhood and neighborhood.lower() in h.lower()) or any(kw.lower() in h.lower() for kw in ['coffee', 'cafe', 'tea', 'restaurant', 'pub', 'bar']):
+                            wikivoyage_url = f"https://en.wikivoyage.org/wiki/{city_base}"
+                            if section_keywords:
+                                wikivoyage_url = wikivoyage_url + "#" + (section_keywords[0].replace(" ", "_").title())
+                            out.append({"text": h, "wikivoyage_url": wikivoyage_url, "section": section_type})
+                    return out
+
                 print(f"DEBUG: section_keywords={section_keywords}, target_section_idx={target_section_idx}")
-                if not target_section_idx:
-                    return items
-                params2 = {
-                    "action": "parse",
-                    "page": city_base,
-                    "prop": "text",
-                    "section": target_section_idx,
-                    "format": "json",
-                    "redirects": 1,
-                }
-                resp2 = requests.get(
-                    url,
-                    params=params2,
-                    headers={"User-Agent": "TravelLand/1.0"},
-                    timeout=8,
-                )
-                resp2.raise_for_status()
-                html = resp2.json().get("parse", {}).get("text", {}).get("*", "")
-                highlights = re.findall(r"<li>(.*?)</li>", html, re.DOTALL)
-                if not highlights:
-                    highlights = re.split(r"<br ?/?>|\n|</p>", html)
 
-                def clean_html(raw):
-                    # Remove style tags and their content
-                    raw = re.sub(r"<style[^>]*>.*?</style>", "", raw, flags=re.DOTALL | re.IGNORECASE)
-                    # Remove script tags and their content
-                    raw = re.sub(r"<script[^>]*>.*?</script>", "", raw, flags=re.DOTALL | re.IGNORECASE)
-                    # Remove all remaining HTML tags
-                    raw = re.sub(r"<[^>]+>", "", raw)
-                    # Clean up multiple spaces
-                    raw = re.sub(r"\s+", " ", raw).strip()
-                    return raw
+                if target_section_idx:
+                    params2 = {
+                        "action": "parse",
+                        "page": city_base,
+                        "prop": "text",
+                        "section": target_section_idx,
+                        "format": "json",
+                        "redirects": 1,
+                    }
+                    resp2 = requests.get(
+                        url,
+                        params=params2,
+                        headers={"User-Agent": "TravelLand/1.0"},
+                        timeout=8,
+                    )
+                    resp2.raise_for_status()
+                    html = resp2.json().get("parse", {}).get("text", {}).get("*", "")
+                    items = _extract_from_html(html)
+                else:
+                    # Full page scan: fetch full HTML and attempt to find neighborhood-specific or keyword-rich lines
+                    params2 = {
+                        "action": "parse",
+                        "page": city_base,
+                        "prop": "text",
+                        "format": "json",
+                        "redirects": 1,
+                    }
+                    resp2 = requests.get(
+                        url,
+                        params=params2,
+                        headers={"User-Agent": "TravelLand/1.0"},
+                        timeout=8,
+                    )
+                    resp2.raise_for_status()
+                    html = resp2.json().get("parse", {}).get("text", {}).get("*", "")
+                    items = _extract_from_html(html)
 
-                highlights = [clean_html(h) for h in highlights if clean_html(h)]
-                for idx, h in enumerate(highlights):
-                    city_base = city_name.split(',')[0].strip()
-                    wikivoyage_url = f"https://en.wikivoyage.org/wiki/{city_base}#" + section_keywords[0].replace(" ", "_").title() if section_keywords else f"https://en.wikivoyage.org/wiki/{city_base}"
-                    # Return textual highlights (not venue rows) so they can be attached as descriptive guidance
-                    items.append({
-                        "text": h,
-                        "wikivoyage_url": wikivoyage_url,
-                        "section": section_type,
-                    })
             except Exception as e:
                 logging.debug(f"Wikivoyage {section_type} highlights failed for {city_name}: {e}")
             return items
@@ -2367,7 +2423,7 @@ def _search_impl(payload):
                     features.append("accessible")
                 if "takeaway=yes" in tags_str:
                     features.append("takeaway available")
-                if "delivery=yes" in tags_str:
+                if "delivery=yes" in tags_dict:
                     features.append("delivery")
                 if "opening_hours" in tags_dict:
                     features.append("listed hours")
@@ -2443,6 +2499,53 @@ def _search_impl(payload):
 
         t_real_end = time.time()
         print(f"[TIMING] Real venue search: {t_real_end-t_real_start:.2f}s")
+
+        # If provider POIs exist, prefer them (OSM/real venues) and include Wikivoyage only as context
+        if results:
+            debug_info['venues_source'] = 'osm'
+            print(f"[SEARCH] Returning {len(results)} OSM venues; including Wikivoyage as contextual highlights ({len(wikivoyage_texts)} items)")
+        else:
+            # Fallback to Wikivoyage items when no real POIs were found and neighborhood is provided
+            if is_food_query and neighborhood_name and include_web:
+                try:
+                    print(f"[WIKIVOYAGE FALLBACK] No POIs from providers, attempting neighborhood wikivoyage extraction for '{neighborhood_name}'")
+                    wiki_items = fetch_wikivoyage_section(city, ['eat', 'food', 'cafe', 'coffee', 'tea'], 'food', neighborhood_name)
+                    for idx, wi in enumerate((wiki_items or [])[:12]):
+                        # Attempt to extract a name and short description
+                        text = wi.get('text', '')
+                        # If the text contains a link-like name at start, use it, else use first sentence
+                        name_match = re.match(r"\s*([^\-–—,:]+)[\-–—,:]\s*(.*)", text)
+                        if name_match:
+                            name = name_match.group(1).strip()
+                            desc = name_match.group(2).strip()
+                        else:
+                            # Fallback: first 60 characters as name, rest as description
+                            parts = text.split('.', 1)
+                            name = parts[0][:60].strip()
+                            desc = (parts[1].strip() if len(parts) > 1 else '').strip()
+                        venue = {
+                            'id': f"wikivoyage-{idx}",
+                            'city': city,
+                            'name': name or 'Local spot',
+                            'budget': 'mid',
+                            'price_range': '$$',
+                            'description': desc or text,
+                            'tags': 'wikivoyage',
+                            'address': None,
+                            'latitude': None,
+                            'longitude': None,
+                            'website': wi.get('wikivoyage_url'),
+                            'osm_url': None,  # don't set OSM URL for wikivoyage-derived venues
+                            'provider': 'wikivoyage',
+                        }
+                        results.append(format_venue(venue))
+                    if results:
+                        partial = True
+                        debug_info['venues_source'] = 'wikivoyage_fallback'
+                except Exception as e:
+                    logging.debug(f"Wikivoyage neighborhood fallback failed: {e}")
+            else:
+                debug_info['venues_source'] = 'none'
 
     # Now fetch Wikivoyage highlights as descriptive guidance (not venues)
     # Always try to include a city-level WikiVoyage summary if available

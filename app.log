@@ -1,30 +1,860 @@
-ERROR:root:Failed to import city_guides.overpass_provider: No module named 'city_guides'
-[2026-01-18 15:53:53 -0500] [77595] [INFO] Running on http://0.0.0.0:5010 (CTRL + C to quit)
-INFO:hypercorn.error:Running on http://0.0.0.0:5010 (CTRL + C to quit)
+🔍 Checking Groq model availability: llama-3.1-8b-instant
+⚠ Could not list models, using llama-3.1-8b-instant
+2026-01-21 18:36:35,373 - DEBUG - Using selector: EpollSelector
+2026-01-21 18:36:35,388 - INFO - ✅ Redis connected
+[2026-01-21 18:36:35 -0500] [22916] [INFO] Running on http://0.0.0.0:5010 (CTRL + C to quit)
+2026-01-21 18:36:35,388 - INFO - Running on http://0.0.0.0:5010 (CTRL + C to quit)
+2026-01-21 18:37:07,100 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'London'}
+2026-01-21 18:37:07,101 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: None, debug_info: {'city_input': 'London', 'normalized_city': 'London', 'neighborhood_name': None, 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:37:07,103 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:37:07,220 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=London&format=json&redirects=1 HTTP/1.1" 200 508
+2026-01-21 18:37:07,221 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.
+2026-01-21 18:37:07,222 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.', lang='pt', city='London'
+2026-01-21 18:37:07,328 - DEBUG - [WikipediaProvider] QID for 'How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.': None
+2026-01-21 18:37:07,328 - DEBUG - [WikipediaProvider] No summary found for 'How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.'
+2026-01-21 18:37:07,328 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:37:07,328 - DEBUG - [WikipediaProvider] Fetching full page for slug: How_do_I_get_around_London?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips. url: https://pt.wikipedia.org/wiki/How_do_I_get_around_London?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips.
+2026-01-21 18:37:07,377 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:37:07,377 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:37:07,378 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:37:07,540 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=London&prop=sections&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:37:07,541 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:37:07,717 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=London&prop=text&section=48&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:37:07,720 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:37:08,841 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:37:08,938 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=London&format=json&redirects=1 HTTP/1.1" 200 508
 Loading .env from /home/markm/TravelLand/.env
 ✓ GROQ_API_KEY loaded successfully: gsk_hd... (length: 56)
-ℹ Groq model check skipped: cannot import name 'Groq' from 'groq' (unknown location)
-🐛 Debugpy listening on 0.0.0.0:5678
 [DEBUG] Loading .env from /home/markm/TravelLand/.env
  * Serving Quart app 'app'
  * Debug mode: False
  * Please use an ASGI server (e.g. Hypercorn) directly in production
  * Running on http://0.0.0.0:5010 (CTRL + C to quit)
-[2026-01-18 15:53:57 -0500] [77595] [INFO] 127.0.0.1:56024 GET / 1.1 200 6491 9670
-[2026-01-18 15:53:58 -0500] [77595] [INFO] 127.0.0.1:56038 GET /favicon.ico 1.1 404 207 21842
-[2026-01-18 15:53:58 -0500] [77595] [INFO] 127.0.0.1:56038 GET /favicon.ico 1.1 404 207 1056
-0.09s - Could not connect to 127.0.0.1: 54331
-Traceback (most recent call last):
-  File "/home/markm/TravelLand/venv/lib/python3.12/site-packages/debugpy/_vendored/pydevd/_pydevd_bundle/pydevd_comm.py", line 531, in start_client
-    s.connect((host, port))
-ConnectionRefusedError: [Errno 111] Connection refused
-Could not connect to 127.0.0.1: 54331
-Traceback (most recent call last):
-  File "/home/markm/TravelLand/venv/lib/python3.12/site-packages/debugpy/_vendored/pydevd/pydevd.py", line 3708, in main
-    debugger.connect(host, port)
-  File "/home/markm/TravelLand/venv/lib/python3.12/site-packages/debugpy/_vendored/pydevd/pydevd.py", line 1508, in connect
-    s = start_client(host, port)
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/markm/TravelLand/venv/lib/python3.12/site-packages/debugpy/_vendored/pydevd/_pydevd_bundle/pydevd_comm.py", line 531, in start_client
-    s.connect((host, port))
-ConnectionRefusedError: [Errno 111] Connection refused
+DEBUG: Query: 'How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.', is_neighborhood_query: False, neighborhoods count: 0
+[TIMING] After setup: 1.74s
+[TIMING] Total (post-setup): 1.84s
+SEARCH RESULTS: found 0 venues
+[2026-01-21 18:37:08 -0500] [22916] [INFO] 127.0.0.1:40398 POST /search 1.1 200 3675 1840246
+[2026-01-21 18:37:27 -0500] [22916] [INFO] 127.0.0.1:46468 GET / 1.1 - - 13091
+2026-01-21 18:37:36,524 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'London'}
+2026-01-21 18:37:36,524 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: None, debug_info: {'city_input': 'London', 'normalized_city': 'London', 'neighborhood_name': None, 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:37:36,526 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:37:36,635 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=London&format=json&redirects=1 HTTP/1.1" 200 508
+2026-01-21 18:37:36,635 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.
+2026-01-21 18:37:36,636 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.', lang='pt', city='London'
+2026-01-21 18:37:36,739 - DEBUG - [WikipediaProvider] QID for 'How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.': None
+2026-01-21 18:37:36,739 - DEBUG - [WikipediaProvider] No summary found for 'How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.'
+2026-01-21 18:37:36,739 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:37:36,739 - DEBUG - [WikipediaProvider] Fetching full page for slug: How_do_I_get_around_London?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips. url: https://pt.wikipedia.org/wiki/How_do_I_get_around_London?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips.
+2026-01-21 18:37:36,787 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:37:36,787 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:37:36,788 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:37:36,937 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=London&prop=sections&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:37:36,939 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:37:37,150 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=London&prop=text&section=48&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:37:37,152 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:37:38,279 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:37:38,388 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=London&format=json&redirects=1 HTTP/1.1" 200 508
+DEBUG: Query: 'How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.', is_neighborhood_query: False, neighborhoods count: 0
+[TIMING] After setup: 1.75s
+[TIMING] Total (post-setup): 1.86s
+SEARCH RESULTS: found 0 venues
+[2026-01-21 18:37:38 -0500] [22916] [INFO] 127.0.0.1:47618 POST /search 1.1 200 3675 1866113
+[2026-01-21 18:38:52 -0500] [22916] [INFO] 127.0.0.1:58856 OPTIONS /search 1.1 204 0 37314
+[2026-01-21 18:38:52 -0500] [22916] [INFO] 127.0.0.1:58870 OPTIONS /geocode 1.1 204 0 40524
+[2026-01-21 18:38:52 -0500] [22916] [INFO] 127.0.0.1:58856 OPTIONS /search 1.1 204 0 792
+[2026-01-21 18:38:52 -0500] [22916] [INFO] 127.0.0.1:58870 OPTIONS /geocode 1.1 204 0 1593
+[2026-01-21 18:38:52 -0500] [22916] [INFO] 127.0.0.1:58878 GET /neighborhoods 1.1 200 128910 66632
+2026-01-21 18:38:52,439 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'L'}
+2026-01-21 18:38:52,440 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: None, debug_info: {'city_input': 'L', 'normalized_city': 'L', 'neighborhood_name': None, 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:38:52,447 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:52,556 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=L&format=json&redirects=1 HTTP/1.1" 200 86
+2026-01-21 18:38:52,559 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:38:52,682 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=L&format=json&redirects=1 HTTP/1.1" 200 232
+2026-01-21 18:38:52,685 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: How do I get around L? Name the primary transit app or website used by locals and give 3 quick survival tips.
+2026-01-21 18:38:52,685 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='How do I get around L? Name the primary transit app or website used by locals and give 3 quick survival tips.', lang='pt', city='L'
+DEBUG: Query: 'How do I get around L? Name the primary transit app or website used by locals and give 3 quick survival tips.', is_neighborhood_query: False, neighborhoods count: 0
+[2026-01-21 18:38:52 -0500] [22916] [INFO] 127.0.0.1:58856 GET /neighborhoods 1.1 200 9777 288520
+2026-01-21 18:38:52,712 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'Lo'}
+2026-01-21 18:38:52,712 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: None, debug_info: {'city_input': 'Lo', 'normalized_city': 'Lo', 'neighborhood_name': None, 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:38:52,713 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:52,809 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lo&format=json&redirects=1 HTTP/1.1" 200 87
+2026-01-21 18:38:52,810 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:38:52,915 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lo&format=json&redirects=1 HTTP/1.1" 200 133
+2026-01-21 18:38:52,917 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'Lon'}
+2026-01-21 18:38:52,917 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: None, debug_info: {'city_input': 'Lon', 'normalized_city': 'Lon', 'neighborhood_name': None, 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:38:52,917 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:53,011 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lon&format=json&redirects=1 HTTP/1.1" 200 88
+2026-01-21 18:38:53,013 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:38:53,116 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lon&format=json&redirects=1 HTTP/1.1" 200 128
+2026-01-21 18:38:53,120 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: How do I get around Lo? Name the primary transit app or website used by locals and give 3 quick survival tips.
+2026-01-21 18:38:53,120 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='How do I get around Lo? Name the primary transit app or website used by locals and give 3 quick survival tips.', lang='pt', city='Lo'
+2026-01-21 18:38:53,120 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: How do I get around Lon? Name the primary transit app or website used by locals and give 3 quick survival tips.
+2026-01-21 18:38:53,120 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='How do I get around Lon? Name the primary transit app or website used by locals and give 3 quick survival tips.', lang='pt', city='Lon'
+2026-01-21 18:38:53,222 - DEBUG - [WikipediaProvider] QID for 'How do I get around L? Name the primary transit app or website used by locals and give 3 quick survival tips.': None
+2026-01-21 18:38:53,222 - DEBUG - [WikipediaProvider] No summary found for 'How do I get around L? Name the primary transit app or website used by locals and give 3 quick survival tips.'
+2026-01-21 18:38:53,222 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: How do I get around L? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:38:53,222 - DEBUG - [WikipediaProvider] Fetching full page for slug: How_do_I_get_around_L?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips. url: https://pt.wikipedia.org/wiki/How_do_I_get_around_L?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips.
+2026-01-21 18:38:53,222 - DEBUG - [WikipediaProvider] QID for 'How do I get around Lo? Name the primary transit app or website used by locals and give 3 quick survival tips.': None
+2026-01-21 18:38:53,222 - DEBUG - [WikipediaProvider] No summary found for 'How do I get around Lo? Name the primary transit app or website used by locals and give 3 quick survival tips.'
+2026-01-21 18:38:53,222 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: How do I get around Lo? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:38:53,223 - DEBUG - [WikipediaProvider] Fetching full page for slug: How_do_I_get_around_Lo?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips. url: https://pt.wikipedia.org/wiki/How_do_I_get_around_Lo?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips.
+2026-01-21 18:38:53,234 - DEBUG - [WikipediaProvider] QID for 'How do I get around Lon? Name the primary transit app or website used by locals and give 3 quick survival tips.': None
+2026-01-21 18:38:53,234 - DEBUG - [WikipediaProvider] No summary found for 'How do I get around Lon? Name the primary transit app or website used by locals and give 3 quick survival tips.'
+2026-01-21 18:38:53,234 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: How do I get around Lon? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:38:53,234 - DEBUG - [WikipediaProvider] Fetching full page for slug: How_do_I_get_around_Lon?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips. url: https://pt.wikipedia.org/wiki/How_do_I_get_around_Lon?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips.
+2026-01-21 18:38:53,269 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:38:53,270 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: How do I get around L? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:38:53,274 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:38:53,274 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: How do I get around Lo? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:38:53,281 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:38:53,281 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: How do I get around Lon? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:38:53,282 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:53,392 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=Lon&prop=sections&format=json&redirects=1 HTTP/1.1" 200 411
+2026-01-21 18:38:53,393 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:38:53,517 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=parse&page=Lon&prop=sections&format=json&redirects=1 HTTP/1.1" 200 531
+2026-01-21 18:38:53,519 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:53,618 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Lon&format=json&redirects=1 HTTP/1.1" 200 88
+2026-01-21 18:38:53,620 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:38:53,720 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Lon&format=json&redirects=1 HTTP/1.1" 200 683
+2026-01-21 18:38:53,722 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: Provide 5 concise crime and safety tips for travelers in Lon. Include common scams, areas to avoid, and nighttime safety.
+2026-01-21 18:38:53,722 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='Provide 5 concise crime and safety tips for travelers in Lon. Include common scams, areas to avoid, and nighttime safety.', lang='pt', city='Lon'
+2026-01-21 18:38:53,826 - DEBUG - [WikipediaProvider] QID for 'Provide 5 concise crime and safety tips for travelers in Lon. Include common scams, areas to avoid, and nighttime safety.': None
+2026-01-21 18:38:53,826 - DEBUG - [WikipediaProvider] No summary found for 'Provide 5 concise crime and safety tips for travelers in Lon. Include common scams, areas to avoid, and nighttime safety.'
+2026-01-21 18:38:53,826 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: Provide 5 concise crime and safety tips for travelers in Lon. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:38:53,826 - DEBUG - [WikipediaProvider] Fetching full page for slug: Provide_5_concise_crime_and_safety_tips_for_travelers_in_Lon._Include_common_scams,_areas_to_avoid,_and_nighttime_safety. url: https://pt.wikipedia.org/wiki/Provide_5_concise_crime_and_safety_tips_for_travelers_in_Lon._Include_common_scams,_areas_to_avoid,_and_nighttime_safety.
+2026-01-21 18:38:53,878 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:38:53,878 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: Provide 5 concise crime and safety tips for travelers in Lon. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:38:53,880 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:38:54,063 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:54,171 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lon&format=json&redirects=1 HTTP/1.1" 200 88
+DEBUG: Query: 'How do I get around Lo? Name the primary transit app or website used by locals and give 3 quick survival tips.', is_neighborhood_query: False, neighborhoods count: 0
+DEBUG: Query: 'How do I get around Lon? Name the primary transit app or website used by locals and give 3 quick survival tips.', is_neighborhood_query: False, neighborhoods count: 0
+DEBUG: Query: 'Provide 5 concise crime and safety tips for travelers in Lon. Include common scams, areas to avoid, and nighttime safety.', is_neighborhood_query: None, neighborhoods count: 0
+[TIMING] After setup: 1.15s
+[TIMING] Total (post-setup): 1.25s
+SEARCH RESULTS: found 0 venues
+[2026-01-21 18:38:54 -0500] [22916] [INFO] 127.0.0.1:58890 POST /search 1.1 200 2004 1461469
+2026-01-21 18:38:54,173 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:54,280 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=Lo&prop=sections&format=json&redirects=1 HTTP/1.1" 200 410
+2026-01-21 18:38:54,281 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:38:54,415 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=parse&page=Lo&prop=sections&format=json&redirects=1 HTTP/1.1" 200 627
+2026-01-21 18:38:54,417 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:54,519 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Lo&format=json&redirects=1 HTTP/1.1" 200 87
+2026-01-21 18:38:54,521 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:38:54,648 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Lo&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:38:54,650 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: Provide 5 concise crime and safety tips for travelers in Lo. Include common scams, areas to avoid, and nighttime safety.
+2026-01-21 18:38:54,650 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='Provide 5 concise crime and safety tips for travelers in Lo. Include common scams, areas to avoid, and nighttime safety.', lang='pt', city='Lo'
+DEBUG: Query: 'Provide 5 concise crime and safety tips for travelers in Lo. Include common scams, areas to avoid, and nighttime safety.', is_neighborhood_query: None, neighborhoods count: 0
+[2026-01-21 18:38:54 -0500] [22916] [INFO] 127.0.0.1:58892 POST /geocode 1.1 200 63 1940765
+[2026-01-21 18:38:54 -0500] [22916] [INFO] 127.0.0.1:58878 POST /geocode 1.1 200 55 1962672
+[2026-01-21 18:38:54 -0500] [22916] [INFO] 127.0.0.1:58856 POST /geocode 1.1 200 55 1530328
+2026-01-21 18:38:54,657 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'Lond'}
+2026-01-21 18:38:54,657 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: None, debug_info: {'city_input': 'Lond', 'normalized_city': 'Lond', 'neighborhood_name': None, 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:38:54,658 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:54,755 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lond&format=json&redirects=1 HTTP/1.1" 200 89
+2026-01-21 18:38:54,756 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:38:54,849 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lond&format=json&redirects=1 HTTP/1.1" 200 212
+2026-01-21 18:38:54,851 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: How do I get around Lond? Name the primary transit app or website used by locals and give 3 quick survival tips.
+2026-01-21 18:38:54,851 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='How do I get around Lond? Name the primary transit app or website used by locals and give 3 quick survival tips.', lang='pt', city='Lond'
+DEBUG: Query: 'How do I get around Lond? Name the primary transit app or website used by locals and give 3 quick survival tips.', is_neighborhood_query: False, neighborhoods count: 0
+[2026-01-21 18:38:54 -0500] [22916] [INFO] 127.0.0.1:58890 GET /neighborhoods 1.1 200 13431 198949
+[2026-01-21 18:38:54 -0500] [22916] [INFO] 127.0.0.1:58892 GET /neighborhoods 1.1 200 245075 209511
+2026-01-21 18:38:54,868 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'Londo'}
+2026-01-21 18:38:54,868 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: None, debug_info: {'city_input': 'Londo', 'normalized_city': 'Londo', 'neighborhood_name': None, 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:38:54,869 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:54,968 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Londo&format=json&redirects=1 HTTP/1.1" 200 90
+2026-01-21 18:38:54,970 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:38:55,075 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Londo&format=json&redirects=1 HTTP/1.1" 200 120
+2026-01-21 18:38:55,080 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: How do I get around Londo? Name the primary transit app or website used by locals and give 3 quick survival tips.
+2026-01-21 18:38:55,081 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='How do I get around Londo? Name the primary transit app or website used by locals and give 3 quick survival tips.', lang='pt', city='Londo'
+DEBUG: Query: 'How do I get around Londo? Name the primary transit app or website used by locals and give 3 quick survival tips.', is_neighborhood_query: False, neighborhoods count: 0
+[2026-01-21 18:38:55 -0500] [22916] [INFO] 127.0.0.1:58856 POST /geocode 1.1 200 58 323037
+2026-01-21 18:38:55,186 - DEBUG - Empty cached neighborhoods for neighborhoods:londo:en; treating as miss
+2026-01-21 18:38:55,187 - DEBUG - [WikipediaProvider] QID for 'Provide 5 concise crime and safety tips for travelers in Lo. Include common scams, areas to avoid, and nighttime safety.': None
+2026-01-21 18:38:55,187 - DEBUG - [WikipediaProvider] No summary found for 'Provide 5 concise crime and safety tips for travelers in Lo. Include common scams, areas to avoid, and nighttime safety.'
+2026-01-21 18:38:55,188 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: Provide 5 concise crime and safety tips for travelers in Lo. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:38:55,188 - DEBUG - [WikipediaProvider] Fetching full page for slug: Provide_5_concise_crime_and_safety_tips_for_travelers_in_Lo._Include_common_scams,_areas_to_avoid,_and_nighttime_safety. url: https://pt.wikipedia.org/wiki/Provide_5_concise_crime_and_safety_tips_for_travelers_in_Lo._Include_common_scams,_areas_to_avoid,_and_nighttime_safety.
+2026-01-21 18:38:55,200 - DEBUG - [WikipediaProvider] QID for 'How do I get around Lond? Name the primary transit app or website used by locals and give 3 quick survival tips.': None
+2026-01-21 18:38:55,201 - DEBUG - [WikipediaProvider] No summary found for 'How do I get around Lond? Name the primary transit app or website used by locals and give 3 quick survival tips.'
+2026-01-21 18:38:55,201 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: How do I get around Lond? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:38:55,201 - DEBUG - [WikipediaProvider] Fetching full page for slug: How_do_I_get_around_Lond?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips. url: https://pt.wikipedia.org/wiki/How_do_I_get_around_Lond?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips.
+2026-01-21 18:38:55,213 - DEBUG - [WikipediaProvider] QID for 'How do I get around Londo? Name the primary transit app or website used by locals and give 3 quick survival tips.': None
+2026-01-21 18:38:55,213 - DEBUG - [WikipediaProvider] No summary found for 'How do I get around Londo? Name the primary transit app or website used by locals and give 3 quick survival tips.'
+2026-01-21 18:38:55,213 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: How do I get around Londo? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:38:55,213 - DEBUG - [WikipediaProvider] Fetching full page for slug: How_do_I_get_around_Londo?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips. url: https://pt.wikipedia.org/wiki/How_do_I_get_around_Londo?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips.
+2026-01-21 18:38:55,243 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:38:55,244 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: Provide 5 concise crime and safety tips for travelers in Lo. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:38:55,251 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:38:55,251 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: How do I get around Lond? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:38:55,265 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:38:55,265 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: How do I get around Londo? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:38:55,267 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:55,382 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=Londo&prop=sections&format=json&redirects=1 HTTP/1.1" 200 412
+2026-01-21 18:38:55,384 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:38:55,500 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=parse&page=Londo&prop=sections&format=json&redirects=1 HTTP/1.1" 200 485
+2026-01-21 18:38:55,502 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:55,612 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Londo&format=json&redirects=1 HTTP/1.1" 200 90
+2026-01-21 18:38:55,613 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:38:55,717 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Londo&format=json&redirects=1 HTTP/1.1" 200 501
+2026-01-21 18:38:55,719 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: Provide 5 concise crime and safety tips for travelers in Londo. Include common scams, areas to avoid, and nighttime safety.
+2026-01-21 18:38:55,719 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='Provide 5 concise crime and safety tips for travelers in Londo. Include common scams, areas to avoid, and nighttime safety.', lang='pt', city='Londo'
+DEBUG: Query: 'Provide 5 concise crime and safety tips for travelers in Londo. Include common scams, areas to avoid, and nighttime safety.', is_neighborhood_query: None, neighborhoods count: 0
+[2026-01-21 18:38:55 -0500] [22916] [INFO] 127.0.0.1:58892 POST /geocode 1.1 200 59 631622
+2026-01-21 18:38:55,724 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'London'}
+2026-01-21 18:38:55,724 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: None, debug_info: {'city_input': 'London', 'normalized_city': 'London', 'neighborhood_name': None, 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:38:55,725 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:55,821 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=London&format=json&redirects=1 HTTP/1.1" 200 508
+2026-01-21 18:38:55,822 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.
+2026-01-21 18:38:55,822 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.', lang='pt', city='London'
+2026-01-21 18:38:55,917 - DEBUG - [WikipediaProvider] QID for 'Provide 5 concise crime and safety tips for travelers in Londo. Include common scams, areas to avoid, and nighttime safety.': None
+2026-01-21 18:38:55,917 - DEBUG - [WikipediaProvider] No summary found for 'Provide 5 concise crime and safety tips for travelers in Londo. Include common scams, areas to avoid, and nighttime safety.'
+2026-01-21 18:38:55,917 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: Provide 5 concise crime and safety tips for travelers in Londo. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:38:55,917 - DEBUG - [WikipediaProvider] Fetching full page for slug: Provide_5_concise_crime_and_safety_tips_for_travelers_in_Londo._Include_common_scams,_areas_to_avoid,_and_nighttime_safety. url: https://pt.wikipedia.org/wiki/Provide_5_concise_crime_and_safety_tips_for_travelers_in_Londo._Include_common_scams,_areas_to_avoid,_and_nighttime_safety.
+2026-01-21 18:38:55,918 - DEBUG - [WikipediaProvider] QID for 'How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.': None
+2026-01-21 18:38:55,918 - DEBUG - [WikipediaProvider] No summary found for 'How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.'
+2026-01-21 18:38:55,918 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:38:55,918 - DEBUG - [WikipediaProvider] Fetching full page for slug: How_do_I_get_around_London?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips. url: https://pt.wikipedia.org/wiki/How_do_I_get_around_London?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips.
+2026-01-21 18:38:55,969 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:38:55,969 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:38:55,970 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: Provide 5 concise crime and safety tips for travelers in Londo. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:38:55,970 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:38:55,970 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:56,116 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=London&prop=sections&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:38:56,118 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:38:57,307 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=London&prop=text&section=48&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:38:57,310 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:39:00,458 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:39:00,566 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=London&format=json&redirects=1 HTTP/1.1" 200 508
+DEBUG: Query: 'How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.', is_neighborhood_query: False, neighborhoods count: 0
+[TIMING] After setup: 4.73s
+[TIMING] Total (post-setup): 4.84s
+SEARCH RESULTS: found 0 venues
+[2026-01-21 18:39:00 -0500] [22916] [INFO] 127.0.0.1:58892 POST /search 1.1 200 3675 4844207
+2026-01-21 18:39:00,568 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:39:02,697 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:39:02,788 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Londo&format=json&redirects=1 HTTP/1.1" 200 90
+2026-01-21 18:39:02,789 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:39:02,902 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=Lond&prop=sections&format=json&redirects=1 HTTP/1.1" 200 411
+2026-01-21 18:39:02,905 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:39:03,025 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=parse&page=Lond&prop=sections&format=json&redirects=1 HTTP/1.1" 200 388
+2026-01-21 18:39:03,027 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:39:03,129 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Lond&format=json&redirects=1 HTTP/1.1" 200 89
+2026-01-21 18:39:03,131 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:39:03,231 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Lond&format=json&redirects=1 HTTP/1.1" 200 227
+[TIMING] After setup: 7.83s
+[TIMING] Total (post-setup): 7.92s
+SEARCH RESULTS: found 0 venues
+[2026-01-21 18:39:03 -0500] [22916] [INFO] 127.0.0.1:58890 POST /search 1.1 - - 8365691
+[2026-01-21 18:39:03 -0500] [22916] [INFO] 127.0.0.1:58890 POST /search 1.1 200 2039 8365897
+2026-01-21 18:39:03,233 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: Provide 5 concise crime and safety tips for travelers in Lond. Include common scams, areas to avoid, and nighttime safety.
+2026-01-21 18:39:03,233 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='Provide 5 concise crime and safety tips for travelers in Lond. Include common scams, areas to avoid, and nighttime safety.', lang='pt', city='Lond'
+DEBUG: Query: 'Provide 5 concise crime and safety tips for travelers in Lond. Include common scams, areas to avoid, and nighttime safety.', is_neighborhood_query: None, neighborhoods count: 0
+[2026-01-21 18:39:03 -0500] [22916] [INFO] 127.0.0.1:58856 GET /neighborhoods 1.1 - - 8051087
+[2026-01-21 18:39:03 -0500] [22916] [INFO] 127.0.0.1:58878 POST /search 1.1 - - 8579617
+[2026-01-21 18:39:03 -0500] [22916] [INFO] 127.0.0.1:58882 POST /search 1.1 - - 10524271
+[2026-01-21 18:39:03 -0500] [22916] [INFO] 127.0.0.1:58870 POST /search 1.1 - - 10796912
+[2026-01-21 18:39:03 -0500] [22916] [INFO] 127.0.0.1:58892 POST /geocode 1.1 - - 69
+[2026-01-21 18:39:03 -0500] [22916] [INFO] 127.0.0.1:58892 POST /geocode 1.1 200 58 3211
+[2026-01-21 18:39:03 -0500] [22916] [INFO] 127.0.0.1:50158 OPTIONS /weather 1.1 204 0 895
+[2026-01-21 18:39:03 -0500] [22916] [INFO] 127.0.0.1:50174 OPTIONS /weather 1.1 204 0 1243
+[2026-01-21 18:39:03 -0500] [22916] [INFO] 127.0.0.1:50178 OPTIONS /weather 1.1 204 0 1629
+[2026-01-21 18:39:03 -0500] [22916] [INFO] 127.0.0.1:50188 OPTIONS /weather 1.1 204 0 2024
+[2026-01-21 18:39:03 -0500] [22916] [INFO] 127.0.0.1:50192 OPTIONS /weather 1.1 204 0 2421
+2026-01-21 18:39:03,340 - DEBUG - [WikipediaProvider] QID for 'Provide 5 concise crime and safety tips for travelers in Lond. Include common scams, areas to avoid, and nighttime safety.': None
+2026-01-21 18:39:03,341 - DEBUG - [WikipediaProvider] No summary found for 'Provide 5 concise crime and safety tips for travelers in Lond. Include common scams, areas to avoid, and nighttime safety.'
+2026-01-21 18:39:03,341 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: Provide 5 concise crime and safety tips for travelers in Lond. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:39:03,341 - DEBUG - [WikipediaProvider] Fetching full page for slug: Provide_5_concise_crime_and_safety_tips_for_travelers_in_Lond._Include_common_scams,_areas_to_avoid,_and_nighttime_safety. url: https://pt.wikipedia.org/wiki/Provide_5_concise_crime_and_safety_tips_for_travelers_in_Lond._Include_common_scams,_areas_to_avoid,_and_nighttime_safety.
+2026-01-21 18:39:03,392 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:39:03,392 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: Provide 5 concise crime and safety tips for travelers in Lond. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:39:03,393 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:39:04,521 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:39:04,625 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lond&format=json&redirects=1 HTTP/1.1" 200 89
+2026-01-21 18:39:04,629 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:39:05,739 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:39:05,837 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lo&format=json&redirects=1 HTTP/1.1" 200 87
+2026-01-21 18:39:05,838 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:39:05,950 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=L&prop=sections&format=json&redirects=1 HTTP/1.1" 200 411
+2026-01-21 18:39:05,951 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:39:06,081 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=parse&page=L&prop=sections&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:39:06,083 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:39:06,176 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=L&format=json&redirects=1 HTTP/1.1" 200 86
+2026-01-21 18:39:06,178 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:39:06,281 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=L&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:39:06,284 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: Provide 5 concise crime and safety tips for travelers in L. Include common scams, areas to avoid, and nighttime safety.
+2026-01-21 18:39:06,285 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='Provide 5 concise crime and safety tips for travelers in L. Include common scams, areas to avoid, and nighttime safety.', lang='pt', city='L'
+2026-01-21 18:39:06,286 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:39:07,401 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:39:07,496 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=L&format=json&redirects=1 HTTP/1.1" 200 86
+🔍 Checking Groq model availability: llama-3.1-8b-instant
+⚠ Could not list models, using llama-3.1-8b-instant
+2026-01-21 18:39:07,998 - DEBUG - Using selector: EpollSelector
+2026-01-21 18:39:08,009 - INFO - ✅ Redis connected
+[2026-01-21 18:39:08 -0500] [22916] [INFO] Running on http://0.0.0.0:5010 (CTRL + C to quit)
+2026-01-21 18:39:08,010 - INFO - Running on http://0.0.0.0:5010 (CTRL + C to quit)
+Loading .env from /home/markm/TravelLand/.env
+✓ GROQ_API_KEY loaded successfully: gsk_hd... (length: 56)
+[DEBUG] Loading .env from /home/markm/TravelLand/.env
+ * Serving Quart app 'app'
+ * Debug mode: False
+ * Please use an ASGI server (e.g. Hypercorn) directly in production
+ * Running on http://0.0.0.0:5010 (CTRL + C to quit)
+[2026-01-21 18:41:44 -0500] [22916] [INFO] 127.0.0.1:55362 OPTIONS /search 1.1 204 0 1535
+[2026-01-21 18:41:44 -0500] [22916] [INFO] 127.0.0.1:55364 OPTIONS /geocode 1.1 204 0 798
+[2026-01-21 18:41:44 -0500] [22916] [INFO] 127.0.0.1:55376 GET /neighborhoods 1.1 200 128910 6268
+[2026-01-21 18:41:44 -0500] [22916] [INFO] 127.0.0.1:55364 OPTIONS /search 1.1 204 0 4321
+[2026-01-21 18:41:44 -0500] [22916] [INFO] 127.0.0.1:55364 OPTIONS /geocode 1.1 204 0 699
+2026-01-21 18:41:44,963 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'L'}
+2026-01-21 18:41:44,963 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: None, debug_info: {'city_input': 'L', 'normalized_city': 'L', 'neighborhood_name': None, 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:41:44,965 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:45,114 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=L&format=json&redirects=1 HTTP/1.1" 200 86
+2026-01-21 18:41:45,115 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:41:45,229 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=L&format=json&redirects=1 HTTP/1.1" 200 232
+2026-01-21 18:41:45,231 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: How do I get around L? Name the primary transit app or website used by locals and give 3 quick survival tips.
+2026-01-21 18:41:45,231 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='How do I get around L? Name the primary transit app or website used by locals and give 3 quick survival tips.', lang='pt', city='L'
+DEBUG: Query: 'How do I get around L? Name the primary transit app or website used by locals and give 3 quick survival tips.', is_neighborhood_query: False, neighborhoods count: 0
+[2026-01-21 18:41:45 -0500] [22916] [INFO] 127.0.0.1:55362 GET /neighborhoods 1.1 200 9777 278629
+2026-01-21 18:41:45,236 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'Lo'}
+2026-01-21 18:41:45,236 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: None, debug_info: {'city_input': 'Lo', 'normalized_city': 'Lo', 'neighborhood_name': None, 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:41:45,237 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:45,332 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lo&format=json&redirects=1 HTTP/1.1" 200 87
+2026-01-21 18:41:45,333 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:41:45,432 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lo&format=json&redirects=1 HTTP/1.1" 200 133
+2026-01-21 18:41:45,434 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'Lon'}
+2026-01-21 18:41:45,434 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: None, debug_info: {'city_input': 'Lon', 'normalized_city': 'Lon', 'neighborhood_name': None, 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:41:45,435 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:45,538 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lon&format=json&redirects=1 HTTP/1.1" 200 88
+2026-01-21 18:41:45,539 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:41:45,640 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lon&format=json&redirects=1 HTTP/1.1" 200 128
+2026-01-21 18:41:45,642 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: How do I get around Lo? Name the primary transit app or website used by locals and give 3 quick survival tips.
+2026-01-21 18:41:45,642 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='How do I get around Lo? Name the primary transit app or website used by locals and give 3 quick survival tips.', lang='pt', city='Lo'
+2026-01-21 18:41:45,642 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: How do I get around Lon? Name the primary transit app or website used by locals and give 3 quick survival tips.
+2026-01-21 18:41:45,642 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='How do I get around Lon? Name the primary transit app or website used by locals and give 3 quick survival tips.', lang='pt', city='Lon'
+DEBUG: Query: 'How do I get around Lo? Name the primary transit app or website used by locals and give 3 quick survival tips.', is_neighborhood_query: False, neighborhoods count: 0
+DEBUG: Query: 'How do I get around Lon? Name the primary transit app or website used by locals and give 3 quick survival tips.', is_neighborhood_query: False, neighborhoods count: 0
+[2026-01-21 18:41:45 -0500] [22916] [INFO] 127.0.0.1:55362 GET /neighborhoods 1.1 200 13431 3769
+2026-01-21 18:41:45,742 - DEBUG - [WikipediaProvider] QID for 'How do I get around Lon? Name the primary transit app or website used by locals and give 3 quick survival tips.': None
+2026-01-21 18:41:45,742 - DEBUG - [WikipediaProvider] No summary found for 'How do I get around Lon? Name the primary transit app or website used by locals and give 3 quick survival tips.'
+2026-01-21 18:41:45,742 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: How do I get around Lon? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:41:45,742 - DEBUG - [WikipediaProvider] Fetching full page for slug: How_do_I_get_around_Lon?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips. url: https://pt.wikipedia.org/wiki/How_do_I_get_around_Lon?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips.
+2026-01-21 18:41:45,743 - DEBUG - [WikipediaProvider] QID for 'How do I get around Lo? Name the primary transit app or website used by locals and give 3 quick survival tips.': None
+2026-01-21 18:41:45,743 - DEBUG - [WikipediaProvider] No summary found for 'How do I get around Lo? Name the primary transit app or website used by locals and give 3 quick survival tips.'
+2026-01-21 18:41:45,743 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: How do I get around Lo? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:41:45,743 - DEBUG - [WikipediaProvider] Fetching full page for slug: How_do_I_get_around_Lo?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips. url: https://pt.wikipedia.org/wiki/How_do_I_get_around_Lo?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips.
+2026-01-21 18:41:45,746 - DEBUG - [WikipediaProvider] QID for 'How do I get around L? Name the primary transit app or website used by locals and give 3 quick survival tips.': None
+2026-01-21 18:41:45,746 - DEBUG - [WikipediaProvider] No summary found for 'How do I get around L? Name the primary transit app or website used by locals and give 3 quick survival tips.'
+2026-01-21 18:41:45,747 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: How do I get around L? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:41:45,747 - DEBUG - [WikipediaProvider] Fetching full page for slug: How_do_I_get_around_L?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips. url: https://pt.wikipedia.org/wiki/How_do_I_get_around_L?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips.
+2026-01-21 18:41:45,790 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:41:45,790 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: How do I get around Lo? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:41:45,790 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:41:45,791 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: How do I get around Lon? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:41:45,791 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:45,904 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=Lon&prop=sections&format=json&redirects=1 HTTP/1.1" 200 412
+2026-01-21 18:41:45,905 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:41:46,035 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=parse&page=Lon&prop=sections&format=json&redirects=1 HTTP/1.1" 200 531
+2026-01-21 18:41:46,036 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:46,132 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Lon&format=json&redirects=1 HTTP/1.1" 200 88
+2026-01-21 18:41:46,134 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:41:46,240 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Lon&format=json&redirects=1 HTTP/1.1" 200 683
+2026-01-21 18:41:46,242 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: Provide 5 concise crime and safety tips for travelers in Lon. Include common scams, areas to avoid, and nighttime safety.
+2026-01-21 18:41:46,242 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='Provide 5 concise crime and safety tips for travelers in Lon. Include common scams, areas to avoid, and nighttime safety.', lang='pt', city='Lon'
+2026-01-21 18:41:46,243 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:41:46,244 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: How do I get around L? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+DEBUG: Query: 'Provide 5 concise crime and safety tips for travelers in Lon. Include common scams, areas to avoid, and nighttime safety.', is_neighborhood_query: None, neighborhoods count: 0
+[2026-01-21 18:41:46 -0500] [22916] [INFO] 127.0.0.1:55400 POST /geocode 1.1 200 63 1109457
+[2026-01-21 18:41:46 -0500] [22916] [INFO] 127.0.0.1:55364 POST /geocode 1.1 200 55 1112882
+2026-01-21 18:41:46,347 - DEBUG - [WikipediaProvider] QID for 'Provide 5 concise crime and safety tips for travelers in Lon. Include common scams, areas to avoid, and nighttime safety.': None
+2026-01-21 18:41:46,347 - DEBUG - [WikipediaProvider] No summary found for 'Provide 5 concise crime and safety tips for travelers in Lon. Include common scams, areas to avoid, and nighttime safety.'
+2026-01-21 18:41:46,347 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: Provide 5 concise crime and safety tips for travelers in Lon. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:41:46,347 - DEBUG - [WikipediaProvider] Fetching full page for slug: Provide_5_concise_crime_and_safety_tips_for_travelers_in_Lon._Include_common_scams,_areas_to_avoid,_and_nighttime_safety. url: https://pt.wikipedia.org/wiki/Provide_5_concise_crime_and_safety_tips_for_travelers_in_Lon._Include_common_scams,_areas_to_avoid,_and_nighttime_safety.
+2026-01-21 18:41:46,348 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'Lond'}
+2026-01-21 18:41:46,348 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: None, debug_info: {'city_input': 'Lond', 'normalized_city': 'Lond', 'neighborhood_name': None, 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:41:46,349 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:46,437 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lond&format=json&redirects=1 HTTP/1.1" 200 89
+2026-01-21 18:41:46,438 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:41:46,533 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lond&format=json&redirects=1 HTTP/1.1" 200 212
+2026-01-21 18:41:46,535 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: How do I get around Lond? Name the primary transit app or website used by locals and give 3 quick survival tips.
+2026-01-21 18:41:46,535 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='How do I get around Lond? Name the primary transit app or website used by locals and give 3 quick survival tips.', lang='pt', city='Lond'
+DEBUG: Query: 'How do I get around Lond? Name the primary transit app or website used by locals and give 3 quick survival tips.', is_neighborhood_query: False, neighborhoods count: 0
+[2026-01-21 18:41:46 -0500] [22916] [INFO] 127.0.0.1:55362 POST /geocode 1.1 200 55 886111
+[2026-01-21 18:41:46 -0500] [22916] [INFO] 127.0.0.1:55362 GET /neighborhoods 1.1 200 245075 10761
+2026-01-21 18:41:46,552 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'Londo'}
+2026-01-21 18:41:46,552 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: None, debug_info: {'city_input': 'Londo', 'normalized_city': 'Londo', 'neighborhood_name': None, 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:41:46,553 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:46,653 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Londo&format=json&redirects=1 HTTP/1.1" 200 90
+2026-01-21 18:41:46,653 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:41:46,755 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Londo&format=json&redirects=1 HTTP/1.1" 200 120
+2026-01-21 18:41:46,757 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: How do I get around Londo? Name the primary transit app or website used by locals and give 3 quick survival tips.
+2026-01-21 18:41:46,757 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='How do I get around Londo? Name the primary transit app or website used by locals and give 3 quick survival tips.', lang='pt', city='Londo'
+2026-01-21 18:41:46,776 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:41:46,776 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: Provide 5 concise crime and safety tips for travelers in Lon. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:41:46,842 - DEBUG - [WikipediaProvider] QID for 'How do I get around Lond? Name the primary transit app or website used by locals and give 3 quick survival tips.': None
+2026-01-21 18:41:46,843 - DEBUG - [WikipediaProvider] No summary found for 'How do I get around Lond? Name the primary transit app or website used by locals and give 3 quick survival tips.'
+2026-01-21 18:41:46,843 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: How do I get around Lond? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:41:46,843 - DEBUG - [WikipediaProvider] Fetching full page for slug: How_do_I_get_around_Lond?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips. url: https://pt.wikipedia.org/wiki/How_do_I_get_around_Lond?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips.
+2026-01-21 18:41:46,846 - DEBUG - [WikipediaProvider] QID for 'How do I get around Londo? Name the primary transit app or website used by locals and give 3 quick survival tips.': None
+2026-01-21 18:41:46,846 - DEBUG - [WikipediaProvider] No summary found for 'How do I get around Londo? Name the primary transit app or website used by locals and give 3 quick survival tips.'
+2026-01-21 18:41:46,847 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: How do I get around Londo? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:41:46,847 - DEBUG - [WikipediaProvider] Fetching full page for slug: How_do_I_get_around_Londo?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips. url: https://pt.wikipedia.org/wiki/How_do_I_get_around_Londo?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips.
+2026-01-21 18:41:46,898 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:41:46,898 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:41:46,898 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: How do I get around Londo? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:41:46,899 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: How do I get around Lond? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:41:46,899 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:47,010 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=Londo&prop=sections&format=json&redirects=1 HTTP/1.1" 200 412
+2026-01-21 18:41:47,011 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:41:47,124 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=parse&page=Londo&prop=sections&format=json&redirects=1 HTTP/1.1" 200 485
+2026-01-21 18:41:47,126 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:47,223 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Londo&format=json&redirects=1 HTTP/1.1" 200 90
+2026-01-21 18:41:47,224 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:41:47,321 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Londo&format=json&redirects=1 HTTP/1.1" 200 501
+2026-01-21 18:41:47,323 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: Provide 5 concise crime and safety tips for travelers in Londo. Include common scams, areas to avoid, and nighttime safety.
+2026-01-21 18:41:47,323 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='Provide 5 concise crime and safety tips for travelers in Londo. Include common scams, areas to avoid, and nighttime safety.', lang='pt', city='Londo'
+DEBUG: Query: 'How do I get around Londo? Name the primary transit app or website used by locals and give 3 quick survival tips.', is_neighborhood_query: False, neighborhoods count: 0
+DEBUG: Query: 'Provide 5 concise crime and safety tips for travelers in Londo. Include common scams, areas to avoid, and nighttime safety.', is_neighborhood_query: None, neighborhoods count: 0
+[2026-01-21 18:41:47 -0500] [22916] [INFO] 127.0.0.1:55364 POST /geocode 1.1 200 68 789315
+2026-01-21 18:41:47,431 - DEBUG - [WikipediaProvider] QID for 'Provide 5 concise crime and safety tips for travelers in Londo. Include common scams, areas to avoid, and nighttime safety.': None
+2026-01-21 18:41:47,431 - DEBUG - [WikipediaProvider] No summary found for 'Provide 5 concise crime and safety tips for travelers in Londo. Include common scams, areas to avoid, and nighttime safety.'
+2026-01-21 18:41:47,431 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: Provide 5 concise crime and safety tips for travelers in Londo. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:41:47,431 - DEBUG - [WikipediaProvider] Fetching full page for slug: Provide_5_concise_crime_and_safety_tips_for_travelers_in_Londo._Include_common_scams,_areas_to_avoid,_and_nighttime_safety. url: https://pt.wikipedia.org/wiki/Provide_5_concise_crime_and_safety_tips_for_travelers_in_Londo._Include_common_scams,_areas_to_avoid,_and_nighttime_safety.
+2026-01-21 18:41:47,482 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:41:47,483 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: Provide 5 concise crime and safety tips for travelers in Londo. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:41:47,484 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:41:47,595 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:47,691 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Londo&format=json&redirects=1 HTTP/1.1" 200 90
+[TIMING] After setup: 1.04s
+[TIMING] Total (post-setup): 1.14s
+SEARCH RESULTS: found 0 venues
+[2026-01-21 18:41:47 -0500] [22916] [INFO] 127.0.0.1:55362 POST /search 1.1 200 2039 1140643
+2026-01-21 18:41:47,696 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:47,797 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=Lond&prop=sections&format=json&redirects=1 HTTP/1.1" 200 412
+2026-01-21 18:41:47,798 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:41:47,920 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=parse&page=Lond&prop=sections&format=json&redirects=1 HTTP/1.1" 200 388
+2026-01-21 18:41:47,921 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:48,011 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Lond&format=json&redirects=1 HTTP/1.1" 200 89
+2026-01-21 18:41:48,013 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:41:48,109 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Lond&format=json&redirects=1 HTTP/1.1" 200 227
+2026-01-21 18:41:48,111 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: Provide 5 concise crime and safety tips for travelers in Lond. Include common scams, areas to avoid, and nighttime safety.
+2026-01-21 18:41:48,111 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='Provide 5 concise crime and safety tips for travelers in Lond. Include common scams, areas to avoid, and nighttime safety.', lang='pt', city='Lond'
+DEBUG: Query: 'Provide 5 concise crime and safety tips for travelers in Lond. Include common scams, areas to avoid, and nighttime safety.', is_neighborhood_query: None, neighborhoods count: 0
+[2026-01-21 18:41:48 -0500] [22916] [INFO] 127.0.0.1:55364 POST /geocode 1.1 200 59 786931
+2026-01-21 18:41:48,114 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'London'}
+2026-01-21 18:41:48,114 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: None, debug_info: {'city_input': 'London', 'normalized_city': 'London', 'neighborhood_name': None, 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:41:48,115 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:48,212 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=London&format=json&redirects=1 HTTP/1.1" 200 508
+2026-01-21 18:41:48,213 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.
+2026-01-21 18:41:48,213 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.', lang='pt', city='London'
+2026-01-21 18:41:48,214 - DEBUG - Empty cached neighborhoods for neighborhoods:londo:en; treating as miss
+2026-01-21 18:41:48,306 - DEBUG - [WikipediaProvider] QID for 'How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.': None
+2026-01-21 18:41:48,306 - DEBUG - [WikipediaProvider] No summary found for 'How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.'
+2026-01-21 18:41:48,306 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:41:48,306 - DEBUG - [WikipediaProvider] Fetching full page for slug: How_do_I_get_around_London?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips. url: https://pt.wikipedia.org/wiki/How_do_I_get_around_London?_Name_the_primary_transit_app_or_website_used_by_locals_and_give_3_quick_survival_tips.
+2026-01-21 18:41:48,314 - DEBUG - [WikipediaProvider] QID for 'Provide 5 concise crime and safety tips for travelers in Lond. Include common scams, areas to avoid, and nighttime safety.': None
+2026-01-21 18:41:48,314 - DEBUG - [WikipediaProvider] No summary found for 'Provide 5 concise crime and safety tips for travelers in Lond. Include common scams, areas to avoid, and nighttime safety.'
+2026-01-21 18:41:48,315 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: Provide 5 concise crime and safety tips for travelers in Lond. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:41:48,315 - DEBUG - [WikipediaProvider] Fetching full page for slug: Provide_5_concise_crime_and_safety_tips_for_travelers_in_Lond._Include_common_scams,_areas_to_avoid,_and_nighttime_safety. url: https://pt.wikipedia.org/wiki/Provide_5_concise_crime_and_safety_tips_for_travelers_in_Lond._Include_common_scams,_areas_to_avoid,_and_nighttime_safety.
+2026-01-21 18:41:48,354 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:41:48,354 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips. or fallback neighborhood
+2026-01-21 18:41:48,355 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:48,500 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=London&prop=sections&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:41:48,502 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:48,682 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=London&prop=text&section=48&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:41:48,685 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:41:49,799 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:49,899 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=London&format=json&redirects=1 HTTP/1.1" 200 508
+DEBUG: Query: 'How do I get around London? Name the primary transit app or website used by locals and give 3 quick survival tips.', is_neighborhood_query: False, neighborhoods count: 0
+[TIMING] After setup: 1.68s
+[TIMING] Total (post-setup): 1.78s
+SEARCH RESULTS: found 0 venues
+[2026-01-21 18:41:49 -0500] [22916] [INFO] 127.0.0.1:55364 POST /search 1.1 200 3675 1785854
+2026-01-21 18:41:49,900 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:41:49,901 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: Provide 5 concise crime and safety tips for travelers in Lond. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:41:49,902 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:41:49,998 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:50,091 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lond&format=json&redirects=1 HTTP/1.1" 200 89
+[TIMING] After setup: 3.65s
+[TIMING] Total (post-setup): 3.74s
+SEARCH RESULTS: found 0 venues
+[2026-01-21 18:41:50 -0500] [22916] [INFO] 127.0.0.1:55400 POST /search 1.1 200 2144 3745171
+2026-01-21 18:41:50,093 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:41:53,256 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:53,353 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lon&format=json&redirects=1 HTTP/1.1" 200 88
+[TIMING] After setup: 7.82s
+[TIMING] Total (post-setup): 7.92s
+SEARCH RESULTS: found 0 venues
+[2026-01-21 18:41:53 -0500] [22916] [INFO] 127.0.0.1:55408 POST /search 1.1 200 2004 8118553
+2026-01-21 18:41:53,355 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:53,460 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=Lo&prop=sections&format=json&redirects=1 HTTP/1.1" 200 412
+2026-01-21 18:41:53,461 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:41:53,581 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=parse&page=Lo&prop=sections&format=json&redirects=1 HTTP/1.1" 200 627
+2026-01-21 18:41:53,583 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:53,689 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Lo&format=json&redirects=1 HTTP/1.1" 200 87
+2026-01-21 18:41:53,691 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:41:53,793 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=Lo&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:41:53,794 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: Provide 5 concise crime and safety tips for travelers in Lo. Include common scams, areas to avoid, and nighttime safety.
+2026-01-21 18:41:53,795 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='Provide 5 concise crime and safety tips for travelers in Lo. Include common scams, areas to avoid, and nighttime safety.', lang='pt', city='Lo'
+DEBUG: Query: 'Provide 5 concise crime and safety tips for travelers in Lo. Include common scams, areas to avoid, and nighttime safety.', is_neighborhood_query: None, neighborhoods count: 0
+[2026-01-21 18:41:53 -0500] [22916] [INFO] 127.0.0.1:55364 GET /neighborhoods 1.1 200 271825 3900438
+[2026-01-21 18:41:53 -0500] [22916] [INFO] 127.0.0.1:55400 POST /geocode 1.1 200 58 1735
+[2026-01-21 18:41:53 -0500] [22916] [INFO] 127.0.0.1:55408 OPTIONS /weather 1.1 204 0 2329
+[2026-01-21 18:41:53 -0500] [22916] [INFO] 127.0.0.1:55364 OPTIONS /weather 1.1 204 0 649
+[2026-01-21 18:41:53 -0500] [22916] [INFO] 127.0.0.1:55400 OPTIONS /weather 1.1 204 0 1196
+[2026-01-21 18:41:53 -0500] [22916] [INFO] 127.0.0.1:55408 OPTIONS /weather 1.1 204 0 997
+[2026-01-21 18:41:53 -0500] [22916] [INFO] 127.0.0.1:55364 OPTIONS /weather 1.1 204 0 734
+[2026-01-21 18:41:53 -0500] [22916] [INFO] 127.0.0.1:55400 OPTIONS /geocode 1.1 204 0 1873
+[2026-01-21 18:41:53 -0500] [22916] [INFO] 127.0.0.1:55408 OPTIONS /generate_quick_guide 1.1 204 0 1866
+[2026-01-21 18:41:53 -0500] [22916] [INFO] 127.0.0.1:55364 OPTIONS /geocode 1.1 204 0 678
+2026-01-21 18:41:53,894 - DEBUG - No neighborhoods for 'Londo', attempting geocode fallback
+2026-01-21 18:41:53,902 - DEBUG - [WikipediaProvider] QID for 'Provide 5 concise crime and safety tips for travelers in Lo. Include common scams, areas to avoid, and nighttime safety.': None
+2026-01-21 18:41:53,903 - DEBUG - [WikipediaProvider] No summary found for 'Provide 5 concise crime and safety tips for travelers in Lo. Include common scams, areas to avoid, and nighttime safety.'
+2026-01-21 18:41:53,903 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: Provide 5 concise crime and safety tips for travelers in Lo. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:41:53,903 - DEBUG - [WikipediaProvider] Fetching full page for slug: Provide_5_concise_crime_and_safety_tips_for_travelers_in_Lo._Include_common_scams,_areas_to_avoid,_and_nighttime_safety. url: https://pt.wikipedia.org/wiki/Provide_5_concise_crime_and_safety_tips_for_travelers_in_Lo._Include_common_scams,_areas_to_avoid,_and_nighttime_safety.
+2026-01-21 18:41:53,949 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:41:53,950 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: Provide 5 concise crime and safety tips for travelers in Lo. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:41:53,950 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:41:57,095 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:57,194 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=Lo&format=json&redirects=1 HTTP/1.1" 200 87
+[TIMING] After setup: 11.86s
+[TIMING] Total (post-setup): 11.96s
+SEARCH RESULTS: found 0 venues
+[2026-01-21 18:41:57 -0500] [22916] [INFO] 127.0.0.1:55384 POST /search 1.1 200 1997 11960162
+2026-01-21 18:41:57,196 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:57,301 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=L&prop=sections&format=json&redirects=1 HTTP/1.1" 200 411
+2026-01-21 18:41:57,302 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:41:59,860 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=parse&page=L&prop=sections&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:41:59,862 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:41:59,953 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=L&format=json&redirects=1 HTTP/1.1" 200 86
+2026-01-21 18:41:59,954 - DEBUG - Starting new HTTPS connection (1): en.wikipedia.org:443
+2026-01-21 18:42:00,123 - DEBUG - https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&explaintext=True&titles=L&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:42:00,125 - DEBUG - [Marco DEBUG] Attempting Wikipedia fetch for user query: Provide 5 concise crime and safety tips for travelers in L. Include common scams, areas to avoid, and nighttime safety.
+2026-01-21 18:42:00,125 - DEBUG - [WikipediaProvider] fetch_wikipedia_summary: title='Provide 5 concise crime and safety tips for travelers in L. Include common scams, areas to avoid, and nighttime safety.', lang='pt', city='L'
+2026-01-21 18:42:00,231 - DEBUG - [WikipediaProvider] QID for 'Provide 5 concise crime and safety tips for travelers in L. Include common scams, areas to avoid, and nighttime safety.': None
+2026-01-21 18:42:00,231 - DEBUG - [WikipediaProvider] No summary found for 'Provide 5 concise crime and safety tips for travelers in L. Include common scams, areas to avoid, and nighttime safety.'
+2026-01-21 18:42:00,231 - DEBUG - [Marco DEBUG] Wikipedia summary NOT found for: Provide 5 concise crime and safety tips for travelers in L. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:42:00,231 - DEBUG - [WikipediaProvider] Fetching full page for slug: Provide_5_concise_crime_and_safety_tips_for_travelers_in_L._Include_common_scams,_areas_to_avoid,_and_nighttime_safety. url: https://pt.wikipedia.org/wiki/Provide_5_concise_crime_and_safety_tips_for_travelers_in_L._Include_common_scams,_areas_to_avoid,_and_nighttime_safety.
+DEBUG: Query: 'Provide 5 concise crime and safety tips for travelers in L. Include common scams, areas to avoid, and nighttime safety.', is_neighborhood_query: None, neighborhoods count: 0
+[2026-01-21 18:42:00 -0500] [22916] [INFO] 127.0.0.1:55364 POST /weather 1.1 200 683 6418547
+[2026-01-21 18:42:00 -0500] [22916] [INFO] 127.0.0.1:55400 POST /weather 1.1 200 690 6428176
+[2026-01-21 18:42:00 -0500] [22916] [INFO] 127.0.0.1:55408 POST /weather 1.1 200 687 6429038
+2026-01-21 18:42:00,278 - DEBUG - [WikipediaProvider] Response status: 403
+2026-01-21 18:42:00,278 - DEBUG - [Marco DEBUG] Wikipedia sections NOT found for: Provide 5 concise crime and safety tips for travelers in L. Include common scams, areas to avoid, and nighttime safety. or fallback neighborhood
+2026-01-21 18:42:00,279 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:42:00,375 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:00,477 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=query&prop=extracts&exintro=True&explaintext=True&titles=L&format=json&redirects=1 HTTP/1.1" 200 86
+[TIMING] After setup: 15.41s
+[TIMING] Total (post-setup): 15.51s
+SEARCH RESULTS: found 0 venues
+[2026-01-21 18:42:00 -0500] [22916] [INFO] 127.0.0.1:55376 POST /search 1.1 200 2159 15515269
+[2026-01-21 18:42:00 -0500] [22916] [INFO] 127.0.0.1:55364 POST /weather 1.1 200 688 239131
+[2026-01-21 18:42:00 -0500] [22916] [INFO] 127.0.0.1:55400 POST /weather 1.1 200 676 234495
+[2026-01-21 18:42:00 -0500] [22916] [INFO] 127.0.0.1:55376 POST /generate_quick_guide 1.1 200 1267 1189
+[2026-01-21 18:42:00 -0500] [22916] [INFO] 127.0.0.1:55364 POST /geocode 1.1 200 58 1799
+[2026-01-21 18:42:00 -0500] [22916] [INFO] 127.0.0.1:55364 GET /neighborhoods 1.1 200 46109 3857
+[2026-01-21 18:42:00 -0500] [22916] [INFO] 127.0.0.1:55364 OPTIONS /weather 1.1 204 0 713
+[2026-01-21 18:42:00 -0500] [22916] [INFO] 127.0.0.1:55384 POST /weather 1.1 200 691 462564
+[2026-01-21 18:42:00 -0500] [22916] [INFO] 127.0.0.1:55364 POST /weather 1.1 200 676 112573
+[2026-01-21 18:42:00 -0500] [22916] [INFO] 127.0.0.1:55364 OPTIONS /search 1.1 204 0 918
+2026-01-21 18:42:00,628 - DEBUG - [SEARCH DEBUG] Incoming payload: {'query': 'London', 'neighborhood': 'Aylesbury Estate', 'category': 'Coffee & tea'}
+2026-01-21 18:42:00,628 - DEBUG - Starting new HTTP connection (1): localhost:5010
+2026-01-21 18:42:06,635 - DEBUG - Failed to geocode neighborhood Aylesbury Estate via internal endpoint: HTTPConnectionPool(host='localhost', port=5010): Read timed out. (read timeout=6)
+2026-01-21 18:42:06,636 - DEBUG - Starting new HTTPS connection (1): nominatim.openstreetmap.org:443
+2026-01-21 18:42:08,776 - DEBUG - Nominatim geocode fallback failed for Aylesbury Estate: HTTPSConnectionPool(host='nominatim.openstreetmap.org', port=443): Max retries exceeded with url: /search?q=Aylesbury+Estate%2C+London&format=json&limit=1&accept-language=en (Caused by NewConnectionError("HTTPSConnection(host='nominatim.openstreetmap.org', port=443): Failed to establish a new connection: [Errno 101] Network is unreachable"))
+2026-01-21 18:42:08,777 - DEBUG - [SEARCH DEBUG] (city-level) bbox set to: None, neighborhood_name: Aylesbury Estate, debug_info: {'city_input': 'London', 'normalized_city': 'London', 'neighborhood_name': 'Aylesbury Estate', 'fallback_triggered': False, 'neighborhood_bbox': None}
+2026-01-21 18:42:08,777 - DEBUG - Using selector: EpollSelector
+2026-01-21 18:42:10,095 - DEBUG - [SEARCH DEBUG] Could not geocode neighborhood 'Aylesbury Estate', skipping proximity filtering.
+2026-01-21 18:42:10,095 - DEBUG - Trying Wikivoyage food highlights for city: 'London' (neighborhood: Aylesbury Estate)
+2026-01-21 18:42:10,095 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:10,244 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=London&prop=sections&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:42:10,244 - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x790d0c5c2360>
+2026-01-21 18:42:10,245 - ERROR - Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x790d0c5e81d0>, 3676.794185735)])']
+connector: <aiohttp.connector.TCPConnector object at 0x790d0c5c2330>
+[TIMING] After setup: 0.00s
+[MULTI_PROVIDER DEBUG] discover_pois called with city=London, poi_type=coffee, bbox=None, neighborhood=Aylesbury Estate, limit=100
+[DEBUG] Starting discover_pois with city=London, bbox=None, neighborhood=Aylesbury Estate, poi_type=coffee
+[DEBUG] About to call asyncio.run(_gather_providers())
+[MULTI_PROVIDER DEBUG] _gather_providers running for city=London, poi_type=coffee, bbox=None, neighborhood=Aylesbury Estate
+[MULTI_PROVIDER DEBUG] Calling overpass_provider.discover_pois with city=London, poi_type=coffee, bbox=None, neighborhood=Aylesbury Estate
+[async_discover_pois] Called with city=London, bbox=(-0.096079, 51.4753277, -0.076079, 51.4953277), poi_type=coffee
+[async_discover_pois] Using bbox_str=51.4753277,-0.096079,51.4953277,-0.076079
+[Overpass] Error with https://overpass-api.de/api/interpreter: 'NoneType' object has no attribute 'post'
+[Overpass] Error with https://overpass.kumi.systems/api/interpreter: 'NoneType' object has no attribute 'post'
+[async_discover_pois] No Overpass data returned for poi_type=coffee
+[DEBUG opentripmap] Created internal aiohttp session for discover_pois
+[DEBUG london_provider] Created internal aiohttp session for fetch_wikivoyage_summary
+[DEBUG london_provider] fetch_wikivoyage_summary Exception: Invalid variable type: value should be str, int or float, got True of type <class 'bool'>
+[DEBUG london_provider] Closed internal aiohttp session after exception
+[DEBUG] Geoapify HTTP error: status=400 url=https://api.geoapify.com/v2/places?filter=rect:-0.096079,51.4753277,-0.076079,51.4953277&apiKey=5d90553d6720416690c7d082cfaa8387&format=json&categories=catering.cafe,catering.coffee_shop&limit=500
+[MULTI_PROVIDER DEBUG] Unified discover_pois returned 0 results from all providers
+[DEBUG] Got 0 results from providers
+[DEBUG] multi_provider returned 0 coffee venues for city 'London'
+[TIMING] Real venue search: 1.32s
+[WIKIVOYAGE FALLBACK] No POIs from providers, attempting neighborhood wikivoyage extraction for 'Aylesbury Estate'
+Fetching wikivoyage for city: London, keywords: ['eat', 'food', 'cafe', 'coffee', 'tea'], neighborhood: Aylesbury Estate
+Checking line: 'districts' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'central london' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'inner london' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'outer london' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'understand' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'history' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'the city and westminster' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'climate' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'winter' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'spring' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'summer' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'autumn' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'tourist information' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'talk' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'get in' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by plane' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'london heathrow' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'london gatwick' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'london stansted' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'london luton' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'london city' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'london southend' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by train' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by national rail' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by eurostar' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'london terminals' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by coach' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'domestic' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'international' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by car' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'roads' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'get around' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by public transport' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'oyster cards' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'validity of your oyster' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'using your oyster card' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'pay-as-you-go (prepay) with your oyster' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'travelcards' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'contactless payment cards' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'fares' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'paper tickets' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'accessibility' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by underground' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'night tube' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'ticketing' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'navigation' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'onboard' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'crime, safety, and accidents' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'getting help' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'on the train' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'lost items' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by bus' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'using the bus' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'fares' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'oyster' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'contactless credit, debit or prepaid cards' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'concessions' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'night buses' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by dlr' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'ticketing' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by train' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by overground' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by the elizabeth line' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by tram' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'on foot' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'walking alternatives to the tube' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'oxford circus station' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by bicycle' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'taking bikes on trains' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'bicycle hire' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+2026-01-21 18:42:10,246 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:10,475 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=London&prop=text&section=101&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:42:10,481 - DEBUG - Trying Wikivoyage food highlights for city: 'London' (neighborhood: None)
+2026-01-21 18:42:10,481 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:10,641 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=London&prop=sections&format=json&redirects=1 HTTP/1.1" 200 None
+Checking line: 'cycle ways' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by taxi' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by car' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'congestion charge' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'traffic' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'parking' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'motorcycles and scooters' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by boat' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by skate' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'by cable car' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'operating hours' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'see' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'landmarks' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'museums and galleries' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'parks' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'itineraries' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'blue plaques' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'london pass' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'do' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'live music' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'theatre' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'other things to do' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'learn' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'learn english' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'work' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'buy' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'money' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'shopping' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'markets' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'tax-free' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Checking line: 'eat' with keywords ['eat', 'food', 'cafe', 'coffee', 'tea']
+Matched! target_section_idx = 101
+DEBUG: section_keywords=['eat', 'food', 'cafe', 'coffee', 'tea'], target_section_idx=101
+Fetching wikivoyage for city: London, keywords: ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try'], neighborhood: None
+Checking line: 'districts' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'central london' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'inner london' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'outer london' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'understand' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'history' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'the city and westminster' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'climate' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'winter' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'spring' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'summer' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'autumn' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'tourist information' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'talk' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'get in' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by plane' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'london heathrow' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'london gatwick' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'london stansted' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'london luton' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'london city' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'london southend' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by train' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by national rail' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by eurostar' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'london terminals' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by coach' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'domestic' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'international' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by car' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'roads' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'get around' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by public transport' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'oyster cards' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'validity of your oyster' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'using your oyster card' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'pay-as-you-go (prepay) with your oyster' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'travelcards' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'contactless payment cards' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'fares' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'paper tickets' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'accessibility' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by underground' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'night tube' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+2026-01-21 18:42:10,643 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:10,881 - DEBUG - https://en.wikivoyage.org:443 "GET /w/api.php?action=parse&page=London&prop=text&section=101&format=json&redirects=1 HTTP/1.1" 200 None
+2026-01-21 18:42:10,885 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:10,953 - DEBUG - https://en.wikivoyage.org:443 "GET /wiki/London HTTP/1.1" 200 256539
+2026-01-21 18:42:11,018 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:11,083 - DEBUG - https://en.wikivoyage.org:443 "GET /wiki/London HTTP/1.1" 200 256539
+2026-01-21 18:42:11,138 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:11,204 - DEBUG - https://en.wikivoyage.org:443 "GET /wiki/London HTTP/1.1" 200 256539
+2026-01-21 18:42:11,266 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:11,336 - DEBUG - https://en.wikivoyage.org:443 "GET /wiki/London HTTP/1.1" 200 256539
+2026-01-21 18:42:11,404 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:11,471 - DEBUG - https://en.wikivoyage.org:443 "GET /wiki/London HTTP/1.1" 200 256539
+2026-01-21 18:42:11,524 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:11,596 - DEBUG - https://en.wikivoyage.org:443 "GET /wiki/London HTTP/1.1" 200 256539
+2026-01-21 18:42:11,658 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:11,729 - DEBUG - https://en.wikivoyage.org:443 "GET /wiki/London HTTP/1.1" 200 256539
+2026-01-21 18:42:11,794 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:11,865 - DEBUG - https://en.wikivoyage.org:443 "GET /wiki/London HTTP/1.1" 200 256539
+2026-01-21 18:42:11,927 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:11,928 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:11,929 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:11,929 - DEBUG - Starting new HTTPS connection (1): en.wikivoyage.org:443
+2026-01-21 18:42:12,029 - DEBUG - https://en.wikivoyage.org:443 "GET /wiki/London HTTP/1.1" 200 256539
+2026-01-21 18:42:12,040 - DEBUG - https://en.wikivoyage.org:443 "GET /wiki/London HTTP/1.1" 200 256539
+2026-01-21 18:42:12,040 - DEBUG - https://en.wikivoyage.org:443 "GET /wiki/London HTTP/1.1" 200 256539
+2026-01-21 18:42:12,041 - DEBUG - https://en.wikivoyage.org:443 "GET /wiki/London HTTP/1.1" 200 256539
+Checking line: 'ticketing' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'navigation' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'onboard' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'crime, safety, and accidents' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'getting help' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'on the train' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'lost items' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by bus' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'using the bus' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'fares' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'oyster' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'contactless credit, debit or prepaid cards' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'concessions' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'night buses' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by dlr' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'ticketing' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by train' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by overground' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by the elizabeth line' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by tram' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'on foot' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'walking alternatives to the tube' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'oxford circus station' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by bicycle' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'taking bikes on trains' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'bicycle hire' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'cycle ways' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by taxi' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by car' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'congestion charge' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'traffic' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'parking' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'motorcycles and scooters' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by boat' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by skate' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'by cable car' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'operating hours' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'see' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'landmarks' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'museums and galleries' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'parks' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'itineraries' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'blue plaques' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'london pass' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'do' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'live music' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'theatre' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'other things to do' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'learn' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'learn english' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'work' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'buy' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'money' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'shopping' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'markets' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'tax-free' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Checking line: 'eat' with keywords ['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try']
+Matched! target_section_idx = 101
+DEBUG: section_keywords=['eat', 'food', 'cuisine', 'dining', 'restaurants', 'must eat', 'must-try'], target_section_idx=101
+[TIMING] Total (post-setup): 2.11s
+SEARCH RESULTS: found 12 venues
+[2026-01-21 18:42:12 -0500] [22916] [INFO] 127.0.0.1:55364 POST /search 1.1 200 15457 11493163
+[2026-01-21 18:42:12 -0500] [22916] [INFO] 127.0.0.1:52964 POST /geocode 1.1 - - 90
+[2026-01-21 18:42:12 -0500] [22916] [INFO] 127.0.0.1:55408 POST /geocode 1.1 200 77 11980232
+[2026-01-21 18:42:12 -0500] [22916] [INFO] 127.0.0.1:37226 OPTIONS /weather 1.1 204 0 425
+[2026-01-21 18:42:12 -0500] [22916] [INFO] 127.0.0.1:37226 POST /weather 1.1 200 681 113667
+[2026-01-21 18:42:47 -0500] [22916] [INFO] 127.0.0.1:55362 GET /neighborhoods 1.1 200 36 59191342
+[2026-01-21 18:43:38 -0500] [22916] [INFO] 127.0.0.1:57800 OPTIONS /geocode 1.1 204 0 681
+[2026-01-21 18:43:38 -0500] [22916] [INFO] 127.0.0.1:57800 POST /geocode 1.1 200 58 697
+[2026-01-21 18:43:38 -0500] [22916] [INFO] 127.0.0.1:57800 GET /neighborhoods 1.1 200 46109 9258
+[2026-01-21 18:43:38 -0500] [22916] [INFO] 127.0.0.1:57800 OPTIONS /weather 1.1 204 0 485
+[2026-01-21 18:43:38 -0500] [22916] [INFO] 127.0.0.1:57800 POST /weather 1.1 200 676 472262
+🔍 Checking Groq model availability: llama-3.1-8b-instant
+⚠ Could not list models, using llama-3.1-8b-instant
+2026-01-21 18:46:24,606 - DEBUG - Using selector: EpollSelector
+2026-01-21 18:46:24,621 - INFO - ✅ Redis connected
+[2026-01-21 18:46:24 -0500] [22916] [INFO] Running on http://0.0.0.0:5010 (CTRL + C to quit)
+2026-01-21 18:46:24,621 - INFO - Running on http://0.0.0.0:5010 (CTRL + C to quit)
+🔍 Checking Groq model availability: llama-3.1-8b-instant
+⚠ Could not list models, using llama-3.1-8b-instant
+2026-01-21 18:46:27,011 - DEBUG - Using selector: EpollSelector
+2026-01-21 18:46:27,022 - INFO - ✅ Redis connected
+[2026-01-21 18:46:27 -0500] [22916] [INFO] Running on http://0.0.0.0:5010 (CTRL + C to quit)
+2026-01-21 18:46:27,022 - INFO - Running on http://0.0.0.0:5010 (CTRL + C to quit)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           /home/markm/TravelLand/city_guides/app.py:265: DeprecationWarning: Call to deprecated close. (Use aclose() instead) -- Deprecated since version 5.0.1.
+  await redis_client.close()
