@@ -4,6 +4,7 @@ import QuickGuide from './QuickGuide';
 export default function SearchResults({ results }) {
   // no raw JSON exposed to users by default
   if (!results) return null;
+  if (typeof results !== 'object') return <div className="results-error">Invalid results data</div>;
   if (results.error) return <div className="results-error">Error: {results.error}</div>;
 
   const quick = results.quick_guide || results.quickGuide || results.summary || null;

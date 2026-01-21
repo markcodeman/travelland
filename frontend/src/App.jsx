@@ -19,7 +19,9 @@ const categories = [
   'Food', 'Nightlife', 'Culture', 'Outdoors', 'Shopping', 'Family', 'History', 'Beaches'
 ];
 
-const countries = ['USA', 'Mexico', 'Spain', 'UK', 'France', 'Germany', 'Italy', 'Canada', 'Australia', 'Japan', 'China', 'India', 'Brazil', 'Argentina', 'South Africa', 'Netherlands', 'Portugal', 'Sweden', 'Norway', 'Denmark'];
+const countries = ['USA', 'Mexico', 'Spain', 'UK', 'France', 'Germany', 'Italy', 'Canada', 'Australia', 'Japan', 'China', 'India', 'Brazil', 'Argentina', 'South Africa', 'Netherlands', 'Portugal', 'Sweden', 'Norway', 'Denmark', 'Iceland'];
+
+const popularCities = ['New York', 'London', 'Paris', 'Tokyo', 'Sydney', 'Rio de Janeiro', 'Lisbon', 'Reykjavik', 'Berlin', 'Rome', 'Barcelona', 'Amsterdam', 'Vienna', 'Prague', 'Budapest', 'Warsaw', 'Athens', 'Istanbul', 'Cairo', 'Cape Town', 'Mumbai', 'Bangkok', 'Singapore', 'Seoul', 'Beijing', 'Shanghai', 'Hong Kong', 'Dubai', 'Moscow', 'Saint Petersburg', 'Madrid', 'Milan', 'Venice', 'Florence', 'Vienna', 'Salzburg', 'Innsbruck', 'Zurich', 'Geneva', 'Interlaken', 'Copenhagen', 'Stockholm', 'Oslo', 'Helsinki', 'Tallinn', 'Riga', 'Vilnius', 'Krakow', 'Budapest', 'Bucharest', 'Sofia', 'Belgrade', 'Zagreb', 'Ljubljana', 'Sarajevo', 'Skopje', 'Tirana', 'Podgorica', 'Pristina', 'Bratislava', 'Brno', 'Prague', 'Warsaw', 'Gdansk', 'Krakow', 'Wroclaw', 'Poznan', 'Lodz', 'Katowice', 'Bydgoszcz', 'Lublin', 'Bialystok', 'Gdansk', 'Szczecin', 'Olsztyn', 'Rzeszow', 'Kielce', 'Zielona Gora', 'Opole', 'Czestochowa', 'Gliwice', 'Zabrze', 'Bielsko-Biala', 'Ruda Slaska', 'Rybnik', 'Tychy', 'Dabrowa Gornicza', 'Chorzow', 'Walbrzych', 'Wloclawek', 'Tarnow', 'Plock', 'Elblag', 'Torun', 'Kalisz', 'Koszalin', 'Legnica', 'Grudziadz', 'Slupsk', 'Jaworzno', 'Jastrzebie-Zdroj', 'Tarnowskie Gory', 'Piekary Slaskie', 'Rumia', 'Wejherowo', 'Sopot', 'Gdynia', 'Slupsk', 'Koszalin', 'Swinoujscie', 'Kolobrzeg', 'Miedzyzdroje', 'Ustka', 'Leba', 'Jastarnia', 'Wladyslawowo', 'Hel', 'Krynica Morska', 'Frombork', 'Malbork', 'Gdansk', 'Gdynia', 'Sopot', 'Rumia', 'Reda', 'Wejherowo', 'Kartuzy', 'Koscierzyna', 'Bytow', 'Człuchów', 'Chojnice', 'Tczew', 'Starogard Gdanski', 'Skarszewy', 'Pelplin', 'Tczew', 'Sztum', 'Dzierzgon', 'Prabuty', 'Kwidzyn', 'Grudziadz', 'Swiecie', 'Chełmno', 'Torun', 'Wloclawek', 'Lipno', 'Rypin', 'Golabki', 'Brodnica', 'Jablonowo Pomorskie', 'Nowe Miasto Lubawskie', 'Olsztyn', 'Dobre Miasto', 'Lidzbark Warminski', 'Bartoszyce', 'Ketrzyn', 'Mragowo', 'Pisz', 'Szczytno', 'Ostroda', 'Ilawa', 'Nowy Dwor Gdanski', 'Morag', 'Paslek', 'Elblag', 'Tolkmicko', 'Frombork', 'Braniewo', 'Lidzbark Warminski', 'Bartoszyce', 'Ketrzyn', 'Mragowo', 'Pisz', 'Szczytno', 'Ostroda', 'Ilawa', 'Nowy Dwor Gdanski', 'Morag', 'Paslek', 'Elblag', 'Tolkmicko', 'Frombork', 'Braniewo', 'Lidzbark Warminski', 'Bartoszyce', 'Ketrzyn', 'Mragowo', 'Pisz', 'Szczytno', 'Ostroda', 'Ilawa', 'Nowy Dwor Gdanski', 'Morag', 'Paslek', 'Elblag', 'Tolkmicko', 'Frombork', 'Braniewo'];
 
 function App() {
   const [city, setCity] = useState('');
@@ -27,6 +29,7 @@ function App() {
   const [neighborhood, setNeighborhood] = useState('');
   const [neighborhoodOptions, setNeighborhoodOptions] = useState([]);
   const [category, setCategory] = useState('');
+  const [generating, setGenerating] = useState(false);
   const [weather, setWeather] = useState(null);
   const [weatherError, setWeatherError] = useState(null);
   const [results, setResults] = useState(null);
@@ -101,34 +104,38 @@ function App() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ city, neighborhood, query: neighborhood })
         });
+        if (!resp.ok) throw new Error('Search request failed');
         const data = await resp.json();
+        if (typeof data !== 'object' || data === null) throw new Error('Invalid search response');
         if (!mounted) return;
         if (data && (data.quick_guide || data.summary || data.quickGuide)) {
           setResults(data);
-        } else {
-          // no quick guide returned by /search -> automatically generate a data-first guide
-          try {
-            setGenerating(true);
-            const gresp = await fetch('http://localhost:5010/generate_quick_guide', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ city, neighborhood })
-            });
-            const gdata = await gresp.json();
-            if (!mounted) return;
-            if (gdata && gdata.quick_guide) {
-              const resObj = { quick_guide: gdata.quick_guide, source: gdata.source, cached: gdata.cached, source_url: gdata.source_url };
-              if (gdata.mapillary_images) resObj.mapillary_images = gdata.mapillary_images;
-              setResults(resObj);
-            }
-          } catch (err) {
-            // ignore
-          } finally {
-            setGenerating(false);
-          }
+          return;
         }
       } catch (err) {
-        // ignore errors
+        console.error('Search failed, trying generate', err);
+      }
+      // no quick guide returned by /search or search failed -> automatically generate a data-first guide
+      try {
+        setGenerating(true);
+        const gresp = await fetch('http://localhost:5010/generate_quick_guide', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ city, neighborhood })
+        });
+        if (!gresp.ok) throw new Error('Generate request failed');
+        const gdata = await gresp.json();
+        if (typeof gdata !== 'object' || gdata === null) throw new Error('Invalid generate response');
+        if (!mounted) return;
+        if (gdata && gdata.quick_guide) {
+          const resObj = { quick_guide: gdata.quick_guide, source: gdata.source, cached: gdata.cached, source_url: gdata.source_url };
+          if (gdata.mapillary_images) resObj.mapillary_images = gdata.mapillary_images;
+          setResults(resObj);
+        }
+      } catch (err) {
+        // ignore
+      } finally {
+        setGenerating(false);
       }
     }, 250);
     return () => { mounted = false; clearTimeout(timer); };
@@ -205,23 +212,6 @@ function App() {
     fetchWeather();
   }, [city, neighborhood]);
 
-  const handleSearch = async () => {
-    setLoading(true);
-    setResults(null);
-    try {
-      const response = await fetch('http://localhost:5010/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ city, query: neighborhood || category || city })
-      });
-      const data = await response.json();
-      setResults(data);
-    } catch (err) {
-      setResults({ error: 'Failed to fetch data from Marco.' });
-    }
-    setLoading(false);
-  };
-
   const suggestionMap = {
     top_food: 'Food',
     historic: 'History',
@@ -267,7 +257,7 @@ function App() {
       }
       // Fetch neighborhoods
       try {
-        const resp = await fetch(`http://localhost:5010/neighborhoods?city=${encodeURIComponent(city)}&lang=en`);
+        const resp = await fetch(`http://localhost:5010/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
         const data = await resp.json();
         if (data && Array.isArray(data.neighborhoods) && data.neighborhoods.length > 0) {
           const names = data.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
@@ -278,7 +268,8 @@ function App() {
             'Rio de Janeiro': ['Copacabana', 'Ipanema', 'Leblon', 'Santa Teresa', 'Barra da Tijuca', 'Lapa', 'Botafogo', 'Jardim Botânico', 'Gamboa', 'Leme', 'Vidigal'],
             'London': ['Camden', 'Chelsea', 'Greenwich', 'Soho', 'Shoreditch'],
             'New York': ['Manhattan', 'Brooklyn', 'Harlem', 'Queens', 'Bronx'],
-            'Lisbon': ['Baixa', 'Chiado', 'Alfama', 'Bairro Alto', 'Belém']
+            'Lisbon': ['Baixa', 'Chiado', 'Alfama', 'Bairro Alto', 'Belém'],
+            'Reykjavik': ['Miðborg', 'Vesturbær', 'Hlíðar', 'Laugardalur', 'Háaleiti']
           };
           setNeighborhoodOptions(fallback[city] || []);
         }
@@ -368,7 +359,7 @@ function App() {
       <div className="app-container">
         <AutocompleteInput
           label="City:"
-          options={cityList}
+          options={popularCities}
           value={city}
           setValue={setCity}
           placeholder="Type or select a city"

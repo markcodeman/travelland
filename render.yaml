@@ -4,17 +4,10 @@ services:
     env: python
     region: oregon
     plan: free
-    buildCommand: |
-      # install python deps, then build frontend and copy into backend static/
-      pip install -r city_guides/requirements.txt
-      cd frontend
-      npm ci
-      npm run build
-      rm -rf ../city_guides/static/* || true
-      cp -R dist/* ../city_guides/static/
+    buildCommand: pip install -r city_guides/requirements.txt && cd frontend && npm ci && npm run build && rm -rf ../city_guides/static/* || true && cp -R dist/* ../city_guides/static/
     startCommand: |
       # run Hypercorn and bind to the PORT Render provides
-      hypercorn city_guides.app:app --bind 0.0.0.0:$PORT
+      bash -lc "cd /opt/render/project/src || true; export PYTHONPATH=/opt/render/project/src:$PYTHONPATH; hypercorn city_guides.app:app --bind 0.0.0.0:$PORT"
     # Environment variables are configured in the Render dashboard; keep secrets out of the manifest
     healthCheckPath: /health
     services:
