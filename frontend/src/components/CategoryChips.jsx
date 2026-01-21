@@ -6,9 +6,7 @@ const categoryMeta = {
   'Culture': { color: '#3498db', icon: '🏛️' },
   'Outdoors': { color: '#27ae60', icon: '🌲' },
   'Shopping': { color: '#e67e22', icon: '🛍️' },
-  'Family': { color: '#e84393', icon: '👨‍👩‍👧' },
   'History': { color: '#95a5a6', icon: '📜' },
-  'Beaches': { color: '#00a8ff', icon: '🏖️' },
 };
 
 export default function CategoryChips({ categories, selectedCategory, setSelectedCategory }) {

@@ -113,10 +113,8 @@ def discover_pois(
     print(f"[MULTI_PROVIDER DEBUG] discover_pois called with city={city}, poi_type={poi_type}, bbox={bbox}, neighborhood={neighborhood}, limit={limit}")
     results = []
     
-    # Always use city-level search; ignore neighborhood for provider call
-    print("[DEBUG] Starting discover_pois with city=", city, "bbox=None (city-level)", "neighborhood=", neighborhood, "poi_type=", poi_type)
-    bbox = None
-    neighborhood = None
+    # Use bbox if provided (for neighborhood searches), otherwise city-level
+    print(f"[DEBUG] Starting discover_pois with city={city}, bbox={bbox}, neighborhood={neighborhood}, poi_type={poi_type}")
 
     # Heuristic: process at most ~10x the requested limit per provider and cap the
     # combined candidate pool too.
@@ -141,14 +139,14 @@ def discover_pois(
             # - Opentripmap (tourism attractions)
             # - Wikivoyage (city summaries)
             # - Mapillary (image enrichment)
-            print(f"[MULTI_PROVIDER DEBUG] Calling overpass_provider.discover_pois with city={city}, poi_type={poi_type}, bbox=None, neighborhood=None (city-level only)")
+            print(f"[MULTI_PROVIDER DEBUG] Calling overpass_provider.discover_pois with city={city}, poi_type={poi_type}, bbox={bbox}, neighborhood={neighborhood}")
             all_results = await overpass_provider.discover_pois(
                 city=city,
                 poi_type=poi_type,
                 limit=max_per_provider,
                 local_only=local_only,
-                bbox=None,
-                neighborhood=None
+                bbox=bbox,
+                neighborhood=neighborhood
             )
             print(f"[MULTI_PROVIDER DEBUG] Unified discover_pois returned {len(all_results)} results from all providers")
             return all_results

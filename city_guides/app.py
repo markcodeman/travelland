@@ -22,6 +22,7 @@ for _env_file in _env_paths:
         break
 
 import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent / "groq"))
 import traveland_rag  # type: ignore
 import json
@@ -227,11 +228,11 @@ active_searches = {}
 DEFAULT_PREWARM_CITIES = os.getenv("SEARCH_PREWARM_CITIES", "London,Paris")
 PREWARM_QUERIES = [q.strip() for q in os.getenv("SEARCH_PREWARM_QUERIES", "Top food").split(",") if q.strip()]
 PREWARM_TTL = int(os.getenv("SEARCH_PREWARM_TTL", "3600"))
-RAW_PREWARM_CITIES = [c.strip() for c in DEFAULT_PREWARM_CITIES.split(",") if c.strip()]
+RAW_PREWARM_CITIES = []  # [c.strip() for c in DEFAULT_PREWARM_CITIES.split(",") if c.strip()]
 NEIGHBORHOOD_CACHE_TTL = int(os.getenv("NEIGHBORHOOD_CACHE_TTL", 60 * 60 * 24 * 7))  # 7 days
 # Popular cities to prewarm neighborhoods for (background task)
 POPULAR_CITIES = [c.strip() for c in os.getenv("POPULAR_CITIES", "London,Paris,New York,Tokyo,Rome,Barcelona").split(",") if c.strip()]
-DISABLE_PREWARM = os.getenv("DISABLE_PREWARM", "false").lower() == "true"
+DISABLE_PREWARM = True  # os.getenv("DISABLE_PREWARM", "false").lower() == "true"
 
 
 @app.before_serving
@@ -1930,15 +1931,10 @@ def build_search_cache_key(city: str, q: str, neighborhood: dict | None = None) 
 async def search():
     payload = await request.get_json(silent=True) or {}
     # Lightweight heuristic to decide whether to cache this search (focus on food/top queries)
-    city = (payload.get("city") or "").strip()
-    q = (payload.get("q") or "").strip().lower()
+    city = (payload.get("query") or "").strip()
+    q = (payload.get("category") or "").strip().lower()
     neighborhood = payload.get("neighborhood")
-    should_cache = False
-    try:
-        if q and any(kw in q for kw in ["food", "restaurant", "top", "best", "must", "eat"]):
-            should_cache = True
-    except Exception:
-        should_cache = False
+    should_cache = False  # disabled for testing
 
     cache_key = None
     cache_ttl = int(os.getenv("SEARCH_CACHE_TTL", "300"))
@@ -1958,11 +1954,8 @@ async def search():
         except Exception:
             app.logger.debug("Redis cache lookup failed; continuing without cache")
 
-    # Run the existing blocking search logic in a thread to avoid blocking the event loop
-    def _search_sync(p):
-        return _search_impl(p)
-
-    result = await asyncio.to_thread(_search_sync, payload)
+    # Run the existing blocking search logic
+    result = _search_impl(payload)
 
     # Store in cache for subsequent fast responses
     if redis_client and cache_key and result:
@@ -1979,7 +1972,7 @@ def _search_impl(payload):
     # It returns a plain dict suitable for JSONification.
     logging.debug(f"[SEARCH DEBUG] Incoming payload: {payload}")
     from city_guides.overpass_provider import normalize_city_name, geocode_city
-    city_input = (payload.get("city") or "").strip()
+    city_input = (payload.get("query") or "").strip()
     city = normalize_city_name(city_input)
     if not city:
         return {"error": "City not found or invalid", "debug_info": {"city_input": city_input}}
@@ -1993,19 +1986,39 @@ def _search_impl(payload):
     user_lat = payload.get("user_lat")
     user_lon = payload.get("user_lon")
     budget = (payload.get("budget") or "").strip().lower()
-    q = (payload.get("q") or "").strip().lower()
+    q = (payload.get("category") or "").strip().lower()
     neighborhood = payload.get("neighborhood")
     # If the input city is not the normalized city, treat it as a neighborhood and use parent city for search
     bbox = None
     neighborhood_name = None
+    if isinstance(neighborhood, dict):
+        neighborhood_name = neighborhood.get("name")
+    elif isinstance(neighborhood, str):
+        neighborhood_name = neighborhood
     if city_input.lower() != city.lower() and city:
         neighborhood_name = city_input
         debug_info['fallback_triggered'] = True
-    elif isinstance(neighborhood, dict) and neighborhood.get("name"):
-        neighborhood_name = (neighborhood.get("name") or "").strip()
-    elif isinstance(neighborhood, str):
-        neighborhood_name = neighborhood.strip()
     debug_info['neighborhood_name'] = neighborhood_name
+    bbox = None
+    if neighborhood_name:
+        nb_full = f"{neighborhood_name}, {city}"
+        # Temporary: hardcode for Camden
+        if neighborhood_name.lower() == "camden":
+            nb_lat, nb_lon = 51.5414, -0.1462
+            # Create a bbox around the neighborhood, ~10km radius
+            delta = 0.1  # approx 10km
+            bbox = [nb_lon - delta, nb_lat - delta, nb_lon + delta, nb_lat + delta]
+            debug_info['neighborhood_bbox'] = bbox
+        else:
+            try:
+                nb_lat, nb_lon = asyncio.run(geocode_city(nb_full))
+                if nb_lat and nb_lon:
+                    # Create a bbox around the neighborhood, ~10km radius
+                    delta = 0.1  # approx 10km
+                    bbox = [nb_lon - delta, nb_lat - delta, nb_lon + delta, nb_lat + delta]
+                    debug_info['neighborhood_bbox'] = bbox
+            except Exception as e:
+                logging.debug(f"Failed to geocode neighborhood {neighborhood_name}: {e}")
     logging.debug(f"[SEARCH DEBUG] (city-level) bbox set to: {bbox}, neighborhood_name: {neighborhood_name}, debug_info: {debug_info}")
     import time
 
@@ -2120,6 +2133,7 @@ def _search_impl(payload):
     print(f"[TIMING] After setup: {t1-t0:.2f}s")
 
     def fetch_wikivoyage_section(city_name, section_keywords, section_type):
+            print(f"Fetching wikivoyage for city: {city_name}, keywords: {section_keywords}")
             # Strip country part for Wikivoyage lookup
             city_base = city_name.split(',')[0].strip()
             url = "https://en.wikivoyage.org/w/api.php"
@@ -2145,9 +2159,12 @@ def _search_impl(payload):
                 target_section_idx = None
                 for s in secs:
                     line = (s.get("line") or "").lower()
-                    if any(kw in line for kw in section_keywords):
+                    print(f"Checking line: '{line}' with keywords {section_keywords}")
+                    if any(line == kw.lower() for kw in section_keywords):
                         target_section_idx = s.get("index")
+                        print(f"Matched! target_section_idx = {target_section_idx}")
                         break
+                print(f"DEBUG: section_keywords={section_keywords}, target_section_idx={target_section_idx}")
                 if not target_section_idx:
                     return items
                 params2 = {
@@ -2206,10 +2223,21 @@ def _search_impl(payload):
     if provider_timeout:
         provider_timeout = max(3.0, provider_timeout - 2.0)
     else:
-        provider_timeout = 23.0
+        provider_timeout = 5.0
 
     # Determine POI type based on query
-    poi_type = "restaurant" if is_food_query else ("historic" if is_historic_query else "general")
+    category_mapping = {
+        "coffee & tea": "coffee",
+        "hidden gems": "hidden",
+        "public transport": "transport",
+        "food": "restaurant",
+        "nightlife": "restaurant",  # or specific
+        "culture": "historic",
+        "outdoors": "park",
+        "shopping": "market",
+        "history": "historic",
+    }
+    poi_type = category_mapping.get(q, "restaurant" if is_food_query else ("historic" if is_historic_query else "general"))
 
     # Fetch real venues and Wikivoyage highlights in parallel to avoid timeouts
     if q and (is_food_query or is_historic_query or poi_type == "general"):
@@ -2221,10 +2249,10 @@ def _search_impl(payload):
         wiki_keywords = []
         wiki_section = None
         if is_food_query:
-            wiki_keywords = ["eat", "food", "cuisine", "dining", "restaurants", "must eat", "must-try"]
+            wiki_keywords = ["Eat", "Food", "Drink"]
             wiki_section = "food"
         elif is_historic_query:
-            wiki_keywords = ["see", "sight", "sights", "attractions", "historic", "landmarks", "monuments"]
+            wiki_keywords = ["See"]
             wiki_section = "historic"
 
         with ThreadPoolExecutor(max_workers=2) as executor:
@@ -2235,11 +2263,11 @@ def _search_impl(payload):
                 limit=100,
                 local_only=local_only if poi_type == "restaurant" else False,
                 timeout=provider_timeout,
-                bbox=None,  # Always use city-level search
-                neighborhood=None  # Do not pass neighborhood to provider
+                bbox=bbox,  # Use neighborhood bbox if available
+                neighborhood=neighborhood_name  # Pass neighborhood name
             )
             wiki_future = None
-            if include_web and wiki_keywords:
+            if include_web and wiki_keywords and not neighborhood_name:
                 wiki_future = executor.submit(fetch_wikivoyage_section, city, wiki_keywords, wiki_section)
 
             try:
@@ -2252,6 +2280,12 @@ def _search_impl(payload):
                 traceback.print_exc()
                 pois = []
                 partial = True
+
+            # Test: add test venue for Camden coffee
+            # if poi_type == "coffee" and neighborhood_name and neighborhood_name.lower() == "camden":
+            #     pois.append(
+            #         {"name": "Test Cafe Camden", "lat": 51.5414, "lon": -0.1462, "address": "123 Camden Road, London"}
+            #     )
 
             if wiki_future:
                 try:

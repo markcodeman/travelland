@@ -305,6 +305,8 @@ button:disabled {
 }
 .weather-icon { font-size: 28px; }
 .weather-temp { font-size: 1.3em; font-weight: 700; color: #163a6a; }
+.weather-city { font-size: 0.9em; color: #3b556f; margin-left: 4px; }
+.weather-day { font-size: 0.85em; color: #6b7a86; margin-top: 2px; }
 .weather-summary { font-size: 0.95em; color: #3b556f; }
 .weather-wind { font-size: 0.85em; color: #6b7a86; margin-top: 4px; }
 /* small spacing for local time / sunrise / sunset lines to avoid overlap */
@@ -323,6 +325,40 @@ button:disabled {
   border-radius: 6px;
   padding: 16px;
   min-height: 80px;
+}
+.search-results section {
+  margin-bottom: 20px;
+}
+.search-results h2 {
+  color: #163a6a;
+  font-size: 1.2em;
+  margin-bottom: 10px;
+}
+.search-results h3 {
+  color: #3b556f;
+  font-size: 1em;
+  margin-bottom: 8px;
+}
+.search-results ul {
+  list-style: none;
+  padding: 0;
+}
+.search-results li {
+  margin-bottom: 8px;
+  padding: 8px;
+  background: #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.wikivoyage-section {
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.wikivoyage-section p {
+  line-height: 1.5;
+  color: #3b556f;
 }
 pre {
   white-space: pre-wrap;

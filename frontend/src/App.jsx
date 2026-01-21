@@ -16,7 +16,7 @@ const cityList = [
   'Lisbon',
 ];
 const categories = [
-  'Food', 'Nightlife', 'Culture', 'Outdoors', 'Shopping', 'Family', 'History', 'Beaches'
+  'Food', 'Nightlife', 'Culture', 'Outdoors', 'Shopping', 'History'
 ];
 
 const countries = ['USA', 'Mexico', 'Spain', 'UK', 'France', 'Germany', 'Italy', 'Canada', 'Australia', 'Japan', 'China', 'India', 'Brazil', 'Argentina', 'South Africa', 'Netherlands', 'Portugal', 'Sweden', 'Norway', 'Denmark', 'Iceland'];
@@ -34,6 +34,8 @@ function App() {
   const [weatherError, setWeatherError] = useState(null);
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Loading...');
+  const [selectedSuggestion, setSelectedSuggestion] = useState('');
 
   // Fetch neighborhoods from backend when city changes
   useEffect(() => {
@@ -49,7 +51,16 @@ function App() {
           if (names.length > 0) {
             // remove duplicate neighborhood names while preserving order
             const uniqueNames = Array.from(new Set(names));
-            setNeighborhoodOptions(uniqueNames);
+            // Add fallback popular neighborhoods to ensure common ones are included
+            const fallback = {
+              'Rio de Janeiro': ['Copacabana', 'Ipanema', 'Leblon', 'Santa Teresa', 'Barra da Tijuca', 'Lapa', 'Botafogo', 'Jardim Botânico', 'Gamboa', 'Leme', 'Vidigal'],
+              'London': ['Camden', 'Chelsea', 'Greenwich', 'Soho', 'Shoreditch'],
+              'New York': ['Manhattan', 'Brooklyn', 'Harlem', 'Queens', 'Bronx'],
+              'Lisbon': ['Baixa', 'Chiado', 'Alfama', 'Bairro Alto', 'Belém']
+            };
+            const fallbackNames = fallback[city] || [];
+            const allNames = Array.from(new Set([...uniqueNames, ...fallbackNames]));
+            setNeighborhoodOptions(allNames);
             return;
           }
         }
@@ -93,47 +104,31 @@ function App() {
     return () => { mounted = false; };
   }, [city]);
 
-  // When a neighborhood is selected, request a neighborhood-scoped quick guide
+  // When a neighborhood is selected, generate a neighborhood-scoped quick guide
   useEffect(() => {
     let mounted = true;
     const timer = setTimeout(async () => {
       if (!city || !neighborhood) return;
       try {
-        const resp = await fetch('http://localhost:5010/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ city, neighborhood, query: neighborhood })
-        });
-        if (!resp.ok) throw new Error('Search request failed');
-        const data = await resp.json();
-        if (typeof data !== 'object' || data === null) throw new Error('Invalid search response');
-        if (!mounted) return;
-        if (data && (data.quick_guide || data.summary || data.quickGuide)) {
-          setResults(data);
-          return;
-        }
-      } catch (err) {
-        console.error('Search failed, trying generate', err);
-      }
-      // no quick guide returned by /search or search failed -> automatically generate a data-first guide
-      try {
         setGenerating(true);
-        const gresp = await fetch('http://localhost:5010/generate_quick_guide', {
+        const resp = await fetch('http://localhost:5010/generate_quick_guide', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ city, neighborhood })
         });
-        if (!gresp.ok) throw new Error('Generate request failed');
-        const gdata = await gresp.json();
-        if (typeof gdata !== 'object' || gdata === null) throw new Error('Invalid generate response');
+        if (!resp.ok) throw new Error('Generate request failed');
+        const data = await resp.json();
+        if (typeof data !== 'object' || data === null) throw new Error('Invalid generate response');
         if (!mounted) return;
-        if (gdata && gdata.quick_guide) {
-          const resObj = { quick_guide: gdata.quick_guide, source: gdata.source, cached: gdata.cached, source_url: gdata.source_url };
-          if (gdata.mapillary_images) resObj.mapillary_images = gdata.mapillary_images;
-          setResults(resObj);
+        if (data && data.quick_guide) {
+          const resObj = { quick_guide: data.quick_guide, source: data.source, cached: data.cached, source_url: data.source_url };
+          if (data.mapillary_images) resObj.mapillary_images = data.mapillary_images;
+          if (!category) {
+            setResults(resObj);
+          }
         }
       } catch (err) {
-        // ignore
+        console.error('Generate quick guide failed', err);
       } finally {
         setGenerating(false);
       }
@@ -213,27 +208,37 @@ function App() {
   }, [city, neighborhood]);
 
   const suggestionMap = {
-    top_food: 'Food',
-    historic: 'History',
     transport: 'Public transport',
-    markets: 'Shopping',
-    family: 'Family',
-    events: 'Culture',
-    hidden: 'Outdoors',
-    coffee: 'Food',
-    parks: 'Outdoors'
+    hidden: 'Hidden gems',
+    coffee: 'Coffee & tea',
   };
+
+
 
   const handleSuggestion = async (id) => {
     const mapped = suggestionMap[id] || id;
     // prefer setting category, then run search
     setCategory(mapped);
+    setSelectedSuggestion(id);
     // ensure city is set; if empty, don't run automatic search
-    if (city) await handleSearch();
+    if (city) await handleSearch(mapped);
   };
 
-  const handleSearch = async () => {
+  const handleSearch = async (overrideCategory) => {
     if (!city) return;
+    // Set loading message
+    let displayCategory = overrideCategory || category;
+    let msg = 'Loading...';
+    if (displayCategory && neighborhood) {
+      msg = `Hang tight brewing up ${displayCategory} in ${neighborhood}, ${city}`;
+    } else if (displayCategory) {
+      msg = `Hang tight brewing up ${displayCategory} in ${city}`;
+    } else if (neighborhood) {
+      msg = `Hang tight exploring ${neighborhood}, ${city}`;
+    } else {
+      msg = `Hang tight exploring ${city}`;
+    }
+    setLoadingMessage(msg);
     setLoading(true);
     setWeatherError(null);
     try {
@@ -294,13 +299,17 @@ function App() {
       }
       // Fetch quick guide
       try {
+        const searchPayload = { city };
+        if (neighborhood) searchPayload.neighborhood = neighborhood;
+        let q = category;
+        if (q) searchPayload.q = q;
         const qresp = await fetch('http://localhost:5010/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ city })
+          body: JSON.stringify(searchPayload)
         });
         const qdata = await qresp.json();
-        if (qdata && (qdata.quick_guide || qdata.summary || qdata.quickGuide)) {
+        if (qdata && (qdata.quick_guide || qdata.summary || qdata.quickGuide || qdata.wikivoyage || qdata.venues || qdata.costs)) {
           setResults(qdata);
         }
       } catch (err) {
@@ -334,19 +343,15 @@ function App() {
 
   return (
     <div>
-      <Header />
+
       {/* Weather moved to top so it's visible in the hero area */}
       <div className="hero">
         <div className="hero-inner">
           <div className="logo-wrap">
             {/* Header handles brand image/title */}
           </div>
-          <div style={{ flex: 1 }}>
-            <h1>TravelLand Neighborhood Explorer</h1>
-            <p className="hero-sub">Chat with Marco, your AI travel guide — discover neighborhoods and get recommendations.</p>
-          </div>
           <div style={{ minWidth: 220 }}>
-            <WeatherDisplay weather={weather} />
+            <WeatherDisplay weather={weather} city={city} />
             {weatherError && (
               <div style={{ marginTop: 8, color: '#9b2c2c', fontSize: 13 }}>
                 {weatherError}
@@ -408,7 +413,7 @@ function App() {
         />
         <button disabled={!city || loading} onClick={handleSearch} style={{ marginTop: 16 }}>Search</button>
         {/* weather is now shown in the hero */}
-        {loading && <p>Loading...</p>}
+        {loading && <p>{loadingMessage}</p>}
         <SearchResults results={results} />
       </div>
     </div>
