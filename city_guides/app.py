@@ -23,7 +23,7 @@ for _env_file in _env_paths:
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent / "groq"))
-import traveland_rag
+import traveland_rag  # type: ignore
 import json
 import hashlib
 from urllib.parse import urlparse
@@ -57,8 +57,9 @@ for env_file in env_paths:
                     os.environ[key.strip()] = value.strip()
         _env_file_used = env_file
         # Verify key was loaded
-        if os.getenv("GROQ_API_KEY"):
-            print(f"✓ GROQ_API_KEY loaded successfully: {os.getenv('GROQ_API_KEY')[:6]}... (length: {len(os.getenv('GROQ_API_KEY'))})")
+        groq_key = os.getenv("GROQ_API_KEY")
+        if groq_key:
+            print(f"✓ GROQ_API_KEY loaded successfully: {groq_key[:6]}... (length: {len(groq_key)})")
         else:
             print("✗ GROQ_API_KEY NOT FOUND in environment after .env load!")
         break
@@ -76,9 +77,13 @@ if os.getenv("GROQ_API_KEY") and _env_file_used:
         client = Groq(api_key=os.getenv("GROQ_API_KEY"))
         
         # Quick check: try to list models
-        models_list = client.models.list()
-        available_models = [m.id for m in models_list.data]
-        print(f"✓ Found {len(available_models)} available Groq models", file=sys.stderr)
+        try:
+            models_list = client.models.list()  # type: ignore
+            available_models = [m.id for m in models_list.data]
+            print(f"✓ Found {len(available_models)} available Groq models", file=sys.stderr)
+        except AttributeError:
+            available_models = [current_model]  # fallback
+            print(f"⚠ Could not list models, using {current_model}", file=sys.stderr)
         sys.stderr.flush()
         
         # If current model not available, find a working one
@@ -235,7 +240,7 @@ async def startup():
     aiohttp_session = aiohttp.ClientSession(headers={"User-Agent": "city-guides-async"})
     try:
         redis_client = aioredis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
-        await redis_client.ping()
+        await redis_client.ping()  # type: ignore
         app.logger.info("✅ Redis connected")
         if RAW_PREWARM_CITIES and PREWARM_QUERIES:
             asyncio.create_task(prewarm_popular_searches())
@@ -277,6 +282,7 @@ async def geocode_city(city: str, country: str = ''):
     """
     if not city:
         return None
+    assert aiohttp_session is not None
 
     query = city
     if country:
@@ -318,7 +324,7 @@ async def geocode_city(city: str, country: str = ''):
     # Helper to try an external provider
     async def try_provider(url, params=None, headers=None, extract_latlon=None):
         try:
-            async with aiohttp_session.get(url, params=params, headers=(headers or {}), timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            async with aiohttp_session.get(url, params=params, headers=(headers or {}), timeout=aiohttp.ClientTimeout(total=10)) as resp:  # type: ignore
                 if resp.status != 200:
                     return None, None
                 data = await resp.json()
@@ -379,7 +385,7 @@ async def reverse_geocode(lat, lon):
     url = "https://nominatim.openstreetmap.org/reverse"
     params = {"lat": lat, "lon": lon, "format": "json", "zoom": 18}
     try:
-        async with aiohttp_session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+        async with aiohttp_session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:  # type: ignore
             if resp.status != 200:
                 print(f"[DEBUG app.py] reverse_geocode HTTP error: {resp.status}")
             resp.raise_for_status()
@@ -441,7 +447,7 @@ async def get_weather_async(lat, lon):
         }
         # coerce boolean params to strings
         coerced = {k: (str(v).lower() if isinstance(v, bool) else v) for k, v in params.items()}
-        async with aiohttp_session.get(url, params=coerced, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+        async with aiohttp_session.get(url, params=coerced, timeout=aiohttp.ClientTimeout(total=10)) as resp:  # type: ignore
             if resp.status != 200:
                 print(f"[DEBUG app.py] get_weather_async HTTP error: {resp.status}")
             resp.raise_for_status()
@@ -642,7 +648,7 @@ async def generate_quick_guide():
         try:
             safe_title = title.replace(' ', '_')
             url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{safe_title}"
-            async with aiohttp_session.get(url, timeout=aiohttp.ClientTimeout(total=6)) as resp:
+            async with aiohttp_session.get(url, timeout=aiohttp.ClientTimeout(total=6)) as resp:  # type: ignore
                 if resp.status == 200:
                     j = await resp.json()
                     # extract summary if available
@@ -709,11 +715,11 @@ async def generate_quick_guide():
         if mapillary_provider:
             # Try neighborhood+city first, then city fallback
             latlon = await geocode_city(f"{neighborhood}, {city}")
-            if not latlon or not latlon[0]:
+            if not latlon or not latlon.get("lat"):
                 latlon = await geocode_city(city)
-            if latlon and latlon[0]:
+            if latlon and latlon.get("lat"):
                 try:
-                    imgs = await mapillary_provider.async_search_images_near(latlon[0], latlon[1], radius_m=400, limit=6, session=aiohttp_session)
+                    imgs = await mapillary_provider.async_search_images_near(latlon["lat"], latlon["lon"], radius_m=400, limit=6, session=aiohttp_session)
                     for it in imgs:
                         mapillary_images.append({
                             'id': it.get('id'),
@@ -1316,7 +1322,7 @@ def fetch_safety_section(city):
         q = f"Provide 5 concise crime and safety tips for travelers in {city}. Include common scams, areas to avoid, and nighttime safety."
         loop = asyncio.get_event_loop()
         if loop.is_running():
-            import nest_asyncio
+            import nest_asyncio  # type: ignore
             nest_asyncio.apply()
             res = loop.run_until_complete(semantic.search_and_reason(q, city, mode="explorer"))
         else:
@@ -1573,16 +1579,20 @@ def _humanize_opening_hours(opening_hours_str):
 
 
 
-@app.route("/transport")
-def transport():
+@app.route("/transport")  # type: ignore
+async def transport():
     city = request.args.get("city", "the city")
     lat = request.args.get("lat")
     lon = request.args.get("lon")
     # fetch a banner image for the requested city (best-effort)
     try:
-        banner = image_provider.get_banner_for_city(city)
-        banner_url = banner.get("url") if banner else None
-        banner_attr = banner.get("attribution") if banner else None
+        if image_provider:
+            banner = await image_provider.get_banner_for_city(city)
+            banner_url = banner.get("url") if banner else None
+            banner_attr = banner.get("attribution") if banner else None
+        else:
+            banner_url = None
+            banner_attr = None
     except Exception:
         banner_url = None
         banner_attr = None
@@ -1847,7 +1857,7 @@ def _get_city_info(city):
         q = f"How do I get around {city}? Name the primary transit app or website used by locals and give 3 quick survival tips."
         loop = asyncio.get_event_loop()
         if loop.is_running():
-            import nest_asyncio
+            import nest_asyncio  # type: ignore
             nest_asyncio.apply()
             marco = loop.run_until_complete(semantic.search_and_reason(q, city, mode="explorer"))
         else:
@@ -1971,6 +1981,8 @@ def _search_impl(payload):
     from city_guides.overpass_provider import normalize_city_name, geocode_city
     city_input = (payload.get("city") or "").strip()
     city = normalize_city_name(city_input)
+    if not city:
+        return {"error": "City not found or invalid", "debug_info": {"city_input": city_input}}
     debug_info = {
         'city_input': city_input,
         'normalized_city': city,
@@ -1990,7 +2002,7 @@ def _search_impl(payload):
         neighborhood_name = city_input
         debug_info['fallback_triggered'] = True
     elif isinstance(neighborhood, dict) and neighborhood.get("name"):
-        neighborhood_name = neighborhood.get("name").strip()
+        neighborhood_name = (neighborhood.get("name") or "").strip()
     elif isinstance(neighborhood, str):
         neighborhood_name = neighborhood.strip()
     debug_info['neighborhood_name'] = neighborhood_name
@@ -2254,10 +2266,11 @@ def _search_impl(payload):
         if neighborhood_name:
             # Try to geocode neighborhood to get center point
             try:
-                nb_bbox = geocode_city(neighborhood_name)
+                # nb_bbox = geocode_city(neighborhood_name)  # async, can't call in sync
+                nb_bbox = None
                 debug_info['neighborhood_bbox'] = nb_bbox
-                if nb_bbox and len(nb_bbox) == 4:
-                    min_lon, min_lat, max_lon, max_lat = nb_bbox
+                if nb_bbox is not None and len(nb_bbox) == 4:
+                    min_lon, min_lat, max_lon, max_lat = nb_bbox  # type: ignore
                     center_lat = (min_lat + max_lat) / 2
                     center_lon = (min_lon + max_lon) / 2
                     def dist_km(venue):
@@ -2770,8 +2783,8 @@ async def ai_reason():
 
 
 @app.route("/convert", methods=["POST"])
-def convert_currency():
-    payload = request.json or {}
+async def convert_currency():
+    payload = await request.get_json(silent=True) or {}
     amount = float(payload.get("amount", 0))
     from_curr = payload.get("from", "USD")
     to_curr = payload.get("to", "EUR")

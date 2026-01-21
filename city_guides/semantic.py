@@ -46,6 +46,12 @@ except Exception as e:
 
 # duckduckgo_provider removed
 
+def shorten_place(city_name):
+    """Shorten city name by taking first part before comma."""
+    if not city_name:
+        return city_name
+    return city_name.split(',')[0].strip()
+
 # Simple in-memory vector store + ingestion that prefers Groq.ai embeddings
 GROQ_EMBEDDING_ENDPOINT = "https://api.groq.ai/v1/embeddings"
 
