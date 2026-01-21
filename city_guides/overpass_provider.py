@@ -1609,51 +1609,26 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
         except Exception:
             pass
 
-    import overpy
-    api = overpy.Overpass()
-    try:
-        # overpy is synchronous, so run in a thread to avoid blocking
-        import concurrent.futures
-        def run_query():
-            return api.query(q)
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            result = await asyncio.get_event_loop().run_in_executor(executor, run_query)
-    except Exception as e:
-        print(f"[async_discover_pois] Overpy error: {e}")
-        result = None
-
-    elements = []
-    if result:
-        # Collect nodes, ways, and relations
-        for node in result.nodes:
-            elements.append({
-                "type": "node",
-                "id": node.id,
-                "lat": float(node.lat),
-                "lon": float(node.lon),
-                "tags": node.tags
-            })
-        for way in result.ways:
-            center_lat = float(way.center_lat) if way.center_lat else None
-            center_lon = float(way.center_lon) if way.center_lon else None
-            elements.append({
-                "type": "way",
-                "id": way.id,
-                "center": {"lat": center_lat, "lon": center_lon},
-                "tags": way.tags
-            })
-        for rel in result.relations:
-            center_lat = float(rel.center_lat) if rel.center_lat else None
-            center_lon = float(rel.center_lon) if rel.center_lon else None
-            elements.append({
-                "type": "relation",
-                "id": rel.id,
-                "center": {"lat": center_lat, "lon": center_lon},
-                "tags": rel.tags
-            })
-    else:
+    # Use aiohttp to query Overpass
+    result_data = None
+    for base_url in ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]:
+        try:
+            timeout = aiohttp.ClientTimeout(total=60)
+            async with session.post(base_url, data={"data": q}, timeout=timeout) as resp:
+                if resp.status == 200:
+                    result_data = await resp.json()
+                    break
+                else:
+                    print(f"[Overpass] {base_url} status={resp.status}")
+        except Exception as e:
+            print(f"[Overpass] Error with {base_url}: {e}")
+            continue
+    if not result_data:
         print(f"[async_discover_pois] No Overpass data returned for poi_type={poi_type}")
         return []
+
+    elements = result_data.get("elements", [])
+    print(f"[async_discover_pois] Got {len(elements)} elements from Overpass")
 
     print("[async_discover_pois] Raw Overpass response:", str(elements)[:1000])
     elements = elements[:200]
@@ -1685,6 +1660,12 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
 
             if better_name:
                 name = better_name
+
+        if name == "Unnamed":
+            if poi_type == "coffee":
+                name = "Coffee Shop"
+            elif poi_type == "restaurant" and tags.get("amenity") == "cafe":
+                name = "Cafe"
 
         if name == "Unnamed" and not any(tags.get(k) for k in ["inscription", "description", "memorial", "wikidata"]):
             continue

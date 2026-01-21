@@ -14,7 +14,7 @@ function weatherEmoji(code) {
   return '🌤️';
 }
 
-export default function WeatherDisplay({ weather }) {
+export default function WeatherDisplay({ weather, city }) {
   if (!weather) return null;
   const [unit, setUnit] = useState('C'); // 'C' or 'F'
   // support either being passed a full payload (with hourly/daily) or single current object
@@ -45,8 +45,19 @@ export default function WeatherDisplay({ weather }) {
     }
   }
 
+  function formatTimeOnly(iso) {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return iso;
+    }
+  }
+
   const sunrise = (weather.daily && weather.daily.sunrise && weather.daily.sunrise[0]) || null;
   const sunset = (weather.daily && weather.daily.sunset && weather.daily.sunset[0]) || null;
+
+  const dayOfWeek = current.time ? new Date(current.time).toLocaleDateString([], { weekday: 'long' }) : null;
 
   return (
     <div className="weather-display hero-weather">
@@ -62,7 +73,10 @@ export default function WeatherDisplay({ weather }) {
           ) : (
             <>{tempF}°F</>
           )}
+          {city && <span className="weather-city"> in {city}</span>}
         </div>
+
+        {dayOfWeek && <div className="weather-day">{dayOfWeek}</div>}
 
         <div className="weather-units">
           <button className={`unit-btn ${unit === 'C' ? 'active' : ''}`} onClick={() => setUnit('C')}>°C</button>
@@ -71,8 +85,8 @@ export default function WeatherDisplay({ weather }) {
 
         {summary && <div className="weather-summary">{summary}</div>}
         {current.time && <div className="weather-localtime">Local time: {formatLocal(current.time)}</div>}
-        {sunrise && <div className="weather-sun">Sunrise: {formatLocal(sunrise)}</div>}
-        {sunset && <div className="weather-sun">Sunset: {formatLocal(sunset)}</div>}
+        {sunrise && <div className="weather-sun">Sunrise: {formatTimeOnly(sunrise)}</div>}
+        {sunset && <div className="weather-sun">Sunset: {formatTimeOnly(sunset)}</div>}
         {windKph !== null && (
           <div className="weather-wind">Wind: {unit === 'C' ? `${Math.round(windKph)} km/h` : `${windMph} mph`}</div>
         )}
