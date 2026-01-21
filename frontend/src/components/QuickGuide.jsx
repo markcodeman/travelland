@@ -6,7 +6,7 @@ export default function QuickGuide({ guide, images, source, source_url }) {
     <div className="quick-guide">
       <h2>Quick guide</h2>
       <p>{guide}</p>
-      {images && images.length > 0 && (
+      {Array.isArray(images) && images.length > 0 && (
         <div className="quick-guide-images">
           {images.slice(0, 8).map((img, i) => (
             <figure key={`${img.id || i}`} className="quick-thumb">
