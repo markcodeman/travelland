@@ -5,7 +5,6 @@ import WeatherDisplay from './components/WeatherDisplay';
 import SearchResults from './components/SearchResults';
 import Header from './components/Header';
 import SuggestionChips from './components/SuggestionChips';
-import NeighborhoodSelect from './components/NeighborhoodSelect';
 import MarcoChat from './components/MarcoChat';
 import LocationSelector from './components/LocationSelector';
 
@@ -373,17 +372,6 @@ function App() {
         {location.city && location.neighborhood && generating && (
           <div style={{ margin: '8px 0 12px 0', color: '#3b556f' }}>
             Generating quick guide…
-          </div>
-        )}
-
-        {location.city && neighborhoodOptions.length > 0 && (
-          <div className="selector-group">
-            <label>Or choose a specific area:</label>
-            <NeighborhoodSelect
-              options={neighborhoodOptions}
-              value={location.neighborhood}
-              onChange={(neighborhood) => setLocation(prev => ({ ...prev, neighborhood }))}
-            />
           </div>
         )}
 
