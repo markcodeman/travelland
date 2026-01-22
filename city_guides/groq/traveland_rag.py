@@ -40,6 +40,15 @@ class TravelLandRecommender:
                 "Each item must reference the venue 'id' exactly as provided, include a numeric 'score' 0..1, a one-line 'reason', "
                 "an array of 'tags', and a 'confidence' field (low/medium/high)."
             )
+        elif recommendation_type == "synthesis":
+            # Strict synthesis prompt: instruct model to return structured enrichment for UI
+            return (
+                "You are a travel synthesis assistant. Given a list of candidate venues (with id, name, lat, lon, and osm_url) and optional short Wikivoyage snippets, "
+                "return STRICT JSON (an array) of up to 8 synthesized venue objects. Each object MUST include: 'id' (must match a provided candidate id), 'name', "
+                "'short_description' (<=140 chars), 'highlight' (<=80 chars), 'sources' (array e.g. [\"osm\",\"wikivoyage\"]), 'score' (0..1), and 'confidence' (low|medium|high). "
+                "Do NOT invent or modify authoritative fields such as latitude, longitude, or osm_url. If you cannot confidently synthesize an item, omit it. "
+                "Return JSON only (no prose)."
+            )
         else:  # neighborhoods
             return (
                 "You are a neighborhood recommendation assistant. "
@@ -178,3 +187,8 @@ def recommend_venues_rag(user_context: Dict, candidates: List[Dict]) -> List[Dic
 def recommend_neighborhoods_rag(user_context: Dict, candidates: List[Dict]) -> List[Dict]:
     """Convenience function for neighborhood recommendations"""
     return recommender.recommend_with_rag(user_context, candidates, "neighborhoods")
+
+
+def recommend_synthesis(user_context: Dict, candidates: List[Dict]) -> List[Dict]:
+    """Convenience wrapper for synthesis-style outputs (strict UI enrichment schema)"""
+    return recommender.recommend_with_rag(user_context, candidates, "synthesis")

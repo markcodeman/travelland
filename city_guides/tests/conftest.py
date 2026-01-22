@@ -24,5 +24,9 @@ def app_client():
     
     app.config["TESTING"] = True
     
-    with app.test_client() as client:
-        yield client
+    client = app.test_client()
+    yield client
+    try:
+        client.close()
+    except Exception:
+        pass
