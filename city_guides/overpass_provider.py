@@ -1528,16 +1528,40 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
     print(f"[async_discover_pois] Called with city={city}, bbox={bbox}, poi_type={poi_type}")
     # Store original bbox for filtering later
     filter_bbox = bbox
-    
-    if bbox is None:
-        if city is None:
-            print("[async_discover_pois] No city or bbox, returning empty")
+
+    # Ensure we have an aiohttp session to use; create/close our own if not provided
+    own_session = False
+    if session is None:
+        session = aiohttp.ClientSession()
+        own_session = True
+
+    try:
+        if bbox is None:
+            if city is None:
+                print("[async_discover_pois] No city or bbox, returning empty")
+                if own_session:
+                    try:
+                        await session.close()
+                    except Exception:
+                        pass
+                return []
+            bbox = await async_geocode_city(city, session=session)
+            print(f"[async_discover_pois] Geocoded to bbox={bbox}")
+        if not bbox:
+            print("[async_discover_pois] bbox is falsy, returning empty")
+            if own_session:
+                try:
+                    await session.close()
+                except Exception:
+                    pass
             return []
-        bbox = await async_geocode_city(city, session=session)
-        print(f"[async_discover_pois] Geocoded to bbox={bbox}")
-    if not bbox:
-        print("[async_discover_pois] bbox is falsy, returning empty")
-        return []
+    except Exception:
+        if own_session:
+            try:
+                await session.close()
+            except Exception:
+                pass
+        raise
     # bbox format: (west, south, east, north) - unpack and convert to Overpass format
     west, south, east, north = bbox
     bbox_str = f"{south},{west},{north},{east}"  # Overpass expects (south, west, north, east)

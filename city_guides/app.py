@@ -132,6 +132,7 @@ if _here not in sys.path:
 # Local providers are located in the same directory
 import multi_provider
 import semantic
+import synthesis
 
 # Enable remote debugging only when explicitly requested via env var
 if os.getenv("ENABLE_DEBUGPY", "0") == "1":
@@ -524,25 +525,222 @@ def ensure_bbox(neighborhood):
     return neighborhood
 
 
-@app.route("/neighborhoods", methods=["GET"])
-async def neighborhoods():
+# Tolerant JSON parsing helper: strips common line comments (// and #) and tries to load JSON.
+import re
+
+def tolerant_parse_json_bytes(raw_bytes: bytes):
+    """Best-effort parse of JSON payloads that may include // or # comments.
+
+    This function strips whole-line comments and trailing // comments before attempting
+    json.loads. It's intentionally conservative — it only removes comments that appear
+    as whole-line or trailing after a value (not inside strings) using heuristics.
     """
-    Query params:
-      - city (preferred): city name (e.g. "Lisbon")
-      - lat, lon (optional fallback)
-      - lang (optional) e.g. en, es
-    Response: JSON list of {id, name, slug, center:{lat,lon}, bbox:{minlat,minlon,maxlat,maxlon}, source}
+    try:
+        text = raw_bytes.decode('utf-8')
+    except Exception:
+        # fallback: attempt latin-1 decode
+        text = raw_bytes.decode('latin-1')
+    # Remove C-style // comments that are at line end or start
+    text = re.sub(r"(?m)//.*$", "", text)
+    # Remove shell-style # comments at line start or after whitespace
+    text = re.sub(r"(?m)^[ \t]*#.*$", "", text)
+    # Remove trailing comments after JSON values like: "key": "value"  # comment
+    text = re.sub(r"(?m)(\"[^\"]*\"\s*[:,]?\s*[^,\n\r]+?)\s+#.*$", r"\1", text)
+    # Remove any leftover blank lines caused by stripping
+    # Attempt to load as JSON
+    try:
+        return json.loads(text)
+    except Exception:
+        # Last-resort: try to find a JSON object in the text using regex
+        m = re.search(r"\{[\s\S]*\}", text)
+        if m:
+            try:
+                return json.loads(m.group(0))
+            except Exception:
+                pass
+    return None
+
+
+# Overpass helper: run a bbox-based query and normalize results
+OVERPASS_URL = os.getenv("OVERPASS_URL") or "https://overpass-api.de/api/interpreter"
+
+async def overpass_query_bbox(bbox, poi_type="restaurant", limit=50, session=None):
+    """Query Overpass within bbox and return normalized venue dicts.
+    bbox: [min_lon, min_lat, max_lon, max_lat]
+    poi_type: 'restaurant'|'coffee' etc to bias the query
     """
-    city = (request.args.get("city") or "").strip()
-    lang = (request.args.get("lang") or "en").strip()
-    lat = request.args.get("lat")
-    lon = request.args.get("lon")
+    south, west, north, east = bbox[1], bbox[0], bbox[3], bbox[2]
+    if poi_type == "coffee":
+        query = f"""
+[out:json][timeout:20];
+(
+  node["amenity"~"cafe|coffee_shop|bar"]({south},{west},{north},{east});
+  way["amenity"~"cafe|bar"]({south},{west},{north},{east});
+  node["shop"~"coffee|tea"]({south},{west},{north},{east});
+);
+out center {limit};
+"""
+    else:
+        query = f"""
+[out:json][timeout:25];
+(
+  node["amenity"~"cafe|restaurant|fast_food|bar"]({south},{west},{north},{east});
+  way["amenity"~"cafe|restaurant|fast_food|bar"]({south},{west},{north},{east});
+  relation["amenity"~"cafe|restaurant|fast_food|bar"]({south},{west},{north},{east});
+  node["shop"="coffee"]({south},{west},{north},{east});
+);
+out center {limit};
+"""
+    sess = session or aiohttp_session
+    if not sess:
+        raise RuntimeError("No aiohttp session available for Overpass query")
+    try:
+        async with sess.post(OVERPASS_URL, data={"data": query}, timeout=aiohttp.ClientTimeout(total=15)) as resp:  # type: ignore
+            if resp.status != 200:
+                raise RuntimeError(f"Overpass returned status {resp.status}")
+            data = await resp.json()
+    except Exception as e:
+        print(f"DEBUG: overpass_query_bbox failed: {e}")
+        return []
+
+    elems = data.get("elements", []) if isinstance(data, dict) else []
+    out = []
+    for e in elems:
+        try:
+            lat = e.get('lat')
+            lon = e.get('lon')
+            if not lat and 'center' in e:
+                lat = e['center'].get('lat')
+                lon = e['center'].get('lon')
+            if not lat or not lon:
+                continue
+            tags = e.get('tags') or {}
+            name = tags.get('name') or tags.get('amenity') or tags.get('shop') or ''
+            venue = {
+                'id': f"osm:{e.get('type')}/{e.get('id')}",
+                'name': name,
+                'lat': float(lat),
+                'lon': float(lon),
+                'tags': tags,
+                'osm_url': f"https://www.openstreetmap.org/{e.get('type')}/{e.get('id')}",
+                'provider': 'osm',
+            }
+            out.append(venue)
+            if len(out) >= limit:
+                break
+        except Exception:
+            continue
+    return out
 
 
-    if not city and not (lat and lon):
-        return jsonify({"error": "city or lat+lon required"}), 400
+async def auto_enrich_venues(q, city, neighborhoods, session=None, limit=5):
+    """Auto-discover POIs for proximity-based queries. Returns list of POIs or []."""
+    try:
+        q_low = (q or "").lower()
 
-    slug = re.sub(r"[^a-z0-9]+", "_", (city or f"{lat}_{lon}").lower())
+        neighborhood_name = None
+        bbox = None
+        if neighborhoods and len(neighborhoods) > 0:
+            nb0 = ensure_bbox(neighborhoods[0])
+            neighborhood_name = nb0.get('name')
+            bbox = nb0.get('bbox')
+
+        should_enrich = False
+        for k in ["nearby", "near", "near me", "nearby me", "nearby to", "close to", "closeby", "nearby?"]:
+            if k in q_low:
+                should_enrich = True
+                break
+        # Also enrich if neighborhood is explicitly mentioned in query
+        if not should_enrich and neighborhood_name and neighborhood_name.lower() in q_low:
+            should_enrich = True
+
+        # Respect operator flag to disable auto-enrichment
+        if os.getenv("AUTO_ENRICH", "1") == "0":
+            return []
+        if not should_enrich:
+            return []
+
+        cache_key = None
+        if redis_client:
+            try:
+                slug = re.sub(r"[^a-z0-9]+", "_", ((neighborhood_name or city or q) or "").lower()).strip("_")[:64]
+                q_hash = hashlib.sha1((q or "").encode()).hexdigest()[:8]
+                cache_key = f"enrich:{slug}:{q_hash}:{limit}"
+                raw = await redis_client.get(cache_key)
+                if raw:
+                    try:
+                        parsed = json.loads(raw)
+                        if isinstance(parsed, list):
+                            return parsed
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+        # Decide poi_type based on query keywords
+        poi_type = "restaurant"
+        if "coffee" in q_low or "cafe" in q_low:
+            poi_type = "coffee"
+
+        # Try Overpass first if we have a bbox (fast, targeted)
+        candidates = []
+        if bbox:
+            try:
+                overpass_res = await overpass_query_bbox(bbox, poi_type=poi_type if poi_type in ("coffee","restaurant") else "restaurant", limit=limit, session=session)
+                if overpass_res:
+                    candidates.extend(overpass_res)
+                    print(f"DEBUG: Overpass returned {len(overpass_res)} candidates")
+            except Exception as e:
+                print(f"DEBUG: overpass_query_bbox failed: {e}")
+
+        # Run discover_pois in a thread (sync version supports neighborhood and bbox params) as supplemental provider
+        try:
+            mp_candidates = await asyncio.to_thread(
+                multi_provider.discover_pois,
+                city or "",
+                poi_type,
+                limit,
+                False,
+                8.0,
+                bbox,
+                neighborhood_name,
+            )
+            if mp_candidates:
+                candidates.extend(mp_candidates)
+        except Exception as e:
+            print(f"DEBUG: discover_pois thread call failed: {e}")
+
+
+        # Basic filtering: ensure lat/lon present and non-zero
+        filtered = []
+        for c in candidates:
+            try:
+                if c and float(c.get('lat', 0)) and float(c.get('lon', 0)):
+                    filtered.append(c)
+            except Exception:
+                continue
+        # dedupe by id and name
+        out = []
+        seen = set()
+        for c in filtered:
+            key = (c.get('id') or '') + '::' + (c.get('name') or '').lower()
+            if key not in seen:
+                seen.add(key)
+                out.append(c)
+            if len(out) >= limit:
+                break
+
+        # cache results
+        if cache_key and redis_client and out:
+            try:
+                await redis_client.set(cache_key, json.dumps(out), ex=60 * 5)
+            except Exception:
+                pass
+
+        return out
+    except Exception as e:
+        print(f"DEBUG: auto_enrich_venues unexpected error: {e}")
+        return []
     cache_key = f"neighborhoods:{slug}:{lang}"
 
     # try redis cache (treat empty arrays as cache-miss to allow fallbacks)
@@ -2280,6 +2478,9 @@ def _search_impl(payload):
         provider_timeout = max(3.0, provider_timeout - 2.0)
     else:
         provider_timeout = 5.0
+    # If a neighborhood bbox is present, give providers more time to return localized results
+    if neighborhood_name and bbox:
+        provider_timeout = max(provider_timeout, 10.0)
 
     # Determine POI type based on query
     category_mapping = {
@@ -2354,21 +2555,39 @@ def _search_impl(payload):
 
         # If neighborhood is provided, filter or rank venues by proximity to neighborhood center
         if neighborhood_name:
-            # Try to geocode neighborhood to get center point
+            # Prefer the bbox we already computed earlier (if any) otherwise attempt a synchronous geocode
             try:
-                # nb_bbox = geocode_city(neighborhood_name)  # async, can't call in sync
-                nb_bbox = None
-                debug_info['neighborhood_bbox'] = nb_bbox
+                nb_bbox = debug_info.get('neighborhood_bbox') or bbox
+                if nb_bbox is None:
+                    try:
+                        georesp = requests.post(
+                            'http://localhost:5010/geocode',
+                            json={'city': city, 'neighborhood': neighborhood_name},
+                            timeout=6,
+                        )
+                        if georesp.ok:
+                            gj = georesp.json()
+                            nb_lat = gj.get('lat')
+                            nb_lon = gj.get('lon')
+                            if nb_lat and nb_lon:
+                                delta = 0.02
+                                nb_bbox = [nb_lon - delta, nb_lat - delta, nb_lon + delta, nb_lat + delta]
+                                debug_info['neighborhood_bbox'] = nb_bbox
+                    except Exception as e:
+                        logging.debug(f"Synchronous neighborhood geocode failed: {e}")
+
                 if nb_bbox is not None and len(nb_bbox) == 4:
                     min_lon, min_lat, max_lon, max_lat = nb_bbox  # type: ignore
                     center_lat = (min_lat + max_lat) / 2
                     center_lon = (min_lon + max_lon) / 2
+
                     def dist_km(venue):
                         lat = venue.get("lat") or venue.get("latitude")
                         lon = venue.get("lon") or venue.get("longitude")
                         if lat is None or lon is None:
                             return 1e9
                         from math import radians, sin, cos, asin, sqrt
+
                         lat1, lon1, lat2, lon2 = map(float, (center_lat, center_lon, lat, lon))
                         dlat = radians(lat2 - lat1)
                         dlon = radians(lon2 - lon1)
@@ -2378,6 +2597,7 @@ def _search_impl(payload):
                         )
                         c = 2 * asin(sqrt(a))
                         return 6371.0 * c
+
                     pois = sorted(pois, key=dist_km)
                     logging.debug(f"[SEARCH DEBUG] Applied proximity filtering to neighborhood '{neighborhood_name}' with bbox {nb_bbox}")
                 else:
@@ -2855,68 +3075,161 @@ async def poi_discover():
 
 @app.route("/semantic-search", methods=["POST"])
 async def ai_reason():
+    """Marco chat endpoint: accepts {q, city, venues, neighborhoods, mode, session_id}
+
+    Stores conversation in Redis under `marco:session:<session_id>` and includes recent
+    history in the prompt sent to `semantic.search_and_reason` for context-aware replies.
+    """
+    from uuid import uuid4
     print("AI REASON ROUTE CALLED")
-    payload = await request.get_json(silent=True) or {}
+
+    # Try normal JSON parsing first; if it fails (e.g., comments in payload), fall back to tolerant parser
+    payload = await request.get_json(silent=True)
+    if not payload:
+        try:
+            raw = await request.data
+            if raw:
+                payload = tolerant_parse_json_bytes(raw)
+        except Exception as e:
+            print(f"DEBUG: tolerant JSON parse failed: {e}")
+    payload = payload or {}
     q = (payload.get("q") or "").strip()
     city = (payload.get("city") or "").strip()  # optional
     mode = payload.get("mode", "explorer")  # default to explorer
     venues = payload.get("venues", [])  # venues from UI context
     neighborhoods = payload.get("neighborhoods", [])  # neighborhoods from UI context
-    print(f"DEBUG: Received q='{q}', city='{city}', venues_count={len(venues)}, neighborhoods_count={len(neighborhoods)}")
+    session_id = payload.get("session_id")
+    print(f"DEBUG: Received q='{q}', city='{city}', venues_count={len(venues)}, neighborhoods_count={len(neighborhoods)}, session_id={session_id}")
+
     if not q:
         return jsonify({"error": "query required"}), 400
+
+    # Ensure we have a session id
+    if not session_id:
+        session_id = str(uuid4())
+
+    # Build and persist conversation history in Redis (best-effort)
+    history_key = f"marco:session:{session_id}"
+    try:
+        # Store the user message as a JSON object
+        msg_obj = {"role": "user", "text": q}
+        if redis_client:
+            await redis_client.rpush(history_key, json.dumps(msg_obj))  # type: ignore
+            # trim to last 12 messages
+            await redis_client.ltrim(history_key, -12, -1)  # type: ignore
+            # set a TTL to avoid long-lived session state
+            await redis_client.expire(history_key, 60 * 60 * 24)  # 24h
+    except Exception as e:
+        print(f"DEBUG: Redis write failed: {e}")
+
     weather = payload.get("weather")
     wikivoyage = payload.get("wikivoyage")
     try:
-        # Debug logging for visibility
-        print(f"[AI_REASON DEBUG] Query: {q}")
-        print(f"[AI_REASON DEBUG] City: {city}")
-        print(f"[AI_REASON DEBUG] Neighborhoods count: {len(neighborhoods) if neighborhoods else 0}")
-        if neighborhoods:
-            print(f"[AI_REASON DEBUG] First 3 neighborhoods: {[n.get('name') for n in neighborhoods[:3]]}")
-        print(f"[AI_REASON DEBUG] Wikivoyage: {wikivoyage}")
-        # Check if neighborhoods were provided in the payload
+        # Fetch recent history for prompt context
+        history_items = []
+        try:
+            if redis_client:
+                raw = await redis_client.lrange(history_key, 0, -1)  # type: ignore
+                for r in raw or []:
+                    try:
+                        history_items.append(json.loads(r))
+                    except Exception:
+                        continue
+        except Exception as e:
+            print(f"DEBUG: Redis read failed: {e}")
+
+        # Compose a short history string for the prompt (user/assistant alternation)
+        history_str = "\n".join([f"{h.get('role').capitalize()}: {h.get('text')}" for h in history_items[-10:]])
+
+        # If neighborhoods provided, prefer neighborhood flow
         if neighborhoods:
             print(f"DEBUG: Using neighborhoods from payload: {len(neighborhoods)}")
-            answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=venues, weather=weather, neighborhoods=neighborhoods, session=aiohttp_session, wikivoyage=wikivoyage)
-            return jsonify({"answer": answer})
-        
-        # If the frontend didn't include any venues or neighborhoods, try to suggest neighborhoods
-        if not venues:
-            try:
-                lat = payload.get("user_lat") or payload.get("lat")
-                lon = payload.get("user_lon") or payload.get("lon")
-                latf = float(lat) if lat not in (None, "") else None
-                lonf = float(lon) if lon not in (None, "") else None
-            except Exception:
-                latf = lonf = None
+            answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=venues, weather=weather, neighborhoods=neighborhoods, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
+        else:
+            # attempt to fetch neighborhoods if not provided
+            if not venues:
+                try:
+                    lat = payload.get("user_lat") or payload.get("lat")
+                    lon = payload.get("user_lon") or payload.get("lon")
+                    latf = float(lat) if lat not in (None, "") else None
+                    lonf = float(lon) if lon not in (None, "") else None
+                except Exception:
+                    latf = lonf = None
 
-            try:
-                nbh = await multi_provider.async_get_neighborhoods(city=city or None, lat=latf, lon=lonf, lang=payload.get("lang", "en"), session=aiohttp_session)
-                print(f"DEBUG: Fetched neighborhoods from provider: {len(nbh)}")
-            except Exception:
-                nbh = []
+                try:
+                    nbh = await multi_provider.async_get_neighborhoods(city=city or None, lat=latf, lon=lonf, lang=payload.get("lang", "en"), session=aiohttp_session)
+                    print(f"DEBUG: Fetched neighborhoods from provider: {len(nbh)}")
+                except Exception:
+                    nbh = []
 
-            if nbh:
-                # Use AI to recommend neighborhoods instead of just listing them
-                print(f"DEBUG: Calling search_and_reason with neighborhoods")
-                answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, neighborhoods=nbh, session=aiohttp_session, wikivoyage=wikivoyage)
-                return jsonify({"answer": answer})
+                if nbh:
+                    # Attempt auto-enrichment: fetch POIs for the neighborhood if no venues were provided
+                    try:
+                        enriched = await auto_enrich_venues(q, city, nbh, session=aiohttp_session)
+                        if enriched:
+                            print(f"DEBUG: Auto-enrichment fetched {len(enriched)} venues; including in semantic prompt")
+                            answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=enriched, weather=weather, neighborhoods=nbh, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
+                        else:
+                            answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, neighborhoods=nbh, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
+                    except Exception as e:
+                        print(f"DEBUG: auto_enrich_venues failed: {e}")
+                        answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, neighborhoods=nbh, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
+                else:
+                    # No neighborhoods found: try to auto-enrich at city-level if the query suggests locality (e.g., contains 'in' or category words)
+                    try:
+                        enriched = await auto_enrich_venues(q, city, [], session=aiohttp_session)
+                        if enriched:
+                            print(f"DEBUG: Auto-enrichment (city-level) fetched {len(enriched)} venues; including in semantic prompt")
+                            answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=enriched, weather=weather, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
+                        else:
+                            answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
+                    except Exception as e:
+                        print(f"DEBUG: auto_enrich_venues (city-level) failed: {e}")
+                        answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
             else:
-                # fallback: run semantic reasoning without venue context
-                print(f"DEBUG: No neighborhoods found, calling search_and_reason without neighborhoods")
-                answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, session=aiohttp_session, wikivoyage=wikivoyage)
-                return jsonify({"answer": answer})
+                answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=venues, weather=weather, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
 
-        # Call async semantic logic directly when venues are present
-        answer = await semantic.search_and_reason(
-            q, city if city else None, mode, context_venues=venues, weather=weather, session=aiohttp_session, wikivoyage=wikivoyage
-        )
-        # semantic.search_and_reason returns either a string or dict with 'answer' key
-        # Preserve behavior by returning it as-is
-        return jsonify({"answer": answer})
+        # Persist assistant response into Redis history
+        try:
+            if redis_client:
+                msg_obj = {"role": "assistant", "text": answer if isinstance(answer, str) else (answer.get('answer') if isinstance(answer, dict) else str(answer))}
+                await redis_client.rpush(history_key, json.dumps(msg_obj))  # type: ignore
+                await redis_client.ltrim(history_key, -12, -1)  # type: ignore
+                await redis_client.expire(history_key, 60 * 60 * 24)  # 24h
+        except Exception as e:
+            print(f"DEBUG: Redis write failed (assistant): {e}")
+
+        return jsonify({"answer": answer, "session_id": session_id})
     except Exception as e:
-        return jsonify({"answer": "Ahoy! 🪙 My explorer's eyes are tired. - Marco"}), 200
+        return jsonify({"answer": "Ahoy! 🪙 My explorer's eyes are tired. - Marco", "session_id": session_id}), 200
+
+
+@app.route("/synthesize", methods=["POST"])
+async def synthesize_route():
+    """Synthesize search results using Groq (Marco). Accepts either a precomputed `search_result` in the body
+    or the same payload that `/search` accepts and will run `_search_impl` to compute it.
+    """
+    payload = await request.get_json(silent=True) or {}
+
+    # Accept `search_result` directly (preferred for deterministic testability)
+    if "search_result" in payload:
+        search_result = payload.get("search_result") or {}
+    else:
+        # Compute search result synchronously in a thread to avoid blocking the event loop
+        search_result = await asyncio.to_thread(_search_impl, payload or {})
+
+    client = synthesis.SynthesisClient()
+    # Run synthesis in a thread (synchronous client)
+    items, warnings = await asyncio.to_thread(client.synthesize, search_result)
+
+    return jsonify({
+        "synthesized_venues": items,
+        "warnings": warnings,
+        "search_preview": {
+            "venues_count": len(search_result.get("venues", [])),
+            "debug_info": search_result.get("debug_info"),
+        },
+    })
 
 
 @app.route("/convert", methods=["POST"])

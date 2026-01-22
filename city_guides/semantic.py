@@ -509,7 +509,7 @@ Ready to explore these areas? Click any neighborhood to focus your search there!
 from typing import Optional
 
 async def search_and_reason(
-    query, city=None, mode="explorer", context_venues=None, weather=None, neighborhoods=None, session: Optional[aiohttp.ClientSession] = None, wikivoyage=None
+    query, city=None, mode="explorer", context_venues=None, weather=None, neighborhoods=None, session: Optional[aiohttp.ClientSession] = None, wikivoyage=None, history: str = None
 ):
     """Search the web and use Groq to reason about the query.
 
@@ -660,8 +660,11 @@ async def search_and_reason(
         w_summary = icons.get(weather.get("weathercode"), "Unknown")
         weather_context = f"\nCURRENT WEATHER IN {city or 'the city'}:\n{w_summary}, {weather.get('temperature_c')}°C / {weather.get('temperature_f')}°F, Wind {weather.get('wind_kmh')} km/h.\n"
 
+    # Incorporate conversation history (if any) into the prompt so Marco can follow-up naturally
+    history_block = f"CONVERSATION HISTORY:\n{history}\n\n" if history else ""
+
     if mode == "explorer":
-        prompt = f"""You are Marco, the legendary explorer! 🗺️
+        prompt = f"""{history_block}You are Marco, the legendary explorer! 🗺️
 
 Traveler is asking: {query}
 
@@ -680,7 +683,7 @@ INSTRUCTIONS FOR MARCO:
 5. If multiple spots match, mention 2 options.
 6. Be enthusiastic and explorer-themed. Sign off as Marco.🗺️🧭"""
     else:
-        prompt = f"User query: {query}\n\n{ui_context}\n\nWeb Data:\n{context}\n\nProvide a factual response."
+        prompt = f"{history_block}User query: {query}\n\n{ui_context}\n\nWeb Data:\n{context}\n\nProvide a factual response."
 
     # Check for public-data-only mode
     import os
