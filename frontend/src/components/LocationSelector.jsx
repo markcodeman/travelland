@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const API_BASE = 'http://localhost:5010';
+const API_BASE = '';
 
 const LocationSelector = ({ onLocationChange }) => {
   const [countries, setCountries] = useState([]);

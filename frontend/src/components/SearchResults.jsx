@@ -55,19 +55,6 @@ export default function SearchResults({ results }) {
         </section>
       )}
 
-      {wikivoyage.length > 0 && (
-        <section>
-          <h2>Wikivoyage highlights <span className="section-sub">(context)</span></h2>
-          {wikivoyage.map((w, i) => (
-            <div key={i} className="wikivoyage-section">
-              <h3>{w.title || w.section} <span className="source-badge source-wikivoyage">WIKIVOYAGE</span></h3>
-              <p>{w.content || w.text}</p>
-              {w.wikivoyage_url && <a href={w.wikivoyage_url} target="_blank" rel="noopener noreferrer">Read more on Wikivoyage</a>}
-            </div>
-          ))}
-        </section>
-      )}
-
       {costs.length > 0 && (
         <section>
           <h2>Cost Estimates</h2>
