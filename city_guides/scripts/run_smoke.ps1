@@ -3,7 +3,7 @@
 
 $cwd = Get-Location
 $python = Join-Path $cwd '.venv\Scripts\python.exe'
-$app = Join-Path $cwd 'app.py'
+$app = Join-Path $cwd 'src\app.py'
 $test = Join-Path $cwd 'tests\playwright_local_smoke.py'
 
 if (-Not (Test-Path $python)) { Write-Error "Python executable not found at $python"; exit 2 }

@@ -85,3 +85,10 @@ venv_new/
 # Temporary files
 *.bak
 /tmp_overpass_debug.py
+
+# Flask
+instance/
+.webassets-cache
+
+# Logs
+*.log
