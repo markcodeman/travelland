@@ -1,15 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function MarcoChat({ city, neighborhood, venues, onClose }) {
+export default function MarcoChat({ city, neighborhood, venues, category, wikivoyage, onClose }) {
   const [messages, setMessages] = useState([]); // {role: 'user'|'assistant', text}
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState(localStorage.getItem('marco_session_id') || null);
   const [loading, setLoading] = useState(false);
   const boxRef = useRef(null);
+  const hasSentInitial = useRef(false);
 
   useEffect(() => {
     if (sessionId) localStorage.setItem('marco_session_id', sessionId);
   }, [sessionId]);
+
+  // Auto-send venue data or category-based message when chat opens
+  useEffect(() => {
+    if (!hasSentInitial.current && messages.length === 0) {
+      hasSentInitial.current = true;
+      let venueText;
+      if (venues && venues.length > 0) {
+        venueText = `Here are some great places I found in ${neighborhood ? neighborhood + ', ' : ''}${city}:\n\n${venues.map((v, i) => `${i + 1}. ${v.name || v.title} - ${v.description || v.address || 'No description'}`).join('\n')}\n\nWhat would you like to know about these places?`;
+      } else if (category) {
+        venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and found some great ${category} options! What would you like to know about ${category} in ${city}?`;
+      } else {
+        venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and I'm ready to help you discover the best spots! What are you interested in - food, attractions, transport, or something else?`;
+      }
+      sendMessage(venueText);
+    }
+  }, [venues, category, messages.length]); // Include category in dependencies
 
   async function sendMessage(text) {
     if (!text || !text.trim()) return;
@@ -23,6 +40,7 @@ export default function MarcoChat({ city, neighborhood, venues, onClose }) {
         city: city || undefined,
         neighborhoods: neighborhood ? [{ name: neighborhood }] : undefined,
         venues: venues || undefined,
+        wikivoyage: wikivoyage || undefined,
         mode: 'explorer',
         session_id: sessionId,
       };

@@ -412,6 +412,8 @@ function App() {
             city={location.city} 
             neighborhood={location.neighborhood} 
             venues={results?.venues?.slice(0, 6) || []} 
+            category={selectedSuggestion}
+            wikivoyage={results?.wikivoyage}
             onClose={() => setMarcoOpen(false)}
           />
         )}
