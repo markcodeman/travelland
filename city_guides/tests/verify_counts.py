@@ -2,9 +2,9 @@ import sys
 import os
 
 # Add the city-guides directory to the path
-sys.path.append(os.path.join(os.getcwd(), "city-guides"))
+sys.path.append(os.path.join(os.getcwd(), "city_guides"))
 
-import multi_provider
+from providers import multi_provider
 
 
 def test_count():

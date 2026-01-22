@@ -1,4 +1,4 @@
-import multi_provider
+from providers import multi_provider
 import json
 import os
 

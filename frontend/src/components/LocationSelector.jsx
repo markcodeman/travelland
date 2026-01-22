@@ -13,12 +13,36 @@ const LocationSelector = ({ onLocationChange }) => {
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedNeighborhood, setSelectedNeighborhood] = useState('');
 
+  const [countryInput, setCountryInput] = useState('');
+  const [stateInput, setStateInput] = useState('');
+  const [cityInput, setCityInput] = useState('');
+  const [neighborhoodInput, setNeighborhoodInput] = useState('');
+
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [showStateDropdown, setShowStateDropdown] = useState(false);
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [showNeighborhoodDropdown, setShowNeighborhoodDropdown] = useState(false);
+
   const [loading, setLoading] = useState({
     countries: false,
     states: false,
     cities: false,
     neighborhoods: false
   });
+
+  // Filtered options
+  const filteredCountries = countries.filter(country =>
+    country.name.toLowerCase().includes(countryInput.toLowerCase())
+  );
+  const filteredStates = states.filter(state =>
+    state.name.toLowerCase().includes(stateInput.toLowerCase())
+  );
+  const filteredCities = cities.filter(city =>
+    city.name.toLowerCase().includes(cityInput.toLowerCase())
+  );
+  const filteredNeighborhoods = neighborhoods.filter(neighborhood =>
+    neighborhood.name.toLowerCase().includes(neighborhoodInput.toLowerCase())
+  );
 
   // Fetch countries on mount
   useEffect(() => {
@@ -29,6 +53,12 @@ const LocationSelector = ({ onLocationChange }) => {
         const data = await response.json();
         console.log('Countries data:', data);
         setCountries(data);
+        // Prefill with US for testing
+        const usCountry = data.find(c => c.code === 'US');
+        if (usCountry) {
+          setSelectedCountry('US');
+          setCountryInput(usCountry.name);
+        }
       } catch (error) {
         console.error('Failed to fetch countries:', error);
       } finally {
@@ -53,6 +83,14 @@ const LocationSelector = ({ onLocationChange }) => {
         const response = await fetch(`${API_BASE}/api/locations/states?countryCode=${selectedCountry}`);
         const data = await response.json();
         setStates(data);
+        // Prefill with CA for testing if US is selected
+        if (selectedCountry === 'US') {
+          const caState = data.find(s => s.code === 'CA');
+          if (caState) {
+            setSelectedState('CA');
+            setStateInput(caState.name);
+          }
+        }
       } catch (error) {
         console.error('Failed to fetch states:', error);
       } finally {
@@ -77,6 +115,14 @@ const LocationSelector = ({ onLocationChange }) => {
         const response = await fetch(`${API_BASE}/api/locations/cities?countryCode=${selectedCountry}&stateCode=${selectedState}`);
         const data = await response.json();
         setCities(data);
+        // Prefill with San Francisco for testing if CA is selected
+        if (selectedState === 'CA') {
+          const sfCity = data.find(c => c.name.toLowerCase() === 'san francisco');
+          if (sfCity) {
+            setSelectedCity(sfCity.name);
+            setCityInput(sfCity.name);
+          }
+        }
       } catch (error) {
         console.error('Failed to fetch cities:', error);
       } finally {
@@ -125,27 +171,102 @@ const LocationSelector = ({ onLocationChange }) => {
     };
 
     onLocationChange(location);
-  }, [selectedCountry, selectedState, selectedCity, selectedNeighborhood, countries, states, onLocationChange]);
+  }, [selectedCountry, selectedState, selectedCity, selectedNeighborhood, onLocationChange]);
 
-  const handleCountryChange = (e) => {
-    const countryCode = e.target.value;
-    setSelectedCountry(countryCode);
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.location-selector')) {
+        setShowCountryDropdown(false);
+        setShowStateDropdown(false);
+        setShowCityDropdown(false);
+        setShowNeighborhoodDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleCountryInputChange = (e) => {
+    const value = e.target.value;
+    setCountryInput(value);
+    if (!value) {
+      setSelectedCountry('');
+      setSelectedState('');
+      setStateInput('');
+      setSelectedCity('');
+      setCityInput('');
+      setSelectedNeighborhood('');
+      setNeighborhoodInput('');
+    }
+    setShowCountryDropdown(true);
+  };
+
+  const handleCountrySelect = (country) => {
+    setSelectedCountry(country.code);
+    setCountryInput(country.name);
+    setShowCountryDropdown(false);
     setSelectedState('');
+    setStateInput('');
     setSelectedCity('');
+    setCityInput('');
     setSelectedNeighborhood('');
+    setNeighborhoodInput('');
   };
 
-  const handleStateChange = (e) => {
-    const stateCode = e.target.value;
-    setSelectedState(stateCode);
-    setSelectedCity('');
-    setSelectedNeighborhood('');
+  const handleStateInputChange = (e) => {
+    const value = e.target.value;
+    setStateInput(value);
+    if (!value) {
+      setSelectedState('');
+      setSelectedCity('');
+      setCityInput('');
+      setSelectedNeighborhood('');
+      setNeighborhoodInput('');
+    }
+    setShowStateDropdown(true);
   };
 
-  const handleCityChange = (e) => {
-    const cityName = e.target.value;
-    setSelectedCity(cityName);
+  const handleStateSelect = (state) => {
+    setSelectedState(state.code);
+    setStateInput(state.name);
+    setShowStateDropdown(false);
+    setSelectedCity('');
+    setCityInput('');
     setSelectedNeighborhood('');
+    setNeighborhoodInput('');
+  };
+
+  const handleCityInputChange = (e) => {
+    const value = e.target.value;
+    setCityInput(value);
+    setSelectedCity(value);
+    if (!value) {
+      setSelectedNeighborhood('');
+      setNeighborhoodInput('');
+    }
+    setShowCityDropdown(true);
+  };
+
+  const handleCitySelect = (city) => {
+    setSelectedCity(city.name);
+    setCityInput(city.name);
+    setShowCityDropdown(false);
+    setSelectedNeighborhood('');
+    setNeighborhoodInput('');
+  };
+
+  const handleNeighborhoodInputChange = (e) => {
+    const value = e.target.value;
+    setNeighborhoodInput(value);
+    setSelectedNeighborhood(value);
+    setShowNeighborhoodDropdown(true);
+  };
+
+  const handleNeighborhoodSelect = (neighborhood) => {
+    setSelectedNeighborhood(neighborhood.name);
+    setNeighborhoodInput(neighborhood.name);
+    setShowNeighborhoodDropdown(false);
   };
 
   const handleNeighborhoodChange = (e) => {
@@ -169,86 +290,182 @@ const LocationSelector = ({ onLocationChange }) => {
   };
 
   return (
-    <div style={{ marginBottom: '16px' }}>
-      <div style={{ marginBottom: '8px' }}>
+    <div className="location-selector" style={{ marginBottom: '16px' }}>
+      <div style={{ marginBottom: '8px', position: 'relative' }}>
         <label style={labelStyle}>Country:</label>
-        <select
-          value={selectedCountry}
-          onChange={handleCountryChange}
+        <input
+          type="text"
+          value={countryInput}
+          onChange={handleCountryInputChange}
+          onFocus={() => setShowCountryDropdown(true)}
+          placeholder={loading.countries ? 'Loading countries...' : 'Type to search countries'}
           style={selectStyle}
           disabled={loading.countries}
-        >
-          <option value="">
-            {loading.countries ? 'Loading countries...' : 'Select a country'}
-          </option>
-          {countries.map(country => (
-            <option key={country.code} value={country.code}>
-              {country.name}
-            </option>
-          ))}
-        </select>
+        />
+        {showCountryDropdown && filteredCountries.length > 0 && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: 'white',
+            border: '1px solid #ccc',
+            borderTop: 'none',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            zIndex: 1000
+          }}>
+            {filteredCountries.map(country => (
+              <div
+                key={country.code}
+                onClick={() => handleCountrySelect(country)}
+                style={{
+                  padding: '8px',
+                  cursor: 'pointer',
+                  borderBottom: '1px solid #eee'
+                }}
+                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                onMouseLeave={(e) => e.target.style.background = 'white'}
+              >
+                {country.name}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {selectedCountry && (
-        <div style={{ marginBottom: '8px' }}>
+        <div style={{ marginBottom: '8px', position: 'relative' }}>
           <label style={labelStyle}>State/Province:</label>
-          <select
-            value={selectedState}
-            onChange={handleStateChange}
+          <input
+            type="text"
+            value={stateInput}
+            onChange={handleStateInputChange}
+            onFocus={() => setShowStateDropdown(true)}
+            placeholder={loading.states ? 'Loading states...' : 'Type to search states'}
             style={selectStyle}
             disabled={loading.states}
-          >
-            <option value="">
-              {loading.states ? 'Loading states...' : 'Select a state/province'}
-            </option>
-            {states.map(state => (
-              <option key={state.code} value={state.code}>
-                {state.name}
-              </option>
-            ))}
-          </select>
+          />
+          {showStateDropdown && filteredStates.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              background: 'white',
+              border: '1px solid #ccc',
+              borderTop: 'none',
+              maxHeight: '200px',
+              overflowY: 'auto',
+              zIndex: 1000
+            }}>
+              {filteredStates.map(state => (
+                <div
+                  key={state.code}
+                  onClick={() => handleStateSelect(state)}
+                  style={{
+                    padding: '8px',
+                    cursor: 'pointer',
+                    borderBottom: '1px solid #eee'
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                  onMouseLeave={(e) => e.target.style.background = 'white'}
+                >
+                  {state.name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {selectedState && (
-        <div style={{ marginBottom: '8px' }}>
+        <div style={{ marginBottom: '8px', position: 'relative' }}>
           <label style={labelStyle}>City:</label>
-          <select
-            value={selectedCity}
-            onChange={handleCityChange}
+          <input
+            type="text"
+            value={cityInput}
+            onChange={handleCityInputChange}
+            onFocus={() => setShowCityDropdown(true)}
+            placeholder={loading.cities ? 'Loading cities...' : 'Type to search cities'}
             style={selectStyle}
             disabled={loading.cities}
-          >
-            <option value="">
-              {loading.cities ? 'Loading cities...' : 'Select a city'}
-            </option>
-            {cities.map(city => (
-              <option key={city.id} value={city.name}>
-                {city.name}
-              </option>
-            ))}
-          </select>
+          />
+          {showCityDropdown && filteredCities.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              background: 'white',
+              border: '1px solid #ccc',
+              borderTop: 'none',
+              maxHeight: '200px',
+              overflowY: 'auto',
+              zIndex: 1000
+            }}>
+              {filteredCities.map(city => (
+                <div
+                  key={city.id}
+                  onClick={() => handleCitySelect(city)}
+                  style={{
+                    padding: '8px',
+                    cursor: 'pointer',
+                    borderBottom: '1px solid #eee'
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                  onMouseLeave={(e) => e.target.style.background = 'white'}
+                >
+                  {city.name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {selectedCity && (
-        <div style={{ marginBottom: '8px' }}>
+        <div style={{ marginBottom: '8px', position: 'relative' }}>
           <label style={labelStyle}>Neighborhood (optional):</label>
-          <select
-            value={selectedNeighborhood}
-            onChange={handleNeighborhoodChange}
+          <input
+            type="text"
+            value={neighborhoodInput}
+            onChange={handleNeighborhoodInputChange}
+            onFocus={() => setShowNeighborhoodDropdown(true)}
+            placeholder={loading.neighborhoods ? 'Loading neighborhoods...' : 'Type to search neighborhoods'}
             style={selectStyle}
             disabled={loading.neighborhoods}
-          >
-            <option value="">
-              {loading.neighborhoods ? 'Loading neighborhoods...' : 'Any neighborhood'}
-            </option>
-            {neighborhoods.map(neighborhood => (
-              <option key={neighborhood.id} value={neighborhood.name}>
-                {neighborhood.name}
-              </option>
-            ))}
-          </select>
+          />
+          {showNeighborhoodDropdown && filteredNeighborhoods.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              background: 'white',
+              border: '1px solid #ccc',
+              borderTop: 'none',
+              maxHeight: '200px',
+              overflowY: 'auto',
+              zIndex: 1000
+            }}>
+              {filteredNeighborhoods.map(neighborhood => (
+                <div
+                  key={neighborhood.id}
+                  onClick={() => handleNeighborhoodSelect(neighborhood)}
+                  style={{
+                    padding: '8px',
+                    cursor: 'pointer',
+                    borderBottom: '1px solid #eee'
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                  onMouseLeave={(e) => e.target.style.background = 'white'}
+                >
+                  {neighborhood.name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
