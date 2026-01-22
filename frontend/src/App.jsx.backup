@@ -177,7 +177,7 @@ function App() {
       mounted = false; 
       clearTimeout(timeoutId); 
     };
-  }, [location.city, location.neighborhood, category, fetchAPI]);
+  }, [city, neighborhood, category, fetchAPI]);
 
   // Weather fetch with geocoding
   const fetchWeatherData = useCallback(async (cityName, neighborhoodName = '') => {

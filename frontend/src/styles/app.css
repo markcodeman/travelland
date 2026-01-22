@@ -379,3 +379,127 @@ pre {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* Marco Chat Modal Styles */
+.marco-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.marco-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.marco-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 12px 12px 0 0;
+}
+
+.marco-header span {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.marco-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.marco-close:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.marco-messages {
+  flex: 1;
+  padding: 16px 20px;
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.marco-msg {
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  line-height: 1.4;
+}
+
+.marco-msg.user {
+  background: #3b82f6;
+  color: white;
+  margin-left: 40px;
+}
+
+.marco-msg.assistant {
+  background: #f3f4f6;
+  color: #1f2937;
+  margin-right: 40px;
+}
+
+.marco-input {
+  display: flex;
+  padding: 16px 20px;
+  border-top: 1px solid #e5e7eb;
+  gap: 8px;
+}
+
+.marco-input input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  outline: none;
+}
+
+.marco-input input:focus {
+  border-color: #3b82f6;
+}
+
+.marco-input button {
+  padding: 8px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.marco-input button:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.marco-input button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
