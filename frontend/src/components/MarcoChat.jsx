@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function MarcoChat({ city, neighborhood, venues }) {
-  const [open, setOpen] = useState(false);
+export default function MarcoChat({ city, neighborhood, venues, onClose }) {
   const [messages, setMessages] = useState([]); // {role: 'user'|'assistant', text}
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState(localStorage.getItem('marco_session_id') || null);
@@ -11,10 +10,6 @@ export default function MarcoChat({ city, neighborhood, venues }) {
   useEffect(() => {
     if (sessionId) localStorage.setItem('marco_session_id', sessionId);
   }, [sessionId]);
-
-  function toggle() {
-    setOpen(o => !o);
-  }
 
   async function sendMessage(text) {
     if (!text || !text.trim()) return;
@@ -53,22 +48,22 @@ export default function MarcoChat({ city, neighborhood, venues }) {
   }
 
   return (
-    <div>
-      <button id="marcoFab" className="marco-fab" onClick={toggle}>Marco</button>
-      {open && (
-        <div className="marco-panel">
-          <div className="marco-header">Marco — Ask me anything about {neighborhood ? neighborhood + ', ' : ''}{city || ''}</div>
-          <div className="marco-messages" ref={boxRef}>
-            {messages.map((m, i) => (
-              <div key={i} className={`marco-msg ${m.role}`}>{m.text}</div>
-            ))}
-          </div>
-          <div className="marco-input">
-            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') sendMessage(input); }} placeholder="Ask Marco a question" />
-            <button disabled={loading} onClick={() => sendMessage(input)}>{loading ? '...' : 'Send'}</button>
-          </div>
+    <div className="marco-modal-overlay">
+      <div className="marco-modal">
+        <div className="marco-header">
+          <span>Marco — Ask me anything about {neighborhood ? neighborhood + ', ' : ''}{city || ''}</span>
+          <button className="marco-close" onClick={onClose}>×</button>
         </div>
-      )}
+        <div className="marco-messages" ref={boxRef}>
+          {messages.map((m, i) => (
+            <div key={i} className={`marco-msg ${m.role}`}>{m.text}</div>
+          ))}
+        </div>
+        <div className="marco-input">
+          <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') sendMessage(input); }} placeholder="Ask Marco a question" />
+          <button disabled={loading} onClick={() => sendMessage(input)}>{loading ? '...' : 'Send'}</button>
+        </div>
+      </div>
     </div>
   );
 }
