@@ -102,7 +102,7 @@ def build_response_for_any_query(query, context, analysis_result):
         return handle_followup_conversation(query, available_venues, city)
 
     elif analysis_result == "answer_with_venue_data":
-        return build_venue_answer_response(query, available_venues, city)
+        return None  # Let the AI handle venue questions with context
 
     elif analysis_result == "neighborhood_exploration":
         return build_neighborhood_response(query, neighborhoods, city)
@@ -1201,7 +1201,13 @@ async def search_and_reason(
             else:
                 logging.debug(f"[Marco DEBUG] Wikipedia sections NOT found for: {query_title} or fallback neighborhood")
         # Use the explorer-themed recommender for neighborhoods
-        if neighborhoods and len(neighborhoods) > 0:
+        # BUT only if the query analysis didn't determine this should be something else
+        should_add_neighborhoods = (
+            neighborhoods and len(neighborhoods) > 0 and
+            analysis_result in ["exploratory_engagement", "neighborhood_exploration"]
+        )
+
+        if should_add_neighborhoods:
             marco_answer = await recommend_neighborhoods(query, city, neighborhoods, mode=mode, weather=weather, session=session)
             summary_parts.append(marco_answer)
         # Blend all other public data as before
@@ -1220,7 +1226,7 @@ async def search_and_reason(
             venue_lines = [f"- {v.get('name')} ({v.get('address') or 'no address'}) — {v.get('description') or ''}" for v in context_venues[:5] if v.get('name')]
             if venue_lines:
                 summary_parts.append("\n**Notable places you can visit:**\n" + "\n".join(venue_lines))
-        if neighborhoods and len(neighborhoods) > 0:
+        if neighborhoods and len(neighborhoods) > 0 and analysis_result in ["exploratory_engagement", "neighborhood_exploration"]:
             nh_names = [n.get("name") for n in neighborhoods if n.get("name")]
             if nh_names:
                 summary_parts.append("\n**Other neighborhoods to explore:** " + ", ".join(nh_names))
