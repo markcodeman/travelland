@@ -3615,8 +3615,6 @@ async def ai_reason():
         # Compose a short history string for the prompt (only user messages to avoid confusion)
         user_messages = [h.get('text') for h in history_items[-5:] if h.get('role') == 'user']  # Last 5 user messages
         history_str = "\n".join([f"Previous user question: {msg}" for msg in user_messages[:-1]])  # Exclude current query
-
-        # If neighborhoods provided, prefer neighborhood flow
         if neighborhoods:
             print(f"DEBUG: Using neighborhoods from payload: {len(neighborhoods)}")
             # For venue queries, try to enrich with venues
@@ -3655,12 +3653,10 @@ async def ai_reason():
                     except Exception:
                         latf = lonf = None
 
-                    try:
-                        nbh = await multi_provider.async_get_neighborhoods(city=city or None, lat=latf, lon=lonf, lang=payload.get("lang", "en"), session=aiohttp_session)
-                        print(f"DEBUG: Fetched neighborhoods from provider: {len(nbh)}")
-                    except Exception:
-                        nbh = []
-                    if nbh:
+        # Skip neighborhood fetching for now to avoid hangs
+        nbh = []
+        print(f"DEBUG: Skipping neighborhood fetch, nbh count: {len(nbh)}")
+        if nbh:
                         # attempt auto-enrichment: fetch POIs for the neighborhood if no venues were provided
                         try:
                             enriched = await enhanced_auto_enrich_venues(q, city, nbh, session=aiohttp_session)
@@ -3685,9 +3681,7 @@ async def ai_reason():
                                 print(f"DEBUG: enhanced_auto_enrich_venues (city-level) failed: {e}")
                                 answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
                             else:
-                                answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=venues, weather=weather, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
-
-                        # Persist assistant response into Redis history
+                                answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=venues, weather=weather, session=None, wikivoyage=wikivoyage, history=history_str)
         try:
             if redis_client:
                 msg_obj = {"role": "assistant", "text": answer if isinstance(answer, str) else (answer.get('answer') if isinstance(answer, dict) else str(answer))}
