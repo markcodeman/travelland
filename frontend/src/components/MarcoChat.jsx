@@ -20,7 +20,18 @@ export default function MarcoChat({ city, neighborhood, venues, category, wikivo
       if (venues && venues.length > 0) {
         venueText = `Here are some great places I found in ${neighborhood ? neighborhood + ', ' : ''}${city}:\n\n${venues.map((v, i) => `${i + 1}. ${v.name || v.title} - ${v.description || v.address || 'No description'}`).join('\n')}\n\nWhat would you like to know about these places?`;
       } else if (category) {
-        venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and found some great ${category} options! What would you like to know about ${category} in ${city}?`;
+        const cLower = (category || '').toLowerCase();
+        let action = 'prepare';
+        if (cLower.includes('coffee')) action = 'brew';
+        else if (cLower.includes('tea')) action = 'steep';
+        else if (cLower.includes('pizza')) action = 'bake';
+        else if (cLower.includes('sushi')) action = 'roll';
+        else if (cLower.includes('beer')) action = 'pour';
+        else if (cLower.includes('wine')) action = 'uncork';
+        else if (cLower.includes('dessert')) action = 'bake';
+        else if (cLower.includes('taco')) action = 'grill';
+
+        venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and found some great ${category} options! Standby while I ${action} them up.`;
       } else {
         venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and I'm ready to help you discover the best spots! What are you interested in - food, attractions, transport, or something else?`;
       }
