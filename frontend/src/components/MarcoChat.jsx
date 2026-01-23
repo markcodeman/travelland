@@ -55,6 +55,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, wikivo
         city: city || undefined,
         neighborhoods: neighborhood ? [{ name: neighborhood }] : undefined,
         venues: venues || undefined,
+        category: category || undefined,
         wikivoyage: wikivoyage || undefined,
         mode: 'explorer',
         session_id: sessionId,
