@@ -35,11 +35,15 @@ export default function MarcoChat({ city, neighborhood, venues, category, wikivo
       } else {
         venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and I'm ready to help you discover the best spots! What are you interested in - food, attractions, transport, or something else?`;
       }
-      sendMessage(venueText);
+      if (category) {
+        sendMessage(venueText, `What are some great ${category} options in ${neighborhood ? neighborhood + ', ' : ''}${city}?`);
+      } else {
+        sendMessage(venueText);
+      }
     }
   }, [venues, category, messages.length]); // Include category in dependencies
 
-  async function sendMessage(text) {
+  async function sendMessage(text, query = null) {
     if (!text || !text.trim()) return;
     const msg = { role: 'user', text };
     setMessages(m => [...m, msg]);
@@ -47,7 +51,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, wikivo
     setLoading(true);
     try {
       const payload = {
-        q: text,
+        q: query || text,
         city: city || undefined,
         neighborhoods: neighborhood ? [{ name: neighborhood }] : undefined,
         venues: venues || undefined,
