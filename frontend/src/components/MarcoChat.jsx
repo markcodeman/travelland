@@ -42,7 +42,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, wikivo
         body: JSON.stringify(payload)
       });
       const data = await resp.json();
-      const fetchedVenues = data.venues || [];
+      const fetchedVenues = (data.venues || []).filter(v => v.provider !== 'wikivoyage');
       if (fetchedVenues.length > 0) {
         const venueText = `Here are some great ${category} options I found in ${neighborhood ? neighborhood + ', ' : ''}${city}:\n\n${fetchedVenues.slice(0, 10).map((v, i) => `${i + 1}. ${v.name || v.title} - ${v.description || v.address || 'No description'}`).join('\n')}\n\nWhat would you like to know about these places?`;
         setMessages([{ role: 'assistant', text: venueText }]);
