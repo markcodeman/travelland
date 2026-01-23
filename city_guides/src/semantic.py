@@ -8,6 +8,7 @@ import hashlib
 import json
 import datetime
 import threading
+import time
 from pathlib import Path
 
 # Load .env file if it exists (for standalone testing)
@@ -351,6 +352,203 @@ def create_venue_context_string(venues, limit=8):
         venue_descriptions.append(f"• {name}: {desc} | {address}")
     
     return "VENUES IN THIS AREA:\n" + "\n".join(venue_descriptions)
+
+
+class ConversationMemory:
+    """Enhanced conversation memory for natural multi-turn travel conversations.
+    
+    Tracks user interests, topic transitions, and builds context for coherent
+    follow-up responses.
+    """
+    
+    def __init__(self, history: str = None):
+        self.history = history or ""
+        self.user_interests = []  # Topics the user mentioned
+        self.venues_mentioned = []  # Venues discussed
+        self.last_topic = None  # Most recent topic
+        self.topic_transitions = []  # When user changed topics
+        self.conversation_flow = []  # Order of messages
+        self.parse_history()
+    
+    def parse_history(self):
+        """Parse conversation history to build memory."""
+        if not self.history:
+            return
+        
+        lines = [line.strip() for line in self.history.split('\n') if line.strip()]
+        if not lines:
+            return
+        
+        # Interest keywords to track
+        interest_keywords = {
+            'coffee': ['coffee', 'cafe', 'espresso', 'latte', 'cappuccino', 'brew'],
+            'food': ['food', 'restaurant', 'eat', 'dining', 'cuisine', 'breakfast', 'lunch', 'dinner'],
+            'bars': ['bar', 'pub', 'drinks', 'nightlife', 'cocktail', 'beer', 'wine'],
+            'attractions': ['museum', 'park', 'attraction', 'sightseeing', 'landmark', 'tourist'],
+            'transport': ['bus', 'metro', 'train', 'transport', 'subway', 'taxi'],
+            'shopping': ['shop', 'market', 'mall', 'store', 'boutique'],
+            'dark': ['dark', 'black', 'strong', 'bold'],
+            'outdoor': ['outdoor', 'patio', 'terrace', 'garden', 'outside'],
+            'budget': ['cheap', 'budget', 'affordable', 'inexpensive', 'price'],
+            'atmosphere': ['cozy', 'romantic', 'lively', 'quiet', 'vibe', 'ambiance'],
+        }
+        
+        for line in lines:
+            # Detect speaker
+            is_user = line.lower().startswith('user:')
+            is_marco = line.lower().startswith('marco:')
+            
+            if not is_user and not is_marco:
+                continue
+            
+            # Extract text
+            if ':' in line:
+                text = line.split(':', 1)[1].strip().lower()
+            else:
+                text = line.lower()
+            
+            if is_user:
+                # Track user interests
+                for interest, keywords in interest_keywords.items():
+                    if any(kw in text for kw in keywords):
+                        if interest not in self.user_interests:
+                            self.user_interests.append(interest)
+                        self.conversation_flow.append(('interest', interest))
+                
+                # Track topic transitions
+                if self.last_topic and not any(kw in text for kw in interest_keywords.get(self.last_topic, [])):
+                    # User changed topic
+                    self.topic_transitions.append((self.last_topic, text[:50]))
+                
+                # Update last topic
+                for interest, keywords in interest_keywords.items():
+                    if any(kw in text for kw in keywords):
+                        self.last_topic = interest
+                        break
+        
+        # Parse for venue mentions
+        venue_patterns = ['try', 'recommend', 'check out', 'go to', 'visit']
+        for line in lines:
+            if is_marco and any(pattern in line.lower() for pattern in venue_patterns):
+                # Extract potential venue names (simple heuristic)
+                words = line.split()
+                for i, word in enumerate(words):
+                    if word in ['try', 'recommend', 'check', 'go']:
+                        if i + 1 < len(words):
+                            venue = words[i + 1:i + 4]
+                            if venue:
+                                venue_name = ' '.join(venue).rstrip('.,!')
+                                if venue_name not in self.venues_mentioned:
+                                    self.venues_mentioned.append(venue_name)
+    
+    def get_interests_str(self) -> str:
+        """Get string representation of user interests."""
+        if not self.user_interests:
+            return "No specific interests mentioned yet"
+        return ", ".join(self.user_interests)
+    
+    def should_reference_previous(self) -> bool:
+        """Check if we should reference previous conversation."""
+        return len(self.conversation_flow) >= 2
+    
+    def get_followup_context(self) -> str:
+        """Build context for follow-up responses."""
+        if not self.should_reference_previous():
+            return ""
+        
+        context_parts = []
+        
+        if self.user_interests:
+            interests = ", ".join(self.user_interests[-3:])  # Last 3 interests
+            context_parts.append(f"User interests so far: {interests}")
+        
+        if self.venues_mentioned:
+            venues = ", ".join(self.venues_mentioned[-2:])  # Last 2 venues
+            context_parts.append(f"Venues already discussed: {venues}")
+        
+        if self.topic_transitions:
+            last_trans = self.topic_transitions[-1]
+            context_parts.append(f"Recent topic: {last_trans[1]}...")
+        
+        return " | ".join(context_parts)
+
+
+class ConversationAnalyzer:
+    """Analyzes conversation history to understand context and user intent"""
+    
+    def __init__(self, history: str = None):
+        self.history = history or ""
+        self.topic = "general"
+        self.topic_depth = 0
+        self.user_frustration = 0
+        self.repeated_response_count = 0
+        self.last_user_query = ""
+        self.parse_history()
+    
+    def parse_history(self):
+        """Analyze conversation to determine current state"""
+        if not self.history:
+            return
+        
+        lines = [line.strip() for line in self.history.split('\n') if line.strip()]
+        if not lines:
+            return
+            
+        # Extract last 6 lines (3 exchanges)
+        recent = lines[-6:]
+        
+        # Analyze topic depth
+        topic_count = {}
+        for line in recent:
+            if line.lower().startswith('user:'):
+                text = line.split(':', 1)[1].strip().lower()
+                # Simple keyword extraction - could be enhanced with NLP
+                for word in text.split():
+                    if len(word) > 3 and word not in ['the', 'and', 'for', 'with', 'what', 'where']:
+                        topic_count[word] = topic_count.get(word, 0) + 1
+        
+        # Determine main topic
+        if topic_count:
+            main_topic = max(topic_count, key=topic_count.get)
+            if topic_count[main_topic] >= 2:  # Repeated topic
+                self.topic = main_topic
+                self.topic_depth = topic_count[main_topic]
+        
+        # Detect frustration
+        frustration_phrases = [
+            "i just told you",
+            "you're not listening",
+            "where do i click",
+            "same response",
+            "repeating yourself"
+        ]
+        self.user_frustration = sum(1 for line in recent 
+                                  if any(phrase in line.lower() for phrase in frustration_phrases))
+        
+        # Detect Marco's repetition
+        marco_lines = [line for line in recent if line.lower().startswith('marco:')]
+        if len(marco_lines) >= 2:
+            last_2 = [line.split(':', 1)[1].strip() for line in marco_lines[-2:]]
+            if last_2[0] == last_2[1]:
+                self.repeated_response_count = 2
+    
+    def should_escalate(self) -> bool:
+        """Determine if Marco should provide concrete information"""
+        return (
+            self.user_frustration >= 1 or
+            self.topic_depth >= 2 or
+            self.repeated_response_count >= 1
+        )
+    
+    def get_response_strategy(self) -> str:
+        """Determine best response strategy"""
+        if self.user_frustration >= 1:
+            return "apology_with_concrete_info"
+        elif self.topic_depth >= 2:
+            return "deepen_topic"
+        elif self.repeated_response_count >= 1:
+            return "break_repetition"
+        return "continue_conversation"
 
 def create_rich_venue_context(venues, query, limit=6):
     """Create detailed AI context from OSM data only"""
@@ -1118,14 +1316,58 @@ async def search_and_reason(
         'history': history
     }
 
-    smart_response = build_response_for_any_query(query, context_data, analysis_result)
+    # Initialize conversation analyzer early so we can decide whether to escalate
+    conv_analyzer = ConversationAnalyzer(history)
+    try:
+        print(f"DEBUG early conv_analyzer: topic={conv_analyzer.topic}, frustration={conv_analyzer.user_frustration}, should_escalate={conv_analyzer.should_escalate()}")
+    except Exception:
+        pass
 
-    # If we got a direct response from the analysis, return it
+    # If analyzer requests escalation, prioritize local auto-enrichment and concrete replies
+    try:
+        if conv_analyzer.should_escalate():
+            try:
+                from city_guides.providers import multi_provider
+                print("DEBUG: Early escalation - attempting local auto-enrichment of venues before other logic")
+                enriched = await multi_provider.async_discover_pois(city or '', poi_type='restaurant', limit=6)
+                if enriched:
+                    print(f"DEBUG: Early auto-enrichment found {len(enriched)} venues; returning concrete response")
+                    return produce_concrete_response(query, city, enriched, conv_analyzer)
+            except Exception as e:
+                print(f"DEBUG: Early auto-enrichment failed: {e}")
+    except Exception:
+        pass
+
+    smart_response = build_response_for_any_query(query, context_data, analysis_result)
+    try:
+        print(f"DEBUG: smart_response: {smart_response}")
+    except Exception:
+        pass
+
+    # If we got a direct response from the analysis, consider returning it unless escalation is required
     if smart_response is not None:
-        if mode == "explorer":
-            return f"Ahoy! 🧭 {smart_response} - Marco"
+        try:
+            lower_sr = (smart_response or "").lower()
+            generic_checks = [
+                "tell me more about what you're looking for",
+                "i'm ready to explore",
+                "could you tell me more",
+                "what would you like to know",
+            ]
+            is_generic_sr = any(p in lower_sr for p in generic_checks) or lower_sr.strip().endswith('?')
+            print(f"DEBUG: is_generic_sr={is_generic_sr}")
+        except Exception:
+            is_generic_sr = False
+
+        # If analyzer suggests escalation and the smart_response is generic, skip the quick return
+        if conv_analyzer.should_escalate() and is_generic_sr:
+            # continue to AI/Groq path to get concrete suggestions
+            pass
         else:
-            return smart_response
+            if mode == "explorer":
+                return f"Ahoy! 🧭 {smart_response} - Marco"
+            else:
+                return smart_response
 
     # For venue-focused queries, continue with AI analysis
     # Only fall back to neighborhood recommendations for explicit neighborhood queries
@@ -1147,8 +1389,65 @@ async def search_and_reason(
         ]
         ui_context = "VENUES TO CONSIDER:\n" + "\n".join(ui_lines)
 
-    # Build comprehensive prompt using the new function
-    prompt = build_focused_marco_prompt(query, city, context_venues, weather, neighborhoods, history)
+    # Process conversation history and build prompt using ConversationAnalyzer
+    conv_analyzer = ConversationAnalyzer(history)
+
+    # Build venue context string if available
+    venue_context = create_venue_context_string(context_venues or [])
+
+    # Weather context
+    weather_context = ""
+    if weather:
+        weather_context = f"\nCURRENT WEATHER: {weather.get('temperature_c')}°C"
+
+    # Choose prompt depending on conversation state
+    if conv_analyzer.should_escalate():
+        prompt = f"""You are Marco, a helpful travel assistant! 🗺️
+
+User query: "{query}"
+
+CONVERSATION CONTEXT:
+- Current topic: {conv_analyzer.topic}
+- User frustration: {conv_analyzer.user_frustration}/3
+- Response repetition: {conv_analyzer.repeated_response_count}/3
+
+{weather_context}
+{venue_context}
+
+CRITICAL INSTRUCTIONS:
+1. NEVER repeat previous responses
+2. If user frustration is high, acknowledge it and provide CONCRETE information
+3. If topic is established, go deeper into that topic with SPECIFIC examples
+4. Use venue data to provide actual recommendations
+5. NEVER say "Tell me more about what you're looking for"
+6. NEVER ask generic questions when user has been specific
+
+Response format:
+- Start with specific recommendations or information
+- Be concise but informative
+- Sign off as "- Marco 🧭"
+
+Example of GOOD response (if user asked about coffee):
+"Ahoy! 🧭 Based on your interest in coffee, I found these spots in {city or 'the area'}:
+• Blue Bottle Coffee (known for dark roasts)
+• Philz Coffee (specialty pour-overs)
+Would you like details about any of these?"
+
+Example of BAD response:
+"Tell me more about what you're looking for!" (NEVER use this)"""
+    else:
+        prompt = f"""You are Marco, a helpful travel assistant! 🗺️
+
+User query: "{query}"
+{weather_context}
+{venue_context}
+
+INSTRUCTIONS:
+1. Answer the specific question asked
+2. If user mentioned something specific (e.g., "dark coffee"), address it directly
+3. Use venue data when available
+4. Keep responses concise and helpful
+5. Sign off as "- Marco 🧭" """
 
     # Check for public-data-only mode
     import os
@@ -1240,6 +1539,22 @@ async def search_and_reason(
         if not context_venues and not neighborhoods and not wikivoyage and not summary_parts and not WIKI_AVAILABLE and not RAG_AVAILABLE:
             return "Ahoy! 🪙 My explorer's eyes are tired. Try searching for a specific place above first! - Marco"
 
+        # 2. Otherwise, if escalation is needed and we lack venue context, try to auto-enrich locally
+        try:
+            print(f"DEBUG: conv_analyzer state: topic={conv_analyzer.topic}, frustration={conv_analyzer.user_frustration}, should_escalate={conv_analyzer.should_escalate()}")
+        except Exception:
+            pass
+        if conv_analyzer.should_escalate() and (not context_venues or len(context_venues) == 0):
+            try:
+                from city_guides.providers import multi_provider
+                print("DEBUG: Escalation requested - attempting local auto-enrichment of venues")
+                enriched = await multi_provider.async_discover_pois(city or '', poi_type='restaurant', limit=6)
+                if enriched:
+                    print(f"DEBUG: Auto-enrichment found {len(enriched)} venues; returning concrete response")
+                    return produce_concrete_response(query, city, enriched, conv_analyzer)
+            except Exception as e:
+                print(f"DEBUG: Auto-enrichment attempt failed: {e}")
+
         # 2. Otherwise, call Groq as before
         key = _get_api_key()
         print(f"DEBUG: Calling Groq for query: {query}")
@@ -1255,11 +1570,73 @@ async def search_and_reason(
             print(f"DEBUG: Prompt too long ({len(prompt)} chars), truncating to {MAX_PROMPT_CHARS}")
             prompt = prompt[:MAX_PROMPT_CHARS] + "\n\n[TRUNCATED]"
 
+        # Call Groq / reasoning implementation and apply response safeguards
+        answer = None
         if session is None:
             async with get_session() as session:
-                return await _search_and_reason_impl(prompt, key, cache_key, context_venues, query, session)
+                answer = await _search_and_reason_impl(prompt, key, cache_key, context_venues, query, session)
         else:
-            return await _search_and_reason_impl(prompt, key, cache_key, context_venues, query, session)
+            answer = await _search_and_reason_impl(prompt, key, cache_key, context_venues, query, session)
+
+        # Apply response safeguards
+        try:
+            final_response = apply_response_safeguards(
+                answer,
+                query,
+                history,
+                context_venues or [],
+                conv_analyzer,
+                city,
+            )
+        except Exception:
+            final_response = answer
+
+        # Store response in redis if available (best-effort)
+        try:
+            # note: redis_client may be defined in app context; do not require it
+            from city_guides.src.app import redis_client  # type: ignore
+            if redis_client and cache_key:
+                cache_data = {
+                    "response": final_response,
+                    "query": query,
+                    "city": city,
+                    "topic": conv_analyzer.topic,
+                    "timestamp": time.time(),
+                }
+                try:
+                    await redis_client.setex(cache_key, 3600, json.dumps(cache_data))
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # If analyzer indicates escalation but response is still generic/asking for clarification,
+        # force a concrete venue-based reply.
+        try:
+            generic_phrases = [
+                "tell me more about what you're looking for",
+                "i'm ready to explore",
+                "search for a specific place",
+                "click any neighborhood",
+                "i'm ready for adventure",
+                "ready for adventure",
+                "ready to explore",
+                "could you tell me more",
+                "what are you most curious",
+            ]
+            lower_final = (final_response or "").lower()
+            is_generic_final = any(p in lower_final for p in generic_phrases) or lower_final.strip().endswith('?')
+        except Exception:
+            is_generic_final = False
+
+        if conv_analyzer.should_escalate() and is_generic_final:
+            try:
+                concrete = produce_concrete_response(query, city, context_venues or [], conv_analyzer)
+                final_response = concrete
+            except Exception:
+                pass
+
+        return final_response
         try:
             async with session.post(
                 "https://api.groq.com/openai/v1/chat/completions",
@@ -1339,6 +1716,110 @@ async def search_and_reason(
         return fallback3
 
 
+def apply_response_safeguards(response, query, history, venues, analyzer, city=None):
+    """Fix generic responses and ensure conversation flow"""
+    if not response:
+        return response
+
+    # Check for generic fallbacks
+    generic_phrases = [
+        "tell me more about what you're looking for",
+        "i'm ready to explore",
+        "search for a specific place",
+        "click any neighborhood",
+        "i'd recommend exploring",
+        "i'm ready for adventure",
+        "ready for adventure",
+        "ready to explore",
+    ]
+    is_generic = any(phrase in response.lower() for phrase in generic_phrases)
+
+    # Check if user was specific but Marco is generic
+    user_specific = any(term in query.lower() for term in [
+        'dark', 'black', 'espresso', 'museum', 'park', 'transport', 'history'
+    ])
+
+    if is_generic and (user_specific or analyzer.should_escalate()):
+        topic = analyzer.topic if analyzer.topic != "general" else "travel"
+        venue_names = [v.get('name') for v in venues[:3] if v.get('name')] if venues else []
+        if venue_names:
+            return (
+                f"Ahoy! 🧭 I understand you're interested in {topic} - here are specific places: "
+                f"{', '.join(venue_names)}. Would you like details about any of these?"
+            )
+
+        # Fallback to specific venue types
+        venue_types = []
+        if venues:
+            venue_types = list(set(v.get('type', 'spot') for v in venues if v.get('type')))
+
+        return (
+            f"Ahoy! 🧭 For {topic} in {city or 'this area'}, I recommend exploring: "
+            f"{', '.join(venue_types[:2]) if venue_types else 'local spots'}. "
+            f"What specifically about them would you like to know?"
+        )
+
+    # Check for repeated responses
+    if history and response and history.count(response) > 1:
+        return "Ahoy! 🧭 I realize I'm repeating myself - let me give you concrete information: [Specific details based on venue data]"
+
+    return response
+
+
+def produce_concrete_response(query, city, venues, analyzer):
+    """Force a concrete, venue-based response when conversation needs escalation."""
+    topic = analyzer.topic if analyzer and analyzer.topic != "general" else None
+    q_lower = (query or "").lower()
+
+    # Use provided venues if available
+    if venues and len(venues) > 0:
+        venue_lines = []
+        for v in venues[:3]:
+            name = v.get('name') or v.get('title') or 'Local spot'
+            desc = v.get('description') or v.get('type') or ''
+            addr = v.get('address') or v.get('display_address') or ''
+            line = f"• {name} — {desc}" + (f" ({addr})" if addr else "")
+            venue_lines.append(line)
+        header_topic = topic or (q_lower.split()[0] if q_lower else 'travel')
+        return (
+            f"Ahoy! 🧭 I understand you're interested in {header_topic} — here are specific places in {city or 'this area'}:\n"
+            + "\n".join(venue_lines)
+            + "\nWould you like details about any of these? - Marco 🧭"
+        )
+
+    # Fallback to bundled data in data/venues.json
+    try:
+        root = Path(__file__).resolve().parents[1]
+        vfile = root / 'data' / 'venues.json'
+        if vfile.exists():
+            with open(vfile, 'r', encoding='utf-8') as f:
+                allv = json.load(f)
+            matches = []
+            c_low = (city or '').lower()
+            for v in allv:
+                if c_low and c_low in (v.get('city') or '').lower():
+                    matches.append(v)
+            if not matches:
+                matches = allv[:3]
+            venue_lines = [f"• {v.get('name')} — {v.get('description')}" for v in matches[:3]]
+            return (
+                f"Ahoy! 🧭 Here are some specific suggestions for {city or 'this area'}:\n"
+                + "\n".join(venue_lines)
+                + "\nWould you like details about any of these? - Marco 🧭"
+            )
+    except Exception:
+        pass
+
+    # Last-resort concrete suggestions based on query keywords
+    if any(k in q_lower for k in ['coffee', 'cafe', 'espresso', 'dark']):
+        return (
+            f"Ahoy! 🧭 I found several coffee-focused spots nearby: try searching for 'roaster', 'specialty cafe', or 'espresso bar' in {city or 'this area'}. "
+            f"If you want, I can list top picks by neighborhood. - Marco 🧭"
+        )
+
+    return response if (response := ("Ahoy! 🧭 Here are some concrete suggestions: check local cafes and restaurants in the neighborhoods shown.")) else response
+
+
 async def _search_and_reason_impl(prompt, key, cache_key, context_venues, query, session=None):
     own_session = False
     if session is None:
@@ -1411,3 +1892,153 @@ async def _search_and_reason_impl(prompt, key, cache_key, context_venues, query,
     except Exception:
         pass
     return fallback2
+
+
+# ============================================================
+# NEW CONVERSATION OPTIMIZATION FUNCTIONS
+# Added for improved Marco travel conversations
+# ============================================================
+
+def create_conversation_prompt(query, city, venues, weather, history):
+    """Create a natural conversation-style prompt for Marco.
+    
+    This prompt is designed to:
+    1. Reference specific venues by name
+    2. Remember what user asked before
+    3. Ask natural follow-up questions
+    4. Avoid generic responses
+    """
+    
+    # Build conversation memory context
+    memory = ConversationMemory(history)
+    followup_context = memory.get_followup_context()
+    
+    # Venue context
+    venue_context = create_rich_venue_context(venues, query)
+    
+    # Weather context
+    weather_context = ""
+    if weather:
+        temp = weather.get('temperature_c', 20)
+        conditions = weather.get('weathercode', 0)
+        icons = {
+            0: "☀️ Clear", 1: "🌤️ Mainly clear", 2: "⛅ Partly cloudy", 3: "☁️ Overcast",
+            45: "🌫️ Fog", 51: "🌦️ Light drizzle", 61: "🌦️ Slight rain",
+            71: "🌨️ Slight snow", 80: "🌧️ Rain showers", 95: "⛈️ Thunderstorm"
+        }
+        w_summary = icons.get(conditions, "Unknown")
+        weather_context = f"\n🌤️ Current weather: {w_summary}, {temp}°C"
+        
+        # Weather-based advice
+        if conditions in [51, 53, 55, 61, 63, 65, 80, 81, 82]:
+            weather_context += " (rainy - indoor spots or covered seating recommended)"
+        elif conditions in [71, 73, 75]:
+            weather_context += " (snowy - cozy indoor venues ideal)"
+        elif temp > 28:
+            weather_context += " (hot - places with AC or outdoor shade)"
+        elif temp < 10:
+            weather_context += " (chilly - warm, cozy spots recommended)"
+    
+    # Detect if this is a follow-up
+    is_followup = memory.should_reference_previous()
+    user_interests = memory.get_interests_str()
+    
+    # Build the system prompt
+    system_prompt = """You are Marco, an experienced travel guide! 🗺️
+
+Your personality:
+- Enthusiastic but knowledgeable
+- Speak like a local expert, not a robot
+- Reference specific places by NAME when you recommend them
+- Ask natural follow-up questions to keep conversation going
+- Never say "Tell me more about what you're looking for"
+- Never give generic responses like "I recommend exploring"
+- Always explain WHY a place is good for the user's specific interest
+
+Rules for responses:
+1. If user asks about coffee, mention SPECIFIC coffee shops by name
+2. If user asks about food, recommend SPECIFIC restaurants with cuisines
+3. Reference the VENUE DATA provided - don't make up places
+4. If user asks follow-up, reference what they asked before
+5. End with a natural question, not a generic invitation
+
+Example of GOOD response:
+"Based on your interest in dark roast, **Blue Bottle Coffee** on High Street is excellent - they specialize in bold espresso roasts and have a cozy atmosphere. For something more intimate, **Temple Coffee** nearby offers single-origin beans with knowledgeable baristas. Both are within walking distance of each other. Would you like more details on either, or are you looking for something with outdoor seating?"
+
+Example of BAD response (NEVER do this):
+"I recommend trying local coffee shops. Tell me more about what you're looking for!" """
+
+    # Build conversation context
+    conversation_context = ""
+    if is_followup and followup_context:
+        conversation_context = f"\n📜 CONVERSATION CONTEXT:\n{followup_context}\n"
+    
+    # Query analysis
+    q_lower = query.lower()
+    is_followup_q = any(kw in q_lower for kw in ['what about', 'and', 'also', 'too', 'more', 'other', 'another'])
+    
+    # User intent detection
+    intent = "general"
+    if any(kw in q_lower for kw in ['dark', 'black', 'strong', 'bold', 'espresso']):
+        intent = "dark_coffee"
+    elif any(kw in q_lower for kw in ['cheap', 'budget', 'affordable', 'under']):
+        intent = "budget"
+    elif any(kw in q_lower for kw in ['outdoor', 'patio', 'terrace', 'garden']):
+        intent = "outdoor"
+    elif any(kw in q_lower for kw in ['cozy', 'romantic', 'quiet', 'intimate']):
+        intent = "atmosphere"
+    
+    # Build user message based on context
+    user_message = f"""Traveler asks: "{query}"
+
+{city or 'This area'} - {intent.upper()} query{weather_context}{conversation_context}
+
+{venue_context}
+
+User's stated interests: {user_interests}
+
+Response requirements:
+1. If this is a follow-up question, REFERENCE what they asked before
+2. If venues are listed, recommend SPECIFIC ones by NAME
+3. Explain WHY each recommendation fits their request
+4. Give practical details (location, price hints, atmosphere)
+5. Ask a natural follow-up question
+
+{"This appears to be a follow-up question - build on previous context." if is_followup_q else ""}
+
+Remember: You're a local expert. Be specific, helpful, and conversational! 🧭"""
+
+    return [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_message}
+    ]
+
+
+def create_venue_recommendation(query, city, venues, limit=3):
+    """Create a concise venue recommendation for quick responses."""
+    if not venues:
+        return f"I don't have specific venue data for {city} yet. Try searching for the type of place you're looking for!"
+    
+    recommendations = []
+    for venue in venues[:limit]:
+        name = venue.get('name', 'Local spot')
+        venue_type = venue.get('type', 'venue').title()
+        tags = venue.get('tags', {})
+        cuisine = tags.get('cuisine', '').title()
+        
+        if cuisine:
+            desc = f"{cuisine} {venue_type}"
+        else:
+            desc = venue_type
+        
+        # Get address
+        address = venue.get('display_address') or venue.get('address', '')
+        if address:
+            address = f" at {address}"
+        
+        recommendations.append(f"• **{name}** - {desc}{address}")
+    
+    if len(venues) > limit:
+        recommendations.append(f"• ...and {len(venues) - limit} more great spots!")
+    
+    return f"Here are my top picks in {city}:\n\n" + "\n".join(recommendations)

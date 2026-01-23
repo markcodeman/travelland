@@ -43,6 +43,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, wikivo
         wikivoyage: wikivoyage || undefined,
         mode: 'explorer',
         session_id: sessionId,
+        history: buildConversationHistory(messages),
       };
       const resp = await fetch('http://localhost:5010/semantic-search', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
@@ -64,6 +65,12 @@ export default function MarcoChat({ city, neighborhood, venues, category, wikivo
       if (boxRef.current) boxRef.current.scrollTop = boxRef.current.scrollHeight;
     }
   }
+
+  const buildConversationHistory = (messages) => {
+    return messages
+      .map(msg => `${msg.role === 'user' ? 'User' : 'Marco'}: ${msg.text || msg.content || ''}`)
+      .join('\n');
+  };
 
   return (
     <div className="marco-modal-overlay">
