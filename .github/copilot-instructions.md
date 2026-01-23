@@ -24,11 +24,17 @@ TravelLand is a full-stack travel exploration app with:
 cd tools && bash restart_and_tail.sh
 ```
 
+
 ### Testing Frontend Changes
 - Use MCP/Playwright browser automation for UI testing
 - Navigate to `http://localhost:5174`, test location selection → search → chat flow
 - Check console for errors, verify data flows correctly
 - **STRICT REQUIREMENT**: Always perform these tests immediately after proposing any frontend changes
+
+### Server Restart Policy
+- **ALWAYS** restart the relevant server (backend, frontend, Next.js, etc.) automatically after making changes that require a restart (code, config, env, or proxy changes).
+- Do **NOT** ask the user for permission to restart—just do it as part of your workflow.
+- After restart, verify the service is running and ready for testing.
 
 ### Backend Development
 - Run with `hypercorn city_guides.src.app:app` (production) or `python -m city_guides.src.app` (dev)

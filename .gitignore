@@ -92,3 +92,4 @@ instance/
 
 # Logs
 *.log
+.blackboxcli/

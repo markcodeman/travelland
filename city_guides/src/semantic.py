@@ -41,7 +41,7 @@ except Exception as e:
 
 # Import RAG recommender
 try:
-    from ..groq.traveland_rag import recommend_venues_rag, recommend_neighborhoods_rag
+    from city_guides.groq.traveland_rag import recommend_venues_rag, recommend_neighborhoods_rag
     RAG_AVAILABLE = True
 except Exception as e:
     RAG_AVAILABLE = False
@@ -67,7 +67,7 @@ def analyze_any_query(query, available_venues, conversation_history):
     is_followup = any(pattern in query_lower for pattern in followup_patterns)
 
     # Specific venue/place requests
-    venue_keywords = ['restaurant', 'cafe', 'coffee', 'bar', 'pub', 'food', 'eat', 'drink', 'shop', 'store', 'museum', 'park', 'attraction']
+    venue_keywords = ['restaurant', 'cafe', 'coffee', 'bar', 'pub', 'food', 'eat', 'drink', 'shop', 'store', 'museum', 'park', 'attraction', 'pizza', 'taco', 'burger', 'sushi', 'italian', 'chinese', 'mexican', 'thai', 'indian', 'french', 'japanese', 'korean', 'vietnamese', 'mediterranean', 'american', 'breakfast', 'lunch', 'dinner', 'snacks', 'dessert', 'bakery', 'ice cream']
     wants_specific_venues = any(keyword in query_lower for keyword in venue_keywords)
 
     # Neighborhood exploration (only if explicitly mentioned)
@@ -81,6 +81,8 @@ def analyze_any_query(query, available_venues, conversation_history):
         return "answer_with_venue_data"
     elif is_question and wants_neighborhoods:
         return "neighborhood_exploration"
+    elif is_question and wants_specific_venues:  # User is asking about specific venue types
+        return "venue_request"  # New category for venue requests without existing venue data
     elif is_question:
         return "general_question"
     elif has_prev_context:  # Follow-up to previous conversation
@@ -108,6 +110,9 @@ def build_response_for_any_query(query, context, analysis_result):
     elif analysis_result == "neighborhood_exploration":
         return build_neighborhood_response(query, neighborhoods, city)
 
+    elif analysis_result == "venue_request":
+        return handle_venue_request(query, city)
+
     elif analysis_result == "general_question":
         return handle_general_question(query, available_venues, city)
 
@@ -124,30 +129,53 @@ def build_response_for_any_query(query, context, analysis_result):
 def handle_followup_conversation(query, venues, city):
     """Handle conversations where user mentions they've explored/found things"""
     query_lower = query.lower()
-    
+
     # Detect what they were interested in
     if "pub" in query_lower or "bar" in query_lower or "drink" in query_lower:
         if venues:
             pub_venues = [v for v in venues if v.get('type', '').lower() in ['pub', 'bar']]
             if pub_venues:
-                return f"That's awesome you found great pubs! Since you're asking about traditional Irish pubs in {city}, would you like recommendations for:\n\n• More authentic Irish pubs with live music?\n• Historic pubs with traditional atmosphere?\n• Pubs known for their Guinness or local brews?\n\nOr would you like me to suggest some top-rated traditional spots?"
-        return f"Excellent pub discoveries! What would you like to know about traditional Irish pubs in {city}? I can help with recommendations for different styles, atmospheres, or specific areas."
-    
-    if "coffee" in query_lower or "cafe" in query_lower:
+                venue_names = [v.get('name', 'this pub') for v in pub_venues[:3] if v.get('name')]
+                if venue_names:
+                    names_str = "**, **".join(venue_names[:2])
+                    return f"That's awesome you found great pubs! Based on local data, here are some excellent options in {city}:\n\n• **{names_str}\**\n\nWould you like more details on any of these, or are you looking for a specific type of pub?"
+        return f"Excellent pub discoveries! What would you like to know about pubs in {city}? I can help with recommendations for different styles, atmospheres, or specific areas."
+
+    if "coffee" in query_lower or "cafe" in query_lower or "roast" in query_lower:
         if venues:
             coffee_venues = [v for v in venues if 'coffee' in v.get('type', '').lower() or 'cafe' in v.get('type', '').lower()]
             if coffee_venues:
-                return f"That's awesome you found good coffee! Since you're asking about coffee in {city} generally, are you interested in:\n\n• Other great coffee spots across the city?\n• Specific coffee styles (local roasters, specialty brews)?\n• Coffee shops with particular amenities (outdoor seating, WiFi)?\n\nOr would you like me to suggest some top-rated options based on local data?"
-        return f"Excellent coffee discoveries! What would you like to know about coffee in {city}? I can help with recommendations for different neighborhoods, coffee styles, or specific amenities you're looking for."
-    
+                venue_names = [v.get('name') for v in coffee_venues[:3] if v.get('name')]
+                if venue_names:
+                    names_str = "**, **".join(venue_names[:2])
+                    # Check for specific coffee preferences
+                    if "medium roast" in query_lower:
+                        return f"Ahoy! 🧭 Based on your interest in medium roast, here are some excellent coffee spots in {city}:\n\n• **{names_str}**\n\nThese cafes are known for their balanced medium roast blends. Would you like more details on any of these, or are you looking for other coffee styles?"
+                    elif "dark roast" in query_lower:
+                        return f"Ahoy! 🧭 For dark roast lovers, here are some great coffee options in {city}:\n\n• **{names_str}**\n\nThese spots specialize in rich, bold dark roast coffees. Would you like more details on any of these?"
+                    elif "light roast" in query_lower:
+                        return f"Ahoy! 🧭 If you enjoy light roast, check out these coffee cafes in {city}:\n\n• **{names_str}**\n\nThese places offer bright, fruity light roast options. Would you like more details on any of these?"
+                    else:
+                        return f"Ahoy! 🧭 Based on local data, here are some excellent coffee spots in {city}:\n\n• **{names_str}**\n\nWould you like more details on any of these, or are you looking for a specific coffee style (like dark roast, medium roast, or light roast)?"
+        return f"Ahoy! 🧭 I can help you find great coffee in {city}! Let me search for some excellent coffee shops and cafes in the area. One moment while I find the best spots for you. - Marco ☕"
+
     if "food" in query_lower or "restaurant" in query_lower or "eat" in query_lower:
         if venues:
             food_venues = [v for v in venues if v.get('type', '').lower() in ['restaurant', 'food']]
             if food_venues:
-                return f"That's great you found good food! Since you're asking about dining in {city}, are you interested in:\n\n• Different cuisines or types of restaurants?\n• Specific neighborhoods with great food scenes?\n• Restaurants with particular atmospheres or price ranges?\n\nOr would you like me to recommend some top-rated dining options?"
+                venue_names = [v.get('name', 'this restaurant') for v in food_venues[:3] if v.get('name')]
+                if venue_names:
+                    names_str = "**, **".join(venue_names[:2])
+                    return f"That's great you found good food! Based on local data, here are some excellent restaurants in {city}:\n\n• **{names_str}\**\n\nWould you like more details on any of these, or are you looking for a specific cuisine?"
         return f"Excellent food discoveries! What would you like to know about dining in {city}? I can help with recommendations for different cuisines, neighborhoods, or specific types of restaurants."
-    
-    # Generic followup
+
+    # Generic followup - use available venue names if we have them
+    if venues:
+        venue_names = [v.get('name', 'this spot') for v in venues[:2] if v.get('name')]
+        if venue_names:
+            names_str = "**, **".join(venue_names)
+            return f"That's great you've been exploring! Based on local data, here are some popular spots you've already discovered:\n\n• **{names_str}\**\n\nWhat would you like to discover next? I can help with more recommendations for food, attractions, or specific interests!"
+
     return f"That's great you've been exploring! What would you like to discover next in {city}? I can help with recommendations for food, attractions, or other interests."
 
 
@@ -185,12 +213,101 @@ def build_conversation_continuation(query, history, venues, city):
     return f"Tell me more about what you're looking for in {city}! I can provide specific recommendations based on your interests."
 
 
+def handle_venue_request(query, city):
+    """Handle venue requests when no venues are currently available"""
+    query_lower = query.lower()
+
+    # Detect specific food/cuisine types
+    food_keywords = {
+        'pizza': ['pizza', 'pizzeria'],
+        'taco': ['taco', 'tacos', 'mexican'],
+        'burger': ['burger', 'burgers', 'american'],
+        'sushi': ['sushi', 'japanese'],
+        'italian': ['italian', 'pasta', 'pizza'],
+        'chinese': ['chinese'],
+        'mexican': ['mexican', 'taco'],
+        'thai': ['thai'],
+        'indian': ['indian', 'curry'],
+        'french': ['french'],
+        'japanese': ['japanese', 'sushi'],
+        'korean': ['korean'],
+        'vietnamese': ['vietnamese', 'pho'],
+        'mediterranean': ['mediterranean', 'greek'],
+        'american': ['american', 'burger'],
+        'breakfast': ['breakfast'],
+        'lunch': ['lunch'],
+        'dinner': ['dinner'],
+        'snacks': ['snacks'],
+        'dessert': ['dessert'],
+        'bakery': ['bakery'],
+        'ice cream': ['ice cream', 'gelato'],
+        'coffee': ['coffee', 'cafe', 'espresso'],
+        'bar': ['bar', 'pub', 'drinks'],
+        'restaurant': ['restaurant', 'food', 'eat', 'dining']
+    }
+
+    # Find matching food type
+    matched_food_type = None
+    for food_type, keywords in food_keywords.items():
+        if any(keyword in query_lower for keyword in keywords):
+            matched_food_type = food_type
+            break
+
+    if matched_food_type:
+        # Map food types to more descriptive categories
+        food_descriptions = {
+            'pizza': 'pizza',
+            'taco': 'tacos',
+            'burger': 'burgers',
+            'sushi': 'sushi',
+            'italian': 'Italian cuisine',
+            'chinese': 'Chinese cuisine',
+            'mexican': 'Mexican cuisine',
+            'thai': 'Thai cuisine',
+            'indian': 'Indian cuisine',
+            'french': 'French cuisine',
+            'japanese': 'Japanese cuisine',
+            'korean': 'Korean cuisine',
+            'vietnamese': 'Vietnamese cuisine',
+            'mediterranean': 'Mediterranean cuisine',
+            'american': 'American cuisine',
+            'breakfast': 'breakfast spots',
+            'lunch': 'lunch options',
+            'dinner': 'dinner restaurants',
+            'snacks': 'snacks',
+            'dessert': 'desserts',
+            'bakery': 'bakeries',
+            'ice cream': 'ice cream',
+            'coffee': 'coffee shops',
+            'bar': 'bars',
+            'restaurant': 'restaurants'
+        }
+
+        food_description = food_descriptions.get(matched_food_type, matched_food_type)
+        return f"Ahoy! 🧭 I understand you're looking for {food_description} in {city}! Let me find some great options for you. One moment while I search for the best {food_description} spots in the area. - Marco 🍕"
+
+    # Fallback for general venue requests
+    return f"Ahoy! 🧭 I understand you're looking for something specific in {city}! Let me find some great options for you. One moment while I search for the best spots in the area. - Marco 🏙️"
+
 def build_venue_suggestions(query, venues, city):
-    """Build suggestions when user wants specific venue types"""
+    """Build suggestions when user wants specific venue types - returns SPECIFIC recommendations"""
     if not venues:
         return f"I'd be happy to help you find what you're looking for in {city}! Could you be more specific about the type of place?"
 
-    # This will be handled by AI with venue context
+    # Extract venue names from available data
+    venue_names = [v.get('name', 'Local spot') for v in venues[:5] if v.get('name')]
+    
+    if venue_names:
+        # Create a specific response with actual venue names
+        if len(venue_names) == 1:
+            return f"Based on local data, here's a top pick in {city}: **{venue_names[0]}**. Would you like more details about this place or other options?"
+        elif len(venue_names) == 2:
+            return f"Here are the top spots in {city} based on local data:\n\n• **{venue_names[0]}**\n• **{venue_names[1]}**\n\nWould you like more details about any of these?"
+        else:
+            names_str = "**, **".join(venue_names[:3])
+            return f"Here are the top spots in {city} based on local data:\n\n• **{names_str}**\n\nWould you like more details about any of these?"
+
+    # This will be handled by AI with venue context - but we now have venue data
     return None
 
 
@@ -483,6 +600,7 @@ class ConversationAnalyzer:
         self.user_frustration = 0
         self.repeated_response_count = 0
         self.last_user_query = ""
+        self.specific_intents = []  # Track specific user intents (dark coffee, outdoor, etc.)
         self.parse_history()
     
     def parse_history(self):
@@ -502,6 +620,11 @@ class ConversationAnalyzer:
         for line in recent:
             if line.lower().startswith('user:'):
                 text = line.split(':', 1)[1].strip().lower()
+                self.last_user_query = text
+                
+                # Extract specific intents from the query
+                self._detect_specific_intents(text)
+                
                 # Simple keyword extraction - could be enhanced with NLP
                 for word in text.split():
                     if len(word) > 3 and word not in ['the', 'and', 'for', 'with', 'what', 'where']:
@@ -532,17 +655,42 @@ class ConversationAnalyzer:
             if last_2[0] == last_2[1]:
                 self.repeated_response_count = 2
     
+    def _detect_specific_intents(self, text):
+        """Detect specific user intents from query text"""
+        intents = []
+        
+        # Coffee-related specific intents
+        if any(kw in text for kw in ['dark', 'black', 'strong', 'bold', 'espresso']):
+            intents.append('dark_coffee')
+        if any(kw in text for kw in ['outdoor', 'patio', 'terrace', 'garden', 'outside seating']):
+            intents.append('outdoor_seating')
+        if any(kw in text for kw in ['budget', 'cheap', 'affordable', 'inexpensive', 'under $']):
+            intents.append('budget_friendly')
+        if any(kw in text for kw in ['cozy', 'romantic', 'quiet', 'intimate', 'peaceful']):
+            intents.append('cozy_atmosphere')
+        if any(kw in text for kw in ['quick', 'fast', 'takeaway', 'takeout', 'grab and go']):
+            intents.append('quick_service')
+        if any(kw in text for kw in ['wheelchair', 'accessible', 'disabled', 'mobility']):
+            intents.append('accessible')
+        
+        self.specific_intents = intents
+    
     def should_escalate(self) -> bool:
         """Determine if Marco should provide concrete information"""
+        """More sensitive escalation triggers"""
         return (
+            len(self.specific_intents) > 0 or
             self.user_frustration >= 1 or
             self.topic_depth >= 2 or
-            self.repeated_response_count >= 1
+            self.repeated_response_count >= 1 or
+            (self.last_user_query and len(self.last_user_query.split()) >= 3)  # More specific queries
         )
     
     def get_response_strategy(self) -> str:
         """Determine best response strategy"""
-        if self.user_frustration >= 1:
+        if self.specific_intents:
+            return "address_specific_intent"
+        elif self.user_frustration >= 1:
             return "apology_with_concrete_info"
         elif self.topic_depth >= 2:
             return "deepen_topic"
@@ -690,27 +838,75 @@ def build_focused_marco_prompt(query, city, venues, weather, neighborhoods, hist
     
     history_context = f"\n**Previous user questions:**\n{history}\n" if history else ""
     
-    return f"""You're Marco, a local travel expert! 🗺️
+    return f"""You are Marco, a SPECIFIC and helpful travel guide! 🗺️
 
-**QUESTION TO ANSWER:** "{query}"
+**USER QUERY:** "{query}"
 
-{history_context}
 {venue_context}
-{weather_advice}
-{neighborhood_context}
 
-**Your mission:**
-- Answer the QUESTION TO ANSWER above directly
-- Recommend specific venues from the list above when relevant
-- Explain WHY each recommendation fits their request
-- Use the weather context for practical advice
-- Mention neighborhood characteristics when relevant
-- Keep it friendly but focused on the actual data
+**CRITICAL RULES:**
+1. NEVER say "Tell me more about what you're looking for"
+2. ALWAYS recommend SPECIFIC venues by name when available
+3. If venues exist, reference at least 2-3 of them
+4. NEVER ask generic questions when specific venues are available
+5. Provide practical details: location, why it's good, features
 
-**Response format:**
-Start with 2-3 specific venue recommendations, then add general area advice.
+**VENUE DATA AVAILABLE:** {len(venues)} venues
+**MUST USE THIS DATA:** Reference venues by name and explain why they match the query
 
-Ready to explore! 🧭"""
+Response format:
+- Start with 2-3 specific venue recommendations
+- Explain WHY each fits the user's query
+- Add practical tips based on weather/location
+- End with a specific follow-up question
+
+**Example BAD response (NEVER DO THIS):** "I'm ready to explore! What are you interested in?"
+**Example GOOD response:** "Based on your interest in coffee, I recommend **Blue Bottle Coffee** for their dark roasts and **Philz Coffee** for custom blends. Both have outdoor seating and are within walking distance."
+
+Ready to help! 🧭"""
+
+
+def build_mandatory_venues_prompt(query, city, venues, weather, neighborhoods):
+    """FORCE Marco to use venue data - no generic responses allowed"""
+    
+    venue_context = create_rich_venue_context(venues[:6], query)
+    
+    return f"""You are Marco, a travel assistant that MUST provide specific recommendations. FAILURE to use venue data will result in poor user experience.
+
+**USER QUERY:** "{query}" in {city}
+
+**AVAILABLE VENUE DATA ({len(venues)} venues):**
+{venue_context}
+
+**CRITICAL COMMANDS (MUST OBEY):**
+1. You MUST reference specific venues by NAME from the list above
+2. You MUST provide concrete recommendations, not generic suggestions  
+3. You MUST explain why each venue fits the user's request
+4. You MUST NOT say "I'm ready to explore" or other generic phrases
+5. You MUST NOT ask "What are you interested in?" - use the venues provided
+6. You MUST include practical details (distance, features, etc.)
+
+**PROHIBITED PHRASES (NEVER USE):**
+- "Tell me more about what you're looking for"
+- "I'm ready to help you discover" 
+- "What are you interested in?"
+- "Let me know what you'd like to find"
+- Any variation of asking for more input when venues exist
+
+**EXAMPLE OF GOOD RESPONSE:**
+"Based on your interest in coffee, here are specific options:
+• **Blue Bottle Coffee** - Known for dark roasts and artisanal brewing (0.3km away)
+• **Sightglass Coffee** - Local favorite with outdoor seating (0.5km away)  
+• **Ritual Coffee Roasters** - Sustainable sourcing and cozy atmosphere (0.7km away)
+
+Which of these sounds most appealing?"
+
+**BAD RESPONSE (NEVER DO THIS):**
+"I'm ready to explore coffee options! What type of coffee do you like?"
+
+**BECAUSE:** Real venues exist - use them immediately.
+
+Now respond with SPECIFIC venue recommendations:"""
 
 def enhance_marco_response(response_text, venues):
     """Add specific venue references to Marco's response"""
@@ -809,6 +1005,34 @@ async def _convert_currency_impl(amount, from_curr, to_curr, session):
 
 
 from typing import Optional
+
+# Expanded venue discovery categories
+VENUE_CATEGORIES = {
+    'transport': ['station', 'bus_stop', 'tram_stop', 'ferry_terminal', 'bicycle_rental'],
+    'attractions': ['museum', 'gallery', 'theatre', 'cinema', 'monument', 'artwork'],
+    'accommodation': ['hotel', 'hostel', 'guest_house', 'apartment'],
+    'food': ['restaurant', 'cafe', 'bar', 'pub', 'fast_food'],
+    'shopping': ['mall', 'market', 'boutique', 'supermarket'],
+    'services': ['bank', 'pharmacy', 'post_office', 'tourist_info'],
+    'activities': ['park', 'beach', 'sports_centre', 'swimming_pool']
+}
+
+def get_poi_type_from_query(query):
+    """Determine POI type based on broader travel categories"""
+    q_lower = query.lower()
+
+    if any(kw in q_lower for kw in ['bus', 'metro', 'train', 'transport', 'transit']):
+        return 'transport'
+    elif any(kw in q_lower for kw in ['museum', 'attraction', 'landmark', 'tourist']):
+        return 'attractions'
+    elif any(kw in q_lower for kw in ['hotel', 'hostel', 'stay', 'accommodation']):
+        return 'accommodation'
+    elif any(kw in q_lower for kw in ['shop', 'store', 'market', 'mall']):
+        return 'shopping'
+    elif any(kw in q_lower for kw in ['park', 'hike', 'beach', 'activity']):
+        return 'activities'
+    else:
+        return 'restaurant'  # Default to food for generic queries
 
 async def _fetch_text(url, timeout=8, session: Optional[aiohttp.ClientSession] = None):
     if session is None:
@@ -1083,7 +1307,7 @@ Ready to explore these areas? Click any neighborhood to focus your search there!
                                 if not name:
                                     continue
                                 # If the neighborhood name appears in the answer but no link is present, add a link after the first mention
-                                pattern = re.compile(rf"(\*\*{re.escape(name)}\*\*|{re.escape(name)})", re.IGNORECASE)
+                                pattern = re.compile(rf"(**{re.escape(name)}**|{re.escape(name)})", re.IGNORECASE)
                                 # Properly URL-encode the search query
                                 search_query = f"{name} {city}".strip()
                                 maps_url = f"https://www.google.com/maps/search/{urllib.parse.quote_plus(search_query)}"
@@ -1111,11 +1335,11 @@ Ready to explore these areas? Click any neighborhood to focus your search there!
             for i, name in enumerate(names[:4]):  # Show up to 4 neighborhoods
                 neighborhood_list.append(f"🏘️ **{name}**: A great area to explore in {city or 'this city'}")
 
-            fallback = f"Ahoy! 🧭 Based on your interests in '{query}', I'd recommend exploring these {city or 'city'} neighborhoods:\n\n" + "\n".join(neighborhood_list) + "\n\nClick any neighborhood to focus your search there! - Marco 🗺️"
+            fallback = f"Based on your interests, Based on your interests in '{query}', I'd recommend exploring these {city or 'city'} neighborhoods:\n\n" + "\n".join(neighborhood_list) + "\n\nClick any neighborhood to focus your search there! - Marco 🗺️"
         elif names:
             fallback = f"Recommended neighborhoods for '{query}': {', '.join(names)}. Try selecting one to explore venues there."
         else:
-            fallback = f"Ahoy! 🧭 I'm exploring {city or 'this city'}! Try searching for a specific place above to help me navigate better. - Marco"
+            fallback = f"Based on your interests, I'm exploring {city or 'this city'}! Try searching for a specific place above to help me navigate better. - Marco"
         try:
             _cache_set(cache_key, fallback, source="fallback")
         except Exception:
@@ -1165,7 +1389,7 @@ async def _recommend_neighborhoods_impl(prompt, key, neighborhoods, city, cache_
                             if not name:
                                 continue
                             # If the neighborhood name appears in the answer but no link is present, add a link after the first mention
-                            pattern = re.compile(rf"(\*\*{re.escape(name)}\*\*|{re.escape(name)})", re.IGNORECASE)
+                            pattern = re.compile(rf"(**{re.escape(name)}**|{re.escape(name)})", re.IGNORECASE)
                             # Properly URL-encode the search query
                             search_query = f"{name} {city}".strip()
                             maps_url = f"https://www.google.com/maps/search/{urllib.parse.quote_plus(search_query)}"
@@ -1193,11 +1417,11 @@ async def _recommend_neighborhoods_impl(prompt, key, neighborhoods, city, cache_
         for i, name in enumerate(names[:4]):  # Show up to 4 neighborhoods
             neighborhood_list.append(f"🏘️ **{name}**: A great area to explore in {city or 'this city'}")
 
-        fallback = f"Ahoy! 🧭 Based on your interests in '{query}', I'd recommend exploring these {city or 'city'} neighborhoods:\n\n" + "\n".join(neighborhood_list) + "\n\nClick any neighborhood to focus your search there! - Marco 🗺️"
+        fallback = f"Based on your interests, Based on your interests in '{query}', I'd recommend exploring these {city or 'city'} neighborhoods:\n\n" + "\n".join(neighborhood_list) + "\n\nClick any neighborhood to focus your search there! - Marco 🗺️"
     elif names:
         fallback = f"Recommended neighborhoods for '{query}': {', '.join(names)}. Try selecting one to explore venues there."
     else:
-        fallback = f"Ahoy! 🧭 I'm exploring {city or 'this city'}! Try searching for a specific place above to help me navigate better. - Marco"
+        fallback = f"Based on your interests, I'm exploring {city or 'this city'}! Try searching for a specific place above to help me navigate better. - Marco"
     try:
         _cache_set(cache_key, fallback, source="fallback")
     except Exception:
@@ -1228,12 +1452,12 @@ async def search_and_reason(
             to_curr = match.group(3)
             result = await convert_currency(amount, from_curr, to_curr, session=session)
             if mode == "explorer":
-                return f"Ahoy! 🪙 As your trusty currency converter, here's the exchange: {result}. Safe travels with your coins!"
+                return f"For your As your trusty currency converter, here's the exchange: {result}. Safe travels with your coins!"
             else:
                 return f"Currency conversion: {result}"
         else:
             if mode == "explorer":
-                return "Arrr, I couldn't parse that currency request. Try 'convert 100 USD to EUR'!"
+                return "I'm having trouble parsing that currency request. Try 'convert 100 USD to EUR'!"
             else:
                 return "Unable to parse currency conversion request. Please use format like 'convert 100 USD to EUR'."
 
@@ -1300,7 +1524,7 @@ async def search_and_reason(
             )
             if simple_weather_check:
                 if mode == "explorer":
-                    return f"Ahoy! 🧭 The current weather in {city or 'this city'} is: {summary}. {details}. Safe travels! - Marco"
+                    return f"Based on your interests, The current weather in {city or 'this city'} is: {summary}. {details}. Safe travels! - Marco"
                 else:
                     return f"Current weather in {city or 'this city'}: {summary}. {details}."
 
@@ -1328,13 +1552,83 @@ async def search_and_reason(
         if conv_analyzer.should_escalate():
             try:
                 from city_guides.providers import multi_provider
-                print("DEBUG: Early escalation - attempting local auto-enrichment of venues before other logic")
-                enriched = await multi_provider.async_discover_pois(city or '', poi_type='restaurant', limit=6)
-                if enriched:
-                    print(f"DEBUG: Early auto-enrichment found {len(enriched)} venues; returning concrete response")
-                    return produce_concrete_response(query, city, enriched, conv_analyzer)
+                print("DEBUG: Early escalation - attempting aggressive local auto-enrichment of venues before other logic")
+                # Aggressive POI search: try multiple POI types and increase the result limit
+                aggressive_limit = 40
+                candidate_types = ['restaurant', 'cafe', 'bar', 'tourism', 'park']
+                enriched_candidates = []
+                for t in candidate_types:
+                    try:
+                        res = await multi_provider.async_discover_pois(city or '', poi_type=t, limit=aggressive_limit)
+                        if res:
+                            enriched_candidates.extend(res)
+                    except Exception as _:
+                        continue
+                # Deduplicate by id and keep top results
+                seen = set()
+                deduped = []
+                for v in enriched_candidates:
+                    vid = v.get('id')
+                    if not vid:
+                        continue
+                    if vid in seen:
+                        continue
+                    seen.add(vid)
+                    deduped.append(v)
+                if deduped:
+                    print(f"DEBUG: Early aggressive auto-enrichment found {len(deduped)} venues; returning concrete response")
+                    return produce_concrete_response(query, city, deduped[:12], conv_analyzer)
             except Exception as e:
                 print(f"DEBUG: Early auto-enrichment failed: {e}")
+    except Exception:
+        pass
+
+    # Provider-first for explicit venue queries:
+    # For queries that clearly request venues (pizza, coffee, restaurant, etc.),
+    # attempt to fetch verified POIs from providers before calling the generative model.
+    try:
+        q_lower_local = (query or "").lower()
+        venue_indicators = ['pizza', 'pizzeria', 'restaurant', 'food', 'eat', 'coffee', 'cafe', 'bar', 'pub', 'sushi', 'taco', 'burger']
+        is_venue_query = any(k in q_lower_local for k in venue_indicators) or analysis_result in ("venue_request", "venue_suggestions")
+
+        if is_venue_query:
+            try:
+                from city_guides.providers import multi_provider
+                # Use the new get_poi_type_from_query function to determine POI type
+                poi_type = get_poi_type_from_query(query)
+
+                print(f"DEBUG: Provider-first enrichment for venue query (poi_type={poi_type}) - aggressive mode")
+                # Aggressive provider-first search: increase limit and try related types if necessary
+                enriched = await multi_provider.async_discover_pois(city or '', poi_type=poi_type, limit=40)
+                if not enriched:
+                    # fallback: try broader types
+                    fallback_types = [poi_type, 'restaurant', 'cafe', 'bar']
+                    enriched_candidates = []
+                    for t in fallback_types:
+                        try:
+                            res = await multi_provider.async_discover_pois(city or '', poi_type=t, limit=40)
+                            if res:
+                                enriched_candidates.extend(res)
+                        except Exception:
+                            continue
+                    # dedupe
+                    seen = set()
+                    deduped = []
+                    for v in enriched_candidates:
+                        vid = v.get('id')
+                        if not vid or vid in seen:
+                            continue
+                        seen.add(vid)
+                        deduped.append(v)
+                    enriched = deduped
+
+                if enriched:
+                    print(f"DEBUG: Provider-first enrichment found {len(enriched)} venues; returning concrete response")
+                    return produce_concrete_response(query, city, enriched[:12], conv_analyzer)
+                else:
+                    print("DEBUG: Provider-first enrichment found no venues; will continue to AI path")
+            except Exception as e:
+                print(f"DEBUG: Provider-first enrichment failed: {e}")
     except Exception:
         pass
 
@@ -1349,13 +1643,36 @@ async def search_and_reason(
         try:
             lower_sr = (smart_response or "").lower()
             generic_checks = [
+                # Generic responses that indicate Marco is not being helpful
                 "tell me more about what you're looking for",
                 "i'm ready to explore",
+                "search for a specific place",
+                "click any neighborhood",
+                "i'd recommend exploring",
+                "i'm ready for adventure",
+                "ready for adventure",
+                "ready to explore",
                 "could you tell me more",
+                "what are you most curious",
+                "what interests you",
                 "what would you like to know",
+                "how can i help you",
+                "what are you looking for",
+                "any specific interests",
+                "let me know what interests you",
+                "safe travels",
+                "my explorer's eyes are tired",
+                "i'd be happy to help",
+                "what sounds most interesting",
+                "what are you most curious about",
+                # Question-only endings
+                "?",  # Any response that ends with just a question mark
             ]
-            is_generic_sr = any(p in lower_sr for p in generic_checks) or lower_sr.strip().endswith('?')
-            print(f"DEBUG: is_generic_sr={is_generic_sr}")
+            is_generic_sr = any(p in lower_sr for p in generic_checks)
+            # Also consider it generic if response is very short (< 50 chars) and ends with ?
+            if len(lower_sr) < 50 and lower_sr.strip().endswith('?'):
+                is_generic_sr = True
+            print(f"DEBUG: is_generic_sr={is_generic_sr}, response_preview={lower_sr[:80]}")
         except Exception:
             is_generic_sr = False
 
@@ -1365,7 +1682,7 @@ async def search_and_reason(
             pass
         else:
             if mode == "explorer":
-                return f"Ahoy! 🧭 {smart_response} - Marco"
+                return f"Based on your interests, {smart_response} - Marco"
             else:
                 return smart_response
 
@@ -1401,53 +1718,14 @@ async def search_and_reason(
         weather_context = f"\nCURRENT WEATHER: {weather.get('temperature_c')}°C"
 
     # Choose prompt depending on conversation state
-    if conv_analyzer.should_escalate():
-        prompt = f"""You are Marco, a helpful travel assistant! 🗺️
-
-User query: "{query}"
-
-CONVERSATION CONTEXT:
-- Current topic: {conv_analyzer.topic}
-- User frustration: {conv_analyzer.user_frustration}/3
-- Response repetition: {conv_analyzer.repeated_response_count}/3
-
-{weather_context}
-{venue_context}
-
-CRITICAL INSTRUCTIONS:
-1. NEVER repeat previous responses
-2. If user frustration is high, acknowledge it and provide CONCRETE information
-3. If topic is established, go deeper into that topic with SPECIFIC examples
-4. Use venue data to provide actual recommendations
-5. NEVER say "Tell me more about what you're looking for"
-6. NEVER ask generic questions when user has been specific
-
-Response format:
-- Start with specific recommendations or information
-- Be concise but informative
-- Sign off as "- Marco 🧭"
-
-Example of GOOD response (if user asked about coffee):
-"Ahoy! 🧭 Based on your interest in coffee, I found these spots in {city or 'the area'}:
-• Blue Bottle Coffee (known for dark roasts)
-• Philz Coffee (specialty pour-overs)
-Would you like details about any of these?"
-
-Example of BAD response:
-"Tell me more about what you're looking for!" (NEVER use this)"""
+    # Use the mandatory venues prompt when escalation is requested or when the query is venue-focused
+    venue_keywords = ['coffee', 'food', 'restaurant', 'bar', 'pub', 'cafe', 'eat', 'drink']
+    is_venue_query_ui = any(keyword in (query or "").lower() for keyword in venue_keywords)
+    if conv_analyzer.should_escalate() or (context_venues and is_venue_query_ui):
+        prompt = build_mandatory_venues_prompt(query, city, context_venues or [], weather, neighborhoods or [])
     else:
-        prompt = f"""You are Marco, a helpful travel assistant! 🗺️
-
-User query: "{query}"
-{weather_context}
-{venue_context}
-
-INSTRUCTIONS:
-1. Answer the specific question asked
-2. If user mentioned something specific (e.g., "dark coffee"), address it directly
-3. Use venue data when available
-4. Keep responses concise and helpful
-5. Sign off as "- Marco 🧭" """
+        # Use the focused prompt as a sensible default (still enforces venue usage when available)
+        prompt = build_focused_marco_prompt(query, city, context_venues or [], weather, neighborhoods or [], history)
 
     # Check for public-data-only mode
     import os
@@ -1537,7 +1815,7 @@ INSTRUCTIONS:
         # If we have context venues but no good public data synthesis, we should still call Groq
         # Only fall back to generic message if we have no context at all AND no way to get more data
         if not context_venues and not neighborhoods and not wikivoyage and not summary_parts and not WIKI_AVAILABLE and not RAG_AVAILABLE:
-            return "Ahoy! 🪙 My explorer's eyes are tired. Try searching for a specific place above first! - Marco"
+            return "For your My explorer's eyes are tired. Try searching for a specific place above first! - Marco"
 
         # 2. Otherwise, if escalation is needed and we lack venue context, try to auto-enrich locally
         try:
@@ -1548,14 +1826,45 @@ INSTRUCTIONS:
             try:
                 from city_guides.providers import multi_provider
                 print("DEBUG: Escalation requested - attempting local auto-enrichment of venues")
-                enriched = await multi_provider.async_discover_pois(city or '', poi_type='restaurant', limit=6)
-                if enriched:
-                    print(f"DEBUG: Auto-enrichment found {len(enriched)} venues; returning concrete response")
-                    return produce_concrete_response(query, city, enriched, conv_analyzer)
+                # Try to infer POI type from the user's query (prefer cafes for coffee-related queries)
+                q_lower_local = (query or "").lower()
+                poi_type = 'restaurant'
+                if any(k in q_lower_local for k in ['coffee', 'cafe', 'espresso', 'roaster', 'latte']):
+                    poi_type = 'cafe'
+                # Aggressive auto-enrichment: try multiple related types and increase limit
+                aggressive_limit = 40
+                types_to_try = [poi_type, 'restaurant', 'cafe', 'bar', 'tourism']
+                enriched_candidates = []
+                for t in types_to_try:
+                    try:
+                        res = await multi_provider.async_discover_pois(city or '', poi_type=t, limit=aggressive_limit)
+                        if res:
+                            enriched_candidates.extend(res)
+                    except Exception:
+                        continue
+                # dedupe
+                seen = set()
+                deduped = []
+                for v in enriched_candidates:
+                    vid = v.get('id')
+                    if not vid or vid in seen:
+                        continue
+                    seen.add(vid)
+                    deduped.append(v)
+                if deduped:
+                    print(f"DEBUG: Auto-enrichment found {len(deduped)} venues; returning concrete response")
+                    return produce_concrete_response(query, city, deduped[:12], conv_analyzer)
             except Exception as e:
                 print(f"DEBUG: Auto-enrichment attempt failed: {e}")
 
-        # 2. Otherwise, call Groq as before
+        # 2. Skip AI call entirely if we have good venue data for venue-related queries
+        if context_venues and len(context_venues) > 0:
+            venue_keywords = ['coffee', 'food', 'restaurant', 'bar', 'pub', 'cafe', 'eat', 'drink']
+            if any(keyword in (query or "").lower() for keyword in venue_keywords):
+                print(f"DEBUG: Skipping AI call - direct concrete response for venue query: {query}")
+                return produce_concrete_response(query, city, context_venues, conv_analyzer)
+
+        # 3. Otherwise, call Groq as before
         key = _get_api_key()
         print(f"DEBUG: Calling Groq for query: {query}")
         print(f"DEBUG: Context Venues Count: {len(context_venues) if context_venues else 0}")
@@ -1676,7 +1985,7 @@ INSTRUCTIONS:
             pool = context_venues[:5] if len(context_venues) >= 5 else context_venues
             v = random.choice(pool)
             name = v.get("name", "this spot")
-            fallback = f"Ahoy! 🧭 My compass is spinning, but looking at our map, **{name}** stands out! Based on my logs, it should be a fine spot for your quest. Safe travels! - Marco"
+            fallback = f"Based on your interests, My compass is spinning, but looking at our map, **{name}** stands out! Based on my logs, it should be a fine spot for your quest. Safe travels! - Marco"
             try:
                 _cache_set(cache_key, fallback, source="fallback")
             except Exception:
@@ -1689,11 +1998,11 @@ INSTRUCTIONS:
             venue_names = [v.get('name') for v in context_venues[:3] if v.get('name')]
             if venue_names:
                 names_str = ", ".join(venue_names)
-                fallback2 = f"Ahoy! 🧭 While my compass is adjusting, check out {names_str} - they look promising based on local data! - Marco"
+                fallback2 = f"Based on your interests, While my compass is adjusting, check out {names_str} - they look promising based on local data! - Marco"
             else:
-                fallback2 = "Ahoy! 🧭 I'm exploring this area! The venues on your screen have good local ratings. - Marco"
+                fallback2 = "Based on your interests, I'm exploring this area! The venues on your screen have good local ratings. - Marco"
         else:
-            fallback2 = "Ahoy! 🧭 I'm ready to explore! Search for a specific place to get detailed recommendations. - Marco"
+            fallback2 = "Based on your interests, I'm ready to explore! Search for a specific place to get detailed recommendations. - Marco"
         try:
             _cache_set(cache_key, fallback2, source="fallback")
         except Exception:
@@ -1702,13 +2011,13 @@ INSTRUCTIONS:
     except Exception as e:
         print(f"DEBUG: Groq Exception: {e}")
         if context_venues:
-            fallback = f"Ahoy! 🧭 My compass is spinning, but **{context_venues[0].get('name')}** on your screen looks like a treasure! - Marco"
+            fallback = f"Based on your interests, My compass is spinning, but **{context_venues[0].get('name')}** on your screen looks like a treasure! - Marco"
             try:
                 _cache_set(cache_key, fallback, source="fallback")
             except Exception:
                 pass
             return fallback
-        fallback3 = "Ahoy! � I'm ready for adventure! - Marco"
+        fallback3 = "I'm I'm ready for adventure! - Marco"
         try:
             _cache_set(cache_key, fallback3, source="fallback")
         except Exception:
@@ -1717,11 +2026,11 @@ INSTRUCTIONS:
 
 
 def apply_response_safeguards(response, query, history, venues, analyzer, city=None):
-    """Fix generic responses and ensure conversation flow"""
+    """More aggressive filtering of generic responses"""
     if not response:
         return response
 
-    # Check for generic fallbacks
+    # Expanded list of generic phrases to catch
     generic_phrases = [
         "tell me more about what you're looking for",
         "i'm ready to explore",
@@ -1731,93 +2040,99 @@ def apply_response_safeguards(response, query, history, venues, analyzer, city=N
         "i'm ready for adventure",
         "ready for adventure",
         "ready to explore",
+        "could you tell me more",
+        "what are you most curious",
+        "what would you like to know",
+        "how can i help you",
+        "what are you looking for",
+        "any specific interests",
+        "let me know what interests you",
+        "safe travels",
+        "my explorer's eyes are tired",
+        "i'd be happy to help",
+        "what sounds most interesting",
+        "what are you most curious about",
     ]
+
+    # If response is generic AND we have venue data, force concrete response
     is_generic = any(phrase in response.lower() for phrase in generic_phrases)
 
-    # Check if user was specific but Marco is generic
-    user_specific = any(term in query.lower() for term in [
-        'dark', 'black', 'espresso', 'museum', 'park', 'transport', 'history'
-    ])
-
-    if is_generic and (user_specific or analyzer.should_escalate()):
-        topic = analyzer.topic if analyzer.topic != "general" else "travel"
-        venue_names = [v.get('name') for v in venues[:3] if v.get('name')] if venues else []
-        if venue_names:
-            return (
-                f"Ahoy! 🧭 I understand you're interested in {topic} - here are specific places: "
-                f"{', '.join(venue_names)}. Would you like details about any of these?"
-            )
-
-        # Fallback to specific venue types
-        venue_types = []
-        if venues:
-            venue_types = list(set(v.get('type', 'spot') for v in venues if v.get('type')))
-
-        return (
-            f"Ahoy! 🧭 For {topic} in {city or 'this area'}, I recommend exploring: "
-            f"{', '.join(venue_types[:2]) if venue_types else 'local spots'}. "
-            f"What specifically about them would you like to know?"
-        )
-
-    # Check for repeated responses
-    if history and response and history.count(response) > 1:
-        return "Ahoy! 🧭 I realize I'm repeating myself - let me give you concrete information: [Specific details based on venue data]"
+    if is_generic and venues and len(venues) > 0:
+        return produce_concrete_response(query, city, venues, analyzer)
 
     return response
 
 
+def _create_google_maps_link(name, city):
+    """Create a Google Maps search URL for a venue."""
+    import urllib.parse
+    search_query = f"{name} {city}".strip()
+    encoded = urllib.parse.quote_plus(search_query)
+    return f"https://www.google.com/maps/search/{encoded}"
+
+
+def _get_venue_emoji(venue):
+    """Get an appropriate emoji for a venue based on its type."""
+    name = (venue.get('name') or '').lower()
+    venue_type = (venue.get('type') or '').lower()
+    tags = venue.get('tags', {})
+    cuisine = (tags.get('cuisine') or '').lower()
+    
+    if 'pizza' in cuisine or 'pizza' in name:
+        return '🍕'
+    elif 'curry' in cuisine or 'indian' in cuisine:
+        return '🍛'
+    elif 'coffee' in cuisine or 'cafe' in cuisine:
+        return '☕'
+    elif 'burger' in cuisine or 'american' in cuisine:
+        return '🍔'
+    elif 'sushi' in cuisine or 'japanese' in cuisine:
+        return '🍣'
+    elif 'mexican' in cuisine or 'taco' in cuisine:
+        return '🌮'
+    elif 'thai' in cuisine or 'vietnamese' in cuisine or 'pho' in name:
+        return '🍜'
+    elif 'pub' in venue_type or 'bar' in venue_type or 'beer' in name:
+        return '🍺'
+    elif 'wine' in cuisine:
+        return '🍷'
+    elif 'bakery' in venue_type or 'breakfast' in cuisine:
+        return '🥐'
+    elif 'ice cream' in venue_type:
+        return '🍦'
+    elif 'chinese' in cuisine:
+        return '🥡'
+    elif 'italian' in cuisine or 'pasta' in cuisine:
+        return '🍝'
+    elif 'french' in cuisine:
+        return '🥖'
+    elif 'mediterranean' in cuisine or 'greek' in cuisine:
+        return '🥙'
+    elif 'restaurant' in venue_type:
+        return '🍽️'
+    elif 'cafe' in venue_type:
+        return '☕'
+    elif 'bar' in venue_type:
+        return '🍸'
+    elif 'fast_food' in venue_type:
+        return '🍔'
+    
+    return '📍'
+
+
 def produce_concrete_response(query, city, venues, analyzer):
     """Force a concrete, venue-based response when conversation needs escalation."""
-    topic = analyzer.topic if analyzer and analyzer.topic != "general" else None
-    q_lower = (query or "").lower()
+    if not venues or len(venues) == 0:
+        return f"I'd love to help you explore {city}! Try searching for specific venues first to get detailed recommendations."
 
-    # Use provided venues if available
-    if venues and len(venues) > 0:
-        venue_lines = []
-        for v in venues[:3]:
-            name = v.get('name') or v.get('title') or 'Local spot'
-            desc = v.get('description') or v.get('type') or ''
-            addr = v.get('address') or v.get('display_address') or ''
-            line = f"• {name} — {desc}" + (f" ({addr})" if addr else "")
-            venue_lines.append(line)
-        header_topic = topic or (q_lower.split()[0] if q_lower else 'travel')
-        return (
-            f"Ahoy! 🧭 I understand you're interested in {header_topic} — here are specific places in {city or 'this area'}:\n"
-            + "\n".join(venue_lines)
-            + "\nWould you like details about any of these? - Marco 🧭"
-        )
+    # Always use available venue data instead of generic responses
+    venue_names = [v.get('name', 'Local spot') for v in venues[:3] if v.get('name')]
 
-    # Fallback to bundled data in data/venues.json
-    try:
-        root = Path(__file__).resolve().parents[1]
-        vfile = root / 'data' / 'venues.json'
-        if vfile.exists():
-            with open(vfile, 'r', encoding='utf-8') as f:
-                allv = json.load(f)
-            matches = []
-            c_low = (city or '').lower()
-            for v in allv:
-                if c_low and c_low in (v.get('city') or '').lower():
-                    matches.append(v)
-            if not matches:
-                matches = allv[:3]
-            venue_lines = [f"• {v.get('name')} — {v.get('description')}" for v in matches[:3]]
-            return (
-                f"Ahoy! 🧭 Here are some specific suggestions for {city or 'this area'}:\n"
-                + "\n".join(venue_lines)
-                + "\nWould you like details about any of these? - Marco 🧭"
-            )
-    except Exception:
-        pass
+    if venue_names:
+        names_str = "**, **".join(venue_names)
+        return f"Based on your interest in '{query}', here are some great spots in **{city}**:\n\n• **{names_str}**\n\nWould you like details about any of these, or should I find more options? - Marco 🧭"
 
-    # Last-resort concrete suggestions based on query keywords
-    if any(k in q_lower for k in ['coffee', 'cafe', 'espresso', 'dark']):
-        return (
-            f"Ahoy! 🧭 I found several coffee-focused spots nearby: try searching for 'roaster', 'specialty cafe', or 'espresso bar' in {city or 'this area'}. "
-            f"If you want, I can list top picks by neighborhood. - Marco 🧭"
-        )
-
-    return response if (response := ("Ahoy! 🧭 Here are some concrete suggestions: check local cafes and restaurants in the neighborhoods shown.")) else response
+    return f"I found some great options for '{query}' in {city}! Click search to see detailed recommendations. - Marco"
 
 
 async def _search_and_reason_impl(prompt, key, cache_key, context_venues, query, session=None):
@@ -1869,7 +2184,7 @@ async def _search_and_reason_impl(prompt, key, cache_key, context_venues, query,
         pool = context_venues[:5] if len(context_venues) >= 5 else context_venues
         v = random.choice(pool)
         name = v.get("name", "this spot")
-        fallback = f"Ahoy! 🧭 My compass is spinning, but looking at our map, **{name}** stands out! Based on my logs, it should be a fine spot for your quest. Safe travels! - Marco"
+        fallback = f"Based on your interests, My compass is spinning, but looking at our map, **{name}** stands out! Based on my logs, it should be a fine spot for your quest. Safe travels! - Marco"
         try:
             _cache_set(cache_key, fallback, source="fallback")
         except Exception:
@@ -1882,11 +2197,11 @@ async def _search_and_reason_impl(prompt, key, cache_key, context_venues, query,
         venue_names = [v.get('name') for v in context_venues[:3] if v.get('name')]
         if venue_names:
             names_str = ", ".join(venue_names)
-            fallback2 = f"Ahoy! 🧭 While my compass is adjusting, check out {names_str} - they look promising based on local data! - Marco"
+            fallback2 = f"Based on your interests, While my compass is adjusting, check out {names_str} - they look promising based on local data! - Marco"
         else:
-            fallback2 = "Ahoy! 🧭 I'm exploring this area! The venues on your screen have good local ratings. - Marco"
+            fallback2 = "Based on your interests, I'm exploring this area! The venues on your screen have good local ratings. - Marco"
     else:
-        fallback2 = "Ahoy! 🧭 I'm ready to explore! Search for a specific place to get detailed recommendations. - Marco"
+        fallback2 = "Based on your interests, I'm ready to explore! Search for a specific place to get detailed recommendations. - Marco"
     try:
         _cache_set(cache_key, fallback2, source="fallback")
     except Exception:

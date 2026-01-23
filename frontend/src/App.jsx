@@ -30,8 +30,8 @@ const SUGGESTION_MAP = {
   coffee: 'Coffee & tea',
 };
 
-// API base URL as constant
-const API_BASE = 'http://localhost:5010';
+// API base URL as constant (use Vite proxy by keeping this empty)
+const API_BASE = '';
 
 function App() {
   const [location, setLocation] = useState({
@@ -226,16 +226,6 @@ function App() {
     fetchWeatherData(location.city, location.neighborhood);
   }, [location.city, location.neighborhood, fetchWeatherData]);
 
-  // Memoized suggestion handler
-  const handleSuggestion = useCallback(async (id) => {
-    const mapped = SUGGESTION_MAP[id] || id;
-    setCategory(mapped);
-    setSelectedSuggestion(id);
-    
-    if (location.city) {
-      await handleSearch(mapped);
-    }
-  }, [location.city]); // handleSearch is defined later
 
   // Main search function - defined with useCallback to avoid recreation
   const handleSearch = useCallback(async (overrideCategory = null) => {
@@ -246,8 +236,8 @@ function App() {
 
     const displayCategory = overrideCategory || category;
     const message = location.neighborhood 
-      ? `Hang tight brewing up ${displayCategory || 'exploring'} in ${location.neighborhood}, ${location.city}`
-      : `Hang tight brewing up ${displayCategory || 'exploring'} in ${location.city}`;
+      ? `Finding ${displayCategory || 'great spots'} in ${location.neighborhood}, ${location.city}...`
+      : `Finding ${displayCategory || 'great spots'} in ${location.city}...`;
     
     setLoadingMessage(message);
     setLoading(true);
@@ -321,6 +311,17 @@ function App() {
       setLoading(false);
     }
   }, [location.city, location.neighborhood, location.country, category, fetchAPI, fetchQuickGuide, fetchNeighborhoods, fetchWeatherData]);
+
+  // Memoized suggestion handler
+  const handleSuggestion = useCallback(async (id) => {
+    const label = SUGGESTION_MAP[id] || id; // human label
+    setCategory(id); // keep internal id
+    setSelectedSuggestion(id);
+    
+    if (location.city) {
+      await handleSearch(label); // pass label so backend gets "Hidden gems"
+    }
+  }, [location.city, handleSearch]);
 
   // Memoized generate function
   const generateQuickGuide = useCallback(async () => {
@@ -400,7 +401,8 @@ function App() {
             city={location.city} 
             neighborhood={location.neighborhood} 
             venues={results?.venues?.slice(0, 6) || []} 
-            category={selectedSuggestion}
+            category={SUGGESTION_MAP[selectedSuggestion] || (typeof category === 'string' ? category : '')}
+            initialInput={SUGGESTION_MAP[selectedSuggestion] || ''} // Pass the selected category
             wikivoyage={results?.wikivoyage}
             onClose={() => setMarcoOpen(false)}
           />

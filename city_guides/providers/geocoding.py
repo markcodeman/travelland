@@ -107,8 +107,9 @@ async def geocode_city(city: str, country: str = ''):
     try:
         url = "https://nominatim.openstreetmap.org/search"
         params = {"q": city, "format": "json", "limit": 1}
+        headers = {"User-Agent": "city-guides-app", "Accept-Language": "en"}
         async with get_session() as session:
-            async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            async with session.get(url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as resp:
                 if resp.status != 200:
                     print(f"geocode_city nominatim HTTP {resp.status}")
                 resp.raise_for_status()
