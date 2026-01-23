@@ -36,7 +36,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, wikivo
         venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and I'm ready to help you discover the best spots! What are you interested in - food, attractions, transport, or something else?`;
       }
       if (category) {
-        sendMessage(venueText, `What are some great ${category} options in ${neighborhood ? neighborhood + ', ' : ''}${city}?`);
+        sendMessage(venueText, `List some great ${category} options in ${neighborhood ? neighborhood + ', ' : ''}${city} with bullet points including name and brief description.`);
       } else {
         sendMessage(venueText);
       }
