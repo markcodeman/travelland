@@ -18,13 +18,13 @@ export default function MarcoChat({ city, neighborhood, venues, category, wikivo
       hasSentInitial.current = true;
       if (venues && venues.length > 0) {
         const venueText = `Here are some great places I found in ${neighborhood ? neighborhood + ', ' : ''}${city}:\n\n${venues.map((v, i) => `${i + 1}. ${v.name || v.title} - ${v.description || v.address || 'No description'}`).join('\n')}\n\nWhat would you like to know about these places?`;
-        sendMessage(venueText);
+        setMessages([{ role: 'assistant', text: venueText }]);
       } else if (category) {
         // Fetch venues for the category
         fetchVenuesForCategory();
       } else {
         const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and I'm ready to help you discover the best spots! What are you interested in - food, attractions, transport, or something else?`;
-        sendMessage(venueText);
+        setMessages([{ role: 'assistant', text: venueText }]);
       }
     }
   }, [venues, category, messages.length]); // Include category in dependencies
@@ -45,7 +45,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, wikivo
       const fetchedVenues = data.venues || [];
       if (fetchedVenues.length > 0) {
         const venueText = `Here are some great ${category} options I found in ${neighborhood ? neighborhood + ', ' : ''}${city}:\n\n${fetchedVenues.slice(0, 10).map((v, i) => `${i + 1}. ${v.name || v.title} - ${v.description || v.address || 'No description'}`).join('\n')}\n\nWhat would you like to know about these places?`;
-        sendMessage(venueText);
+        setMessages([{ role: 'assistant', text: venueText }]);
       } else {
         const cLower = (category || '').toLowerCase();
         let action = 'prepare';
