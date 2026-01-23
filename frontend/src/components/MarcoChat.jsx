@@ -1,27 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import VenueCard from './VenueCard';
+import './MarcoChat.css';
 
-export default function MarcoChat({ city, neighborhood, venues, category, wikivoyage, onClose }) {
+export default function MarcoChat({ city, neighborhood, venues, category, initialInput, onClose }) {
   const [messages, setMessages] = useState([]); // {role: 'user'|'assistant', text}
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(initialInput || ''); // allow initial input
   const [sessionId, setSessionId] = useState(localStorage.getItem('marco_session_id') || null);
   const [loading, setLoading] = useState(false);
-  const boxRef = useRef(null);
+  const messagesEndRef = useRef(null);
   const hasSentInitial = useRef(false);
 
   useEffect(() => {
     if (sessionId) localStorage.setItem('marco_session_id', sessionId);
   }, [sessionId]);
 
+  // Keep input in sync if initialInput prop changes
+  useEffect(() => {
+    if (initialInput !== undefined) setInput(initialInput || '');
+  }, [initialInput]);
+
   // Auto-send venue data or category-based message when chat opens
   useEffect(() => {
     if (!hasSentInitial.current && messages.length === 0) {
       hasSentInitial.current = true;
       if (venues && venues.length > 0) {
-        const venueText = `Here are some great places I found in ${neighborhood ? neighborhood + ', ' : ''}${city}:\n\n${venues.map((v, i) => `${i + 1}. ${v.name || v.title} - ${v.description || v.address || 'No description'}`).join('\n')}\n\nWhat would you like to know about these places?`;
-        setMessages([{ role: 'assistant', text: venueText }]);
+        setMessages([{ role: 'assistant', venues }]);
       } else if (category) {
-        // Fetch venues for the category
-        fetchVenuesForCategory();
+        // Do not auto-run a backend search when the chat opens with a category selected.
+        // Instead, prompt the user and offer a Search button so the user explicitly confirms.
+        const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and can look for ${category} options — click Search to fetch details.`;
+        setMessages([{ role: 'assistant', text: venueText }]);
       } else {
         const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and I'm ready to help you discover the best spots! What are you interested in - food, attractions, transport, or something else?`;
         setMessages([{ role: 'assistant', text: venueText }]);
@@ -44,20 +53,10 @@ export default function MarcoChat({ city, neighborhood, venues, category, wikivo
       const data = await resp.json();
       const fetchedVenues = (data.venues || []).filter(v => v.provider !== 'wikivoyage');
       if (fetchedVenues.length > 0) {
-        const venueText = `Here are some great ${category} options I found in ${neighborhood ? neighborhood + ', ' : ''}${city}:\n\n${fetchedVenues.slice(0, 10).map((v, i) => `${i + 1}. ${v.name || v.title} - ${v.description || v.address || 'No description'}`).join('\n')}\n\nWhat would you like to know about these places?`;
-        setMessages([{ role: 'assistant', text: venueText }]);
+        setMessages([{ role: 'assistant', venues: fetchedVenues.slice(0, 10) }]);
       } else {
-        const cLower = (category || '').toLowerCase();
-        let action = 'prepare';
-        if (cLower.includes('coffee')) action = 'brew';
-        else if (cLower.includes('tea')) action = 'steep';
-        else if (cLower.includes('pizza')) action = 'bake';
-        else if (cLower.includes('sushi')) action = 'roll';
-        else if (cLower.includes('beer')) action = 'pour';
-        else if (cLower.includes('wine')) action = 'uncork';
-        else if (cLower.includes('dessert')) action = 'bake';
-        else if (cLower.includes('taco')) action = 'grill';
-        const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and found some great ${category} options! Standby while I ${action} them up.`;
+        const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and found some great ${category} options! Let me search for more details.`;
+        // Keep existing behavior when user explicitly triggers a search
         sendMessage(venueText, `What are some great ${category} options in ${neighborhood ? neighborhood + ', ' : ''}${city}?`);
       }
     } catch (e) {
@@ -73,60 +72,195 @@ export default function MarcoChat({ city, neighborhood, venues, category, wikivo
     setMessages(m => [...m, msg]);
     setInput('');
     setLoading(true);
+
     try {
+      // Use the Groq-backed chat API on the same origin (Next.js or proxied)
       const payload = {
-        q: query || text,
-        city: city || undefined,
-        neighborhoods: neighborhood ? [{ name: neighborhood }] : undefined,
-        venues: venues || undefined,
-        category: category || undefined,
-        wikivoyage: wikivoyage || undefined,
-        mode: 'explorer',
-        session_id: sessionId,
-        history: buildConversationHistory(messages),
+        // include the message we just sent so the handler has the latest user input
+        messages: [...messages, msg].map(m => ({ role: m.role, text: m.text })),
+        city: city,
+        neighborhood: neighborhood,
+        category: category,
+        venues: venues,
+        session_id: sessionId
       };
-      const resp = await fetch('http://localhost:5010/semantic-search', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
-      const j = await resp.json();
-      if (j && j.answer) {
-        const assistantText = typeof j.answer === 'string' ? j.answer : (j.answer.answer || JSON.stringify(j.answer));
-        setMessages(m => [...m, { role: 'assistant', text: assistantText }]);
-      }
-      if (j && j.session_id) {
-        setSessionId(j.session_id);
+
+      const data = await response.json();
+
+      if (data && data.answer) {
+        setMessages(m => [...m, { role: 'assistant', text: data.answer }]);
+        if (data.session_id) {
+          setSessionId(data.session_id);
+        }
+      } else {
+        setMessages(m => [...m, { role: 'assistant', text: "I apologize, but I'm having trouble connecting. Please try again in a moment." }]);
+        console.error('Groq API failed', data?.error);
       }
     } catch (e) {
-      setMessages(m => [...m, { role: 'assistant', text: "Ahoy! Marco is having a snooze. Try again in a moment." }]);
-      console.error('Marco chat failed', e);
+      setMessages(m => [...m, { role: 'assistant', text: "I apologize, but I'm having trouble connecting. Please try again in a moment." }]);
+      console.error('Chat API failed', e);
     } finally {
       setLoading(false);
-      // scroll
-      if (boxRef.current) boxRef.current.scrollTop = boxRef.current.scrollHeight;
     }
   }
 
-  const buildConversationHistory = (messages) => {
-    return messages
-      .map(msg => `${msg.role === 'user' ? 'User' : 'Marco'}: ${msg.text || msg.content || ''}`)
-      .join('\n');
+  // Auto-scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSubmit = () => {
+    if (!input.trim() || loading) return;
+    sendMessage(input);
+    setInput('');
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
   };
 
   return (
     <div className="marco-modal-overlay">
       <div className="marco-modal">
         <div className="marco-header">
-          <span>Marco — Ask me anything about {neighborhood ? neighborhood + ', ' : ''}{city || ''}</span>
+          <span>Marco — Travel Assistant for {neighborhood ? `${neighborhood}, ` : ''}{city}</span>
           <button className="marco-close" onClick={onClose}>×</button>
         </div>
-        <div className="marco-messages" ref={boxRef}>
-          {messages.map((m, i) => (
-            <div key={i} className={`marco-msg ${m.role}`}>{m.text}</div>
+
+        <div className="marco-messages">
+          {messages.map((msg, i) => (
+            <div key={i} className={`marco-msg ${msg.role}`}>
+              {msg.role === 'assistant' && msg.venues ? (
+                <div>
+                  <div style={{fontWeight:700, fontSize:'1.1em', marginBottom:8}}>☕ Here are some great places I found:</div>
+                  {msg.venues && msg.venues.length > 0 ? (
+                    msg.venues.map((venue, idx) => (
+                      <VenueCard key={venue.id || idx} venue={{
+                        ...venue,
+                        emoji: (venue.description || '').toLowerCase().includes('tea') ? '🫖' : (venue.description || '').toLowerCase().includes('coffee') ? '☕' : '📍',
+                        mapsUrl: venue.latitude && venue.longitude ? `https://www.google.com/maps/search/?api=1&query=${venue.latitude},${venue.longitude}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((venue.name || venue.title || '') + ' ' + (venue.city || ''))}`
+                      }}
+                      onDirections={(v) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.address || v.name + ' ' + (v.city || ''))}`,'_blank')}
+                      onMap={(v) => window.open(v.mapsUrl, '_blank')}
+                      onSave={null}
+                      />
+                    ))
+                  ) : (
+                    // Client-side fallback card when venues array is empty or only contains summaries
+                    <VenueCard key="fallback-google-maps" venue={{
+                      id: 'google-maps-fallback-client',
+                      name: `See more on Google Maps`,
+                      address: city || '',
+                      description: `No detailed venues found for ${neighborhood ? neighborhood + ', ' : ''}${city}. Explore more on Google Maps.`,
+                      latitude: null,
+                      longitude: null,
+                      city: city || '',
+                      provider: 'fallback',
+                      osm_url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(city || '')}`,
+                      website: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(city || '')}`,
+                      image: null,
+                      emoji: '📍',
+                      mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(city || '')}`
+                    }}
+                    onDirections={(v) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.address || v.name + ' ' + (v.city || ''))}`,'_blank')}
+                    onMap={(v) => window.open(v.mapsUrl, '_blank')}
+                    onSave={null}
+                    />
+                  )}
+                  <div style={{marginTop:12, color:'#888'}}>What would you like to know about these places?</div>
+                </div>
+              ) : msg.role === 'assistant' ? (
+                <div>
+                  <ReactMarkdown
+                  components={{
+                    a: props => <a {...props} target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', textDecoration: 'underline', fontWeight: 600 }}>{props.children}</a>,
+                    strong: props => <strong style={{ color: '#333', fontWeight: 700 }}>{props.children}</strong>,
+                    li: props => <li style={{ marginBottom: 6 }}>{props.children}</li>,
+                    small: props => <small style={{ color: '#888', fontSize: '0.95em' }}>{props.children}</small>,
+                    span: props => <span style={{ color: '#1976d2', fontWeight: 600 }}>{props.children}</span>
+                  }}
+                  skipHtml={false}
+                  disallowedElements={[]}
+                  allowElement={() => true}
+                >
+                  {msg.text}
+                  </ReactMarkdown>
+                  {/* If the assistant returned a summary/list (wikivoyage-style) and no venues were provided,
+                      show a client-side fallback VenueCard so the UI always displays a card layout. */}
+                  {(() => {
+                    const text = msg.text || '';
+                    const looksLikeList = /\n\s*\d+\./.test(text) || /here are (a few|some) recommendations/i.test(text);
+                    if (looksLikeList) {
+                      return (
+                        <div style={{marginTop:12}}>
+                          <VenueCard key="fallback-google-maps-md" venue={{
+                            id: 'google-maps-fallback-md',
+                            name: `See more on Google Maps`,
+                            address: city || '',
+                            description: `No detailed venues found for ${neighborhood ? neighborhood + ', ' : ''}${city}. Explore more on Google Maps.`,
+                            latitude: null,
+                            longitude: null,
+                            city: city || '',
+                            provider: 'fallback',
+                            osm_url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(city || '')}`,
+                            website: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(city || '')}`,
+                            image: null,
+                            emoji: '📍',
+                            mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(city || '')}`
+                          }}
+                          onDirections={(v) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.address || v.name + ' ' + (v.city || ''))}`,'_blank')}
+                          onMap={(v) => window.open(v.mapsUrl, '_blank')}
+                          onSave={null}
+                          />
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              ) : (
+                msg.text
+              )}
+            </div>
           ))}
+          {loading && (
+            <div className="marco-msg assistant">
+              <div className="loading-dots">...</div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
         </div>
+
         <div className="marco-input">
-          <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') sendMessage(input); }} placeholder="Ask Marco a question" />
-          <button disabled={loading} onClick={() => sendMessage(input)}>{loading ? '...' : 'Send'}</button>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask about restaurants, attractions, travel tips..."
+            disabled={loading}
+          />
+          <button
+            onClick={() => {
+              if (category && !input.trim()) {
+                fetchVenuesForCategory();
+              } else {
+                handleSubmit();
+              }
+            }}
+            disabled={loading || (!input.trim() && !category)}
+          >
+            {loading ? '...' : "Let's Go"}
+          </button>
         </div>
       </div>
     </div>

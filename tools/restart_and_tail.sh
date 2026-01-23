@@ -4,13 +4,15 @@
 echo "=== TRAVELLAND SERVICES STARTUP ==="
 echo "Backend: Quart on port 5010"
 echo "Frontend: Vite on port 5174"
+echo "Next.js: Next app on port 3000"
+
 
 # Kill any existing processes
 echo "Stopping existing services..."
-pkill -9 -f "hypercorn\|quart\|vite\|npm.*dev" || true
+pkill -9 -f "hypercorn\|quart\|vite\|npm.*dev\|next dev" || true
 
-# Kill any processes using ports 5010 or 5174
-for port in 5010 5174; do
+# Kill any processes using ports 5010, 5174, or 3000
+for port in 5010 5174 3000; do
     PORT_PIDS=$(ss -ltnp 2>/dev/null | grep ":$port" | grep -o 'pid=[0-9]*' | cut -d'=' -f2 | tr '\n' ' ')
     if [ ! -z "$PORT_PIDS" ]; then
         echo "Force killing processes using port $port: $PORT_PIDS"
@@ -21,8 +23,8 @@ for port in 5010 5174; do
 done
 
 # Wait for ports to be free
-echo "Ensuring ports 5010 and 5174 are free..."
-for port in 5010 5174; do
+echo "Ensuring ports 5010, 5174, and 3000 are free..."
+for port in 5010 5174 3000; do
     for i in {1..5}; do
         if ! ss -ltn 2>/dev/null | grep -q ":$port"; then
             echo "Port $port is free"
@@ -34,7 +36,7 @@ for port in 5010 5174; do
 done
 
 # Final check - exit if ports still in use
-for port in 5010 5174; do
+for port in 5010 5174 3000; do
     if ss -ltn 2>/dev/null | grep -q ":$port"; then
         echo "ERROR: Cannot free port $port. Something is holding it."
         exit 1
@@ -53,8 +55,16 @@ npm run dev &
 FRONTEND_PID=$!
 echo $FRONTEND_PID > ../frontend.pid
 
+echo "Starting Next.js app on port 3000..."
+cd /home/markm/TravelLand/next-app
+npm run dev &
+NEXT_PID=$!
+echo $NEXT_PID > ../next.pid
+
 cd /home/markm/TravelLand
 echo "Services started:"
 echo "  Backend (Quart): http://localhost:5010"
 echo "  Frontend (Vite): http://localhost:5174"
 echo "PIDs saved to backend.pid and frontend.pid"
+echo "  Next.js (Next): http://localhost:3000"
+echo "PIDs saved to backend.pid, frontend.pid, and next.pid"
