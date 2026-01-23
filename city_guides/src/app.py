@@ -3612,9 +3612,19 @@ async def ai_reason():
         except Exception as e:
             print(f"DEBUG: Redis read failed: {e}")
 
-        # Compose a short history string for the prompt (only user messages to avoid confusion)
-        user_messages = [h.get('text') for h in history_items[-5:] if h.get('role') == 'user']  # Last 5 user messages
-        history_str = "\n".join([f"Previous user question: {msg}" for msg in user_messages[:-1]])  # Exclude current query
+        # Compose a short conversation history for the prompt (User/Marco lines)
+        history_lines = []
+        for h in history_items[-12:]:  # last 12 messages
+            role = h.get('role', '').lower()
+            text = h.get('text') or h.get('message') or ''
+            if not text:
+                continue
+            if role == 'user':
+                history_lines.append(f"User: {text}")
+            else:
+                history_lines.append(f"Marco: {text}")
+        # Exclude the current query if present (we'll pass prior history only)
+        history_str = "\n".join(history_lines[:-1]) if len(history_lines) > 0 else ""
         if neighborhoods:
             print(f"DEBUG: Using neighborhoods from payload: {len(neighborhoods)}")
             # For venue queries, try to enrich with venues
@@ -3653,38 +3663,71 @@ async def ai_reason():
                     except Exception:
                         latf = lonf = None
 
-        # Skip neighborhood fetching for now to avoid hangs
-        nbh = []
-        print(f"DEBUG: Skipping neighborhood fetch, nbh count: {len(nbh)}")
-        if nbh:
-                        # attempt auto-enrichment: fetch POIs for the neighborhood if no venues were provided
+        # Attempt to fetch neighborhoods (with timeouts/fallbacks) so Marco has full context
+        try:
+            nbh = []
+            try:
+                # Try provider call with a short timeout
+                nbh = await multi_provider.async_get_neighborhoods(city=city or None, lat=None, lon=None, lang='en', session=aiohttp_session)
+            except Exception:
+                nbh = []
+
+            # If provider returned nothing and we have a city, attempt geocode fallback
+            if not nbh and city:
+                try:
+                    geo = await geocode_city(city)
+                    if geo and geo.get('lat') and geo.get('lon'):
                         try:
-                            enriched = await enhanced_auto_enrich_venues(q, city, nbh, session=aiohttp_session)
-                            if enriched:
-                                print(f"DEBUG: Auto-enrichment fetched {len(enriched)} venues; including in semantic prompt")
-                                answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=enriched, weather=weather, neighborhoods=nbh, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
-                            else:
-                                answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, neighborhoods=nbh, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
-                        except Exception as e:
-                                print(f"DEBUG: auto_enrich_venues failed: {e}")
-                                answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, neighborhoods=nbh, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
-                        else:
-                        # No neighborhoods found: try to auto-enrich at city-level if the query suggests locality (e.g., contains 'in' or category words)
-                            try:
-                                enriched = await enhanced_auto_enrich_venues(q, city, [], session=aiohttp_session)
-                                if enriched:
-                                    print(f"DEBUG: Auto-enrichment (city-level) fetched {len(enriched)} venues; including in semantic prompt")
-                                    answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=enriched, weather=weather, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
-                                else:
-                                    answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
-                            except Exception as e:
-                                print(f"DEBUG: enhanced_auto_enrich_venues (city-level) failed: {e}")
-                                answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
-                            else:
-                                answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=venues, weather=weather, session=None, wikivoyage=wikivoyage, history=history_str)
+                            nbh = await multi_provider.async_get_neighborhoods(city=None, lat=geo.get('lat'), lon=geo.get('lon'), lang='en', session=aiohttp_session)
+                        except Exception:
+                            nbh = []
+                except Exception:
+                    nbh = []
+
+            # Ensure bbox and limit the number of neighborhoods
+            if nbh:
+                nbh = [ensure_bbox(n) for n in (nbh[:8] if len(nbh) > 8 else nbh)]
+            print(f"DEBUG: Fetched neighborhoods count: {len(nbh) if nbh else 0}")
+
+            if nbh:
+                # attempt auto-enrichment: fetch POIs for the neighborhood if no venues were provided
+                try:
+                    enriched = await enhanced_auto_enrich_venues(q, city, nbh, session=aiohttp_session)
+                    if enriched:
+                        print(f"DEBUG: Auto-enrichment fetched {len(enriched)} venues; including in semantic prompt")
+                        answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=enriched, weather=weather, neighborhoods=nbh, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
+                    else:
+                        answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, neighborhoods=nbh, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
+                except Exception as e:
+                    print(f"DEBUG: auto_enrich_venues failed: {e}")
+                    answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, neighborhoods=nbh, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
+            else:
+                # No neighborhoods found: try to auto-enrich at city-level if the query suggests locality
+                try:
+                    enriched = await enhanced_auto_enrich_venues(q, city, [], session=aiohttp_session)
+                    if enriched:
+                        print(f"DEBUG: Auto-enrichment (city-level) fetched {len(enriched)} venues; including in semantic prompt")
+                        answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=enriched, weather=weather, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
+                    else:
+                        answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
+                except Exception as e:
+                    print(f"DEBUG: enhanced_auto_enrich_venues (city-level) failed: {e}")
+                    answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=[], weather=weather, session=aiohttp_session, wikivoyage=wikivoyage, history=history_str)
+        except Exception as e:
+            print(f"DEBUG: neighborhood fetch logic failed: {e}")
+            # As a last resort, call semantic without neighborhoods
+            answer = await semantic.search_and_reason(q, city if city else None, mode, context_venues=venues, weather=weather, session=None, wikivoyage=wikivoyage, history=history_str)
         try:
             if redis_client:
-                msg_obj = {"role": "assistant", "text": answer if isinstance(answer, str) else (answer.get('answer') if isinstance(answer, dict) else str(answer))}
+                assistant_text = ''
+                if 'answer' in locals():
+                    if isinstance(answer, str):
+                        assistant_text = answer
+                    elif isinstance(answer, dict):
+                        assistant_text = answer.get('answer') or str(answer)
+                    else:
+                        assistant_text = str(answer)
+                msg_obj = {"role": "assistant", "text": assistant_text}
                 await redis_client.rpush(history_key, json.dumps(msg_obj))  # type: ignore
                 await redis_client.ltrim(history_key, -12, -1)  # type: ignore
                 await redis_client.expire(history_key, 60 * 60 * 24)  # 24h
@@ -3736,6 +3779,132 @@ async def convert_currency():
         return jsonify({"result": result})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/marco-test", methods=["POST"])
+async def marco_test():
+    """Simple test endpoint for Marco conversation optimization.
+    
+    Accepts:
+    - q: User query string
+    - city: City name (optional)
+    - venues: List of venue dicts (optional)
+    - history: Conversation history string (optional)
+    - weather: Weather data dict (optional)
+    
+    Returns:
+    - answer: Marco's response
+    - debug: Debug info about the prompt
+    """
+    import asyncio
+    
+    payload = await request.get_json(silent=True) or {}
+    q = (payload.get("q") or "").strip()
+    city = (payload.get("city") or "").strip()
+    venues = payload.get("venues", [])
+    history = payload.get("history", "")
+    weather = payload.get("weather")
+    
+    if not q:
+        return jsonify({"error": "Query 'q' is required"}), 400
+    
+    # Build conversation prompt
+    messages = semantic.create_conversation_prompt(q, city, venues, weather, history)
+    
+    # Get API key
+    key = os.getenv("GROQ_API_KEY")
+    if not key:
+        # Return a simple response without API call
+        simple_response = f"Ahoy! 🧭 I understand you're asking about '{q}' in {city or 'this area'}. "
+        if venues:
+            simple_response += create_simple_venue_response(venues, q)
+        else:
+            simple_response += "Try searching for specific venues first, and I can give you detailed recommendations!"
+        return jsonify({
+            "answer": simple_response,
+            "debug": {
+                "mode": "no_api_key",
+                "query": q,
+                "city": city,
+                "venues_count": len(venues)
+            }
+        })
+    
+    # Call Groq API
+    try:
+        async with aiohttp_session.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "llama-3.1-8b-instant",
+                "messages": messages,
+                "max_tokens": 400,
+                "temperature": 0.7,
+            },
+            timeout=aiohttp.ClientTimeout(total=30),
+        ) as response:
+            if response.status != 200:
+                error_text = await response.text()
+                return jsonify({
+                    "error": f"Groq API error: {response.status}",
+                    "details": error_text
+                }), 500
+            
+            data = await response.json()
+            answer = data["choices"][0]["message"]["content"]
+            
+            return jsonify({
+                "answer": answer.strip(),
+                "debug": {
+                    "mode": "groq",
+                    "query": q,
+                    "city": city,
+                    "venues_count": len(venues),
+                    "history_length": len(history),
+                    "is_followup": semantic.ConversationMemory(history).should_reference_previous()
+                }
+            })
+    except Exception as e:
+        return jsonify({
+            "error": str(e),
+            "answer": f"Ahoy! 🧭 I encountered an issue answering about '{q}'. Please try again!"
+        }), 500
+
+
+def create_simple_venue_response(venues, query):
+    """Create a simple response when no API key is available."""
+    if not venues:
+        return ""
+    
+    q_lower = query.lower()
+    is_coffee = any(kw in q_lower for kw in ['coffee', 'cafe', 'espresso'])
+    is_food = any(kw in q_lower for kw in ['food', 'restaurant', 'eat', 'dining'])
+    is_dark = any(kw in q_lower for kw in ['dark', 'black', 'strong', 'bold'])
+    
+    recommendations = []
+    for v in venues[:3]:
+        name = v.get('name', 'Local spot')
+        v_type = v.get('type', v.get('amenity', 'venue')).title()
+        cuisine = v.get('cuisine') or v.get('tags', {}).get('cuisine', '')
+        
+        if cuisine:
+            recommendations.append(f"• **{name}** ({cuisine} {v_type})")
+        else:
+            recommendations.append(f"• **{name}** ({v_type})")
+    
+    if recommendations:
+        rec_text = "\n".join(recommendations)
+        if is_coffee and is_dark:
+            return f"\n\nBased on your interest in dark roast, here are my top picks:\n{rec_text}\n\nWould you like more details on any of these?"
+        elif is_food:
+            return f"\n\nHere are my top food recommendations:\n{rec_text}\n\nWhat sounds good to you?"
+        else:
+            return f"\n\nHere are some great spots:\n{rec_text}\n\nWould you like to know more about any of these?"
+    
+    return ""
 
 
 @app.route("/version", methods=["GET"])
