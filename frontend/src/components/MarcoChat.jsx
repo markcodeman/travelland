@@ -16,10 +16,37 @@ export default function MarcoChat({ city, neighborhood, venues, category, wikivo
   useEffect(() => {
     if (!hasSentInitial.current && messages.length === 0) {
       hasSentInitial.current = true;
-      let venueText;
       if (venues && venues.length > 0) {
-        venueText = `Here are some great places I found in ${neighborhood ? neighborhood + ', ' : ''}${city}:\n\n${venues.map((v, i) => `${i + 1}. ${v.name || v.title} - ${v.description || v.address || 'No description'}`).join('\n')}\n\nWhat would you like to know about these places?`;
+        const venueText = `Here are some great places I found in ${neighborhood ? neighborhood + ', ' : ''}${city}:\n\n${venues.map((v, i) => `${i + 1}. ${v.name || v.title} - ${v.description || v.address || 'No description'}`).join('\n')}\n\nWhat would you like to know about these places?`;
+        sendMessage(venueText);
       } else if (category) {
+        // Fetch venues for the category
+        fetchVenuesForCategory();
+      } else {
+        const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and I'm ready to help you discover the best spots! What are you interested in - food, attractions, transport, or something else?`;
+        sendMessage(venueText);
+      }
+    }
+  }, [venues, category, messages.length]); // Include category in dependencies
+
+  const fetchVenuesForCategory = async () => {
+    try {
+      const payload = {
+        query: city,
+        category: category,
+        neighborhood: neighborhood,
+      };
+      const resp = await fetch('http://localhost:5010/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      const fetchedVenues = data.venues || [];
+      if (fetchedVenues.length > 0) {
+        const venueText = `Here are some great ${category} options I found in ${neighborhood ? neighborhood + ', ' : ''}${city}:\n\n${fetchedVenues.slice(0, 10).map((v, i) => `${i + 1}. ${v.name || v.title} - ${v.description || v.address || 'No description'}`).join('\n')}\n\nWhat would you like to know about these places?`;
+        sendMessage(venueText);
+      } else {
         const cLower = (category || '').toLowerCase();
         let action = 'prepare';
         if (cLower.includes('coffee')) action = 'brew';
@@ -30,18 +57,15 @@ export default function MarcoChat({ city, neighborhood, venues, category, wikivo
         else if (cLower.includes('wine')) action = 'uncork';
         else if (cLower.includes('dessert')) action = 'bake';
         else if (cLower.includes('taco')) action = 'grill';
-
-        venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and found some great ${category} options! Standby while I ${action} them up.`;
-      } else {
-        venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and I'm ready to help you discover the best spots! What are you interested in - food, attractions, transport, or something else?`;
+        const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and found some great ${category} options! Standby while I ${action} them up.`;
+        sendMessage(venueText, `What are some great ${category} options in ${neighborhood ? neighborhood + ', ' : ''}${city}?`);
       }
-      if (category) {
-        sendMessage(venueText, `List some great ${category} options in ${neighborhood ? neighborhood + ', ' : ''}${city}. Format the response as bullet points: - Venue Name: Brief description`);
-      } else {
-        sendMessage(venueText);
-      }
+    } catch (e) {
+      console.error('Failed to fetch venues for category', e);
+      const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and I'm ready to help you discover the best spots! What are you interested in - ${category}?`;
+      sendMessage(venueText);
     }
-  }, [venues, category, messages.length]); // Include category in dependencies
+  };
 
   async function sendMessage(text, query = null) {
     if (!text || !text.trim()) return;
