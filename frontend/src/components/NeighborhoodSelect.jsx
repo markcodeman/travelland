@@ -16,7 +16,15 @@ export default function NeighborhoodSelect({ options = [], value = '', onChange 
     return () => document.removeEventListener('mousedown', onDoc);
   }, []);
 
-  const filtered = options.filter(o => o.toLowerCase().includes(query.toLowerCase()));
+  const filtered = options.filter(o => {
+    const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (!tokens.length) return true;
+    const words = o.toLowerCase().split(/\s+/);
+    // All tokens must match the start of some word in the name
+    return tokens.every(token =>
+      words.some(word => word.startsWith(token))
+    );
+  });
 
   // group by first letter
   const groups = filtered.reduce((acc, item) => {
