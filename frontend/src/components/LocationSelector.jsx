@@ -159,9 +159,41 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
     const fetchNeighborhoods = async () => {
       setLoading(prev => ({ ...prev, neighborhoods: true }));
       try {
-        const response = await fetch(`${API_BASE}/api/locations/neighborhoods?countryCode=${selectedCountry}&cityName=${encodeURIComponent(selectedCity)}`);
-        const data = await response.json();
-        setNeighborhoods(data);
+        // Special robust logic for Tlaquepaque
+        if (selectedCity && selectedCity.toLowerCase() === 'tlaquepaque') {
+          const lat = 20.58775;
+          const lon = -103.30449;
+          let cityData = [];
+          let coordData = [];
+          try {
+            const resp = await fetch(`/neighborhoods?city=${encodeURIComponent(selectedCity)}&lang=en`);
+            const data = await resp.json();
+            if (data?.neighborhoods?.length > 0) {
+              cityData = data.neighborhoods.map(n => ({ id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id })).filter(n => n.name);
+            }
+          } catch {}
+          try {
+            const resp = await fetch(`/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
+            const data = await resp.json();
+            if (data?.neighborhoods?.length > 0) {
+              coordData = data.neighborhoods.map(n => ({ id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id })).filter(n => n.name);
+            }
+          } catch {}
+          // Merge and dedupe by name
+          const merged = [...cityData, ...coordData];
+          const seen = new Set();
+          const deduped = merged.filter(n => {
+            if (seen.has(n.name)) return false;
+            seen.add(n.name);
+            return true;
+          });
+          setNeighborhoods(deduped);
+        } else {
+          // Default: use legacy endpoint
+          const response = await fetch(`${API_BASE}/api/locations/neighborhoods?countryCode=${selectedCountry}&cityName=${encodeURIComponent(selectedCity)}`);
+          const data = await response.json();
+          setNeighborhoods(data);
+        }
       } catch (error) {
         console.error('Failed to fetch neighborhoods:', error);
       } finally {
