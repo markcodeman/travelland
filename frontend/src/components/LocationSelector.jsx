@@ -1,22 +1,23 @@
 import React, { useState, useEffect } from 'react';
 
+// Use Vite proxy: API_BASE should be empty string for local dev
 const API_BASE = '';
 
-const LocationSelector = ({ onLocationChange }) => {
+const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
   const [neighborhoods, setNeighborhoods] = useState([]);
 
-  const [selectedCountry, setSelectedCountry] = useState('');
-  const [selectedState, setSelectedState] = useState('');
-  const [selectedCity, setSelectedCity] = useState('');
-  const [selectedNeighborhood, setSelectedNeighborhood] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState(initialLocation.country || '');
+  const [selectedState, setSelectedState] = useState(initialLocation.state || '');
+  const [selectedCity, setSelectedCity] = useState(initialLocation.city || '');
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState(initialLocation.neighborhood || '');
 
-  const [countryInput, setCountryInput] = useState('');
-  const [stateInput, setStateInput] = useState('');
-  const [cityInput, setCityInput] = useState('');
-  const [neighborhoodInput, setNeighborhoodInput] = useState('');
+  const [countryInput, setCountryInput] = useState(initialLocation.countryName || initialLocation.country || '');
+  const [stateInput, setStateInput] = useState(initialLocation.stateName || initialLocation.state || '');
+  const [cityInput, setCityInput] = useState(initialLocation.cityName || initialLocation.city || '');
+  const [neighborhoodInput, setNeighborhoodInput] = useState(initialLocation.neighborhoodName || initialLocation.neighborhood || '');
 
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [showStateDropdown, setShowStateDropdown] = useState(false);
@@ -51,13 +52,21 @@ const LocationSelector = ({ onLocationChange }) => {
       try {
         const response = await fetch(`${API_BASE}/api/locations/countries`);
         const data = await response.json();
-        console.log('Countries data:', data);
+        console.log('LocationSelector render - selectedCity:', selectedCity, 'neighborhoods length:', neighborhoods.length);
         setCountries(data);
-        // Prefill with US for testing
-        const usCountry = data.find(c => c.code === 'US');
-        if (usCountry) {
-          setSelectedCountry('US');
-          setCountryInput(usCountry.name);
+        // Use initial location if provided, otherwise default to US for testing
+        if (initialLocation.country) {
+          const initialCountry = data.find(c => c.code === initialLocation.country || c.name === initialLocation.countryName);
+          if (initialCountry) {
+            setSelectedCountry(initialCountry.code);
+            setCountryInput(initialCountry.name);
+          }
+        } else {
+          const usCountry = data.find(c => c.code === 'US');
+          if (usCountry) {
+            setSelectedCountry('US');
+            setCountryInput(usCountry.name);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch countries:', error);
@@ -83,12 +92,18 @@ const LocationSelector = ({ onLocationChange }) => {
         const response = await fetch(`${API_BASE}/api/locations/states?countryCode=${selectedCountry}`);
         const data = await response.json();
         setStates(data);
-        // Prefill with CA for testing if US is selected
+        // Prefill with CA for testing if US is selected, or Jalisco for Mexico
         if (selectedCountry === 'US') {
           const caState = data.find(s => s.code === 'CA');
           if (caState) {
             setSelectedState('CA');
             setStateInput(caState.name);
+          }
+        } else if (selectedCountry === 'MX') {
+          const jaliscoState = data.find(s => s.name.toLowerCase().includes('jalisco'));
+          if (jaliscoState) {
+            setSelectedState(jaliscoState.code);
+            setStateInput(jaliscoState.name);
           }
         }
       } catch (error) {
