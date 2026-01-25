@@ -126,13 +126,35 @@ async def _geoapify_reverse_geocode_impl(params, headers, session):
 # --- GEOAPIFY POI SEARCH ---
 GEOAPIFY_PLACES_URL = "https://api.geoapify.com/v2/places"
 
+# Mapping from our normalized poi_type keys to Geoapify 'categories' strings.
+# This provides broader, more specific category coverage for common poi_type values.
+GEOAPIFY_CATEGORIES = {
+    "restaurant": "catering.restaurant,catering.cafe,catering.fast_food",
+    "coffee": "catering.cafe,catering.coffee_shop",
+    "park": "leisure.park,leisure.garden,leisure.nature_reserve",
+    "historic": "building.historic,heritage.historic",
+    "museum": "entertainment.museum,entertainment.art_gallery",
+    "market": "commercial.marketplace",
+    "transport": "transport",
+    "family": "leisure.playground,leisure.amusement_arcade,leisure.miniature_golf",
+    "event": "entertainment.theatre,entertainment.cinema,entertainment.arts_centre",
+    "hotel": "accommodation.hotel,accommodation.hostel",
+    "shopping": "commercial.shopping_mall,commercial.retail",
+    "nightlife": "catering.bar,entertainment.night_club",
+    "local": "tourism.attraction",
+    "hidden": "tourism.attraction",
+}
+
 async def geoapify_discover_pois(
     bbox: Optional[Union[list[float], tuple[float, float, float, float]]],
     kinds: Optional[str] = None,
+    poi_type: Optional[str] = None,
     limit: int = 200,
     session: Optional[aiohttp.ClientSession] = None,
 ) -> list[dict]:
-    """Discover POIs using Geoapify Places API, normalized to Overpass-like output."""
+    """Discover POIs using Geoapify Places API, normalized to Overpass-like output.
+    If `kinds` is not provided, a best-effort mapping from `poi_type` to Geoapify
+    categories will be used via the `GEOAPIFY_CATEGORIES` constant."""
     api_key = get_geoapify_key()
     if not api_key:
         print("[DEBUG] Geoapify API key missing!")
@@ -153,7 +175,13 @@ async def geoapify_discover_pois(
     if kinds:
         params_base["categories"] = kinds
     else:
-        params_base["categories"] = "tourism,catering,entertainment,leisure,commercial,healthcare,education"
+        # Use explicit mapping for poi_type when available, otherwise fall back to a broad default
+        if poi_type and poi_type in GEOAPIFY_CATEGORIES:
+            params_base["categories"] = GEOAPIFY_CATEGORIES[poi_type]
+        else:
+            params_base["categories"] = ",".join([
+                "tourism","catering","entertainment","leisure","commercial","healthcare","education"
+            ])
 
     headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
     if session is None:
@@ -582,7 +610,8 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
     try:
         area_id = None
         if city:
-            params = {"q": city, "format": "json", "limit": 1, "addressdetails": 1}
+            # Try to find an administrative relation for the named city/municipality.
+            params = {"q": city, "format": "json", "limit": 10, "addressdetails": 1}
             headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": lang}
             try:
                 timeout = aiohttp.ClientTimeout(total=10)
@@ -590,8 +619,34 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
                     if r.status == 200:
                         j = await r.json()
                         if j:
-                            if j[0].get("osm_type") == "relation" and j[0].get("osm_id"):
-                                area_id = 3600000000 + int(j[0]["osm_id"])  # relation -> area id
+                            # Prefer an explicit relation result (administrative boundary)
+                            relation_candidate = None
+                            for res in j:
+                                try:
+                                    if res.get("osm_type") == "relation" and res.get("osm_id"):
+                                        relation_candidate = res
+                                        break
+                                except Exception:
+                                    continue
+
+                            # If none found, try to locate an administrative/boundary-type result
+                            if not relation_candidate:
+                                for res in j:
+                                    try:
+                                        cls = (res.get("class") or "").lower()
+                                        typ = (res.get("type") or "").lower()
+                                        if (cls == "boundary" and typ == "administrative") or (typ == "administrative"):
+                                            if res.get("osm_type") == "relation" and res.get("osm_id"):
+                                                relation_candidate = res
+                                                break
+                                    except Exception:
+                                        continue
+
+                            if relation_candidate and relation_candidate.get("osm_id"):
+                                try:
+                                    area_id = 3600000000 + int(relation_candidate["osm_id"])  # relation -> area id
+                                except Exception:
+                                    area_id = None
             except Exception:
                 pass
 
@@ -616,7 +671,8 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
             else:
                 bb = await async_geocode_city(city or "", session=session)
                 if bb:
-                    south, west, north, east = bb
+                    # async_geocode_city returns (west, south, east, north)
+                    west, south, east, north = bb
                     bbox_str = f"{south},{west},{north},{east}"
 
             if not bbox_str:
@@ -633,6 +689,7 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
             """
 
         # call overpass endpoints
+        results = []
         for url in OVERPASS_URLS:
             try:
                 timeout = aiohttp.ClientTimeout(total=30)
@@ -641,61 +698,141 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
                         continue
                     j = await resp.json()
                     elements = j.get("elements", [])
-                    results = []
-                    for el in elements:
-                        name = el.get("tags", {}).get("name")
-                        if not name:
-                            continue
-                        el_id = f"{el.get('type')}/{el.get('id')}"
-                        bbox = None
-                        if el.get("type") == "relation":
-                            bbox = el.get("bounds") or el.get("bbox")
-                        center = None
-                        if "center" in el:
-                            center = {"lat": el["center"]["lat"], "lon": el["center"]["lon"]}
-                        elif "lat" in el and "lon" in el:
-                            center = {"lat": el["lat"], "lon": el["lon"]}
-                        # If bbox not available from bounds, generate from center with a buffer
-                        if bbox is None and center:
-                            # Create a bbox around the center point (0.01 degrees ≈ 1.1 km buffer)
-                            buf = 0.01
-                            bbox = [
-                                center["lon"] - buf,  # west
-                                center["lat"] - buf,  # south
-                                center["lon"] + buf,  # east
-                                center["lat"] + buf,  # north
-                            ]
-                        
-                        results.append({
-                            "id": el_id,
-                            "name": name,
-                            "slug": re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_"),
-                            "center": center,
-                            "bbox": bbox,
-                            "source": "osm",
-                        })
-                    if results:
-                        return results
+                    if elements and not results:
+                        # Only append once per successful Overpass response to avoid duplicates across endpoints
+                        results.extend([
+                            {
+                                "id": f"{el.get('type')}/{el.get('id')}",
+                                "name": el.get("tags", {}).get("name"),
+                                "slug": re.sub(r"[^a-z0-9]+", "_", (el.get("tags", {}).get("name") or "").lower()).strip("_"),
+                                "center": ({"lat": el["center"]["lat"], "lon": el["center"]["lon"]} if "center" in el else ({"lat": el.get("lat"), "lon": el.get("lon")} if ("lat" in el and "lon" in el) else None)),
+                                "bbox": (el.get("bounds") or el.get("bbox") if el.get("type") == "relation" else None) or ( [ (el["center"]["lon"] - 0.01), (el["center"]["lat"] - 0.01), (el["center"]["lon"] + 0.01), (el["center"]["lat"] + 0.01) ] if "center" in el else None),
+                                "source": "osm",
+                            }
+                            for el in elements if el.get("tags", {}).get("name")
+                        ])
             except asyncio.TimeoutError:
                 continue
             except Exception:
                 continue
 
-        # If Overpass produced no results, try GeoNames as a best-effort fallback
+        # Always attempt GeoNames fallback if configured; merge into results or return geonames-only
         geonames_user = os.getenv("GEONAMES_USERNAME")
         if geonames_user:
             try:
-                # import lazily to avoid import-time cost when not used
                 import geonames_provider
                 geores = await geonames_provider.async_get_neighborhoods_geonames(
                     city=city, lat=lat, lon=lon, session=session
                 )
                 if geores:
-                    return geores
+                    if not results:
+                        return geores
+                    # merge unique geonames entries by slug, name, or proximity
+                    def _is_near(a_center, b_center, thresh_deg=0.02):
+                        if not a_center or not b_center:
+                            return False
+                        try:
+                            return (
+                                abs(float(a_center.get("lat", 0)) - float(b_center.get("lat", 0))) <= thresh_deg
+                                and abs(float(a_center.get("lon", 0)) - float(b_center.get("lon", 0))) <= thresh_deg
+                            )
+                        except Exception:
+                            return False
+
+                    existing = list(results)
+                    slugs = set(r.get("slug") for r in existing if r.get("slug"))
+                    names = set((r.get("name") or "").lower() for r in existing)
+                    for g in geores:
+                        gslug = g.get("slug")
+                        gname = (g.get("name") or "").lower()
+                        gcenter = g.get("center")
+                        duplicate = False
+                        if (gslug and gslug in slugs) or (gname and gname in names):
+                            duplicate = True
+                        else:
+                            for r in existing:
+                                if _is_near(r.get("center"), gcenter):
+                                    duplicate = True
+                                    break
+                        if not duplicate:
+                            results.append(g)
             except Exception:
                 pass
 
-        return []
+        # As an extra safety, if we have coordinates and GeoNames configured, call findNearbyPlaceName
+        # directly and append any entries not already present. This ensures small localities (e.g., Las Liebres)
+        # are included even when other fallbacks miss them.
+        geonames_user = os.getenv("GEONAMES_USERNAME")
+        if geonames_user and lat and lon:
+            try:
+                gparams = {"username": geonames_user, "lat": lat, "lng": lon, "radius": int(os.getenv("GEONAMES_RADIUS_KM", "20")), "maxRows": int(os.getenv("GEONAMES_MAX_ROWS", "20"))}
+                # Use a fresh session for GeoNames to avoid potential session-level blocking
+                async with get_session() as gsession:
+                    async with gsession.get("http://api.geonames.org/findNearbyPlaceNameJSON", params=gparams, timeout=aiohttp.ClientTimeout(total=10)) as gr:
+                        if gr.status == 200:
+                            gj = await gr.json()
+                            gentries = []
+                            for g in gj.get("geonames", []):
+                                name = g.get("name") or g.get("toponymName")
+                                if not name:
+                                    continue
+                                geoid = g.get("geonameId")
+                                latv = g.get("lat")
+                                lonv = g.get("lng") or g.get("lon")
+                                center = None
+                                try:
+                                    if latv and lonv:
+                                        center = {"lat": float(latv), "lon": float(lonv)}
+                                except Exception:
+                                    center = None
+                                bbox = None
+                                if "north" in g or "south" in g:
+                                    try:
+                                        bbox = [float(g.get("west")), float(g.get("south")), float(g.get("east")), float(g.get("north"))]
+                                    except Exception:
+                                        bbox = None
+                                gentries.append({
+                                    "id": f"geonames/{geoid}",
+                                    "name": name,
+                                    "slug": re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_"),
+                                    "center": center,
+                                    "bbox": bbox,
+                                    "source": "geonames",
+                                })
+
+                            # merge any that are not duplicates
+                            existing = list(results)
+                            slugs = set(r.get("slug") for r in existing if r.get("slug"))
+                            names = set((r.get("name") or "").lower() for r in existing)
+                            def _is_near(a_center, b_center, thresh_deg=0.02):
+                                if not a_center or not b_center:
+                                    return False
+                                try:
+                                    return (
+                                        abs(float(a_center.get("lat", 0)) - float(b_center.get("lat", 0))) <= thresh_deg
+                                        and abs(float(a_center.get("lon", 0)) - float(b_center.get("lon", 0))) <= thresh_deg
+                                    )
+                                except Exception:
+                                    return False
+
+                            for g in gentries:
+                                gslug = g.get("slug")
+                                gname = (g.get("name") or "").lower()
+                                gcenter = g.get("center")
+                                duplicate = False
+                                if (gslug and gslug in slugs) or (gname and gname in names):
+                                    duplicate = True
+                                else:
+                                    for r in existing:
+                                        if _is_near(r.get("center"), gcenter):
+                                            duplicate = True
+                                            break
+                                if not duplicate:
+                                    results.append(g)
+            except Exception:
+                pass
+
+        return results
 
     finally:
         if own:
@@ -1403,7 +1540,7 @@ async def discover_pois(city: Optional[str] = None, poi_type: str = "restaurant"
     tasks.append(async_discover_pois(city, poi_type, limit, local_only, bbox, session=session, name_query=name_query))
 
     # Geoapify - always call with specific kinds if available, otherwise use defaults
-    tasks.append(geoapify_discover_pois(bbox, kinds=geoapify_kinds, limit=limit, session=session))
+    tasks.append(geoapify_discover_pois(bbox, kinds=geoapify_kinds, poi_type=poi_type, limit=limit, session=session))
 
     # Opentripmap
     if opentripmap_kinds:
@@ -1582,20 +1719,37 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
 
         # Execute query directly
         result_data = None
+        # Try each base URL with retries and backoff to mitigate transient timeouts
         for base_url in ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]:
-            try:
-                timeout = aiohttp.ClientTimeout(total=30)
-                async with session.post(base_url, data={"data": query}, timeout=timeout) as resp:
-                    if resp.status == 200:
-                        result_data = await resp.json()
-                        break
-                    else:
-                        print(f"[Overpass] {base_url} status={resp.status}")
-            except Exception as e:
-                print(f"[Overpass] Error with {base_url}: {e}")
-                continue
+            attempts = 3
+            for attempt in range(1, attempts + 1):
+                try:
+                    # increase timeout on subsequent attempts
+                    tot = 30 + (attempt - 1) * 15
+                    timeout = aiohttp.ClientTimeout(total=tot)
+                    async with session.post(base_url, data={"data": query}, timeout=timeout) as resp:
+                        if resp.status == 200:
+                            result_data = await resp.json()
+                            break
+                        else:
+                            print(f"[Overpass] {base_url} status={resp.status} (attempt {attempt})")
+                except Exception as e:
+                    print(f"[Overpass] Error with {base_url} attempt {attempt}: {e}")
+                    # small backoff before retrying
+                    try:
+                        await asyncio.sleep(attempt * 0.5)
+                    except Exception:
+                        pass
+                    continue
+            if result_data:
+                break
         if not result_data:
             print(f"[async_discover_pois] No Overpass data returned for around() query")
+            if own_session:
+                try:
+                    await session.close()
+                except Exception:
+                    pass
             return []
 
         elements = result_data.get("elements", [])
@@ -1680,20 +1834,35 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
 
         # Use aiohttp to query Overpass
         result_data = None
+        # Try each base URL with retries/backoff (helps with intermittent Overpass failures)
         for base_url in ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]:
-            try:
-                timeout = aiohttp.ClientTimeout(total=60)
-                async with session.post(base_url, data={"data": q}, timeout=timeout) as resp:
-                    if resp.status == 200:
-                        result_data = await resp.json()
-                        break
-                    else:
-                        print(f"[Overpass] {base_url} status={resp.status}")
-            except Exception as e:
-                print(f"[Overpass] Error with {base_url}: {e}")
-                continue
+            attempts = 3
+            for attempt in range(1, attempts + 1):
+                try:
+                    tot = 60 + (attempt - 1) * 15
+                    timeout = aiohttp.ClientTimeout(total=tot)
+                    async with session.post(base_url, data={"data": q}, timeout=timeout) as resp:
+                        if resp.status == 200:
+                            result_data = await resp.json()
+                            break
+                        else:
+                            print(f"[Overpass] {base_url} status={resp.status} (attempt {attempt})")
+                except Exception as e:
+                    print(f"[Overpass] Error with {base_url} attempt {attempt}: {e}")
+                    try:
+                        await asyncio.sleep(attempt * 0.5)
+                    except Exception:
+                        pass
+                    continue
+            if result_data:
+                break
         if not result_data:
             print(f"[async_discover_pois] No Overpass data returned for poi_type={poi_type}")
+            if own_session:
+                try:
+                    await session.close()
+                except Exception:
+                    pass
             return []
 
         elements = result_data.get("elements", [])
@@ -1814,6 +1983,11 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
         print(f"[async_discover_pois] Filtered from {len(out)} to {len(filtered_out)} POIs using bbox={filter_bbox}")
         out = filtered_out
     
+    if own_session:
+        try:
+            await session.close()
+        except Exception:
+            pass
     return out[:limit]
 
 

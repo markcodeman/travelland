@@ -2,7 +2,6 @@
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  margin: 16px 0;
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -22,6 +21,28 @@
 .venue-name {
   color: #1976d2;
 }
+.venue-badge {
+  margin-left: 8px;
+  background: #eef6ff;
+  color: #0b5aa6;
+  font-size: 0.75em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.venue-groq {
+  margin-left: 8px;
+  background: linear-gradient(90deg,#fff7e6,#fff6f8);
+  color: #7a4b14;
+  font-size: 0.72em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  border: 1px solid rgba(122,75,20,0.08);
+}
+.venue-groq.low { opacity: 0.8 }
+.venue-groq.medium { opacity: 1 }
+.venue-groq.high { box-shadow: 0 4px 10px rgba(122,75,20,0.08) }
 .venue-image {
   width: 100%;
   border-radius: 8px;
@@ -54,4 +75,26 @@
 }
 .venue-btn:hover {
   background: #125ea2;
+}
+.venue-unverified {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.venue-card-fallback {
+  background: #fbfbfd;
+  border: 1px dashed #e6e6e6;
+  color: #666;
+}
+.venue-card-fallback .muted {
+  color: #777;
+  font-size: 0.95em;
+}
+.venue-fallback-link {
+  background: transparent;
+  color: #1976d2;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(25,118,210,0.1);
+  text-decoration: underline;
 }

@@ -3,7 +3,25 @@ import math
 import asyncio
 from typing import List, Dict, Optional
 import aiohttp
+from pathlib import Path
 
+# Load environment variables from .env file (same as app.py)
+_env_paths = [
+    Path(__file__).parent.parent / ".env",
+    Path(__file__).parent.parent.parent / ".env", 
+    Path("/home/markm/TravelLand/.env"),
+]
+for _env_file in _env_paths:
+    if _env_file.exists():
+        with open(_env_file) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ[key.strip()] = value.strip()
+        break
+
+# Updated with user-provided implementation
 
 def _meters_to_degree_lat(meters: float) -> float:
     # approx conversion: 1 deg lat ~ 111320 meters
@@ -135,3 +153,256 @@ async def async_enrich_venues(
         if own_session:
             await session.close()
             print("[DEBUG mapillary] Closed internal aiohttp session after async_enrich_venues")
+
+
+async def async_search_places(
+    query: str,
+    access_token: str,
+    session: Optional[aiohttp.ClientSession] = None,
+) -> List[Dict]:
+    """Search Mapillary places based on a query.
+
+    Returns a list of dicts with keys: id, name, type, lat, lon
+    If request fails, returns empty list.
+    """
+    own_session = False
+    if session is None:
+        session = aiohttp.ClientSession(headers={"User-Agent": "city-guides-mapillary"})
+        own_session = True
+
+    try:
+        url = "https://api.mapillary.com/places"
+        params = {
+            "query": query,
+            "access_token": access_token
+        }
+
+        async with session.get(url, params=params) as resp:
+            if resp.status != 200:
+                print(f"[DEBUG mapillary] async_search_places HTTP error: {resp.status}")
+                if own_session:
+                    await session.close()
+                    print("[DEBUG mapillary] Closed internal aiohttp session after error")
+                return []
+            data = await resp.json()
+            items = data.get("data") or data.get("places") or []
+            out = []
+            for it in items:
+                name = it.get("name", "")
+                place_type = it.get("type", "")
+                geom = it.get("geometry") or {}
+                lat_i = None
+                lon_i = None
+                if isinstance(geom, dict):
+                    c = geom.get("coordinates")
+                    if isinstance(c, (list, tuple)) and len(c) >= 2:
+                        lon_i, lat_i = float(c[0]), float(c[1])
+                out.append({"id": it.get("id"), "name": name, "type": place_type, "lat": lat_i, "lon": lon_i})
+            if own_session:
+                await session.close()
+                print("[DEBUG mapillary] Closed internal aiohttp session after success")
+            return out
+    except Exception as e:
+        print(f"[DEBUG mapillary] async_search_places Exception: {e}")
+        if own_session:
+            await session.close()
+            print("[DEBUG mapillary] Closed internal aiohttp session after exception")
+        return []
+
+
+# Helper utilities for bbox sizing and guarding Mapillary bbox limits
+def _bbox_area(bbox: tuple) -> float:
+    try:
+        west, south, east, north = bbox
+        return abs((east - west) * (north - south))
+    except Exception:
+        return 1.0
+
+
+def _small_centered_bbox(bbox: tuple, max_area: float = 0.01) -> tuple:
+    """Return a small bbox centered on the given bbox center with area <= max_area."""
+    west, south, east, north = bbox
+    lat = (south + north) / 2.0
+    lon = (west + east) / 2.0
+    # make a square bbox with side = sqrt(max_area)
+    half = (max_area ** 0.5) / 2.0
+    return (lon - half, lat - half, lon + half, lat + half)
+
+
+async def async_discover_map_features(
+    bbox: Optional[tuple] = None,
+    object_values: Optional[str] = None,
+    limit: int = 200,
+    session: Optional[aiohttp.ClientSession] = None,
+) -> List[Dict]:
+    """Discover derived map features (points) from Mapillary's Graph API `/map_features`.
+
+    Returns normalized entries with keys similar to other providers (osm_id, name, lat, lon, tags, source, raw).
+    """
+    token = os.getenv("MAPILLARY_TOKEN")
+    if not token:
+        return []
+    if not bbox or len(bbox) != 4:
+        return []
+
+    # Enforce small bbox area requirement for map_features (doc: small bbox recommended)
+    if _bbox_area(bbox) > 0.01:
+        bbox = _small_centered_bbox(bbox)
+
+    west, south, east, north = bbox
+    bbox_str = f"{west},{south},{east},{north}"
+
+    params = {
+        "access_token": token,
+        "bbox": bbox_str,
+        "fields": "id,geometry,object_value",
+        "limit": str(limit),
+    }
+    if object_values:
+        params["object_values"] = object_values
+
+    own_session = False
+    if session is None:
+        session = aiohttp.ClientSession(headers={"User-Agent": "city-guides-mapillary"})
+        own_session = True
+
+    try:
+        timeout = aiohttp.ClientTimeout(total=15)
+        async with session.get("https://graph.mapillary.com/map_features", params=params, timeout=timeout) as r:
+            if r.status != 200:
+                return []
+            j = await r.json()
+            items = j.get("data", [])
+            out = []
+            for it in items:
+                geom = it.get("geometry", {}) or {}
+                coords = geom.get("coordinates") if isinstance(geom, dict) else None
+                lon, lat = (None, None)
+                if isinstance(coords, (list, tuple)) and len(coords) >= 2:
+                    lon, lat = float(coords[0]), float(coords[1])
+                out.append({
+                    "osm_id": it.get("id"),
+                    "name": it.get("object_value") or "map_feature",
+                    "lat": lat,
+                    "lon": lon,
+                    "address": "",
+                    "tags": it.get("object_value", ""),
+                    "source": "mapillary-map_feature",
+                    "raw": it,
+                })
+            return out
+    except Exception:
+        return []
+    finally:
+        if own_session:
+            await session.close()
+
+
+async def async_discover_images_in_bbox(
+    bbox: Optional[tuple] = None,
+    limit: int = 100,
+    session: Optional[aiohttp.ClientSession] = None,
+    fields: Optional[List[str]] = None,
+) -> List[Dict]:
+    """Discover Mapillary images within a small bbox and normalize into point-like entries.
+
+    The Mapillary `/images` endpoint requires small bbox areas (<0.01 deg^2).
+    Returns entries with source 'mapillary-image' and includes thumbnail urls when available.
+    """
+    token = os.getenv("MAPILLARY_TOKEN")
+    if not token:
+        return []
+    if not bbox or len(bbox) != 4:
+        return []
+
+    if _bbox_area(bbox) > 0.01:
+        bbox = _small_centered_bbox(bbox)
+
+    if fields is None:
+        fields = ["id", "computed_geometry", "thumb_1024_url", "thumb_512_url"]
+
+    west, south, east, north = bbox
+    bbox_str = f"{west},{south},{east},{north}"
+
+    params = {
+        "access_token": token,
+        "bbox": bbox_str,
+        "fields": ",".join(fields),
+        "limit": str(limit),
+    }
+
+    own_session = False
+    if session is None:
+        session = aiohttp.ClientSession(headers={"User-Agent": "city-guides-mapillary"})
+        own_session = True
+
+    try:
+        timeout = aiohttp.ClientTimeout(total=15)
+        async with session.get("https://graph.mapillary.com/images", params=params, timeout=timeout) as r:
+            if r.status != 200:
+                return []
+            j = await r.json()
+            items = j.get("data", [])
+            out = []
+            for it in items:
+                geom = it.get("computed_geometry", {}) or {}
+                coords = geom.get("coordinates") if isinstance(geom, dict) else None
+                lon, lat = (None, None)
+                if isinstance(coords, (list, tuple)) and len(coords) >= 2:
+                    lon, lat = float(coords[0]), float(coords[1])
+                thumb = it.get("thumb_1024_url") or it.get("thumb_512_url") or it.get("thumb_url")
+                out.append({
+                    "osm_id": it.get("id"),
+                    "name": f"mapillary_image_{it.get('id')}",
+                    "lat": lat,
+                    "lon": lon,
+                    "address": "",
+                    "tags": "image",
+                    "thumbnail": thumb,
+                    "source": "mapillary-image",
+                    "raw": it,
+                })
+            return out
+    except Exception:
+        return []
+    finally:
+        if own_session:
+            await session.close()
+
+
+async def async_discover_places(
+    bbox: Optional[tuple] = None,
+    poi_type: Optional[str] = None,
+    limit: int = 100,
+    session: Optional[aiohttp.ClientSession] = None,
+) -> List[Dict]:
+    """Unified Mapillary POI discovery that uses map_features and small-bbox images.
+
+    This replaces the legacy `api.mapillary.com/places` usage which is unsupported.
+    - Prefers `map_features` search (derived POI-like objects)
+    - Falls back to small-bbox images search and returns image-derived points
+
+    Returns normalized entries similar to other providers.
+    """
+    token = os.getenv("MAPILLARY_TOKEN")
+    if not token:
+        return []
+
+    if not bbox or len(bbox) != 4:
+        return []
+
+    # Try map_features first
+    try:
+        features = await async_discover_map_features(bbox=bbox, object_values=None, limit=limit, session=session)
+    except Exception:
+        features = []
+
+    # If map_features returned nothing, try images-derived points
+    if not features:
+        try:
+            images = await async_discover_images_in_bbox(bbox=bbox, limit=limit, session=session)
+        except Exception:
+            images = []
+        return images[:limit]
+
+    return features[:limit]

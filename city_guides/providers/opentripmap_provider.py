@@ -6,10 +6,23 @@ from typing import List, Dict
 import asyncio
 import aiohttp
 
-from overpass_provider import geocode_city
+from city_guides.providers.overpass_provider import geocode_city
 
 OPENTRIPMAP_KEY = os.getenv("OPENTRIPMAP_API_KEY") or os.getenv("OPENTRIPMAP_KEY")
 BASE = "https://api.opentripmap.com/0.1/en/places"
+# Prefer bbox endpoint for better spatial coverage and deterministic bounding
+OPENTRIPMAP_API_URL = f"{BASE}/bbox"
+
+# London-targeted category expansions (OTM works better with broader kinds for large cities)
+LONDON_OTM_CATEGORIES = {
+    "restaurant": "restaurants,cafes,bars,pubs",
+    "historic": "historic,archaeological,memorials",
+    "museum": "museums,galleries,theatres",
+    "park": "parks,gardens,squares",
+    "transport": "transport",
+    "shopping": "shops,marketplaces",
+    "entertainment": "amusements,cinemas,theatres",
+}
 
 
 def _haversine_meters(lat1, lon1, lat2, lon2):
@@ -25,42 +38,90 @@ def _haversine_meters(lat1, lon1, lat2, lon2):
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
+def expand_bbox_for_opentripmap(bbox, city_radius_km: float = 10.0):
+    """Expand bbox to approximate city-level coverage for OpenTripMap.
+
+    Args:
+        bbox: (west, south, east, north)
+        city_radius_km: radius in kilometers to expand around bbox center
+
+    Returns:
+        Expanded bbox tuple (west, south, east, north)
+    """
+    try:
+        west, south, east, north = bbox
+    except Exception:
+        return bbox
+
+    # Convert km to degrees (approx, conservative)
+    km_per_degree = 111.0
+    expansion_degrees = float(city_radius_km) / km_per_degree
+
+    center_lon = (west + east) / 2.0
+    center_lat = (south + north) / 2.0
+
+    new_west = center_lon - expansion_degrees
+    new_east = center_lon + expansion_degrees
+    new_south = center_lat - expansion_degrees
+    new_north = center_lat + expansion_degrees
+
+    print(f"[DEBUG] Expanded bbox: {new_west:.4f}, {new_south:.4f} → {new_east:.4f}, {new_north:.4f} (±{expansion_degrees:.4f}°)")
+    return (new_west, new_south, new_east, new_north)
+
+
 async def discover_restaurants(city: str, limit: int = 50, cuisine: str = None, session: aiohttp.ClientSession = None) -> List[Dict]:
     """Discover POIs via OpenTripMap. Best-effort: requires OPENTRIPMAP_API_KEY in env.
 
     Returns list of dicts with keys: name,address,latitude,longitude,osm_url,place_id
+
+    Note: The `city` argument may be either a city name string or a bbox tuple/list `(west, south, east, north)` to call the bbox endpoint directly.
     """
     if not OPENTRIPMAP_KEY:
         return []
-    from overpass_provider import geocode_city
+    from city_guides.providers.overpass_provider import geocode_city
     if session is None:
         session = aiohttp.ClientSession()
         own_session = True
         print("[DEBUG opentripmap] Created internal aiohttp session for discover_restaurants")
     else:
         own_session = False
-    bbox = await geocode_city(city, session=session)
+    # Accept either a bbox tuple/list (west, south, east, north) or a city string
+    if isinstance(city, (list, tuple)):
+        bbox = city
+    else:
+        bbox = await geocode_city(city, session=session)
     if not bbox:
+        if own_session:
+            await session.close()
         return []
-    south, west, north, east = bbox
-    lat = (south + north) / 2.0
-    lon = (west + east) / 2.0
-    # radius: half diagonal of bbox in meters, capped to 20000m
-    d1 = _haversine_meters(lat, lon, north, west)
-    d2 = _haversine_meters(lat, lon, south, east)
-    radius = int(min(max(d1, d2) * 1.6, 20000)) or 5000
+    west, south, east, north = bbox
+
+    # Determine if this bbox is (likely) London and expand restaurant kinds if so
+    center_lon = (west + east) / 2.0
+    center_lat = (south + north) / 2.0
+    is_london = False
+    try:
+        if isinstance(city, str) and "london" in city.lower():
+            is_london = True
+        elif 51.28 <= center_lat <= 51.7 and -0.51 <= center_lon <= 0.34:
+            is_london = True
+    except Exception:
+        is_london = False
+
+    kinds_to_use = LONDON_OTM_CATEGORIES.get("restaurant") if is_london else "restaurants"
 
     params = {
         "apikey": OPENTRIPMAP_KEY,
-        "radius": radius,
+        "lon_min": west,
+        "lat_min": south,
+        "lon_max": east,
+        "lat_max": north,
         "limit": limit,
-        "lon": lon,
-        "lat": lat,
-        "kinds": "restaurants",
+        "kinds": kinds_to_use,
     }
 
     try:
-        async with session.get(f"{BASE}/radius", params=params, timeout=20) as r:
+        async with session.get(OPENTRIPMAP_API_URL, params=params, timeout=20) as r:
             if r.status != 200:
                 print(f"[DEBUG opentripmap] discover_restaurants HTTP error: {r.status}")
                 if own_session:
@@ -147,7 +208,7 @@ async def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, 
     """Discover POIs via OpenTripMap for different kinds of places.
 
     Args:
-        city: City name to search in
+        city: City name to search in, or a bbox tuple/list `(west, south, east, north)` to call the bbox endpoint directly
         kinds: OpenTripMap kinds string (e.g., "historic", "museums", "parks")
         limit: Maximum results to return
 
@@ -162,28 +223,27 @@ async def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, 
         print("[DEBUG opentripmap] Created internal aiohttp session for discover_pois")
     else:
         own_session = False
-    bbox = await geocode_city(city, session=session)
+    # Accept either a bbox tuple/list (west, south, east, north) or a city string
+    if isinstance(city, (list, tuple)):
+        bbox = city
+    else:
+        bbox = await geocode_city(city, session=session)
     if not bbox:
         return []
-    south, west, north, east = bbox
-    lat = (south + north) / 2.0
-    lon = (west + east) / 2.0
-    # radius: half diagonal of bbox in meters, capped to 20000m
-    d1 = _haversine_meters(lat, lon, north, west)
-    d2 = _haversine_meters(lat, lon, south, east)
-    radius = int(min(max(d1, d2) * 1.6, 20000)) or 5000
+    west, south, east, north = bbox
 
     params = {
         "apikey": OPENTRIPMAP_KEY,
-        "radius": radius,
+        "lon_min": west,
+        "lat_min": south,
+        "lon_max": east,
+        "lat_max": north,
         "limit": limit,
-        "lon": lon,
-        "lat": lat,
         "kinds": kinds,
     }
 
     try:
-        async with session.get(f"{BASE}/radius", params=params, timeout=20) as r:
+        async with session.get(OPENTRIPMAP_API_URL, params=params, timeout=20) as r:
             if r.status != 200:
                 print(f"[DEBUG opentripmap] discover_pois HTTP error: {r.status}")
                 if own_session:
@@ -266,24 +326,60 @@ async def async_discover_pois(city: str, kinds: str = "restaurants", limit: int 
     if not OPENTRIPMAP_KEY:
         print(f"[DEBUG opentripmap discover_pois] No API key, returning empty")
         return []
-    bbox = geocode_city(city)
-    print(f"[DEBUG opentripmap discover_pois] Geocoded bbox: {bbox}")
-    if not bbox:
+    # Accept either a bbox tuple/list (west, south, east, north) or a city string
+    if isinstance(city, (list, tuple)):
+        bbox = city
+    else:
+        bbox = await geocode_city(city, session=session)
+    # Detailed bbox debug (requested)
+    try:
+        west, south, east, north = bbox
+        print(f"[DEBUG] Opentripmap search:")
+        print(f"  BBox: {west:.4f}, {south:.4f} → {east:.4f}, {north:.4f}")
+        print(f"  Width: {east-west:.4f}° longitude")
+        print(f"  Height: {north-south:.4f}° latitude")
+        print(f"  Kinds: {kinds}")
+    except Exception as e:
+        print(f"[DEBUG] Opentripmap bbox debug failed: {e}")
+
+    # Expand to city-level bbox for OpenTripMap queries to improve coverage
+    try:
+        expanded_bbox = expand_bbox_for_opentripmap(bbox)
+        west, south, east, north = expanded_bbox
+        print(f"[DEBUG] Using expanded bbox for Opentripmap: {west:.4f}, {south:.4f} → {east:.4f}, {north:.4f}")
+    except Exception as e:
+        print(f"[DEBUG] Failed to expand bbox, falling back to original: {e}")
+        try:
+            west, south, east, north = bbox
+        except Exception:
+            return []
+
+    print(f"[DEBUG opentripmap discover_pois] Geocoded bbox: {west, south, east, north}")
+    if not (west or south or east or north):
         return []
-    south, west, north, east = bbox
-    lat = (south + north) / 2.0
-    lon = (west + east) / 2.0
-    d1 = _haversine_meters(lat, lon, north, west)
-    d2 = _haversine_meters(lat, lon, south, east)
-    radius = int(min(max(d1, d2) * 1.6, 20000)) or 5000
+
+    # Map kinds to London-specific set when the bbox/city falls within London
+    center_lon = (west + east) / 2.0
+    center_lat = (south + north) / 2.0
+    is_london = False
+    try:
+        if isinstance(city, str) and "london" in city.lower():
+            is_london = True
+        elif 51.28 <= center_lat <= 51.7 and -0.51 <= center_lon <= 0.34:
+            is_london = True
+    except Exception:
+        is_london = False
+
+    kinds_to_use = LONDON_OTM_CATEGORIES.get(kinds, kinds) if is_london else kinds
 
     params = {
         "apikey": OPENTRIPMAP_KEY,
-        "radius": radius,
+        "lon_min": west,
+        "lat_min": south,
+        "lon_max": east,
+        "lat_max": north,
         "limit": limit,
-        "lon": lon,
-        "lat": lat,
-        "kinds": kinds,
+        "kinds": kinds_to_use,
     }
 
     own_session = False
@@ -292,8 +388,8 @@ async def async_discover_pois(city: str, kinds: str = "restaurants", limit: int 
         own_session = True
 
     try:
-        print(f"[DEBUG opentripmap async_discover_pois] Requesting {BASE}/radius with params: radius={params['radius']}, lat={params['lat']}, lon={params['lon']}")
-        async with session.get(f"{BASE}/radius", params=params, timeout=20) as r:
+        print(f"[DEBUG opentripmap async_discover_pois] Requesting {OPENTRIPMAP_API_URL} with bbox params: {params}")
+        async with session.get(OPENTRIPMAP_API_URL, params=params, timeout=20) as r:
             print(f"[DEBUG opentripmap async_discover_pois] HTTP status: {r.status}")
             if r.status != 200:
                 try:

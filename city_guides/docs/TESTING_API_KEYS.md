@@ -53,12 +53,13 @@ if not key:
     print('❌ OPENTRIPMAP_KEY not found in environment')
     exit(1)
 
-params = {'apikey': key, 'lat': 51.5074, 'lon': -0.1278, 'radius': 1000, 'kinds': 'restaurants'}
+# Use bbox for deterministic area queries (lon_min, lat_min, lon_max, lat_max)
+params = {'apikey': key, 'lon_min': -0.15, 'lat_min': 51.50, 'lon_max': -0.10, 'lat_max': 51.52, 'limit': 100, 'kinds': 'restaurants'}
 try:
-    r = requests.get('https://api.opentripmap.com/0.1/en/places/radius', params=params)
+    r = requests.get('https://api.opentripmap.com/0.1/en/places/bbox', params=params)
     r.raise_for_status()
-    print('✓ OpenTripMap API works!')
-    print(f'→ Found {len(r.json().get(\"features\", []))} locations in London')
+    print('✓ OpenTripMap API works (bbox)!')
+    print(f'→ Found {len(r.json().get("features", []))} locations in bbox')
 except Exception as e:
     print(f'❌ OpenTripMap Error: {e}')
 "

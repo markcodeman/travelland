@@ -213,6 +213,12 @@ select, input[type="text"] {
   outline: none;
   box-shadow: 0 1px 6px rgba(33,150,243,0.12);
 }
+.suggestion-chip.selected {
+  background: #1976d2;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(25,118,210,0.18);
+}
+.suggestion-chip.selected .chip-icon { opacity: 1; }
 .chip-icon { font-size: 1.05em; }
 
 /* Explore heading for city */
