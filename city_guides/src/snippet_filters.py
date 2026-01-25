@@ -33,3 +33,61 @@ def looks_like_ddgs_disambiguation_text(txt: str) -> bool:
     if 'rating' in low and any(c.isdigit() for c in low):
         return True
     return False
+
+
+# --- DDGS domain blocklist helpers ---
+from urllib.parse import urlparse
+
+
+def _get_domain(href: str) -> str:
+    """Return normalized domain for an href (lowercased, no port)."""
+    if not href:
+        return ''
+    try:
+        p = urlparse(href)
+        host = (p.netloc or href).lower()
+        # strip port
+        if ':' in host:
+            host = host.split(':', 1)[0]
+        return host
+    except Exception:
+        return href.lower()
+
+
+def is_blocked_ddgs_domain(href: str, blocked_domains: list) -> bool:
+    """Return True if href belongs to one of the blocked domains.
+    blocked_domains can be like ['tripsavvy.com','tripadvisor.com'] and subdomains are matched as well.
+    """
+    if not href:
+        return False
+    domain = _get_domain(href)
+    for b in (blocked_domains or []):
+        b = b.strip().lower()
+        if not b:
+            continue
+        if domain == b or domain.endswith('.' + b):
+            return True
+    return False
+
+
+def filter_ddgs_results(results: list, blocked_domains: list) -> tuple:
+    """Filter a list of ddgs result dicts into (allowed, blocked).
+    Each result is expected to have a 'href' or 'url' field.
+    """
+    allowed = []
+    blocked = []
+    for r in results:
+        href = r.get('href') or r.get('url') or ''
+        if is_blocked_ddgs_domain(href, blocked_domains):
+            blocked.append(r)
+        else:
+            allowed.append(r)
+    return allowed, blocked
+    if low.count(',') >= 3 and len(low) < 200:
+        parts = [p.strip() for p in low.split(',')]
+        short_parts = [p for p in parts if len(p) < 80]
+        if len(short_parts) >= 3:
+            return True
+    if 'rating' in low and any(c.isdigit() for c in low):
+        return True
+    return False
