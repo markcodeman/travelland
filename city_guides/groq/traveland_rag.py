@@ -29,6 +29,13 @@ class TravelLandRecommender:
     def __init__(self):
         self.api_key = GROQ_API_KEY
         self.model = GROQ_MODEL
+        # Local synthesizer fallback (keeps outputs usable when Groq fails)
+        try:
+            from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+            self.synthesizer = SynthesisEnhancer()
+        except Exception:
+            self.synthesizer = None
+
 
     def build_system_prompt(self, recommendation_type: str = "venues") -> str:
         """Build system prompt based on recommendation type"""
@@ -123,6 +130,77 @@ class TravelLandRecommender:
             logger.error(f"GROQ API call failed: {e}")
             return None
 
+    def recommend_synthesis_enhanced(self, user_context: Dict, candidates: List[Dict]) -> List[Dict]:
+        """
+        Enhanced synthesis flow:
+          - Try RAG synthesis via Groq
+          - Validate and normalize results
+          - Fallback to local synthesis (SynthesisEnhancer) when Groq fails or returns invalid output
+        """
+        # Try the existing RAG path first
+        try:
+            sys_msg = {"role": "system", "content": self.build_system_prompt("synthesis")}
+            user_msg = {"role": "user", "content": self.build_user_prompt(user_context, candidates, "synthesis")}
+            resp = self.call_groq_chat([sys_msg, user_msg], timeout=15)
+            if resp:
+                raw = resp["choices"][0]["message"]["content"]
+                try:
+                    recs = json.loads(raw)
+                    validated = self._validate_and_normalize_synthesis(recs, candidates)
+                    if validated:
+                        logger.info(f"RAG synthesis produced {len(validated)} validated items")
+                        return validated
+                    else:
+                        logger.warning("RAG synthesis produced no validated items; falling back")
+                except json.JSONDecodeError:
+                    logger.warning("RAG synthesis returned non-JSON response; falling back")
+        except Exception as e:
+            logger.exception(f"RAG synthesis step failed: {e}")
+
+        # Local fallback
+        if self.synthesizer:
+            logger.info("Falling back to local synthesizer for synthesis output")
+            return self.synthesizer.synthesize_venues(candidates, max_venues=8)
+
+        return []
+
+    def _validate_and_normalize_synthesis(self, recs: List[Dict], candidates: List[Dict]) -> List[Dict]:
+        """
+        Validate RAG synthesis output and apply safety rules
+        """
+        id_to_cand = {c.get('id') or c.get('name'): c for c in candidates}
+        validated = []
+
+        for r in recs:
+            vid = r.get('id')
+            if not vid or vid not in id_to_cand:
+                logger.warning(f"Skipping synthesis item with invalid id: {vid}")
+                continue
+
+            # Ensure English description
+            if 'short_description' in r and r['short_description'] and self.synthesizer:
+                snippet, lang = self.synthesizer.extract_english_snippet(r['short_description'], 140)
+                r['short_description'] = snippet
+                r['detected_language'] = lang
+                if lang != 'en':
+                    logger.warning(f"Non-English description detected for {vid}: {lang}")
+
+            if 'highlight' in r and r['highlight'] and self.synthesizer:
+                if len(r['highlight']) > 80:
+                    r['highlight'] = self.synthesizer.safe_trim(r['highlight'], 80)
+
+            if 'sources' not in r or not isinstance(r['sources'], list):
+                r['sources'] = ['osm']
+
+            r['attribution'] = self.synthesizer.create_attribution(r['sources'], r.get('name', 'this location')) if self.synthesizer else 'Source: OpenStreetMap'
+
+            if 'confidence' not in r or r['confidence'] not in ['low','medium','high']:
+                r['confidence'] = 'medium'
+
+            validated.append(r)
+
+        return validated
+
     def recommend_with_rag(self, user_context: Dict, candidates: List[Dict],
                           recommendation_type: str = "venues") -> List[Dict]:
         """
@@ -190,5 +268,14 @@ def recommend_neighborhoods_rag(user_context: Dict, candidates: List[Dict]) -> L
 
 
 def recommend_synthesis(user_context: Dict, candidates: List[Dict]) -> List[Dict]:
-    """Convenience wrapper for synthesis-style outputs (strict UI enrichment schema)"""
+    """Convenience wrapper for synthesis-style outputs (strict UI enrichment schema)
+    Enhanced behavior: try RAG synthesis, validate/normalize, then fallback to local synthesis if necessary.
+    """
+    # Prefer the enhanced synthesis path if available on the recommender
+    if hasattr(recommender, 'recommend_synthesis_enhanced'):
+        try:
+            return recommender.recommend_synthesis_enhanced(user_context, candidates)
+        except Exception:
+            # fallback to original RAG path
+            return recommender.recommend_with_rag(user_context, candidates, "synthesis")
     return recommender.recommend_with_rag(user_context, candidates, "synthesis")
