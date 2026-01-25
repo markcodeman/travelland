@@ -1160,6 +1160,16 @@ async def generate_quick_guide():
                     print(f"DDGS query failed for {q}: {e}")
                     continue
             # Keep unique by href
+            # Apply configurable DDGS domain blocklist (soft block) so we don't use noisy sites as final quick guides
+            try:
+                blocked_domains = [d.strip().lower() for d in os.getenv('BLOCKED_DDGS_DOMAINS', 'tripsavvy.com,tripadvisor.com').split(',') if d.strip()]
+                from city_guides.src.snippet_filters import filter_ddgs_results
+                allowed_results, blocked_results = filter_ddgs_results(ddgs_results, blocked_domains)
+                if blocked_results:
+                    app.logger.info('Blocked %d DDGS results for domains: %s', len(blocked_results), ','.join(sorted(set([ (r.get('href') or r.get('url') or '').split('/')[2] for r in blocked_results if (r.get('href') or r.get('url') )]))))
+                ddgs_results = allowed_results
+            except Exception:
+                app.logger.exception('Failed to apply DDGS blocklist filter')
             seen = set()
             unique = []
             for r in ddgs_results:
@@ -1396,6 +1406,22 @@ async def generate_quick_guide():
         app.logger.exception('Failed to validate synthesized quick_guide')
 
     out = {'quick_guide': synthesized, 'source': source or 'data-first', 'cached': False, 'generated_at': time.time(), 'source_url': source_url} 
+
+    def _is_relevant_wikimedia_image(wik_img: dict, city_name: str, neighborhood_name: str) -> bool:
+        """Heuristic to decide if a Wikimedia banner image is relevant to the place (avoid portraits/trophies).
+        Returns True if image should be used."""
+        if not wik_img:
+            return False
+        page_title = (wik_img.get('page_title') or '')
+        remote = (wik_img.get('remote_url') or wik_img.get('url') or '')
+        lower_title = page_title.lower()
+        lower_remote = remote.lower()
+        bad_terms = ['trophy', 'portrait', 'headshot', 'award', 'cup', 'ceremony', 'medal']
+        good_terms = ['skyline', 'panorama', 'view', 'street', 'market', 'plaza', 'park', 'bridge', 'neighborhood', 'colonia']
+        is_bad = any(b in lower_title for b in bad_terms) or any(b in lower_remote for b in bad_terms)
+        is_good = any(g in lower_title for g in good_terms) or any(g in lower_remote for g in good_terms) or (city_name.lower() in lower_title)
+        return not (is_bad and not is_good)
+
     # Try to enrich quick guide with Mapillary thumbnails (if available)
     mapillary_images = []
     try:
@@ -1425,6 +1451,14 @@ async def generate_quick_guide():
         pass
 
     # If no Mapillary images found, try a Wikimedia Commons fallback (best-effort)
+    # Also, strip any inline 'Image via' lines from the quick_guide and move them to metadata
+    try:
+        from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+        cleaned_quick_guide, image_attributions = SynthesisEnhancer.extract_image_attributions(synthesized or '')
+        synthesized = cleaned_quick_guide
+    except Exception:
+        image_attributions = []
+
     if not mapillary_images and image_provider:
         try:
             wik_img = None
@@ -1446,15 +1480,30 @@ async def generate_quick_guide():
                 except Exception:
                     wik_img = None
             if wik_img and (wik_img.get('remote_url') or wik_img.get('url')):
-                remote = wik_img.get('remote_url') or wik_img.get('url')
-                attr = wik_img.get('attribution')
-                mapillary_images.append({
-                    'id': None,
-                    'url': remote,
-                    'provider': 'wikimedia',
-                    'attribution': attr,
-                    'source_url': remote,
-                })
+                if _is_relevant_wikimedia_image(wik_img, city, neighborhood):
+                    remote = wik_img.get('remote_url') or wik_img.get('url')
+                    attr = wik_img.get('attribution')
+                    page_title = (wik_img.get('page_title') or '')
+                    mapillary_images.append({
+                        'id': None,
+                        'url': remote,
+                        'provider': 'wikimedia',
+                        'attribution': attr,
+                        'page_title': page_title,
+                        'source_url': remote,
+                    })
+                else:
+                    app.logger.info('Skipping wikimedia image based on relevance heuristic: %s', wik_img.get('page_title') or wik_img.get('remote_url'))
+            # include any attributions found in the quick_guide text as metadata (deduped)
+            for a in image_attributions:
+                if not any((a.get('url') and a.get('url') == m.get('source_url')) for m in mapillary_images):
+                    mapillary_images.append({
+                        'id': None,
+                        'url': a.get('url'),
+                        'provider': a.get('provider'),
+                        'attribution': SynthesisEnhancer.create_attribution(a.get('provider'), a.get('url')),
+                        'source_url': a.get('url')
+                    })
         except Exception:
             app.logger.debug('wikimedia fallback failed for quick_guide')
 
