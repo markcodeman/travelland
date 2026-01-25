@@ -129,6 +129,11 @@ for env_file in env_paths:
             print(f"✓ GROQ_API_KEY loaded successfully: {groq_key[:6]}... (length: {len(groq_key)})")
         else:
             print("✗ GROQ_API_KEY NOT FOUND in environment after .env load!")
+        geoapify_key = os.getenv("GEOAPIFY_API_KEY")
+        if geoapify_key:
+            print(f"✓ GEOAPIFY_API_KEY loaded: {geoapify_key[:6]}... (length: {len(geoapify_key)})")
+        else:
+            print("✗ GEOAPIFY_API_KEY NOT FOUND in environment after .env load! Geo-enrichment will be disabled until you provide a key.")
         break
 else:
     print("Warning: .env file not found in any expected location")
@@ -385,11 +390,11 @@ async def _persist_quick_guide(out_obj, city_name, neighborhood_name, file_path)
                 out_obj['quick_guide'] = SynthesisEnhancer.generate_neighborhood_paragraph(neighborhood_name, city_name)
                 out_obj['source'] = 'synthesized'
                 out_obj['source_url'] = None
-                        out_obj['confidence'] = 'low'
-                    except Exception:
-                        out_obj['quick_guide'] = f"{neighborhood_name} is a neighborhood in {city_name}."
-                        out_obj['source'] = 'data-first'
-                        out_obj['confidence'] = 'low'
+                out_obj['confidence'] = 'low'
+            except Exception:
+                out_obj['quick_guide'] = f"{neighborhood_name} is a neighborhood in {city_name}."
+                out_obj['source'] = 'data-first'
+                out_obj['confidence'] = 'low'
         try:
             app.logger.debug('redis_client value at cache write: %s', str(redis_client)[:200])
             if redis_client:
@@ -462,6 +467,9 @@ def _is_relevant_wikimedia_image(wik_img: dict, city_name: str, neighborhood_nam
     return True
 
 
+@app.route("/<path:path>", methods=["GET"])
+async def catch_all(path):
+    # Serve React app for client-side routing
     if path.startswith("api/") or path.startswith("static/"):
         # Let Quart handle API and static routes normally
         from quart import abort
@@ -993,6 +1001,27 @@ async def generate_quick_guide():
             except Exception:
                 app.logger.exception('Failed to neutralize cached quick_guide')
 
+            # If cached content is a simple 'X is a neighborhood in Y.' from data-first, try geo enrichment
+            try:
+                if resp.get('source') == 'data-first' and re.match(r'^.+ is a neighborhood in .+\.$', (resp.get('quick_guide') or '')):
+                    try:
+                        from city_guides.src.geo_enrichment import enrich_neighborhood, build_enriched_quick_guide
+                        enrichment = await enrich_neighborhood(city, neighborhood, session=aiohttp_session)
+                        if enrichment and (enrichment.get('text') or (enrichment.get('pois') and len(enrichment.get('pois'))>0)):
+                            resp['quick_guide'] = build_enriched_quick_guide(neighborhood, city, enrichment)
+                            resp['source'] = 'geo-enriched'
+                            resp['confidence'] = 'medium'
+                            try:
+                                with open(cache_file, 'w', encoding='utf-8') as f:
+                                    json.dump({'quick_guide': resp['quick_guide'], 'source': resp['source'], 'generated_at': time.time(), 'source_url': None, 'confidence': resp['confidence']}, f, ensure_ascii=False, indent=2)
+                            except Exception:
+                                app.logger.exception('Failed to persist geo-enriched replacement for cached entry')
+                            return jsonify(resp)
+                    except Exception:
+                        app.logger.exception('Geo enrichment for cached entry failed')
+            except Exception:
+                app.logger.exception('Failed to attempt geo-enrichment on cached quick_guide')
+
             # Compute confidence for cached snippet (backfill if missing)
             try:
                 cached_src = data.get('source') or ''
@@ -1010,7 +1039,7 @@ async def generate_quick_guide():
                 else:
                     resp['confidence'] = cached_conf
             except Exception:
-                resp['confidence'] = 'low'
+                resp['confidence'] = 'low' 
 
             # If cached content is a DDGS/synthesized hit that looks like a disambiguation or promotional snippet,
             # replace it immediately with a synthesized neutral paragraph and return that (avoid falling-through returns)
@@ -1204,12 +1233,15 @@ async def generate_quick_guide():
             ddgs_results = []
             for q in ddgs_queries:
                 try:
+                    if not ddgs_search:
+                        app.logger.debug('DDGS provider not available at runtime; skipping query %s', q)
+                        continue
                     res = await ddgs_search(q, engine="google", max_results=6)
-                    print(f"DDGS: query={q} got {len(res) if res else 0} results")
+                    app.logger.debug('DDGS: query=%s got %d results', q, len(res) if res else 0)
                     if res:
                         ddgs_results.extend(res)
                 except Exception as e:
-                    print(f"DDGS query failed for {q}: {e}")
+                    app.logger.debug('DDGS query failed for %s: %s', q, e)
                     continue
             # Keep unique by href
             # Apply configurable DDGS domain blocklist (soft block) so we don't use noisy sites as final quick guides
@@ -1373,7 +1405,6 @@ async def generate_quick_guide():
         # Attempt DuckDuckGo (DDGS) as a fallback to fetch a travel-oriented summary when
         # Wikipedia and local data files don't provide a good match.
         try:
-            from city_guides.providers.ddgs_provider import ddgs_search
             ddgs_queries = [
                 f"{neighborhood}, {city} travel guide",
                 f"{neighborhood} {city} travel",
@@ -1382,22 +1413,26 @@ async def generate_quick_guide():
             ]
             ddgs_snippet = None
             ddgs_url = None
-            for q in ddgs_queries:
-                try:
-                    results = await ddgs_search(q, engine="google", max_results=5)
-                    for r in results:
-                        body = (r.get('body') or '') or (r.get('title') or '')
-                        text = re.sub(r'\s+', ' ', (body or '')).strip()
-                        # Accept result if it's reasonably descriptive and mentions either neighborhood or city
-                        if len(text) >= 60 and (city.lower() in text.lower() or neighborhood.lower() in text.lower() or q.lower().startswith(city.lower())):
-                            ddgs_snippet = text
-                            ddgs_original = (r.get('body') or r.get('title') or '')
-                            ddgs_url = r.get('href')
+            if not ddgs_search:
+                app.logger.debug('DDGS provider not available at runtime; skipping DDGS fallback for %s/%s', city, neighborhood)
+            else:
+                for q in ddgs_queries:
+                    try:
+                        results = await ddgs_search(q, engine="google", max_results=5)
+                        for r in results:
+                            body = (r.get('body') or '') or (r.get('title') or '')
+                            text = re.sub(r'\s+', ' ', (body or '')).strip()
+                            # Accept result if it's reasonably descriptive and mentions either neighborhood or city
+                            if len(text) >= 60 and (city.lower() in text.lower() or neighborhood.lower() in text.lower() or q.lower().startswith(city.lower())):
+                                ddgs_snippet = text
+                                ddgs_original = (r.get('body') or r.get('title') or '')
+                                ddgs_url = r.get('href')
+                                break
+                        if ddgs_snippet:
                             break
-                    if ddgs_snippet:
-                        break
-                except Exception:
-                    continue
+                    except Exception as e:
+                        app.logger.debug('DDGS query failed for %s %s: %s', q, city, e)
+                        continue
             if ddgs_snippet:
                 # Reject noisy/harmful ddgs snippets by url or content
                 href = ddgs_url or ''
@@ -1475,10 +1510,21 @@ async def generate_quick_guide():
     except Exception:
         confidence = 'low'
 
-    # If confidence is low, return a minimal factual sentence to avoid generic fluff
+    # If confidence is low, attempt geo enrichment before returning minimal fallback
     if confidence == 'low':
-        synthesized = f"{neighborhood} is a neighborhood in {city}."
-        source = source or 'data-first'
+        try:
+            from city_guides.src.geo_enrichment import enrich_neighborhood, build_enriched_quick_guide
+            enrichment = await enrich_neighborhood(city, neighborhood, session=aiohttp_session)
+            if enrichment and (enrichment.get('text') or (enrichment.get('pois') and len(enrichment.get('pois')) > 0)):
+                synthesized = build_enriched_quick_guide(neighborhood, city, enrichment)
+                source = 'geo-enriched'
+                confidence = 'medium'
+            else:
+                synthesized = f"{neighborhood} is a neighborhood in {city}."
+                source = source or 'data-first'
+        except Exception:
+            synthesized = f"{neighborhood} is a neighborhood in {city}."
+            source = source or 'data-first'
 
     out = {'quick_guide': synthesized, 'source': source or 'data-first', 'confidence': confidence, 'cached': False, 'generated_at': time.time(), 'source_url': source_url} 
 
@@ -1590,7 +1636,7 @@ async def generate_quick_guide():
     except Exception:
         app.logger.exception('failed to write quick_guide cache')
 
-    resp = {'quick_guide': synthesized, 'source': source or 'data-first', 'cached': False, 'source_url': source_url}
+    resp = {'quick_guide': synthesized, 'source': source or 'data-first', 'confidence': confidence, 'cached': False, 'source_url': source_url}
     if mapillary_images:
         resp['mapillary_images'] = mapillary_images
     return jsonify(resp)
@@ -3008,74 +3054,109 @@ async def _get_countries():
 async def _get_states(country_code):
     """Get list of states/provinces for a country from GeoNames."""
     print(f"DEBUG: Fetching states for country_code: {country_code}")
+
+    # Fallback data for some countries (always defined so we can use it when GeoNames fails)
+    fallback_states = {
+        "US": [
+            {"id": "AL", "name": "Alabama", "code": "AL"},
+            {"id": "AK", "name": "Alaska", "code": "AK"},
+            {"id": "AZ", "name": "Arizona", "code": "AZ"},
+            {"id": "AR", "name": "Arkansas", "code": "AR"},
+            {"id": "CA", "name": "California", "code": "CA"},
+            {"id": "CO", "name": "Colorado", "code": "CO"},
+            {"id": "CT", "name": "Connecticut", "code": "CT"},
+            {"id": "DE", "name": "Delaware", "code": "DE"},
+            {"id": "FL", "name": "Florida", "code": "FL"},
+            {"id": "GA", "name": "Georgia", "code": "GA"},
+            {"id": "HI", "name": "Hawaii", "code": "HI"},
+            {"id": "ID", "name": "Idaho", "code": "ID"},
+            {"id": "IL", "name": "Illinois", "code": "IL"},
+            {"id": "IN", "name": "Indiana", "code": "IN"},
+            {"id": "IA", "name": "Iowa", "code": "IA"},
+            {"id": "KS", "name": "Kansas", "code": "KS"},
+            {"id": "KY", "name": "Kentucky", "code": "KY"},
+            {"id": "LA", "name": "Louisiana", "code": "LA"},
+            {"id": "ME", "name": "Maine", "code": "ME"},
+            {"id": "MD", "name": "Maryland", "code": "MD"},
+            {"id": "MA", "name": "Massachusetts", "code": "MA"},
+            {"id": "MI", "name": "Michigan", "code": "MI"},
+            {"id": "MN", "name": "Minnesota", "code": "MN"},
+            {"id": "MS", "name": "Mississippi", "code": "MS"},
+            {"id": "MO", "name": "Missouri", "code": "MO"},
+            {"id": "MT", "name": "Montana", "code": "MT"},
+            {"id": "NE", "name": "Nebraska", "code": "NE"},
+            {"id": "NV", "name": "Nevada", "code": "NV"},
+            {"id": "NH", "name": "New Hampshire", "code": "NH"},
+            {"id": "NJ", "name": "New Jersey", "code": "NJ"},
+            {"id": "NM", "name": "New Mexico", "code": "NM"},
+            {"id": "NY", "name": "New York", "code": "NY"},
+            {"id": "NC", "name": "North Carolina", "code": "NC"},
+            {"id": "ND", "name": "North Dakota", "code": "ND"},
+            {"id": "OH", "name": "Ohio", "code": "OH"},
+            {"id": "OK", "name": "Oklahoma", "code": "OK"},
+            {"id": "OR", "name": "Oregon", "code": "OR"},
+            {"id": "PA", "name": "Pennsylvania", "code": "PA"},
+            {"id": "RI", "name": "Rhode Island", "code": "RI"},
+            {"id": "SC", "name": "South Carolina", "code": "SC"},
+            {"id": "SD", "name": "South Dakota", "code": "SD"},
+            {"id": "TN", "name": "Tennessee", "code": "TN"},
+            {"id": "TX", "name": "Texas", "code": "TX"},
+            {"id": "UT", "name": "Utah", "code": "UT"},
+            {"id": "VT", "name": "Vermont", "code": "VT"},
+            {"id": "VA", "name": "Virginia", "code": "VA"},
+            {"id": "WA", "name": "Washington", "code": "WA"},
+            {"id": "WV", "name": "West Virginia", "code": "WV"},
+            {"id": "WI", "name": "Wisconsin", "code": "WI"},
+            {"id": "WY", "name": "Wyoming", "code": "WY"},
+        ],
+        "MX": [
+            {"id": "AG", "name": "Aguascalientes", "code": "AG"},
+            {"id": "BC", "name": "Baja California", "code": "BC"},
+            {"id": "BS", "name": "Baja California Sur", "code": "BS"},
+            {"id": "CM", "name": "Campeche", "code": "CM"},
+            {"id": "CS", "name": "Chiapas", "code": "CS"},
+            {"id": "CH", "name": "Chihuahua", "code": "CH"},
+            {"id": "CO", "name": "Coahuila", "code": "CO"},
+            {"id": "CL", "name": "Colima", "code": "CL"},
+            {"id": "DF", "name": "Mexico City", "code": "DF"},
+            {"id": "DG", "name": "Durango", "code": "DG"},
+            {"id": "GT", "name": "Guanajuato", "code": "GT"},
+            {"id": "GR", "name": "Guerrero", "code": "GR"},
+            {"id": "HG", "name": "Hidalgo", "code": "HG"},
+            {"id": "JC", "name": "Jalisco", "code": "JC"},
+            {"id": "MC", "name": "Mexico State", "code": "MC"},
+            {"id": "MN", "name": "Michoacán", "code": "MN"},
+            {"id": "MS", "name": "Morelos", "code": "MS"},
+            {"id": "NT", "name": "Nayarit", "code": "NT"},
+            {"id": "NL", "name": "Nuevo León", "code": "NL"},
+            {"id": "OC", "name": "Oaxaca", "code": "OC"},
+            {"id": "PL", "name": "Puebla", "code": "PL"},
+            {"id": "QO", "name": "Querétaro", "code": "QO"},
+            {"id": "QR", "name": "Quintana Roo", "code": "QR"},
+            {"id": "SP", "name": "San Luis Potosí", "code": "SP"},
+            {"id": "SL", "name": "Sinaloa", "code": "SL"},
+            {"id": "SR", "name": "Sonora", "code": "SR"},
+            {"id": "TB", "name": "Tabasco", "code": "TB"},
+            {"id": "TM", "name": "Tamaulipas", "code": "TM"},
+            {"id": "TL", "name": "Tlaxcala", "code": "TL"},
+            {"id": "VE", "name": "Veracruz", "code": "VE"},
+            {"id": "YU", "name": "Yucatán", "code": "YU"},
+            {"id": "ZA", "name": "Zacatecas", "code": "ZA"},
+        ],
+        "CA": [
+            {"id": "ON", "name": "Ontario", "code": "ON"},
+            {"id": "QC", "name": "Quebec", "code": "QC"},
+            {"id": "BC", "name": "British Columbia", "code": "BC"},
+            {"id": "AB", "name": "Alberta", "code": "AB"},
+        ],
+        "AU": [
+            {"id": "NSW", "name": "New South Wales", "code": "NSW"},
+            {"id": "VIC", "name": "Victoria", "code": "VIC"},
+            {"id": "QLD", "name": "Queensland", "code": "QLD"},
+        ],
+    }
     geonames_user = os.getenv("GEONAMES_USERNAME")
     if not geonames_user:
-        # Fallback data for some countries
-        fallback_states = {
-            "US": [
-                {"id": "AL", "name": "Alabama", "code": "AL"},
-                {"id": "AK", "name": "Alaska", "code": "AK"},
-                {"id": "AZ", "name": "Arizona", "code": "AZ"},
-                {"id": "AR", "name": "Arkansas", "code": "AR"},
-                {"id": "CA", "name": "California", "code": "CA"},
-                {"id": "CO", "name": "Colorado", "code": "CO"},
-                {"id": "CT", "name": "Connecticut", "code": "CT"},
-                {"id": "DE", "name": "Delaware", "code": "DE"},
-                {"id": "FL", "name": "Florida", "code": "FL"},
-                {"id": "GA", "name": "Georgia", "code": "GA"},
-                {"id": "HI", "name": "Hawaii", "code": "HI"},
-                {"id": "ID", "name": "Idaho", "code": "ID"},
-                {"id": "IL", "name": "Illinois", "code": "IL"},
-                {"id": "IN", "name": "Indiana", "code": "IN"},
-                {"id": "IA", "name": "Iowa", "code": "IA"},
-                {"id": "KS", "name": "Kansas", "code": "KS"},
-                {"id": "KY", "name": "Kentucky", "code": "KY"},
-                {"id": "LA", "name": "Louisiana", "code": "LA"},
-                {"id": "ME", "name": "Maine", "code": "ME"},
-                {"id": "MD", "name": "Maryland", "code": "MD"},
-                {"id": "MA", "name": "Massachusetts", "code": "MA"},
-                {"id": "MI", "name": "Michigan", "code": "MI"},
-                {"id": "MN", "name": "Minnesota", "code": "MN"},
-                {"id": "MS", "name": "Mississippi", "code": "MS"},
-                {"id": "MO", "name": "Missouri", "code": "MO"},
-                {"id": "MT", "name": "Montana", "code": "MT"},
-                {"id": "NE", "name": "Nebraska", "code": "NE"},
-                {"id": "NV", "name": "Nevada", "code": "NV"},
-                {"id": "NH", "name": "New Hampshire", "code": "NH"},
-                {"id": "NJ", "name": "New Jersey", "code": "NJ"},
-                {"id": "NM", "name": "New Mexico", "code": "NM"},
-                {"id": "NY", "name": "New York", "code": "NY"},
-                {"id": "NC", "name": "North Carolina", "code": "NC"},
-                {"id": "ND", "name": "North Dakota", "code": "ND"},
-                {"id": "OH", "name": "Ohio", "code": "OH"},
-                {"id": "OK", "name": "Oklahoma", "code": "OK"},
-                {"id": "OR", "name": "Oregon", "code": "OR"},
-                {"id": "PA", "name": "Pennsylvania", "code": "PA"},
-                {"id": "RI", "name": "Rhode Island", "code": "RI"},
-                {"id": "SC", "name": "South Carolina", "code": "SC"},
-                {"id": "SD", "name": "South Dakota", "code": "SD"},
-                {"id": "TN", "name": "Tennessee", "code": "TN"},
-                {"id": "TX", "name": "Texas", "code": "TX"},
-                {"id": "UT", "name": "Utah", "code": "UT"},
-                {"id": "VT", "name": "Vermont", "code": "VT"},
-                {"id": "VA", "name": "Virginia", "code": "VA"},
-                {"id": "WA", "name": "Washington", "code": "WA"},
-                {"id": "WV", "name": "West Virginia", "code": "WV"},
-                {"id": "WI", "name": "Wisconsin", "code": "WI"},
-                {"id": "WY", "name": "Wyoming", "code": "WY"},
-            ],
-            "CA": [
-                {"id": "ON", "name": "Ontario", "code": "ON"},
-                {"id": "QC", "name": "Quebec", "code": "QC"},
-                {"id": "BC", "name": "British Columbia", "code": "BC"},
-                {"id": "AB", "name": "Alberta", "code": "AB"},
-            ],
-            "AU": [
-                {"id": "NSW", "name": "New South Wales", "code": "NSW"},
-                {"id": "VIC", "name": "Victoria", "code": "VIC"},
-                {"id": "QLD", "name": "Queensland", "code": "QLD"},
-            ],
-        }
         return fallback_states.get(country_code, [])
     
     async with get_session() as session:
@@ -3083,7 +3164,14 @@ async def _get_states(country_code):
             # Use GeoNames children endpoint to get administrative divisions
             country_id = await _get_country_geoname_id(country_code, session)
             print(f"DEBUG: Country ID for {country_code}: {country_id}")
+            print(f"DEBUG: country_id type={type(country_id).__name__}, repr={country_id!r}")
+            # If GeoNames lookup failed, fall back to our static list (for a few supported countries)
             if not country_id:
+                print(f"DEBUG: Entered not country_id branch for {country_code}")
+                if country_code in fallback_states:
+                    print(f"DEBUG: GeoNames lookup failed for {country_code}; using fallback_states")
+                    return fallback_states.get(country_code, [])
+                print(f"DEBUG: No fallback available for {country_code}; returning empty list")
                 return []
                 
             url = "http://api.geonames.org/childrenJSON"
@@ -3094,6 +3182,10 @@ async def _get_states(country_code):
             }
             async with session.get(url, params=params, timeout=10) as resp:
                 if resp.status != 200:
+                    # If GeoNames returned an HTTP error, try fallback if available
+                    if country_code in fallback_states:
+                        print(f"DEBUG: GeoNames HTTP {resp.status} for {country_code}; using fallback_states")
+                        return fallback_states.get(country_code, [])
                     return []
                 data = await resp.json()
                 states = []
@@ -3107,6 +3199,10 @@ async def _get_states(country_code):
                 print(f"DEBUG: Found {len(states)} states for {country_code}")
                 return states
         except Exception:
+            # On exceptions (network, parsing), try fallback
+            if country_code in fallback_states:
+                print(f"DEBUG: Exception while fetching GeoNames for {country_code}; using fallback_states")
+                return fallback_states.get(country_code, [])
             return []
 
 
@@ -3171,8 +3267,55 @@ async def _get_cities(country_code, state_code=None):
             return []
 
 
+# Simple in-memory cache for GeoNames country IDs to avoid repeated remote calls
+_COUNTRY_ID_CACHE: dict = {}
+
+# Redis key prefix and TTL for country ID cache
+_COUNTRY_ID_REDIS_PREFIX = "geonames:country_id:"
+_COUNTRY_ID_TTL_SECONDS = 7 * 24 * 3600  # 7 days
+
 async def _get_country_geoname_id(country_code, session):
-    """Get GeoNames ID for a country code."""
+    """Get GeoNames ID for a country code, with caching to reduce remote calls.
+
+    Behavior:
+      - If Redis is configured (app.redis_client), consult Redis first and return cached values.
+      - Otherwise fall back to an in-memory process-local cache (_COUNTRY_ID_CACHE).
+      - Positive and negative (None) lookups are cached to prevent repeated remote calls.
+    """
+    country_code = (country_code or '').upper()
+    if not country_code:
+        return None
+
+    # 1) Try Redis cache when available
+    try:
+        if redis_client:
+            redis_key = _COUNTRY_ID_REDIS_PREFIX + country_code
+            raw = await redis_client.get(redis_key)
+            if raw is not None:
+                # Redis may return bytes; decode and interpret
+                try:
+                    if isinstance(raw, (bytes, bytearray)):
+                        rawd = raw.decode('utf-8')
+                    else:
+                        rawd = str(raw)
+                    if rawd == 'null' or rawd == 'None' or rawd == '':
+                        _COUNTRY_ID_CACHE[country_code] = None
+                        return None
+                    cid = int(rawd)
+                    _COUNTRY_ID_CACHE[country_code] = cid
+                    return cid
+                except Exception:
+                    # Fall through to remote lookup on decode error
+                    pass
+    except Exception:
+        # Redis may be unavailable; fall back to in-memory cache and remote lookup
+        app.logger.debug('Redis country-id lookup failed; falling back to in-memory cache', exc_info=True)
+
+    # 2) Fall back to in-memory cache
+    if country_code in _COUNTRY_ID_CACHE:
+        return _COUNTRY_ID_CACHE[country_code]
+
+    # 3) Remote lookup via GeoNames
     try:
         url = "http://api.geonames.org/countryInfoJSON"
         params = {"username": os.getenv("GEONAMES_USERNAME"), "country": country_code}
@@ -3181,9 +3324,26 @@ async def _get_country_geoname_id(country_code, session):
                 data = await resp.json()
                 countries = data.get("geonames", [])
                 if countries:
-                    return countries[0].get("geonameId")
+                    cid = countries[0].get("geonameId")
+                    # Cache in-memory and in Redis (if available)
+                    _COUNTRY_ID_CACHE[country_code] = cid
+                    try:
+                        if redis_client:
+                            # Store as string; use 'null' for None
+                            await redis_client.set(redis_key, str(cid), ex=_COUNTRY_ID_TTL_SECONDS)
+                    except Exception:
+                        app.logger.debug('Failed to write country-id to Redis', exc_info=True)
+                    return cid
     except Exception:
         pass
+
+    # Negative cache: store None to avoid repeated lookups
+    _COUNTRY_ID_CACHE[country_code] = None
+    try:
+        if redis_client:
+            await redis_client.set(_COUNTRY_ID_REDIS_PREFIX + country_code, 'null', ex=_COUNTRY_ID_TTL_SECONDS)
+    except Exception:
+        app.logger.debug('Failed to write negative country-id to Redis', exc_info=True)
     return None
 
 
@@ -4137,7 +4297,8 @@ def _search_impl(payload):
 
     # Wikivoyage highlights are returned separately in `wikivoyage_texts`
 
-    print(f"SEARCH RESULTS: found {len(results)} venues")
+    # Distinguish between provider-found results and final returned venues (fallbacks may be added later)
+    print(f"SEARCH PROVIDER RESULTS: found {len(results)} provider venues (before fallback)")
     try:
         if user_lat and user_lon and results:
 
@@ -4313,6 +4474,12 @@ def _search_impl(payload):
         except Exception as e:
             debug_info["groq_error"] = str(e)
 
+    # Record how many provider results we found before any fallback
+    try:
+        debug_info['provider_count'] = len(results)
+    except Exception:
+        debug_info['provider_count'] = 0
+
     has_real_venue = any(is_real_venue(v) for v in results)
     if not has_real_venue:
         fallback_city = city or payload.get('query') or ''
@@ -4343,6 +4510,12 @@ def _search_impl(payload):
         "costs": cost_estimates,
         "debug_info": debug_info,
     }
+    # Helpful debug: report both provider-found counts and final returned venue counts
+    try:
+        provider_count = int(debug_info.get('provider_count', len(results)))
+    except Exception:
+        provider_count = len(results)
+    print(f"[SEARCH DEBUG] Returning {len(response_data.get('venues', []))} venues (providers: {provider_count})")
     return response_data
 
 

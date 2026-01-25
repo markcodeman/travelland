@@ -31,6 +31,42 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
     neighborhoods: false
   });
 
+  // Geolocation helper state
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState(null);
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      setGeoError('Geolocation not supported in this browser.');
+      return;
+    }
+    setGeoLoading(true);
+    setGeoError(null);
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      try {
+        const resp = await fetch(`${API_BASE}/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
+        const data = await resp.json();
+        if (data?.neighborhoods?.length > 0) {
+          const mapped = data.neighborhoods.map(n => ({ id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id }));
+          setNeighborhoods(mapped);
+          // Clear selected neighborhood to force user's selection from nearby list
+          setSelectedNeighborhood('');
+        } else {
+          setGeoError('No nearby neighborhoods found for your location.');
+        }
+      } catch (err) {
+        setGeoError('Failed to fetch neighborhoods for your location.');
+      } finally {
+        setGeoLoading(false);
+      }
+    }, (err) => {
+      setGeoError('Permission denied or unable to get location.');
+      setGeoLoading(false);
+    }, { enableHighAccuracy: false, timeout: 10000 });
+  }; 
+
   // Filtered options
   const filteredCountries = countries.filter(country =>
     country.name.toLowerCase().includes(countryInput.toLowerCase())
@@ -515,7 +551,7 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
 
       {selectedCity && (
         <div style={{ marginBottom: '8px', position: 'relative' }}>
-          <label style={labelStyle}>Neighborhood (optional): <button type="button" aria-label="Refresh neighborhoods" title="Refresh neighborhoods" onClick={refreshNeighborhoods} style={{ marginLeft: 8, padding: '2px 6px', fontSize: 12, borderRadius: 4, cursor: 'pointer' }}>↻</button></label>
+          <label style={labelStyle}>Neighborhood (optional): <button type="button" aria-label="Refresh neighborhoods" title="Refresh neighborhoods" onClick={refreshNeighborhoods} style={{ marginLeft: 8, padding: '2px 6px', fontSize: 12, borderRadius: 4, cursor: 'pointer' }}>↻</button> <button type="button" aria-label="Use my location" title="Use my location" onClick={handleUseMyLocation} style={{ marginLeft: 8, padding: '2px 8px', fontSize: 12, borderRadius: 4, cursor: 'pointer' }} disabled={geoLoading}>{geoLoading ? 'Locating…' : 'Use my location 📍'}</button></label>
           <input
             type="text"
             value={neighborhoodInput}
