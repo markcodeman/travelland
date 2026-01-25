@@ -74,7 +74,9 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
   };
 
   const refreshCountries = async () => {
-    // Clear dependent selections so user can pick a new country
+    // Clear current country selection and dependent selections so user can pick a new country
+    setSelectedCountry('');
+    setCountryInput('');
     setSelectedState('');
     setStateInput('');
     setSelectedCity('');
@@ -118,7 +120,9 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
   };
 
   const refreshStates = async () => {
-    // Clear dependent selections
+    // Clear current state selection and dependent selections
+    setSelectedState('');
+    setStateInput('');
     setSelectedCity('');
     setCityInput('');
     setSelectedNeighborhood('');
@@ -154,6 +158,9 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
   };
 
   const refreshCities = async () => {
+    // Clear current city selection and dependent selections
+    setSelectedCity('');
+    setCityInput('');
     setSelectedNeighborhood('');
     setNeighborhoodInput('');
     await fetchCities(selectedCountry, selectedState);
@@ -212,6 +219,9 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
   };
 
   const refreshNeighborhoods = async () => {
+    // Clear current neighborhood selection so full list is shown
+    setSelectedNeighborhood('');
+    setNeighborhoodInput('');
     await fetchNeighborhoodsForCity(selectedCountry, selectedCity);
     setShowNeighborhoodDropdown(true);
   };
