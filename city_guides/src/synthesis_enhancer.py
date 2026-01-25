@@ -192,6 +192,32 @@ class SynthesisEnhancer:
         return (result.strip() + ellipsis).strip()
 
     @staticmethod
+    def extract_image_attributions(text: str):
+        """Extract lines like 'Image via X (url)' from a block of text.
+        Returns (clean_text, attributions) where attributions is a list of dicts {provider, url}.
+        """
+        if not text:
+            return text, []
+        atts = []
+        patt = re.compile(r"(?im)^\s*Image\s+via\s+([^\(\n]+)(?:\s*\((https?://[^\)\n]+)\))?\s*$")
+        def _collect(m):
+            provider = m.group(1).strip()
+            url = m.group(2).strip() if m.group(2) else None
+            atts.append({'provider': provider, 'url': url})
+            return ''
+        clean = patt.sub(lambda m: _collect(m) or '', text).strip()
+        seen = set()
+        uniq = []
+        for a in atts:
+            key = (a.get('url') or '').strip().lower() or a.get('provider','').strip().lower()
+            if key and key not in seen:
+                seen.add(key)
+                uniq.append(a)
+        return clean, uniq
+
+    @staticmethod
+
+    
     def extract_venue_highlights(venue_data: Dict, sources: List[str]) -> Dict:
         """
         Extract highlights from multiple sources with confidence scoring

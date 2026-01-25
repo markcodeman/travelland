@@ -99,8 +99,7 @@ async def fetch_banner_from_wikipedia(city, session: aiohttp.ClientSession = Non
                             pageurl = f"https://en.wikipedia.org/?curid={pageid}" if pageid else "https://en.wikipedia.org/"
                             return {
                                 "remote_url": thumb,
-                                "attribution": f"Image via Wikimedia/Wikipedia ({pageurl})",
-                            }
+                                "attribution": f"Image via Wikimedia/Wikipedia ({pageurl})",                                "page_title": p.get('title')                            }
         except Exception:
             # fall through to fallback search
             pass
@@ -153,8 +152,7 @@ async def fetch_banner_from_wikipedia(city, session: aiohttp.ClientSession = Non
                         pageurl = f"https://en.wikipedia.org/?curid={pageid}" if pageid else "https://en.wikipedia.org/"
                         return {
                             "remote_url": thumb,
-                            "attribution": f"Image via Wikimedia/Wikipedia ({pageurl})",
-                        }
+                            "attribution": f"Image via Wikimedia/Wikipedia ({pageurl})",                            "page_title": p2.get('title')                        }
             except Exception:
                 # ignore and try next query
                 continue
