@@ -80,6 +80,34 @@ except Exception as e:
 2. Sign up for a free API key
 3. Copy to your `.env` as `OPENTRIPMAP_KEY`
 
+### Geoapify (Neighborhood boundaries & POIs)
+Geoapify provides robust geocoding, boundary bboxes, and a Places (POI) API that we use for neighborhood enrichment and POI discovery.
+
+1. Go to https://www.geoapify.com/ and create an account
+2. Get an API key (Places API)
+3. Copy the key to your `city-guides/.env` as `GEOAPIFY_API_KEY`
+
+### Quick Geoapify Test
+You can run a quick test locally to verify your `GEOAPIFY_API_KEY` is accessible:
+
+```bash
+cd city-guides
+python - <<'PY'
+import os, requests
+from dotenv import load_dotenv
+load_dotenv()
+key = os.getenv('GEOAPIFY_API_KEY')
+if not key:
+    print('❌ GEOAPIFY_API_KEY not found')
+    raise SystemExit(1)
+print('✓ GEOAPIFY key found')
+# Geocode a city
+r = requests.get('https://api.geoapify.com/v1/geocode/search', params={'text':'Lisbon','apiKey':key,'limit':1})
+r.raise_for_status()
+print('✓ Geoapify geocode works:', r.json().get('results',[{}])[0].get('formatted'))
+PY
+```
+
 ---
 
 ## 🔧 Troubleshooting
@@ -97,6 +125,7 @@ DuckDuckGo and Overpass (OSM) do not require keys but are also rate-limited.
 cd city-guides
 # Create a `.env` file in this directory and add your key
 # Example:
+# GEOAPIFY_API_KEY=your_geoapify_api_key_here
 # GOOGLE_PLACES_API_KEY=AIzaSyBxxxxxxxxxxxxxxxxxxxxx
 # FLASK_ENV=development
 # PORT=5010
@@ -104,6 +133,7 @@ cd city-guides
 
 Your `.env` should look like:
 ```
+GEOAPIFY_API_KEY=your_geoapify_api_key_here
 GOOGLE_PLACES_API_KEY=AIzaSyBxxxxxxxxxxxxxxxxxxxxx
 FLASK_ENV=development
 PORT=5010

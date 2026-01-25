@@ -1,4 +1,12 @@
 
+"""Canonical Overpass provider implementation.
+This file is the canonical implementation — DO NOT create another top-level
+`city_guides/overpass_provider.py` file with duplicated implementation.
+Before adding any new provider files, search the repository for existing modules
+(e.g., `overpass_provider.py`) and prefer adding code to `city_guides/providers/`.
+If you must create a top-level shim for compatibility, add a small shim that
+re-exports the implementation (see `city_guides/overpass_provider.py` for an example).
+"""
 from typing import Optional, Union, List, Dict
 import logging
 

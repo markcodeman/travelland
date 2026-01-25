@@ -11,7 +11,8 @@
     "@headlessui/react": "^1.7.19",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-markdown": "^8.0.7"
+    "react-markdown": "^8.0.7",
+    "react-geolocated": "^3.1.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",
