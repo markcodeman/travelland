@@ -993,6 +993,25 @@ async def generate_quick_guide():
             except Exception:
                 app.logger.exception('Failed to neutralize cached quick_guide')
 
+            # Compute confidence for cached snippet (backfill if missing)
+            try:
+                cached_src = data.get('source') or ''
+                cached_conf = data.get('confidence')
+                if not cached_conf:
+                    if cached_src == 'wikipedia':
+                        resp['confidence'] = 'high'
+                    elif cached_src == 'ddgs':
+                        resp['confidence'] = 'medium'
+                    elif cached_src == 'synthesized':
+                        # conservative: synthesized cached snippets without recorded evidence are low confidence
+                        resp['confidence'] = 'low'
+                    else:
+                        resp['confidence'] = 'low'
+                else:
+                    resp['confidence'] = cached_conf
+            except Exception:
+                resp['confidence'] = 'low'
+
             # If cached content is a DDGS/synthesized hit that looks like a disambiguation or promotional snippet,
             # replace it immediately with a synthesized neutral paragraph and return that (avoid falling-through returns)
             from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
@@ -1006,9 +1025,10 @@ async def generate_quick_guide():
                     resp['quick_guide'] = new_para
                     resp['source'] = 'synthesized'
                     resp['source_url'] = None
+                    resp['confidence'] = 'low'
                     try:
                         with open(cache_file, 'w', encoding='utf-8') as f:
-                            json.dump({'quick_guide': resp['quick_guide'], 'source': resp['source'], 'generated_at': time.time(), 'source_url': None}, f, ensure_ascii=False, indent=2)
+                            json.dump({'quick_guide': resp['quick_guide'], 'source': resp['source'], 'generated_at': time.time(), 'source_url': None, 'confidence': resp['confidence']}, f, ensure_ascii=False, indent=2)
                     except Exception:
                         app.logger.exception('Failed to persist synthesized replacement for cached disambiguation')
                     return jsonify(resp)
@@ -1019,7 +1039,27 @@ async def generate_quick_guide():
                     except Exception:
                         pass
                     # fall through to regeneration
-            # If cached snippet passed sanity checks, return it
+            # If cached snippet passed sanity checks, but is low confidence, replace with minimal factual fallback
+            if resp.get('confidence') == 'low' and src in ('synthesized', 'ddgs'):
+                app.logger.info('Replacing cached low-confidence quick_guide for %s/%s with minimal factual fallback', city, neighborhood)
+                try:
+                    minimal = f"{neighborhood} is a neighborhood in {city}."
+                    resp['quick_guide'] = minimal
+                    resp['source'] = 'data-first'
+                    resp['source_url'] = None
+                    resp['confidence'] = 'low'
+                    try:
+                        with open(cache_file, 'w', encoding='utf-8') as f:
+                            json.dump({'quick_guide': resp['quick_guide'], 'source': resp['source'], 'generated_at': time.time(), 'source_url': None, 'confidence': resp['confidence']}, f, ensure_ascii=False, indent=2)
+                    except Exception:
+                        app.logger.exception('Failed to persist minimal replacement for cached low-confidence quick_guide')
+                    return jsonify(resp)
+                except Exception:
+                    app.logger.exception('Failed to synthesize minimal fallback for cached low-confidence entry')
+                    try:
+                        cache_file.unlink()
+                    except Exception:
+                        pass
             return jsonify(resp)
 
             # If the cached content is from Wikipedia, run a stricter relevance check
