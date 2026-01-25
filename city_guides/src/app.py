@@ -3,7 +3,13 @@ from quart import Quart
 # Create Quart app instance at the very top so it is always defined before any route decorators
 app = Quart(__name__, static_folder="/home/markm/TravelLand/city_guides/static", static_url_path='', template_folder="/home/markm/TravelLand/city_guides/templates")
 
-from city_guides.providers.ddgs_provider import ddgs_search
+# DDGS provider import is optional at module import time (tests may not have ddgs installed)
+try:
+    from city_guides.providers.ddgs_provider import ddgs_search
+except Exception:
+    ddgs_search = None
+    app.logger.debug('DDGS provider not available at module import time; ddgs_search set to None')
+
 from city_guides.groq.traveland_rag import recommender
 
 # --- /recommend route for RAG recommender ---
@@ -215,8 +221,8 @@ VERBOSE_OPEN_HOURS = os.getenv("VERBOSE_OPEN_HOURS", "false").lower() == "true"
 
 # Import local providers and utilities
 try:
-    import image_provider
-except ImportError:
+    from city_guides.providers import image_provider
+except Exception:
     image_provider = None
 
 try:
@@ -364,6 +370,40 @@ def format_venue(venue):
         venue['display_address'] = address
     
     return venue
+
+
+async def _persist_quick_guide(out_obj, city_name, neighborhood_name, file_path):
+    """Persist quick_guide to the filesystem and (optionally) to Redis.
+    This is extracted to module-level to make it directly testable."""
+    try:
+        from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
+        if out_obj.get('source') == 'ddgs' and looks_like_ddgs_disambiguation_text(out_obj.get('quick_guide') or ''):
+            app.logger.info('Not caching disambiguation/promotional ddgs quick_guide for %s/%s', city_name, neighborhood_name)
+            # replace with synthesized neutral paragraph if available
+            try:
+                from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+                out_obj['quick_guide'] = SynthesisEnhancer.generate_neighborhood_paragraph(neighborhood_name, city_name)
+                out_obj['source'] = 'synthesized'
+                out_obj['source_url'] = None
+            except Exception:
+                out_obj['quick_guide'] = f"{neighborhood_name} is a neighborhood in {city_name}."
+                out_obj['source'] = 'data-first'
+
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(out_obj, f, ensure_ascii=False, indent=2)
+
+        # Also persist sanitized quick_guide into Redis (best-effort)
+        try:
+            app.logger.debug('redis_client value at cache write: %s', str(redis_client)[:200])
+            if redis_client:
+                redis_key = f"quick_guide:{re.sub(r'[^a-z0-9]+', '_', city_name.lower()).strip('_')}:{re.sub(r'[^a-z0-9]+', '_', neighborhood_name.lower()).strip('_')}"
+                app.logger.debug('Writing quick_guide to redis key=%s', redis_key)
+                await redis_client.set(redis_key, json.dumps(out_obj), ex=86400)
+        except Exception:
+            app.logger.exception('failed to write quick_guide to redis')
+
+    except Exception:
+        app.logger.exception('failed to write quick_guide cache')
 
 
 async def get_weather_async(lat, lon):
@@ -906,6 +946,70 @@ async def generate_quick_guide():
             if data.get('generated_at'):
                 resp['generated_at'] = data.get('generated_at')
 
+            # EARLY: If raw cached content looks like DDGS disambiguation/promotional UI, replace before neutralization
+            try:
+                from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
+                raw_q = data.get('quick_guide') or ''
+                src = data.get('source') or ''
+                if src in ('ddgs', 'synthesized') and (looks_like_ddgs_disambiguation_text(raw_q) or 'missing:' in raw_q.lower()):
+                    app.logger.info('Replacing raw cached %s quick_guide for %s/%s due to disambiguation/promotional content (early replacement)', src, city, neighborhood)
+                    try:
+                        from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+                        new_para = SynthesisEnhancer.generate_neighborhood_paragraph(neighborhood, city)
+                        resp['quick_guide'] = new_para
+                        resp['source'] = 'synthesized'
+                        resp['source_url'] = None
+                        try:
+                            with open(cache_file, 'w', encoding='utf-8') as f:
+                                json.dump({'quick_guide': resp['quick_guide'], 'source': resp['source'], 'generated_at': time.time(), 'source_url': None}, f, ensure_ascii=False, indent=2)
+                        except Exception:
+                            app.logger.exception('Failed to persist synthesized replacement for cached disambiguation (early)')
+                        return jsonify(resp)
+                    except Exception:
+                        app.logger.exception('Failed to synthesize replacement for cached disambiguation (early)')
+                        try:
+                            cache_file.unlink()
+                        except Exception:
+                            pass
+            except Exception:
+                app.logger.exception('Failed to validate raw cached quick_guide')
+
+            # Neutralize cached quick_guide tone before returning (remove first-person/promotional voice)
+            try:
+                from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+                resp['quick_guide'] = SynthesisEnhancer.neutralize_tone(resp.get('quick_guide') or '', neighborhood=neighborhood, city=city, max_length=400)
+            except Exception:
+                app.logger.exception('Failed to neutralize cached quick_guide')
+
+            # If cached content is a DDGS/synthesized hit that looks like a disambiguation or promotional snippet,
+            # replace it immediately with a synthesized neutral paragraph and return that (avoid falling-through returns)
+            from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
+            src = data.get('source') or ''
+            quick_text = resp.get('quick_guide') or ''
+            if src in ('ddgs', 'synthesized') and (looks_like_ddgs_disambiguation_text(quick_text) or 'missing:' in quick_text.lower()):
+                app.logger.info('Replacing cached %s quick_guide for %s/%s due to disambiguation/promotional content', src, city, neighborhood)
+                try:
+                    from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+                    new_para = SynthesisEnhancer.generate_neighborhood_paragraph(neighborhood, city)
+                    resp['quick_guide'] = new_para
+                    resp['source'] = 'synthesized'
+                    resp['source_url'] = None
+                    try:
+                        with open(cache_file, 'w', encoding='utf-8') as f:
+                            json.dump({'quick_guide': resp['quick_guide'], 'source': resp['source'], 'generated_at': time.time(), 'source_url': None}, f, ensure_ascii=False, indent=2)
+                    except Exception:
+                        app.logger.exception('Failed to persist synthesized replacement for cached disambiguation')
+                    return jsonify(resp)
+                except Exception:
+                    app.logger.exception('Failed to synthesize replacement for cached disambiguation')
+                    try:
+                        cache_file.unlink()
+                    except Exception:
+                        pass
+                    # fall through to regeneration
+            # If cached snippet passed sanity checks, return it
+            return jsonify(resp)
+
             # If the cached content is from Wikipedia, run a stricter relevance check
             try:
                 if data.get('source') == 'wikipedia':
@@ -935,20 +1039,49 @@ async def generate_quick_guide():
     wiki_summary = None
     wiki_url = None
 
+    def _looks_like_disambiguation_text(txt: str) -> bool:
+        """Return True if the wiki extract looks like a disambiguation/listing page rather than a local description.
+        Heuristics:
+          - contains 'may refer to' or 'may also refer to' or starts with '<term> may refer to:'
+          - contains multiple short comma-separated entries or many bullet-like lines
+        """
+        if not txt:
+            return False
+        low = txt.lower()
+        if 'may refer to' in low or 'may also refer' in low or 'may be' in low:
+            return True
+        # Many short comma-separated segments suggests a list/disambig
+        if low.count(',') >= 4 and len(low) < 800:
+            parts = [p.strip() for p in low.split(',')]
+            short_parts = [p for p in parts if len(p) < 60]
+            if len(short_parts) >= 4:
+                return True
+        # multiple lines that look bullet-like
+        lines = [l.strip() for l in txt.splitlines() if l.strip()]
+        bullet_like = sum(1 for l in lines if l.startswith('*') or l.startswith('•') or (len(l.split()) < 6 and ',' in l))
+        if bullet_like >= 3:
+            return True
+        return False
+
     def _page_is_relevant(j: dict) -> bool:
         """Return True if the Wikipedia page JSON `j` appears to describe the neighborhood or city.
         Heuristics:
           - skip disambiguation pages
+          - reject pages that look like disambiguation/list pages
           - accept pages that mention the city or neighborhood in title or extract
           - accept pages that contain locality keywords like 'neighborhood', 'district', 'municipality'
-          - reject pages that look like events/works (fire, album, song, birth/death) unless they also mention the city/locality
         """
         if not j:
             return False
         if j.get('type') == 'disambiguation':
             return False
         title_text = (j.get('title') or '').lower()
-        extract_text = (j.get('extract') or j.get('description') or '').lower()
+        extract_text_raw = (j.get('extract') or j.get('description') or '')
+        # Reject disambiguation-like extracts
+        if _looks_like_disambiguation_text(extract_text_raw):
+            app.logger.debug("Rejected wiki extract as disambiguation for title='%s'", title_text)
+            return False
+        extract_text = extract_text_raw.lower()
         if not extract_text and not title_text:
             return False
         locality_keywords = ['neighborhood', 'neighbourhood', 'district', 'suburb', 'municipality', 'borough', 'locality']
@@ -971,6 +1104,12 @@ async def generate_quick_guide():
         if any(k in extract_text for k in locality_keywords):
             return True
         return False
+
+
+
+
+    # Delegate DDGS/web snippet filtering to a dedicated module to keep imports light for tests
+    from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text as _looks_like_ddgs_disambiguation_text
 
     for title in wiki_title_candidates:
         try:
@@ -1040,11 +1179,19 @@ async def generate_quick_guide():
                 txt = re.sub(r"\s+", ' ', (body or '')).strip()
                 if not txt:
                     continue
+                href = (r.get('href') or r.get('url') or '')
+                # Skip known noisy hostnames (videos/social) by href
+                if href and any(h in href.lower() for h in ['youtube.com', 'facebook.com', 'instagram.com', 'tiktok.com']):
+                    app.logger.debug('Filtered DDGS candidate by href (noisy host): %s', href)
+                    continue
+                # Filter out disambiguation/definition/promotional snippets
+                if _looks_like_ddgs_disambiguation_text(txt):
+                    app.logger.debug('Filtered DDGS candidate as disambiguation/promotional: %s', (r.get('title') or '')[:120])
+                    continue
                 # Consider relevant if mentions neighborhood or city or contains travel keywords
                 lower = txt.lower()
                 if neighborhood.lower() in lower or city.lower() in lower or any(k in lower for k in ['travel', 'guide', 'colonia', 'neighborhood', 'transit', 'bus', 'train']):
                     relevant.append(r)
-
             # If no clearly relevant results, but we have ddgs hits, treat the top hits as possible candidates
             if not relevant and ddgs_results:
                 app.logger.debug('No clearly relevant DDGS hits for %s/%s but using top search results', city, neighborhood)
@@ -1116,6 +1263,14 @@ async def generate_quick_guide():
                             break
                     if chosen:
                         synthesized = ' '.join(chosen)
+                        # Ensure neighborhood name (eg. 'Las Conchas') is present; prefer sentence from original snippets if needed
+                        try:
+                            from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+                            original_combined = ' '.join([ (r.get('body') or '') for r in relevant[:4] ])
+                            fallback = f"{neighborhood} is a neighborhood in {city}."
+                            synthesized = SynthesisEnhancer.ensure_includes_term(synthesized, original_combined, neighborhood, fallback_sentence=fallback, max_length=400)
+                        except Exception:
+                            app.logger.exception('Failed to ensure neighborhood inclusion in DDGS fallback')
                         source = 'ddgs'
                         source_url = relevant[0].get('href') or relevant[0].get('url')
         except Exception:
@@ -1174,6 +1329,7 @@ async def generate_quick_guide():
                         # Accept result if it's reasonably descriptive and mentions either neighborhood or city
                         if len(text) >= 60 and (city.lower() in text.lower() or neighborhood.lower() in text.lower() or q.lower().startswith(city.lower())):
                             ddgs_snippet = text
+                            ddgs_original = (r.get('body') or r.get('title') or '')
                             ddgs_url = r.get('href')
                             break
                     if ddgs_snippet:
@@ -1181,9 +1337,26 @@ async def generate_quick_guide():
                 except Exception:
                     continue
             if ddgs_snippet:
+                # Reject noisy/harmful ddgs snippets by url or content
+                href = ddgs_url or ''
+                if href and any(h in href.lower() for h in ['youtube.com', 'facebook.com', 'instagram.com', 'tiktok.com']):
+                    app.logger.debug('Filtered ddgs_snippet by noisy host: %s', href)
+                    ddgs_snippet = None
+                elif _looks_like_ddgs_disambiguation_text(ddgs_snippet):
+                    app.logger.debug('Filtered ddgs_snippet as disambiguation/promotional content: %s', ddgs_snippet[:120])
+                    ddgs_snippet = None
+
+            if ddgs_snippet:
                 # Trim to a sensible length
                 if len(ddgs_snippet) > 800:
                     ddgs_snippet = ddgs_snippet[:800].rsplit(' ', 1)[0] + '...'
+                # Ensure neighborhood appears in the snippet (preserve 'Las'/'Los' articles etc.)
+                try:
+                    from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+                    fallback = f"{neighborhood} is a neighborhood in {city}."
+                    ddgs_snippet = SynthesisEnhancer.ensure_includes_term(ddgs_snippet, ddgs_original, neighborhood, fallback_sentence=fallback, max_length=800)
+                except Exception:
+                    app.logger.exception('Failed to ensure neighborhood inclusion for ddgs snippet')
                 # Stronger acceptance: ensure snippet mentions city or neighborhood (unless snippet title contains them)
                 if city.lower() in ddgs_snippet.lower() or neighborhood.lower() in ddgs_snippet.lower() or (ddgs_url and (neighborhood.lower() in (ddgs_url or '').lower() or city.lower() in (ddgs_url or '').lower())):
                     synthesized = ddgs_snippet
@@ -1194,12 +1367,35 @@ async def generate_quick_guide():
         except Exception:
             app.logger.exception("ddgs fallback failed for %s, %s", neighborhood, city)
 
-        # Final generic fallback if nothing else matched
+        # Final generic fallback if nothing else matched: synthesize a better paragraph
         if not synthesized:
+            try:
+                from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+                synthesized = SynthesisEnhancer.generate_neighborhood_paragraph(neighborhood, city)
+                source = 'synthesized'
+            except Exception:
+                synthesized = f"{neighborhood} is a neighborhood in {city}."
+                source = 'data-first'
+
+    # Neutralize tone (convert first-person/promotional snippets to neutral travel-guide tone)
+    try:
+        from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+        synthesized = SynthesisEnhancer.neutralize_tone(synthesized or '', neighborhood=neighborhood, city=city, max_length=400)
+    except Exception:
+        app.logger.exception('Quick guide tone neutralization failed')
+
+    # Defensive check: if the synthesized text still looks like a disambiguation/definition or promotional UI fragment,
+    # replace with a safe neutral generic fallback so we never return list/disambig pages.
+    try:
+        from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
+        if looks_like_ddgs_disambiguation_text(synthesized or '') or 'missing:' in (synthesized or '').lower():
+            app.logger.info('Rejecting synthesized quick_guide for %s/%s as disambiguation/promotional content; using generic fallback', city, neighborhood)
             synthesized = f"{neighborhood} is a neighborhood in {city}. It's known locally for its character and points of interest — try searching for food, parks, or nightlife to discover highlights."
             source = 'data-first'
+    except Exception:
+        app.logger.exception('Failed to validate synthesized quick_guide')
 
-    out = {'quick_guide': synthesized, 'source': source or 'data-first', 'cached': False, 'generated_at': time.time(), 'source_url': source_url}
+    out = {'quick_guide': synthesized, 'source': source or 'data-first', 'cached': False, 'generated_at': time.time(), 'source_url': source_url} 
     # Try to enrich quick guide with Mapillary thumbnails (if available)
     mapillary_images = []
     try:
@@ -1263,9 +1459,24 @@ async def generate_quick_guide():
             app.logger.debug('wikimedia fallback failed for quick_guide')
 
     out['mapillary_images'] = mapillary_images
+    # Before writing cache, ensure we are not storing disambiguation/promotional snippets from DDGS
     try:
-        with open(cache_file, 'w', encoding='utf-8') as f:
-            json.dump(out, f, ensure_ascii=False, indent=2)
+        from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
+        if out.get('source') == 'ddgs' and looks_like_ddgs_disambiguation_text(out.get('quick_guide') or ''):
+            app.logger.info('Not caching disambiguation/promotional ddgs quick_guide for %s/%s', city, neighborhood)
+            # replace with synthesized neutral paragraph if available
+            try:
+                from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+                out['quick_guide'] = SynthesisEnhancer.generate_neighborhood_paragraph(neighborhood, city)
+                out['source'] = 'synthesized'
+                out['source_url'] = None
+            except Exception:
+                out['quick_guide'] = f"{neighborhood} is a neighborhood in {city}."
+                out['source'] = 'data-first'
+
+        # Persist using module-level helper
+        await _persist_quick_guide(out, city, neighborhood, cache_file)
+
     except Exception:
         app.logger.exception('failed to write quick_guide cache')
 

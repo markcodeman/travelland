@@ -1,5 +1,7 @@
 
-from typing import Optional, Union
+from typing import Optional, Union, List, Dict
+import logging
+
 import aiohttp
 import time
 import os
@@ -125,6 +127,102 @@ async def _geoapify_reverse_geocode_impl(params, headers, session):
 
 # --- GEOAPIFY POI SEARCH ---
 GEOAPIFY_PLACES_URL = "https://api.geoapify.com/v2/places"
+
+# Enhanced neighborhood fetching with disambiguation (Nominatim is used last as a fallback)
+from city_guides.src.neighborhood_disambiguator import NeighborhoodDisambiguator
+
+async def fetch_neighborhoods_enhanced(
+    city: str,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
+    session: Optional[aiohttp.ClientSession] = None
+) -> List[Dict]:
+    """
+    Enhanced neighborhood fetching with disambiguation for problematic cases
+    Nominatim is used as a LAST resort when other sources don't provide good results.
+    """
+    logger = logging.getLogger(__name__)
+    neighborhoods = []
+
+    # 1) Try reverse-geocode (Geoapify) when coordinates available (prefered)
+    if lat and lon:
+        try:
+            geoapify_data = await geoapify_reverse_geocode(lat, lon, session)
+            if geoapify_data:
+                parts = [p.strip() for p in geoapify_data.split(',') if p.strip()]
+                for part in parts:
+                    if len(part) > 3:
+                        neighborhoods.append({
+                            'name': part,
+                            'display_name': part,
+                            'source': 'geoapify'
+                        })
+        except Exception as e:
+            logger.debug(f"Geoapify reverse geocode failed: {e}")
+
+    # 2) Optionally other providers could be added here (OpenTripMap, Overpass heuristics)
+    # (left intentionally minimal to avoid changing existing flow)
+
+    # 3) As a last resort, try Nominatim by city name (only if we have no decent candidates)
+    if not neighborhoods and city:
+        try:
+            url = f"{NOMINATIM_URL}?q={city}&format=json&addressdetails=1&limit=50"
+            headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
+            if session is None:
+                async with get_session() as session:
+                    async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as r:
+                        if r.status == 200:
+                            data = await r.json()
+                            for item in data:
+                                addr = item.get('address', {})
+                                for key in ['suburb', 'neighbourhood', 'quarter', 'district']:
+                                    if key in addr:
+                                        neighborhoods.append({
+                                            'name': addr[key],
+                                            'display_name': addr[key],
+                                            'source': 'nominatim'
+                                        })
+            else:
+                async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as r:
+                    if r.status == 200:
+                        data = await r.json()
+                        for item in data:
+                            addr = item.get('address', {})
+                            for key in ['suburb', 'neighbourhood', 'quarter', 'district']:
+                                if key in addr:
+                                    neighborhoods.append({
+                                        'name': addr[key],
+                                        'display_name': addr[key],
+                                        'source': 'nominatim'
+                                    })
+        except Exception as e:
+            logger.debug(f"Nominatim neighborhood fetch failed: {e}")
+
+    # Apply disambiguation and deduplication
+    disambiguator = NeighborhoodDisambiguator()
+    names = [n.get('name') or n.get('display_name') for n in neighborhoods]
+    names = [n for n in names if n]
+    unique_names = disambiguator.deduplicate_neighborhoods(names, city)
+
+    ranked = []
+    for name in unique_names:
+        is_valid, confidence, canonical = disambiguator.validate_neighborhood(name, city)
+        ranked.append({
+            'name': canonical or name,
+            'display_name': canonical or name,
+            'label': canonical or name,
+            'id': canonical or name,
+            'confidence': confidence,
+            'is_valid': is_valid
+        })
+
+    ranked.sort(key=lambda x: x['confidence'], reverse=True)
+    filtered = [n for n in ranked if n['confidence'] >= 0.6]
+
+    logger.info(f"Neighborhoods for {city}: {len(neighborhoods)} raw → {len(unique_names)} unique → {len(filtered)} high-confidence")
+
+    return filtered
+
 
 # Mapping from our normalized poi_type keys to Geoapify 'categories' strings.
 # This provides broader, more specific category coverage for common poi_type values.
