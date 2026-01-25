@@ -43,9 +43,24 @@ for port in 5010 5174 3000; do
     fi
 done
 
-echo "Starting backend on port 5010..."
+
+
+
+echo "Exporting environment variables from .env (robust)..."
 cd /home/markm/TravelLand
-hypercorn city_guides.src.app:app --bind 0.0.0.0:5010 &
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
+echo "Starting backend on port 5010 (using venv Python/hypercorn)..."
+# Use venv hypercorn if available, else fallback
+if [ -x "./venv/bin/hypercorn" ]; then
+    ./venv/bin/hypercorn city_guides.src.app:app --bind 0.0.0.0:5010 &
+elif [ -x "./venv/bin/python" ]; then
+    ./venv/bin/python -m hypercorn city_guides.src.app:app --bind 0.0.0.0:5010 &
+else
+    hypercorn city_guides.src.app:app --bind 0.0.0.0:5010 &
+fi
 BACKEND_PID=$!
 echo $BACKEND_PID > backend.pid
 

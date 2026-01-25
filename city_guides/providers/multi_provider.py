@@ -6,6 +6,7 @@ import asyncio
 import math
 import re
 from typing import List, Dict, Optional
+import os
 
 
 # Robust import for overpass_provider, always using absolute import
@@ -18,6 +19,14 @@ try:
 except Exception as e:
     logging.error(f"❌ Failed to import overpass_provider: {e}")
     overpass_provider = None
+
+geonames_provider = None
+try:
+    from city_guides.providers import geonames_provider
+    logging.info("✅ geonames_provider imported successfully")
+except Exception as e:
+    logging.error(f"❌ Failed to import geonames_provider: {e}")
+    geonames_provider = None
 
 try:
     import opentripmap_provider
@@ -128,34 +137,30 @@ def discover_pois(
     async def _gather_providers():
         print(f"[MULTI_PROVIDER DEBUG] _gather_providers running for city={city}, poi_type={poi_type}, bbox={bbox}, neighborhood={neighborhood}")
         """Run all async provider calls concurrently in a single event loop.
-        Uses the unified discover_pois which calls Overpass, Geoapify, 
-        Opentripmap, Wikivoyage, and Mapillary in parallel."""
-        
-        if overpass_provider is None:
-            logging.error("overpass_provider is None! Cannot fetch POIs.")
-            return []
+        Uses the async_discover_pois which calls Overpass, Geoapify, 
+        Opentripmap, and Mapillary in parallel."""
         
         try:
-            # Use the unified discover_pois which runs ALL providers in parallel:
-            # - Overpass (OSM data)
+            # Use the async_discover_pois which runs ALL providers in parallel:
+            # - Overpass (OSM data via async_discover_pois)
             # - Geoapify (places API)
-            # - Opentripmap (tourism attractions)
-            # - Wikivoyage (city summaries)
+            # - Opentripmap (tourism attractions)  
             # - Mapillary (image enrichment)
-            print(f"[MULTI_PROVIDER DEBUG] Calling overpass_provider.discover_pois with city={city}, poi_type={poi_type}, bbox={bbox}, neighborhood={neighborhood}, name_query={name_query}")
-            all_results = await overpass_provider.discover_pois(
+            print(f"[MULTI_PROVIDER DEBUG] Calling async_discover_pois with city={city}, poi_type={poi_type}, bbox={bbox}")
+            all_results = await async_discover_pois(
                 city=city,
                 poi_type=poi_type,
                 limit=max_per_provider,
                 local_only=local_only,
+                timeout=timeout,
                 bbox=bbox,
-                neighborhood=neighborhood,
-                name_query=name_query
             )
-            print(f"[MULTI_PROVIDER DEBUG] Unified discover_pois returned {len(all_results)} results from all providers")
+            print(f"[MULTI_PROVIDER DEBUG] async_discover_pois returned {len(all_results)} results from all providers")
             return all_results
         except Exception as e:
-            logging.error(f"Error in unified discover_pois: {e}")
+            logging.error(f"Error in async_discover_pois: {e}")
+            import traceback
+            traceback.print_exc()
             return []
     
     # Run all async providers in a single event loop
@@ -188,7 +193,19 @@ def discover_pois(
             logging.warning(f"Error normalizing entry: {e}. Entry: {e}")
 
     # Sort by some quality heuristic (name length as proxy for specificity)
-    normalized.sort(key=lambda x: len(x.get("name", "")), reverse=True)
+    def _safe_name_len(item):
+        try:
+            if isinstance(item, dict):
+                name = item.get("name", "")
+            else:
+                return 0
+            if isinstance(name, str):
+                return len(name)
+            return 0
+        except Exception:
+            return 0
+
+    normalized.sort(key=_safe_name_len, reverse=True)
 
 
     
@@ -218,6 +235,7 @@ async def async_discover_pois(
     max_total_candidates = max(int(limit) * 20, 600)
 
     async def _call_provider(func, provider_name, *fargs, **fkwargs):
+        print(f"[DEBUG] _call_provider calling {provider_name} with fargs={fargs}, fkwargs={fkwargs}")
         start = time.time()
         res = None
         try:
@@ -251,18 +269,20 @@ async def async_discover_pois(
                 f"Provider timing: {provider_name} took {dur:.2f}s and returned {count} items"
             )
 
-    tasks = []
-    # Overpass (OSM) - supports different POI types
-    # Ensure city and poi_type are strings, not None
+    # Build coroutines for providers and run them concurrently using asyncio.gather
     city = city or ""
     poi_type = poi_type or "restaurant"
+
+    provider_coros = []
+
+    # Overpass (OSM) - supports different POI types
     if overpass_provider is not None:
         if poi_type == "restaurant":
             func = getattr(overpass_provider, "async_discover_restaurants", overpass_provider.discover_restaurants)
-            tasks.append(asyncio.create_task(_call_provider(func, "overpass", city, limit, None, local_only)))
+            provider_coros.append(_call_provider(func, "overpass", city, limit, None, local_only, bbox=bbox))
         else:
             func = getattr(overpass_provider, "async_discover_pois", overpass_provider.discover_pois)
-            tasks.append(asyncio.create_task(_call_provider(func, "overpass", city, poi_type, limit, local_only)))
+            provider_coros.append(_call_provider(func, "overpass", city, poi_type, limit, local_only, bbox=bbox))
     else:
         logging.error("overpass_provider is None! Cannot fetch POIs.")
 
@@ -285,21 +305,52 @@ async def async_discover_pois(
 
             # prefer async function if available
             func = getattr(opentripmap_provider, "async_discover_pois", opentripmap_provider.discover_pois)
-            tasks.append(asyncio.create_task(_call_provider(func, "opentripmap", city, otm_kinds, limit)))
+            provider_coros.append(_call_provider(func, "opentripmap", city, otm_kinds, limit))
         except Exception:
             pass
 
-    done, pending = await asyncio.wait(tasks)
-    for t in done:
+    # Geoapify (via overpass_provider) - only if function exists. It prefers bbox input.
+    geo_func = getattr(overpass_provider, "geoapify_discover_pois", None)
+    if geo_func:
+        # pass bbox and poi_type to let geoapify pick mapped categories when available
+        provider_coros.append(_call_provider(geo_func, "geoapify", bbox, None, poi_type, limit, session=session))
+
+    # Mapillary Places (optional) - use if token present
+    try:
+        import importlib
+        mapillary_mod = importlib.import_module("city_guides.mapillary_provider")
+    except Exception:
+        mapillary_mod = None
+
+    if mapillary_mod and os.getenv("MAPILLARY_TOKEN"):
+        func = getattr(mapillary_mod, "async_discover_places", None)
+        if func:
+            provider_coros.append(_call_provider(func, "mapillary", bbox, poi_type, limit, session=session))
+
+    # Run all provider coroutines concurrently. Use return_exceptions=True so one failing
+    # provider does not cancel others.
+    try:
+        gather_results = await asyncio.gather(*provider_coros, return_exceptions=True)
+    except Exception as e:
+        logging.warning(f"Unexpected error during asyncio.gather: {e}")
+        gather_results = []
+
+    # Collect results, ignoring providers that raised exceptions
+    for idx, res in enumerate(gather_results):
+        if isinstance(res, Exception):
+            logging.warning(f"Provider {idx} raised during gather: {res}")
+            continue
+        if not res:
+            continue
+        # If result is a coroutine or future (rare because _call_provider resolves), await it
         try:
-            provider_results = t.result()
-            # If provider_results is a coroutine, await it
-            if asyncio.iscoroutine(provider_results) or asyncio.isfuture(provider_results):
-                provider_results = await provider_results
-            if provider_results:
-                results.extend(provider_results)
+            if asyncio.iscoroutine(res) or asyncio.isfuture(res):
+                res = await res
         except Exception as e:
-            logging.warning(f"Error collecting provider results: {e}")
+            logging.warning(f"Error awaiting provider result {idx}: {e}")
+            continue
+        if res:
+            results.extend(res)
 
     # Normalize and dedupe
     normalized = []
@@ -316,7 +367,19 @@ async def async_discover_pois(
         except Exception as e:
             logging.warning(f"Error normalizing entry: {e}")
 
-    normalized.sort(key=lambda x: len(x.get("name", "")), reverse=True)
+    def _safe_name_len_async(item):
+        try:
+            if isinstance(item, dict):
+                name = item.get("name", "")
+            else:
+                return 0
+            if isinstance(name, str):
+                return len(name)
+            return 0
+        except Exception:
+            return 0
+
+    normalized.sort(key=_safe_name_len_async, reverse=True)
 
     # Optionally enrich async results with Mapillary thumbnails if configured and session provided.
     try:
@@ -383,20 +446,58 @@ async def async_discover_restaurants(
 
 
 async def async_get_neighborhoods(city: str | None = None, lat: float | None = None, lon: float | None = None, lang: str = "en", session=None):
-    """Wrapper that prefers provider async implementation and falls back to sync provider in a thread."""
-    try:
-        city_safe = city if city is not None else ""
-        lang_safe = lang if lang is not None else "en"
-        if overpass_provider is not None:
+    """Wrapper that combines results from multiple providers."""
+    results = []
+    
+    # Get from Overpass (OSM)
+    if overpass_provider is not None:
+        try:
             func = getattr(overpass_provider, "async_get_neighborhoods", None)
             if func and asyncio.iscoroutinefunction(func):
-                return await func(city=city_safe, lat=lat, lon=lon, lang=lang_safe, session=session)
+                osm_results = await func(city=city, lat=lat, lon=lon, lang=lang, session=session)
+                if osm_results:
+                    results.extend(osm_results)
             # fallback: call sync version in thread if available
-            func_sync = getattr(overpass_provider, "get_neighborhoods", None)
-            if func_sync:
-                return await asyncio.to_thread(func_sync, city_safe, lat, lon, lang_safe)
-        else:
-            logging.error("overpass_provider is None! Cannot fetch neighborhoods.")
-    except Exception as e:
-        logging.warning(f"neighborhoods provider error: {e}")
-    return []
+            else:
+                func_sync = getattr(overpass_provider, "get_neighborhoods", None)
+                if func_sync:
+                    osm_results = await asyncio.to_thread(func_sync, city or "", lat, lon, lang)
+                    if osm_results:
+                        results.extend(osm_results)
+        except Exception as e:
+            logging.warning(f"Overpass neighborhoods provider error: {e}")
+    
+    # Get from GeoNames if lat/lon provided
+    if geonames_provider is not None and lat is not None and lon is not None:
+        try:
+            geonames_results = await asyncio.wait_for(
+                geonames_provider.async_get_neighborhoods_geonames(city=city, lat=lat, lon=lon, max_rows=100, lang=lang, session=session),
+                timeout=10.0
+            )
+            if geonames_results:
+                # Convert GeoNames format to match OSM format
+                for item in geonames_results:
+                    if isinstance(item, dict) and 'name' in item:
+                        results.append({
+                            'id': item.get('id', f"geonames/{item.get('geonameId', '')}"),
+                            'name': item['name'],
+                            'slug': _norm_name(item['name']),
+                            'center': {'lat': item.get('lat'), 'lon': item.get('lon')},
+                            'bbox': None,  # GeoNames doesn't provide bbox
+                            'source': 'geonames'
+                        })
+        except asyncio.TimeoutError:
+            logging.warning("GeoNames neighborhoods call timed out")
+        except Exception as e:
+            logging.warning(f"GeoNames neighborhoods provider error: {e}")
+    
+    # Remove duplicates based on normalized name
+    seen = set()
+    unique_results = []
+    for r in results:
+        norm = _norm_name(r.get('name', ''))
+        if norm and norm not in seen:
+            seen.add(norm)
+            unique_results.append(r)
+    
+    return unique_results

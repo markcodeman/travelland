@@ -1,3 +1,63 @@
+from quart import Quart
+
+# Create Quart app instance at the very top so it is always defined before any route decorators
+app = Quart(__name__, static_folder="/home/markm/TravelLand/city_guides/static", static_url_path='', template_folder="/home/markm/TravelLand/city_guides/templates")
+
+from city_guides.providers.ddgs_provider import ddgs_search
+from city_guides.groq.traveland_rag import recommender
+
+# --- /recommend route for RAG recommender ---
+@app.route("/api/chat/rag", methods=["POST"])
+async def api_chat_rag():
+    """
+    RAG chat endpoint: Accepts a user query, runs DDGS web search, synthesizes an answer with Groq, and returns a unified AI response.
+    Request JSON: {"query": "...", "engine": "google" (optional), "max_results": 8 (optional)}
+    Response JSON: {"answer": "..."}
+    """
+    try:
+        data = await request.get_json(force=True)
+        query = (data.get("query") or "").strip()
+        engine = data.get("engine", "google")
+        max_results = int(data.get("max_results", 8))
+        if not query:
+            return jsonify({"error": "Missing query"}), 400
+
+        # Run DDGS web search (async)
+        web_results = await ddgs_search(query, engine=engine, max_results=max_results)
+        # Prepare context for Groq
+        context_snippets = []
+        for r in web_results:
+            # Only use title + body for context, never URLs
+            snippet = f"{r.get('title','')}: {r.get('body','')}"
+            context_snippets.append(snippet)
+        context_text = "\n\n".join(context_snippets)
+
+        # Compose Groq prompt (system + user)
+        system_prompt = (
+            "You are Marco, a travel AI assistant. Given a user query and a set of recent web search snippets, synthesize a helpful, accurate, and up-to-date answer. "
+            "Never mention your sources or that you used web search. Respond as a unified expert, not a search engine."
+        )
+        user_prompt = f"User query: {query}\n\nRelevant web snippets:\n{context_text}"
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+
+        # Call Groq via recommender (direct call_groq_chat)
+        groq_resp = recommender.call_groq_chat(messages)
+        if not groq_resp:
+            return jsonify({"error": "Groq API call failed"}), 502
+        try:
+            answer = groq_resp["choices"][0]["message"]["content"]
+        except Exception:
+            answer = None
+        if not answer:
+            return jsonify({"error": "No answer generated"}), 502
+        return jsonify({"answer": answer.strip()})
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
 
 
 
@@ -126,8 +186,9 @@ if os.getenv("GROQ_API_KEY") and _env_file_used:
 
 # Ensure local module imports work when running under an ASGI server
 _here = os.path.dirname(__file__)
-if _here not in sys.path:
-    sys.path.insert(0, _here)
+_parent = os.path.dirname(_here)
+if _parent not in sys.path:
+    sys.path.insert(0, _parent)
 
 # Local providers are located in the same directory
 from city_guides.providers import multi_provider
@@ -834,7 +895,6 @@ async def generate_quick_guide():
         try:
             with open(cache_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            # Preserve any enriched fields (e.g. mapillary_images) stored in the cache
             resp = {
                 'quick_guide': data.get('quick_guide'),
                 'source': data.get('source', 'cache'),
@@ -845,14 +905,73 @@ async def generate_quick_guide():
                 resp['mapillary_images'] = data.get('mapillary_images')
             if data.get('generated_at'):
                 resp['generated_at'] = data.get('generated_at')
-            return jsonify(resp)
+
+            # If the cached content is from Wikipedia, run a stricter relevance check
+            try:
+                if data.get('source') == 'wikipedia':
+                    text = (data.get('quick_guide') or '').lower()
+                    # Expanded blacklist of event/article keywords
+                    blacklist = [
+                        'fire', 'wildfire', 'hurricane', 'earthquake', 'storm', 'flood', 'tornado', 'volcano',
+                        'massacre', 'riot', 'disaster', 'album', 'song', 'single', 'born', 'died', 'surname', 'battle'
+                    ]
+                    # Quick relevance: accept cached wikipedia if it mentions the city or neighborhood, or looks like a locality description
+                    if city.lower() in text or neighborhood.lower() in text or any(k in text for k in ['neighborhood', 'neighbourhood', 'district', 'suburb', 'municipality', 'borough', 'locality']):
+                        return jsonify(resp)
+                    # If it looks like an event/article and doesn't mention the city/neighborhood, ignore cache and regenerate
+                    if any(b in text for b in blacklist) and (city.lower() not in text and neighborhood.lower() not in text):
+                        app.logger.info("Ignoring cached wikipedia quick_guide for %s/%s due to likely unrelated event/article", city, neighborhood)
+                    else:
+                        return jsonify(resp)
+                else:
+                    return jsonify(resp)
+            except Exception:
+                return jsonify(resp)
         except Exception:
             pass
 
-    # Try Wikipedia summary first
+    # Try Wikipedia summary first using a relevance helper
     wiki_title_candidates = [f"{neighborhood}, {city}", f"{neighborhood}"]
     wiki_summary = None
     wiki_url = None
+
+    def _page_is_relevant(j: dict) -> bool:
+        """Return True if the Wikipedia page JSON `j` appears to describe the neighborhood or city.
+        Heuristics:
+          - skip disambiguation pages
+          - accept pages that mention the city or neighborhood in title or extract
+          - accept pages that contain locality keywords like 'neighborhood', 'district', 'municipality'
+          - reject pages that look like events/works (fire, album, song, birth/death) unless they also mention the city/locality
+        """
+        if not j:
+            return False
+        if j.get('type') == 'disambiguation':
+            return False
+        title_text = (j.get('title') or '').lower()
+        extract_text = (j.get('extract') or j.get('description') or '').lower()
+        if not extract_text and not title_text:
+            return False
+        locality_keywords = ['neighborhood', 'neighbourhood', 'district', 'suburb', 'municipality', 'borough', 'locality']
+        event_keywords = ['fire', 'wildfire', 'hurricane', 'earthquake', 'storm', 'flood', 'tornado', 'volcano', 'massacre', 'riot', 'disaster', 'accident', 'attack']
+
+        # If page mentions the city or neighborhood explicitly, consider it relevant
+        if city.lower() in extract_text or city.lower() in title_text:
+            return True
+        if neighborhood.lower() in extract_text or neighborhood.lower() in title_text:
+            # Be careful: neighborhood may appear in the name of an event/article (e.g., "Las Conchas Fire").
+            # If the page title combines neighborhood + an event keyword (e.g., "Las Conchas Fire"), reject it unless the page also mentions the city.
+            if any(ev in title_text for ev in event_keywords):
+                if city.lower() not in extract_text and city.lower() not in title_text:
+                    app.logger.debug("Rejecting page with neighborhood in title but event-like content: %s", title_text)
+                    return False
+                else:
+                    return True
+            # Otherwise accept
+            return True
+        if any(k in extract_text for k in locality_keywords):
+            return True
+        return False
+
     for title in wiki_title_candidates:
         try:
             safe_title = title.replace(' ', '_')
@@ -860,11 +979,16 @@ async def generate_quick_guide():
             async with aiohttp_session.get(url, timeout=aiohttp.ClientTimeout(total=6)) as resp:  # type: ignore
                 if resp.status == 200:
                     j = await resp.json()
-                    # extract summary if available
+                    is_rel = _page_is_relevant(j)
+                    app.logger.debug("Wiki candidate '%s' returned title='%s' relevant=%s", title, (j.get('title') or '')[:200], is_rel)
+                    if not is_rel:
+                        app.logger.debug("Rejected wiki candidate '%s' as not relevant (title=%s)", title, (j.get('title') or ''))
+                        continue
                     extract = j.get('extract') or j.get('description')
                     if extract:
                         wiki_summary = extract
                         wiki_url = j.get('content_urls', {}).get('desktop', {}).get('page') or j.get('canonical') or url
+                        app.logger.info("Accepted wiki quick_guide from title '%s' for %s/%s", j.get('title'), city, neighborhood)
                         break
         except Exception:
             continue
@@ -877,7 +1001,127 @@ async def generate_quick_guide():
         source = 'wikipedia'
         source_url = wiki_url
 
-    # If Wikipedia didn't provide, fall back to city_info and simple template
+    # If Wikipedia didn't provide a good summary, prefer DDGS-derived synthesis when possible
+    if not synthesized:
+        try:
+            ddgs_queries = [
+                f"{neighborhood} {city} travel",
+                f"{neighborhood} {city} information",
+                f"{neighborhood} {city} colonia",
+                f"{city} {neighborhood}",
+            ]
+            ddgs_results = []
+            for q in ddgs_queries:
+                try:
+                    res = await ddgs_search(q, engine="google", max_results=6)
+                    print(f"DDGS: query={q} got {len(res) if res else 0} results")
+                    if res:
+                        ddgs_results.extend(res)
+                except Exception as e:
+                    print(f"DDGS query failed for {q}: {e}")
+                    continue
+            # Keep unique by href
+            seen = set()
+            unique = []
+            for r in ddgs_results:
+                href = r.get('href') or r.get('url')
+                if not href:
+                    continue
+                if href in seen:
+                    continue
+                seen.add(href)
+                unique.append(r)
+            ddgs_results = unique[:6]
+
+            # Filter for results that likely mention the neighborhood/city
+            relevant = []
+            for r in ddgs_results:
+                body = (r.get('body') or '') or (r.get('title') or '')
+                txt = re.sub(r"\s+", ' ', (body or '')).strip()
+                if not txt:
+                    continue
+                # Consider relevant if mentions neighborhood or city or contains travel keywords
+                lower = txt.lower()
+                if neighborhood.lower() in lower or city.lower() in lower or any(k in lower for k in ['travel', 'guide', 'colonia', 'neighborhood', 'transit', 'bus', 'train']):
+                    relevant.append(r)
+
+            # If no clearly relevant results, but we have ddgs hits, treat the top hits as possible candidates
+            if not relevant and ddgs_results:
+                app.logger.debug('No clearly relevant DDGS hits for %s/%s but using top search results', city, neighborhood)
+                relevant = ddgs_results[:3]
+
+            if relevant:
+                app.logger.debug("DDGS candidates for %s/%s: %s", city, neighborhood, [ (r.get('title'), r.get('href') or r.get('url')) for r in relevant ])
+                # Try to synthesize into concise English using the semantic module
+                snippets = []
+                for r in relevant[:6]:
+                    title = (r.get('title') or '').strip()
+                    body = (r.get('body') or '').strip()
+                    href = r.get('href') or r.get('url') or ''
+                    snippet = f"{title}: {body} ({href})" if title else f"{body} ({href})"
+                    snippets.append(snippet)
+                context_text = '\n\n'.join(snippets)
+                synth_prompt = (
+                    f"Synthesize a concise (2-4 sentence) English quick guide for the neighborhood '{neighborhood}, {city}'. "
+                    f"Use only the facts from the following web snippets; keep it travel-focused (type of area, notable features, transit/access, quick local tips). "
+                    f"Answer in English.\n\nWeb snippets:\n{context_text}"
+                )
+                try:
+                    resp = await semantic.search_and_reason(synth_prompt, city=city, mode='rational', session=aiohttp_session)
+                    if isinstance(resp, dict):
+                        resp_text = str(resp.get('answer') or resp.get('text') or '')
+                    else:
+                        resp_text = str(resp or '')
+                    resp_text = resp_text.strip()
+                    app.logger.debug("DDGS synthesis response for %s/%s: %s", city, neighborhood, resp_text[:200])
+                    # Basic sanity check: length and mention of the city/neighborhood or travel keyword
+                    if len(resp_text) >= 40 and (city.lower() in resp_text.lower() or neighborhood.lower() in resp_text.lower() or any(k in resp_text.lower() for k in ['travel', 'guide', 'transit', 'bus', 'train'])):
+                        synthesized = resp_text
+                        source = 'ddgs'
+                        source_url = relevant[0].get('href') or relevant[0].get('url')
+                except Exception:
+                    app.logger.exception('ddgs synthesis failed')
+
+                # If semantic synthesis failed or returned poor text, fall back to simple snippet composition
+                if not synthesized:
+                    def pick_sentences_from_text(txt):
+                        if not txt:
+                            return []
+                        sents = re.split(r'(?<=[.!?])\s+', txt)
+                        out = []
+                        keywords = [neighborhood.lower(), city.lower(), 'bus', 'train', 'transit', 'colonia', 'neighborhood', 'pueblo', 'pueblo mágico', 'pueblo magico']
+                        for s in sents:
+                            low = s.lower()
+                            if any(k in low for k in keywords):
+                                out.append(s.strip())
+                        if not out:
+                            out = [s.strip() for s in sents[:2] if s.strip()]
+                        return out
+
+                    parts = []
+                    for r in relevant[:4]:
+                        text = (r.get('body') or '') or (r.get('title') or '')
+                        text = re.sub(r"\s+", ' ', text).strip()
+                        parts.extend(pick_sentences_from_text(text))
+
+                    # deduplicate and limit
+                    seen = set()
+                    chosen = []
+                    for p in parts:
+                        if p in seen:
+                            continue
+                        seen.add(p)
+                        chosen.append(p)
+                        if len(chosen) >= 3:
+                            break
+                    if chosen:
+                        synthesized = ' '.join(chosen)
+                        source = 'ddgs'
+                        source_url = relevant[0].get('href') or relevant[0].get('url')
+        except Exception:
+            app.logger.exception('DDGS attempt failed for %s/%s', city, neighborhood)
+
+    # If neither Wikipedia nor DDGS synthesized, fall back to city_info and simple template
     if not synthesized:
         try:
             data_dir = Path(__file__).parent.parent / 'data'
@@ -909,8 +1153,51 @@ async def generate_quick_guide():
             synthesized = None
 
     if not synthesized:
-        synthesized = f"{neighborhood} is a neighborhood in {city}. It's known locally for its character and points of interest — try searching for food, parks, or nightlife to discover highlights." 
-        source = 'data-first'
+        # Attempt DuckDuckGo (DDGS) as a fallback to fetch a travel-oriented summary when
+        # Wikipedia and local data files don't provide a good match.
+        try:
+            from city_guides.providers.ddgs_provider import ddgs_search
+            ddgs_queries = [
+                f"{neighborhood}, {city} travel guide",
+                f"{neighborhood} {city} travel",
+                f"{neighborhood} travel",
+                f"{city} travel guide",
+            ]
+            ddgs_snippet = None
+            ddgs_url = None
+            for q in ddgs_queries:
+                try:
+                    results = await ddgs_search(q, engine="google", max_results=5)
+                    for r in results:
+                        body = (r.get('body') or '') or (r.get('title') or '')
+                        text = re.sub(r'\s+', ' ', (body or '')).strip()
+                        # Accept result if it's reasonably descriptive and mentions either neighborhood or city
+                        if len(text) >= 60 and (city.lower() in text.lower() or neighborhood.lower() in text.lower() or q.lower().startswith(city.lower())):
+                            ddgs_snippet = text
+                            ddgs_url = r.get('href')
+                            break
+                    if ddgs_snippet:
+                        break
+                except Exception:
+                    continue
+            if ddgs_snippet:
+                # Trim to a sensible length
+                if len(ddgs_snippet) > 800:
+                    ddgs_snippet = ddgs_snippet[:800].rsplit(' ', 1)[0] + '...'
+                # Stronger acceptance: ensure snippet mentions city or neighborhood (unless snippet title contains them)
+                if city.lower() in ddgs_snippet.lower() or neighborhood.lower() in ddgs_snippet.lower() or (ddgs_url and (neighborhood.lower() in (ddgs_url or '').lower() or city.lower() in (ddgs_url or '').lower())):
+                    synthesized = ddgs_snippet
+                    source = 'ddgs'
+                    source_url = ddgs_url
+                else:
+                    app.logger.debug('DDGS snippet rejected for %s/%s: does not mention city/neighborhood', city, neighborhood)
+        except Exception:
+            app.logger.exception("ddgs fallback failed for %s, %s", neighborhood, city)
+
+        # Final generic fallback if nothing else matched
+        if not synthesized:
+            synthesized = f"{neighborhood} is a neighborhood in {city}. It's known locally for its character and points of interest — try searching for food, parks, or nightlife to discover highlights."
+            source = 'data-first'
 
     out = {'quick_guide': synthesized, 'source': source or 'data-first', 'cached': False, 'generated_at': time.time(), 'source_url': source_url}
     # Try to enrich quick guide with Mapillary thumbnails (if available)
@@ -1905,6 +2192,32 @@ async def transport():
                 break
         except Exception:
             quick_guide = quick_guide or ""
+
+    # If still no good quick_guide, or the wiki extract looks like an unrelated event/article,
+    # try a DDGS (DuckDuckGo) search as a fallback to obtain travel-focused text about the city.
+    try:
+        should_try_ddgs = False
+        if not quick_guide:
+            should_try_ddgs = True
+        else:
+            lower_q = quick_guide.lower()
+            blacklist = ['fire', 'wildfire', 'hurricane', 'earthquake', 'storm', 'album', 'song', 'single', 'born', 'died', 'surname']
+            if any(b in lower_q for b in blacklist) and city.lower() not in lower_q:
+                should_try_ddgs = True
+        if should_try_ddgs:
+            try:
+                from city_guides.providers.ddgs_provider import ddgs_search
+                results = await ddgs_search(f"{city} travel guide", engine="google", max_results=5)
+                for r in results:
+                    body = (r.get('body') or '') or (r.get('title') or '')
+                    text = re.sub(r'\s+', ' ', (body or '')).strip()
+                    if len(text) > 60:
+                        quick_guide = text if len(text) <= 1000 else text[:1000].rsplit(' ', 1)[0] + '...'
+                        break
+            except Exception:
+                app.logger.debug('ddgs lookup failed for city quick_guide', exc_info=True)
+    except Exception:
+        pass
     # Attempt to fetch a safety/crime section for server-side initial render
     try:
         initial_safety = fetch_safety_section(city) or []
@@ -2556,36 +2869,54 @@ async def _get_country_geoname_id(country_code, session):
 async def _get_neighborhoods_for_city(city_name, country_code):
     """Get neighborhoods for a city using existing multi_provider logic."""
     try:
-        # First geocode the city to get lat/lon
-        geocoded = await geocode_city(city_name, country_code)
-        if not geocoded or not geocoded.get("lat") or not geocoded.get("lon"):
-            app.logger.warning(f"Could not geocode city {city_name} in {country_code}")
-            return []
-        
-        lat = geocoded["lat"]
-        lon = geocoded["lon"]
-        
-        # Use the existing neighborhood fetching logic from multi_provider
-        # This will use Overpass API to get neighborhoods for the city
+        # Special case for Tlaquepaque - use known coordinates
+        if city_name.lower() == "tlaquepaque" and country_code == "MX":
+            lat = 20.58775
+            lon = -103.30449
+        else:
+            # First geocode the city to get lat/lon
+            geocoded = await geocode_city(city_name, country_code)
+            if not geocoded or not geocoded.get("lat") or not geocoded.get("lon"):
+                app.logger.warning(f"Could not geocode city {city_name} in {country_code}")
+                return []
+            lat = geocoded["lat"]
+            lon = geocoded["lon"]
+
+        # Always fetch both OSM and GeoNames neighborhoods for these coordinates
         async with get_session() as session:
-            neighborhoods = await multi_provider.async_get_neighborhoods(
-                city=city_name, 
-                lat=lat, 
-                lon=lon, 
-                lang="en", 
+            neighborhoods_osm = await multi_provider.async_get_neighborhoods(
+                city=None,
+                lat=lat,
+                lon=lon,
+                lang="en",
                 session=session
             )
-        
-        # Format for frontend consumption
+            neighborhoods_geonames = []
+            try:
+                from city_guides.providers import geonames_provider
+                neighborhoods_geonames = await geonames_provider.async_get_neighborhoods_geonames(
+                    city=None, lat=lat, lon=lon, max_rows=100, session=session
+                )
+            except Exception as e:
+                app.logger.warning(f"GeoNames fetch failed: {e}")
+
+        # Merge and deduplicate by normalized name
+        def norm(n):
+            return n.get("name", "").strip().lower()
+        all_nh = neighborhoods_osm + neighborhoods_geonames
+        seen = set()
         formatted_neighborhoods = []
-        for nh in neighborhoods:
-            formatted_neighborhoods.append({
-                "id": nh.get("id", nh.get("name", "").lower().replace(" ", "-")),
-                "name": nh.get("name", ""),
-                "lat": nh.get("lat"),
-                "lon": nh.get("lon")
-            })
-        
+        for nh in all_nh:
+            nname = norm(nh)
+            if nname and nname not in seen:
+                seen.add(nname)
+                formatted_neighborhoods.append({
+                    "id": nh.get("id", nh.get("name", "").lower().replace(" ", "-")),
+                    "name": nh.get("name", ""),
+                    "lat": nh.get("lat") or nh.get("center", {}).get("lat"),
+                    "lon": nh.get("lon") or nh.get("center", {}).get("lon")
+                })
+
         return formatted_neighborhoods
     except Exception as e:
         app.logger.warning(f"Error fetching neighborhoods for {city_name}: {e}")
@@ -2620,7 +2951,9 @@ def build_search_cache_key(city: str, q: str, neighborhood: dict | None = None) 
 
 @app.route("/search", methods=["POST"])
 async def search():
+    print(f"[SEARCH ROUTE] Search request received")
     payload = await request.get_json(silent=True) or {}
+    print(f"[SEARCH ROUTE] Payload: {payload}")
     # Lightweight heuristic to decide whether to cache this search (focus on food/top queries)
     city = (payload.get("query") or "").strip()
     q = (payload.get("category") or "").strip().lower()
@@ -2646,7 +2979,9 @@ async def search():
             app.logger.debug("Redis cache lookup failed; continuing without cache")
 
     # Run the existing blocking search logic
+    print(f"[SEARCH ROUTE] Calling _search_impl")
     result = _search_impl(payload)
+    print(f"[SEARCH ROUTE] _search_impl returned result with {len(result.get('venues', []))} venues")
 
     # Store in cache for subsequent fast responses
     if redis_client and cache_key and result:
@@ -2659,6 +2994,7 @@ async def search():
 
 
 def _search_impl(payload):
+    print(f"[SEARCH DEBUG] _search_impl called with payload: {payload}")
     # This helper is the original synchronous implementation of the /search route.
     # It returns a plain dict suitable for JSONification.
     logging.debug(f"[SEARCH DEBUG] Incoming payload: {payload}")
@@ -2675,6 +3011,11 @@ def _search_impl(payload):
         'fallback_triggered': False,
         'neighborhood_bbox': None
     }
+    # Respect client-requested result limit (default 10)
+    try:
+        limit = int(payload.get('limit', 10))
+    except Exception:
+        limit = 10
     user_lat = payload.get("user_lat")
     user_lon = payload.get("user_lon")
     budget = (payload.get("budget") or "").strip().lower()
@@ -2743,6 +3084,37 @@ def _search_impl(payload):
                 except Exception as e:
                     logging.debug(f"Nominatim geocode fallback failed for {neighborhood_name}: {e}")
     logging.debug(f"[SEARCH DEBUG] (city-level) bbox set to: {bbox}, neighborhood_name: {neighborhood_name}, debug_info: {debug_info}")
+
+    # For city-level searches (no neighborhood), geocode the city to create a bbox for providers that need it
+    if bbox is None and city:
+        print(f"[SEARCH DEBUG] City-level search detected, geocoding city: {city}")
+        try:
+            # Read local city data directly (synchronous)
+            import json
+            import re
+            from pathlib import Path
+            
+            data_dir = Path(__file__).parent.parent / "data"
+            slug = re.sub(r"[^a-z0-9]+", "_", city.lower()).strip("_")
+            candidate = data_dir / f"city_info_{slug}.json"
+            
+            if candidate.exists():
+                with open(candidate, "r", encoding="utf-8") as f:
+                    j = json.load(f)
+                    city_lat = j.get("lat")
+                    city_lon = j.get("lon")
+                    if city_lat and city_lon:
+                        # Create a bbox around the city, ~20km radius for city-level searches
+                        delta = 0.2  # approx 20km
+                        bbox = [city_lon - delta, city_lat - delta, city_lon + delta, city_lat + delta]
+                        debug_info['city_bbox'] = bbox
+                        print(f"[SEARCH DEBUG] Geocoded city {city} to bbox: {bbox} from local data")
+            else:
+                print(f"[SEARCH DEBUG] No local data file found for {city}: {candidate}")
+        except Exception as e:
+            print(f"[SEARCH DEBUG] Failed to geocode city {city} from local data: {e}")
+    
+    print(f"[SEARCH DEBUG] Final bbox before calling providers: {bbox}")
     import time
 
     t0 = time.time()
@@ -2971,7 +3343,7 @@ def _search_impl(payload):
     if provider_timeout:
         provider_timeout = max(3.0, provider_timeout - 2.0)
     else:
-        provider_timeout = 5.0
+        provider_timeout = 15.0  # Increased from 5.0 to allow time for all providers including Mapillary
     # If a neighborhood bbox is present, give providers more time to return localized results
     if neighborhood_name and bbox:
         provider_timeout = max(provider_timeout, 10.0)
@@ -2991,7 +3363,8 @@ def _search_impl(payload):
     poi_type = category_mapping.get(q, "restaurant" if is_food_query else ("historic" if is_historic_query else "general"))
 
     # Fetch real venues and Wikivoyage highlights in parallel to avoid timeouts
-    if q and (is_food_query or is_historic_query or poi_type == "general"):
+    # Run provider-based discovery for any explicit category request (including Hidden gems)
+    if q:
         t_real_start = time.time()
 
         # Enhanced venue discovery with improved proximity-based search
@@ -3084,32 +3457,25 @@ def _search_impl(payload):
             from city_guides.providers.overpass_provider import get_nearby_venues
             import asyncio
             pois = []
+            # Execute proximity-based provider in a separate thread to avoid event loop conflicts
+            from concurrent.futures import ThreadPoolExecutor, TimeoutError
             try:
-                # Try to get running loop; if fails, use asyncio.run
-                try:
-                    loop = asyncio.get_running_loop()
-                    # If we're already in an event loop, run in a thread
-                    from concurrent.futures import ThreadPoolExecutor
-                    with ThreadPoolExecutor() as executor:
-                        pois = loop.run_until_complete(
-                            loop.run_in_executor(
-                                executor,
-                                lambda: asyncio.run(get_nearby_venues(
-                                    search_lat, search_lon,
-                                    venue_type=venue_type,
-                                    radius=calculate_search_radius(neighborhood_name, bbox),
-                                    limit=100
-                                ))
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    fut = executor.submit(
+                        lambda: asyncio.run(
+                            get_nearby_venues(
+                                search_lat,
+                                search_lon,
+                                venue_type=venue_type,
+                                radius=calculate_search_radius(neighborhood_name, bbox),
+                                limit=100,
                             )
                         )
-                except RuntimeError:
-                    # No running loop, safe to use asyncio.run
-                    pois = asyncio.run(get_nearby_venues(
-                        search_lat, search_lon,
-                        venue_type=venue_type,
-                        radius=calculate_search_radius(neighborhood_name, bbox),
-                        limit=100
-                    ))
+                    )
+                    pois = fut.result(timeout=provider_timeout + 2)
+            except TimeoutError:
+                print(f"Timeout while fetching nearby venues (timeout={provider_timeout + 2}s)")
+                pois = []
             except Exception as e:
                 print(f"Error in async get_nearby_venues: {e}")
                 pois = []
@@ -3266,7 +3632,7 @@ def _search_impl(payload):
             if not desc:
                 tags_dict = dict(
                     tag.split("=", 1)
-                    for tag in poi.get("tags", "").split(", ")
+                    for tag in tags_text.split(", ")
                     if "=" in tag
                 )
                 cuisine = tags_dict.get("cuisine", "").replace(";", ", ")
@@ -3354,6 +3720,11 @@ def _search_impl(payload):
 
         t_real_end = time.time()
         print(f"[TIMING] Real venue search: {t_real_end-t_real_start:.2f}s")
+
+        # Debug: check what we have in results
+        print(f"[DEBUG] Results list has {len(results)} items")
+        for i, r in enumerate(results[:3]):  # Show first 3
+            print(f"[DEBUG] Result {i}: name='{r.get('name')}', provider='{r.get('provider')}'")
 
         # If provider POIs exist, prefer them (OSM/real venues) and include Wikivoyage only as context
         if results:
@@ -3537,20 +3908,89 @@ def _search_impl(payload):
             if venue["id"] in enriched_data:
                 venue.update(enriched_data[venue["id"]])
 
-    # If no real venues found, or only summary/Markdown venues, force a fallback venue card for UI
+    # Helper to decide whether a venue is an authoritative/candidate venue
     def is_real_venue(v):
-        # Consider a venue real if it has a name, provider is not 'wikivoyage' or 'summary', and not just a text/description
         if not isinstance(v, dict):
             return False
         provider = v.get('provider', '').lower()
         name = v.get('name', '').strip()
-        # Exclude summary/markdown-only or wikivoyage fallback venues
         if provider in ("wikivoyage", "summary"):
             return False
-        if not name or name.lower().startswith("the "):
-            # Defensive: skip generic summary lines
+        if not name or name.lower() in ("unknown", "unnamed", ""):
             return False
         return True
+
+    # Whether we already have real venue candidates
+    has_real_venue = any(is_real_venue(v) for v in results)
+
+    # Optionally re-rank candidate venues using Groq RAG recommender if enabled and only when real venues exist
+    use_groq = os.getenv("USE_GROQ_RAG", "false").lower() in ("1", "true", "yes")
+    if use_groq and has_real_venue:
+        try:
+            from city_guides.groq.traveland_rag import recommend_venues_rag, recommender
+            if recommender.api_key:
+                candidates = results[:50]
+                user_context = {"city": city, "neighborhood": neighborhood_name, "q": q, "preferences": {}}
+                groq_recs = recommend_venues_rag(user_context, candidates)
+                if groq_recs:
+                    id_map = {c.get("id"): c for c in candidates if c.get("id")}
+                    ordered = []
+                    for r in groq_recs:
+                        vid = r.get("id")
+                        cand = id_map.get(vid)
+                        if cand:
+                            c = cand.copy()
+                            c["groq_score"] = r.get("score")
+                            c["groq_confidence"] = r.get("confidence")
+                            c["groq_reason"] = r.get("reason")
+                            c["groq_sources"] = r.get("sources", [])
+                            ordered.append(c)
+                    # Append remaining candidates after Groq-ranked ones
+                    seen = set([v.get("id") for v in ordered])
+                    for c in candidates:
+                        if c.get("id") not in seen:
+                            ordered.append(c)
+                    results = ordered[:limit]
+                    debug_info["groq_used"] = True
+                    debug_info["groq_count"] = len(groq_recs)
+                else:
+                    debug_info["groq_used"] = False
+            else:
+                # No real GROQ key configured — support a developer mock if requested
+                if os.getenv("FORCE_GROQ_MOCK", "false").lower() in ("1", "true", "yes"):
+                    candidates = results[:50]
+                    mock_recs = []
+                    for c in candidates:
+                        name = (c.get("name") or "").lower()
+                        desc = (c.get("description") or "").lower()
+                        score = 0.6
+                        if q and q.lower() in name or q and q.lower() in desc:
+                            score = 0.9
+                        mock_recs.append({"id": c.get("id"), "score": score, "confidence": "medium", "reason": "mocked ranking"})
+                    # Apply mock recs
+                    id_map = {c.get("id"): c for c in candidates if c.get("id")}
+                    ordered = []
+                    for r in mock_recs:
+                        vid = r.get("id")
+                        cand = id_map.get(vid)
+                        if cand:
+                            c = cand.copy()
+                            c["groq_score"] = r.get("score")
+                            c["groq_confidence"] = r.get("confidence")
+                            c["groq_reason"] = r.get("reason")
+                            c["groq_sources"] = r.get("sources", [])
+                            ordered.append(c)
+                    seen = set([v.get("id") for v in ordered])
+                    for c in candidates:
+                        if c.get("id") not in seen:
+                            ordered.append(c)
+                    results = ordered[:limit]
+                    debug_info["groq_used"] = "mock"
+                    debug_info["groq_count"] = len(mock_recs)
+                else:
+                    debug_info["groq_used"] = False
+        except Exception as e:
+            debug_info["groq_error"] = str(e)
 
     has_real_venue = any(is_real_venue(v) for v in results)
     if not has_real_venue:

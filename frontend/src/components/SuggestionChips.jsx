@@ -10,7 +10,7 @@ const rioSuggestions = [
   // Removed tourist, local, budget to reduce clutter
 ];
 
-export default function SuggestionChips({ onSelect, city }) {
+export default function SuggestionChips({ onSelect, city, selected }) {
   const list = rioSuggestions.concat(baseSuggestions);
 
   return (
@@ -24,10 +24,11 @@ export default function SuggestionChips({ onSelect, city }) {
         {list.map(s => (
           <button
             key={s.id}
-            className={`suggestion-chip ${s.cls}`}
+            className={`suggestion-chip ${s.cls} ${selected === s.id ? 'selected' : ''}`}
             type="button"
             onClick={() => onSelect && onSelect(s.id)}
             aria-label={s.label}
+            aria-pressed={selected === s.id}
           >
             <span className="chip-icon">{s.icon}</span>
             <span className="chip-label">{s.label}</span>

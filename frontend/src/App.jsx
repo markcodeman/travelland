@@ -35,13 +35,13 @@ const API_BASE = '';
 
 function App() {
   const [location, setLocation] = useState({
-    country: '',
+    country: 'MX',
     state: '',
-    city: '',
+    city: 'Tlaquepaque',
     neighborhood: '',
-    countryName: '',
+    countryName: 'Mexico',
     stateName: '',
-    cityName: '',
+    cityName: 'Tlaquepaque',
     neighborhoodName: ''
   });
   const [neighborhoodOptions, setNeighborhoodOptions] = useState([]);
@@ -55,6 +55,7 @@ function App() {
   const [synthError, setSynthError] = useState(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState('');
   const [marcoOpen, setMarcoOpen] = useState(false);
+  const [marcoWebRAG, setMarcoWebRAG] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
 
@@ -76,22 +77,75 @@ function App() {
   // Consolidated fetch neighborhoods function
   const fetchNeighborhoods = useCallback(async (cityName, useFallback = true) => {
     if (!cityName) return [];
-    
+
+    // Always try both city and coordinate-based for Tlaquepaque
+    if (cityName.toLowerCase() === 'tlaquepaque') {
+      const lat = 20.58775;
+      const lon = -103.30449;
+      let cityData = [];
+      let coordData = [];
+      try {
+        const data = await fetchAPI(`/neighborhoods?city=${encodeURIComponent(cityName)}&lang=en`);
+        if (data?.neighborhoods?.length > 0) {
+          cityData = data.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
+        }
+      } catch {}
+      try {
+        const data = await fetchAPI(`/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
+        if (data?.neighborhoods?.length > 0) {
+          coordData = data.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
+        }
+      } catch {}
+      const fallbackNames = NEIGHBORHOOD_FALLBACKS[cityName] || [];
+      // Merge and deduplicate
+      return Array.from(new Set([...cityData, ...coordData, ...fallbackNames]));
+    }
+
     try {
+      // First try fetching by city name
       const data = await fetchAPI(`/neighborhoods?city=${encodeURIComponent(cityName)}&lang=en`);
-      
       if (data?.neighborhoods?.length > 0) {
         const names = data.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
         const uniqueNames = Array.from(new Set(names));
         const fallbackNames = NEIGHBORHOOD_FALLBACKS[cityName] || [];
         return Array.from(new Set([...uniqueNames, ...fallbackNames]));
       }
+      // If city-based fetch failed or returned no results, try geocoding to get coordinates
+      try {
+        const geoData = await fetchAPI('/geocode', {
+          method: 'POST',
+          body: JSON.stringify({ city: cityName })
+        });
+        const lat = geoData?.lat ?? geoData?.latitude;
+        const lon = geoData?.lon ?? geoData?.longitude ?? geoData?.lng;
+        if (lat && lon) {
+          // Try fetching by coordinates
+          const coordData = await fetchAPI(`/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
+          if (coordData?.neighborhoods?.length > 0) {
+            const names = coordData.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
+            const uniqueNames = Array.from(new Set(names));
+            const fallbackNames = NEIGHBORHOOD_FALLBACKS[cityName] || [];
+            return Array.from(new Set([...uniqueNames, ...fallbackNames]));
+          }
+        }
+      } catch (geoErr) {
+        // Continue to fallback
+      }
     } catch (err) {
       // Continue to fallback
     }
-    
     return useFallback ? NEIGHBORHOOD_FALLBACKS[cityName] || [] : [];
   }, [fetchAPI]);
+
+  // Auto-load Tlaquepaque neighborhoods on mount
+  useEffect(() => {
+    const autoLoadNeighborhoods = async () => {
+      const neighborhoods = await fetchNeighborhoods('Tlaquepaque');
+      setNeighborhoodOptions(neighborhoods);
+    };
+    
+    autoLoadNeighborhoods();
+  }, []); // Empty dependency array - runs once on mount
 
   // Fetch neighborhoods effect
   useEffect(() => {
@@ -312,8 +366,17 @@ function App() {
     }
   }, [location.city, location.neighborhood, location.country, category, fetchAPI, fetchQuickGuide, fetchNeighborhoods, fetchWeatherData]);
 
-  // Memoized suggestion handler
+  // Memoized suggestion handler with toggle behavior
   const handleSuggestion = useCallback(async (id) => {
+    // Toggle: deselect if already selected
+    if (selectedSuggestion === id) {
+      setCategory('');
+      setSelectedSuggestion('');
+      // trigger a broad search with no specific category
+      if (location.city) await handleSearch('');
+      return;
+    }
+
     const label = SUGGESTION_MAP[id] || id; // human label
     setCategory(id); // keep internal id
     setSelectedSuggestion(id);
@@ -321,7 +384,7 @@ function App() {
     if (location.city) {
       await handleSearch(label); // pass label so backend gets "Hidden gems"
     }
-  }, [location.city, handleSearch]);
+  }, [location.city, handleSearch, selectedSuggestion]);
 
   // Memoized generate function
   const generateQuickGuide = useCallback(async () => {
@@ -368,7 +431,7 @@ function App() {
       </div>
 
       <div className="app-container">
-        <LocationSelector onLocationChange={setLocation} />
+        <LocationSelector onLocationChange={setLocation} initialLocation={location} />
 
         {location.city && location.neighborhood && generating && (
           <div style={{ margin: '8px 0 12px 0', color: '#3b556f' }}>
@@ -376,33 +439,35 @@ function App() {
           </div>
         )}
 
-        <SuggestionChips onSelect={handleSuggestion} city={location.city} />
+        <SuggestionChips onSelect={handleSuggestion} city={location.city} selected={selectedSuggestion} />
         
-        <button 
-          disabled={!location.city} 
-          onClick={() => setMarcoOpen(true)} 
-          style={{ 
-            marginTop: 16,
-            padding: '12px 24px',
-            background: '#007bff', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: 4, 
-            cursor: 'pointer',
-            fontSize: '16px',
-            fontWeight: 'bold'
-          }}
-        >
-          🗺️ Explore with Marco
-        </button>
+
+        <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+          <button
+            disabled={!location.city}
+            onClick={() => setMarcoOpen(true)}
+            style={{
+              padding: '12px 24px',
+              background: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: 4,
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: 'bold'
+            }}
+          >
+            🗺️ Explore with Marco
+          </button>
+        </div>
 
         {marcoOpen && (
-          <MarcoChat 
-            city={location.city} 
-            neighborhood={location.neighborhood} 
-            venues={results?.venues?.slice(0, 6) || []} 
+          <MarcoChat
+            city={location.city}
+            neighborhood={location.neighborhood}
+            venues={results?.venues?.slice(0, 6) || []}
             category={SUGGESTION_MAP[selectedSuggestion] || (typeof category === 'string' ? category : '')}
-            initialInput={SUGGESTION_MAP[selectedSuggestion] || ''} // Pass the selected category
+            initialInput={SUGGESTION_MAP[selectedSuggestion] || ''}
             wikivoyage={results?.wikivoyage}
             onClose={() => setMarcoOpen(false)}
           />

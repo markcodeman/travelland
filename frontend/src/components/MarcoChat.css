@@ -19,8 +19,8 @@
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   width: 100%;
-  max-width: 500px;
-  max-height: 80vh;
+  max-width: 900px;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -83,6 +83,19 @@
   border-bottom-left-radius: 2px;
 }
 
+.marco-msg.assistant.venue-message {
+  max-width: none;
+  width: 100%;
+  padding: 16px 20px;
+}
+
+.venues-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
 .loading-dots {
   display: inline-block;
   width: 20px;
@@ -140,6 +153,123 @@
 
 .marco-input button:hover:not(:disabled) {
   background-color: #357ABD;
+}
+
+/* Itinerary Popover Styles */
+.itinerary-popover {
+  position: relative;
+}
+
+.itinerary-button {
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.itinerary-button:hover {
+  background: #e0e0e0;
+}
+
+.itinerary-panel {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 16px;
+  z-index: 10;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.panel-header button {
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.panel-header button:hover {
+  background: #cc0000;
+}
+
+.day-group {
+  margin-bottom: 12px;
+}
+
+.day-group h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.day-places {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.place-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: #f9f9f9;
+  border-radius: 6px;
+}
+
+.place-item span {
+  font-size: 16px;
+}
+
+.place-item div {
+  flex: 1;
+}
+
+.place-item strong {
+  display: block;
+  font-size: 14px;
+}
+
+.place-item small {
+  color: #666;
+  font-size: 12px;
+}
+
+.place-item button {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px;
+}
+
+.place-item button:hover {
+  color: #ff4d4d;
 }
 
 /* Responsive design */
