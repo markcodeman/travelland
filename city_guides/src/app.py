@@ -385,14 +385,11 @@ async def _persist_quick_guide(out_obj, city_name, neighborhood_name, file_path)
                 out_obj['quick_guide'] = SynthesisEnhancer.generate_neighborhood_paragraph(neighborhood_name, city_name)
                 out_obj['source'] = 'synthesized'
                 out_obj['source_url'] = None
-            except Exception:
-                out_obj['quick_guide'] = f"{neighborhood_name} is a neighborhood in {city_name}."
-                out_obj['source'] = 'data-first'
-
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(out_obj, f, ensure_ascii=False, indent=2)
-
-        # Also persist sanitized quick_guide into Redis (best-effort)
+                        out_obj['confidence'] = 'low'
+                    except Exception:
+                        out_obj['quick_guide'] = f"{neighborhood_name} is a neighborhood in {city_name}."
+                        out_obj['source'] = 'data-first'
+                        out_obj['confidence'] = 'low'
         try:
             app.logger.debug('redis_client value at cache write: %s', str(redis_client)[:200])
             if redis_client:
@@ -442,14 +439,29 @@ async def get_weather_async(lat, lon):
         return None
 
 
-@app.route("/", methods=["GET"])
-async def index():
-    return await app.send_static_file("index.html")
+def _is_relevant_wikimedia_image(wik_img: dict, city_name: str, neighborhood_name: str) -> bool:
+    """Heuristic to decide if a Wikimedia banner image is relevant to the place (avoid portraits, performers, trophies).
+    Module-level helper so it can be used from tests and other modules."""
+    if not wik_img:
+        return False
+    page_title = (wik_img.get('page_title') or '')
+    remote = (wik_img.get('remote_url') or wik_img.get('url') or '')
+    lower_title = page_title.lower()
+    lower_remote = remote.lower()
+    bad_terms = ['trophy', 'portrait', 'headshot', 'award', 'cup', 'ceremony', 'medal', 'singer', 'performing', 'performer', 'concert', 'festival', 'band', 'photo', 'photograph', 'portrait']
+    good_terms = ['skyline', 'panorama', 'view', 'street', 'market', 'plaza', 'park', 'bridge', 'neighborhood', 'colonia', 'architecture', 'building']
+    # Detect obvious person/performer pages by title patterns or keywords
+    is_bad = any(b in lower_title for b in bad_terms) or any(b in lower_remote for b in bad_terms)
+    is_performer_name = False
+    # If page title contains two capitalized words (likely a person's name) and doesn't mention the city, treat as performer-like
+    if page_title and sum(1 for w in page_title.split() if w and w[0].isupper()) >= 2 and (city_name.lower() not in lower_title):
+        is_performer_name = True
+    is_good = any(g in lower_title for g in good_terms) or any(g in lower_remote for g in good_terms) or (city_name.lower() in lower_title)
+    if (is_bad or is_performer_name) and not is_good:
+        return False
+    return True
 
 
-@app.route("/<path:path>", methods=["GET"])
-async def catch_all(path):
-    # Serve React app for client-side routing
     if path.startswith("api/") or path.startswith("static/"):
         # Let Quart handle API and static routes normally
         from quart import abort
@@ -1400,27 +1412,36 @@ async def generate_quick_guide():
         from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
         if looks_like_ddgs_disambiguation_text(synthesized or '') or 'missing:' in (synthesized or '').lower():
             app.logger.info('Rejecting synthesized quick_guide for %s/%s as disambiguation/promotional content; using generic fallback', city, neighborhood)
-            synthesized = f"{neighborhood} is a neighborhood in {city}. It's known locally for its character and points of interest — try searching for food, parks, or nightlife to discover highlights."
+            synthesized = f"{neighborhood} is a neighborhood in {city}."
             source = 'data-first'
     except Exception:
         app.logger.exception('Failed to validate synthesized quick_guide')
 
-    out = {'quick_guide': synthesized, 'source': source or 'data-first', 'cached': False, 'generated_at': time.time(), 'source_url': source_url} 
+    # Determine confidence level for the returned quick guide
+    # - high: sourced from Wikipedia
+    # - medium: DDGS-derived or synthesized with DDGS evidence
+    # - low: synthesized with no supporting web/wiki evidence (fall back to minimal factual sentence)
+    confidence = 'low'
+    try:
+        if source == 'wikipedia':
+            confidence = 'high'
+        elif source == 'ddgs':
+            confidence = 'medium'
+        elif source == 'synthesized':
+            if isinstance(ddgs_results, list) and len(ddgs_results) > 0:
+                confidence = 'medium'
+            else:
+                confidence = 'low'
+    except Exception:
+        confidence = 'low'
 
-    def _is_relevant_wikimedia_image(wik_img: dict, city_name: str, neighborhood_name: str) -> bool:
-        """Heuristic to decide if a Wikimedia banner image is relevant to the place (avoid portraits/trophies).
-        Returns True if image should be used."""
-        if not wik_img:
-            return False
-        page_title = (wik_img.get('page_title') or '')
-        remote = (wik_img.get('remote_url') or wik_img.get('url') or '')
-        lower_title = page_title.lower()
-        lower_remote = remote.lower()
-        bad_terms = ['trophy', 'portrait', 'headshot', 'award', 'cup', 'ceremony', 'medal']
-        good_terms = ['skyline', 'panorama', 'view', 'street', 'market', 'plaza', 'park', 'bridge', 'neighborhood', 'colonia']
-        is_bad = any(b in lower_title for b in bad_terms) or any(b in lower_remote for b in bad_terms)
-        is_good = any(g in lower_title for g in good_terms) or any(g in lower_remote for g in good_terms) or (city_name.lower() in lower_title)
-        return not (is_bad and not is_good)
+    # If confidence is low, return a minimal factual sentence to avoid generic fluff
+    if confidence == 'low':
+        synthesized = f"{neighborhood} is a neighborhood in {city}."
+        source = source or 'data-first'
+
+    out = {'quick_guide': synthesized, 'source': source or 'data-first', 'confidence': confidence, 'cached': False, 'generated_at': time.time(), 'source_url': source_url} 
+
 
     # Try to enrich quick guide with Mapillary thumbnails (if available)
     mapillary_images = []
