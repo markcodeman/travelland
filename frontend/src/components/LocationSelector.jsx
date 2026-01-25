@@ -45,163 +45,195 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
     neighborhood.name.toLowerCase().includes(neighborhoodInput.toLowerCase())
   );
 
-  // Fetch countries on mount
-  useEffect(() => {
-    const fetchCountries = async () => {
-      setLoading(prev => ({ ...prev, countries: true }));
-      try {
-        const response = await fetch(`${API_BASE}/api/locations/countries`);
-        const data = await response.json();
-        console.log('LocationSelector render - selectedCity:', selectedCity, 'neighborhoods length:', neighborhoods.length);
-        setCountries(data);
-        // Use initial location if provided, otherwise default to US for testing
-        if (initialLocation.country) {
-          const initialCountry = data.find(c => c.code === initialLocation.country || c.name === initialLocation.countryName);
-          if (initialCountry) {
-            setSelectedCountry(initialCountry.code);
-            setCountryInput(initialCountry.name);
-          }
-        } else {
-          const usCountry = data.find(c => c.code === 'US');
-          if (usCountry) {
-            setSelectedCountry('US');
-            setCountryInput(usCountry.name);
-          }
+  // Extracted fetch helpers so refresh buttons can call them directly
+  const fetchCountries = async () => {
+    setLoading(prev => ({ ...prev, countries: true }));
+    try {
+      const response = await fetch(`${API_BASE}/api/locations/countries`);
+      const data = await response.json();
+      setCountries(data);
+      // Use initial location if provided, otherwise default to US for testing
+      if (initialLocation.country) {
+        const initialCountry = data.find(c => c.code === initialLocation.country || c.name === initialLocation.countryName);
+        if (initialCountry) {
+          setSelectedCountry(initialCountry.code);
+          setCountryInput(initialCountry.name);
         }
-      } catch (error) {
-        console.error('Failed to fetch countries:', error);
-      } finally {
-        setLoading(prev => ({ ...prev, countries: false }));
+      } else {
+        const usCountry = data.find(c => c.code === 'US');
+        if (usCountry) {
+          setSelectedCountry('US');
+          setCountryInput(usCountry.name);
+        }
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch countries:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, countries: false }));
+    }
+  };
 
-    fetchCountries();
-  }, []);
+  const refreshCountries = async () => {
+    // Clear dependent selections so user can pick a new country
+    setSelectedState('');
+    setStateInput('');
+    setSelectedCity('');
+    setCityInput('');
+    setSelectedNeighborhood('');
+    setNeighborhoodInput('');
+    await fetchCountries();
+    setShowCountryDropdown(true);
+  };
 
-  // Fetch states when country changes
-  useEffect(() => {
-    if (!selectedCountry) {
+  const fetchStates = async (countryCode) => {
+    if (!countryCode) {
       setStates([]);
       setSelectedState('');
       return;
     }
-
-    const fetchStates = async () => {
-      setLoading(prev => ({ ...prev, states: true }));
-      try {
-        const response = await fetch(`${API_BASE}/api/locations/states?countryCode=${selectedCountry}`);
-        const data = await response.json();
-        setStates(data);
-        // Prefill with CA for testing if US is selected, or Jalisco for Mexico
-        if (selectedCountry === 'US') {
-          const caState = data.find(s => s.code === 'CA');
-          if (caState) {
-            setSelectedState('CA');
-            setStateInput(caState.name);
-          }
-        } else if (selectedCountry === 'MX') {
-          const jaliscoState = data.find(s => s.name.toLowerCase().includes('jalisco'));
-          if (jaliscoState) {
-            setSelectedState(jaliscoState.code);
-            setStateInput(jaliscoState.name);
-          }
+    setLoading(prev => ({ ...prev, states: true }));
+    try {
+      const response = await fetch(`${API_BASE}/api/locations/states?countryCode=${countryCode}`);
+      const data = await response.json();
+      setStates(data);
+      // Prefill with CA for testing if US is selected, or Jalisco for Mexico
+      if (countryCode === 'US') {
+        const caState = data.find(s => s.code === 'CA');
+        if (caState) {
+          setSelectedState('CA');
+          setStateInput(caState.name);
         }
-      } catch (error) {
-        console.error('Failed to fetch states:', error);
-      } finally {
-        setLoading(prev => ({ ...prev, states: false }));
+      } else if (countryCode === 'MX') {
+        const jaliscoState = data.find(s => s.name.toLowerCase().includes('jalisco'));
+        if (jaliscoState) {
+          setSelectedState(jaliscoState.code);
+          setStateInput(jaliscoState.name);
+        }
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch states:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, states: false }));
+    }
+  };
 
-    fetchStates();
-  }, [selectedCountry]);
+  const refreshStates = async () => {
+    // Clear dependent selections
+    setSelectedCity('');
+    setCityInput('');
+    setSelectedNeighborhood('');
+    setNeighborhoodInput('');
+    await fetchStates(selectedCountry);
+    setShowStateDropdown(true);
+  };
 
-  // Fetch cities when state changes
-  useEffect(() => {
-    if (!selectedCountry || !selectedState) {
+  const fetchCities = async (countryCode, stateCode) => {
+    if (!countryCode || !stateCode) {
       setCities([]);
       setSelectedCity('');
       return;
     }
-
-    const fetchCities = async () => {
-      setLoading(prev => ({ ...prev, cities: true }));
-      try {
-        const response = await fetch(`${API_BASE}/api/locations/cities?countryCode=${selectedCountry}&stateCode=${selectedState}`);
-        const data = await response.json();
-        setCities(data);
-        // Prefill with San Francisco for testing if CA is selected
-        if (selectedState === 'CA') {
-          const sfCity = data.find(c => c.name.toLowerCase() === 'san francisco');
-          if (sfCity) {
-            setSelectedCity(sfCity.name);
-            setCityInput(sfCity.name);
-          }
+    setLoading(prev => ({ ...prev, cities: true }));
+    try {
+      const response = await fetch(`${API_BASE}/api/locations/cities?countryCode=${countryCode}&stateCode=${stateCode}`);
+      const data = await response.json();
+      setCities(data);
+      // Prefill with San Francisco for testing if CA is selected
+      if (stateCode === 'CA') {
+        const sfCity = data.find(c => c.name.toLowerCase() === 'san francisco');
+        if (sfCity) {
+          setSelectedCity(sfCity.name);
+          setCityInput(sfCity.name);
         }
-      } catch (error) {
-        console.error('Failed to fetch cities:', error);
-      } finally {
-        setLoading(prev => ({ ...prev, cities: false }));
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch cities:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, cities: false }));
+    }
+  };
 
-    fetchCities();
-  }, [selectedCountry, selectedState]);
+  const refreshCities = async () => {
+    setSelectedNeighborhood('');
+    setNeighborhoodInput('');
+    await fetchCities(selectedCountry, selectedState);
+    setShowCityDropdown(true);
+  };
 
-  // Fetch neighborhoods when city changes
-  useEffect(() => {
-    if (!selectedCountry || !selectedCity) {
+  const fetchNeighborhoodsForCity = async (countryCode, cityName) => {
+    if (!countryCode || !cityName) {
       setNeighborhoods([]);
       setSelectedNeighborhood('');
       return;
     }
 
-    const fetchNeighborhoods = async () => {
-      setLoading(prev => ({ ...prev, neighborhoods: true }));
-      try {
-        // Special robust logic for Tlaquepaque
-        if (selectedCity && selectedCity.toLowerCase() === 'tlaquepaque') {
-          const lat = 20.58775;
-          const lon = -103.30449;
-          let cityData = [];
-          let coordData = [];
-          try {
-            const resp = await fetch(`/neighborhoods?city=${encodeURIComponent(selectedCity)}&lang=en`);
-            const data = await resp.json();
-            if (data?.neighborhoods?.length > 0) {
-              cityData = data.neighborhoods.map(n => ({ id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id })).filter(n => n.name);
-            }
-          } catch {}
-          try {
-            const resp = await fetch(`/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
-            const data = await resp.json();
-            if (data?.neighborhoods?.length > 0) {
-              coordData = data.neighborhoods.map(n => ({ id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id })).filter(n => n.name);
-            }
-          } catch {}
-          // Merge and dedupe by name
-          const merged = [...cityData, ...coordData];
-          const seen = new Set();
-          const deduped = merged.filter(n => {
-            if (seen.has(n.name)) return false;
-            seen.add(n.name);
-            return true;
-          });
-          setNeighborhoods(deduped);
-        } else {
-          // Default: use legacy endpoint
-          const response = await fetch(`${API_BASE}/api/locations/neighborhoods?countryCode=${selectedCountry}&cityName=${encodeURIComponent(selectedCity)}`);
-          const data = await response.json();
-          setNeighborhoods(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch neighborhoods:', error);
-      } finally {
-        setLoading(prev => ({ ...prev, neighborhoods: false }));
+    setLoading(prev => ({ ...prev, neighborhoods: true }));
+    try {
+      // Special robust logic for Tlaquepaque
+      if (cityName && cityName.toLowerCase() === 'tlaquepaque') {
+        const lat = 20.58775;
+        const lon = -103.30449;
+        let cityData = [];
+        let coordData = [];
+        try {
+          const resp = await fetch(`/neighborhoods?city=${encodeURIComponent(cityName)}&lang=en`);
+          const data = await resp.json();
+          if (data?.neighborhoods?.length > 0) {
+            cityData = data.neighborhoods.map(n => ({ id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id })).filter(n => n.name);
+          }
+        } catch {}
+        try {
+          const resp = await fetch(`/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
+          const data = await resp.json();
+          if (data?.neighborhoods?.length > 0) {
+            coordData = data.neighborhoods.map(n => ({ id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id })).filter(n => n.name);
+          }
+        } catch {}
+        // Merge and dedupe by name
+        const merged = [...cityData, ...coordData];
+        const seen = new Set();
+        const deduped = merged.filter(n => {
+          if (seen.has(n.name)) return false;
+          seen.add(n.name);
+          return true;
+        });
+        setNeighborhoods(deduped);
+      } else {
+        // Default: use legacy endpoint
+        const response = await fetch(`${API_BASE}/api/locations/neighborhoods?countryCode=${countryCode}&cityName=${encodeURIComponent(cityName)}`);
+        const data = await response.json();
+        setNeighborhoods(data);
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch neighborhoods:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, neighborhoods: false }));
+    }
+  };
 
-    fetchNeighborhoods();
+  const refreshNeighborhoods = async () => {
+    await fetchNeighborhoodsForCity(selectedCountry, selectedCity);
+    setShowNeighborhoodDropdown(true);
+  };
+
+  // Fetch countries on mount
+  useEffect(() => {
+    fetchCountries();
+  }, []);
+
+  // Fetch states when country changes
+  useEffect(() => {
+    fetchStates(selectedCountry);
+  }, [selectedCountry]);
+
+  // Fetch cities when state changes
+  useEffect(() => {
+    fetchCities(selectedCountry, selectedState);
+  }, [selectedCountry, selectedState]);
+
+  // Fetch neighborhoods when city changes
+  useEffect(() => {
+    fetchNeighborhoodsForCity(selectedCountry, selectedCity);
   }, [selectedCountry, selectedCity]);
 
   // Notify parent of location changes
@@ -339,7 +371,7 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
   return (
     <div className="location-selector" style={{ marginBottom: '16px' }}>
       <div style={{ marginBottom: '8px', position: 'relative' }}>
-        <label style={labelStyle}>Country:</label>
+        <label style={labelStyle}>Country: <button type="button" aria-label="Refresh countries" title="Refresh countries" onClick={refreshCountries} style={{ marginLeft: 8, padding: '2px 6px', fontSize: 12, borderRadius: 4, cursor: 'pointer' }}>↻</button></label>
         <input
           type="text"
           value={countryInput}
@@ -383,7 +415,7 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
 
       {selectedCountry && (
         <div style={{ marginBottom: '8px', position: 'relative' }}>
-          <label style={labelStyle}>State/Province:</label>
+          <label style={labelStyle}>State/Province: <button type="button" aria-label="Refresh states" title="Refresh states" onClick={refreshStates} style={{ marginLeft: 8, padding: '2px 6px', fontSize: 12, borderRadius: 4, cursor: 'pointer' }}>↻</button></label>
           <input
             type="text"
             value={stateInput}
@@ -428,7 +460,7 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
 
       {selectedState && (
         <div style={{ marginBottom: '8px', position: 'relative' }}>
-          <label style={labelStyle}>City:</label>
+          <label style={labelStyle}>City: <button type="button" aria-label="Refresh cities" title="Refresh cities" onClick={refreshCities} style={{ marginLeft: 8, padding: '2px 6px', fontSize: 12, borderRadius: 4, cursor: 'pointer' }}>↻</button></label>
           <input
             type="text"
             value={cityInput}
@@ -473,7 +505,7 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
 
       {selectedCity && (
         <div style={{ marginBottom: '8px', position: 'relative' }}>
-          <label style={labelStyle}>Neighborhood (optional):</label>
+          <label style={labelStyle}>Neighborhood (optional): <button type="button" aria-label="Refresh neighborhoods" title="Refresh neighborhoods" onClick={refreshNeighborhoods} style={{ marginLeft: 8, padding: '2px 6px', fontSize: 12, borderRadius: 4, cursor: 'pointer' }}>↻</button></label>
           <input
             type="text"
             value={neighborhoodInput}
