@@ -4,7 +4,7 @@ services:
     env: python
     region: oregon
     plan: free
-    buildCommand: pip install -r requirements.txt && cd frontend && npm ci && npm run build && rm -rf city_guides/static/* || true && cp -R dist/* city_guides/static/ && cp frontend/public/marcos.png city_guides/static/ || true
+    buildCommand: pip install -r city_guides/requirements.txt && cd frontend && npm ci && npm run build && rm -rf city_guides/static/* || true && cp -R dist/* city_guides/static/ && cp frontend/public/marcos.png city_guides/static/ || true
     startCommand: |
       # run Hypercorn and bind to the PORT Render provides
       bash -lc "cd /opt/render/project/src || true; export PYTHONPATH=/opt/render/project/src:$PYTHONPATH; hypercorn city_guides.src.app:app --bind 0.0.0.0:$PORT"
