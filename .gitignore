@@ -70,6 +70,17 @@ city_guides/.venv/
 city_guides/.env
 city_guides/server.pid
 city_guides/.cache/
+
+# Generated data and build artifacts — ignore to keep working tree clean
+# Neighborhood quick guides (local runtime caches)
+city_guides/src/data/neighborhood_quick_guides/
+city_guides/src/data/neighborhood_quick_guides/*
+
+# Frontend build outputs and developer artifacts
+frontend/.vite/
+frontend/docs/
+frontend/tools/
+
 city_guides/static/img.bak*/
 city_guides/static/js.bak*/
 city_guides/static/webfonts.bak*/
