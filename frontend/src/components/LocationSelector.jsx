@@ -34,8 +34,22 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
   // Geolocation helper state
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState(null);
+  // Whether to show an inline consent panel before prompting browser geolocation permission
+  const [showGeoConsent, setShowGeoConsent] = useState(false);
 
   const handleUseMyLocation = () => {
+    // Show the reassurance + consent panel; only request permission after explicit confirmation
+    setGeoError(null);
+    setShowGeoConsent(true);
+  };
+
+  const cancelUseMyLocation = () => {
+    setShowGeoConsent(false);
+    setGeoError(null);
+  };
+
+  const confirmUseMyLocation = () => {
+    setShowGeoConsent(false);
     if (!navigator.geolocation) {
       setGeoError('Geolocation not supported in this browser.');
       return;
@@ -46,18 +60,94 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
       try {
-        const resp = await fetch(`${API_BASE}/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
-        const data = await resp.json();
-        if (data?.neighborhoods?.length > 0) {
+        // Reverse lookup to get structured location info
+        const r = await fetch(`${API_BASE}/reverse_lookup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat, lon })
+        });
+        const data = await r.json().catch(() => null);
+        if (!r.ok) {
+          const msg = (data && (data.message || data.error)) ? (data.message || data.error) : 'Reverse lookup failed';
+          console.error('reverse_lookup error:', data);
+          setGeoError(msg);
+          setGeoLoading(false);
+          return;
+        }
+
+        // Country
+        if (data?.countryCode) {
+          setSelectedCountry(data.countryCode);
+          setCountryInput(data.countryName || data.countryCode);
+        } else if (!data?.cityName && !data?.neighborhoods?.length) {
+          // Nothing helpful returned
+          setGeoError('Reverse lookup returned no useful location info. Try again or enter your city manually.');
+        } else {
+          setGeoError(null);
+        }
+
+        // States: fetch list and try to match by name
+        let matchedState = null;
+        if (data?.countryCode && data?.stateName) {
+          try {
+            const sr = await fetch(`${API_BASE}/api/locations/states?countryCode=${data.countryCode}`);
+            if (sr.ok) {
+              const statesList = await sr.json();
+              setStates(statesList);
+              matchedState = statesList.find(s => s.name && s.name.toLowerCase() === data.stateName.toLowerCase());
+              if (matchedState) {
+                setSelectedState(matchedState.code);
+                setStateInput(matchedState.name);
+              } else {
+                setStateInput(data.stateName);
+              }
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        // Cities: try to fetch cities for the matched state if available
+        if (data?.cityName) {
+          try {
+            const stateCode = matchedState?.code || selectedState;
+            if (stateCode) {
+              const cr = await fetch(`${API_BASE}/api/locations/cities?countryCode=${data.countryCode}&stateCode=${stateCode}`);
+              if (cr.ok) {
+                const citiesList = await cr.json();
+                setCities(citiesList);
+                const matchedCity = citiesList.find(c => c.name && c.name.toLowerCase() === data.cityName.toLowerCase());
+                if (matchedCity) {
+                  setSelectedCity(matchedCity.name);
+                  setCityInput(matchedCity.name);
+                } else {
+                  setSelectedCity(data.cityName);
+                  setCityInput(data.cityName);
+                }
+              }
+            } else {
+              // No state code available, just set the city string
+              setSelectedCity(data.cityName);
+              setCityInput(data.cityName);
+            }
+          } catch (e) {
+            // ignore
+            setSelectedCity(data.cityName);
+            setCityInput(data.cityName);
+          }
+        }
+
+        // Neighborhoods: populate and auto-select first if available
+        if (Array.isArray(data?.neighborhoods) && data.neighborhoods.length > 0) {
           const mapped = data.neighborhoods.map(n => ({ id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id }));
           setNeighborhoods(mapped);
-          // Clear selected neighborhood to force user's selection from nearby list
-          setSelectedNeighborhood('');
-        } else {
-          setGeoError('No nearby neighborhoods found for your location.');
+          // Auto-select top candidate
+          setSelectedNeighborhood(mapped[0].name);
+          setNeighborhoodInput(mapped[0].name);
         }
+
       } catch (err) {
-        setGeoError('Failed to fetch neighborhoods for your location.');
+        setGeoError('Failed to reverse lookup your location.');
       } finally {
         setGeoLoading(false);
       }
@@ -85,7 +175,7 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
   const fetchCountries = async () => {
     setLoading(prev => ({ ...prev, countries: true }));
     try {
-      const response = await fetch(`${API_BASE}/api/locations/countries`);
+      const response = await fetch(`${API_BASE}/api/countries`);
       const data = await response.json();
       setCountries(data);
       // Use initial location if provided, otherwise default to US for testing
@@ -96,11 +186,12 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
           setCountryInput(initialCountry.name);
         }
       } else {
-        const usCountry = data.find(c => c.code === 'US');
-        if (usCountry) {
-          setSelectedCountry('US');
-          setCountryInput(usCountry.name);
-        }
+        // REMOVED: Don't auto-fill US, let users choose
+        // const usCountry = data.find(c => c.code === 'US');
+        // if (usCountry) {
+        //   setSelectedCountry('US');
+        //   setCountryInput(usCountry.name);
+        // }
       }
     } catch (error) {
       console.error('Failed to fetch countries:', error);
@@ -133,21 +224,30 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
     try {
       const response = await fetch(`${API_BASE}/api/locations/states?countryCode=${countryCode}`);
       const data = await response.json();
+      
+      // Check if data is an array, not an error object
+      if (!Array.isArray(data)) {
+        console.error('States API returned non-array data:', data);
+        setStates([]);
+        return;
+      }
+      
       setStates(data);
       // Prefill with CA for testing if US is selected, or Jalisco for Mexico
-      if (countryCode === 'US') {
-        const caState = data.find(s => s.code === 'CA');
-        if (caState) {
-          setSelectedState('CA');
-          setStateInput(caState.name);
-        }
-      } else if (countryCode === 'MX') {
-        const jaliscoState = data.find(s => s.name.toLowerCase().includes('jalisco'));
-        if (jaliscoState) {
-          setSelectedState(jaliscoState.code);
-          setStateInput(jaliscoState.name);
-        }
-      }
+      // REMOVED: Let users choose their own state
+      // if (countryCode === 'US') {
+      //   const caState = data.find(s => s.code === 'CA');
+      //   if (caState) {
+      //     setSelectedState('CA');
+      //     setStateInput(caState.name);
+      //   }
+      // } else if (countryCode === 'MX') {
+      //   const jaliscoState = data.find(s => s.name.toLowerCase().includes('jalisco'));
+      //   if (jaliscoState) {
+      //     setSelectedState(jaliscoState.code);
+      //     setStateInput(jaliscoState.name);
+      //   }
+      // }
     } catch (error) {
       console.error('Failed to fetch states:', error);
     } finally {
@@ -179,13 +279,14 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
       const data = await response.json();
       setCities(data);
       // Prefill with San Francisco for testing if CA is selected
-      if (stateCode === 'CA') {
-        const sfCity = data.find(c => c.name.toLowerCase() === 'san francisco');
-        if (sfCity) {
-          setSelectedCity(sfCity.name);
-          setCityInput(sfCity.name);
-        }
-      }
+      // REMOVED: Let users choose their own city
+      // if (stateCode === 'CA') {
+      //   const sfCity = data.find(c => c.name.toLowerCase() === 'san francisco');
+      //   if (sfCity) {
+      //     setSelectedCity(sfCity.name);
+      //     setCityInput(sfCity.name);
+      //   }
+      // }
     } catch (error) {
       console.error('Failed to fetch cities:', error);
     } finally {
@@ -416,6 +517,20 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
 
   return (
     <div className="location-selector" style={{ marginBottom: '16px' }}>
+      <div style={{ marginBottom: 8, textAlign: 'right' }}>
+        <button type="button" aria-label="Use my location" title="Use my location" onClick={handleUseMyLocation} style={{ padding: '6px 10px', fontSize: 13, borderRadius: 6, cursor: 'pointer' }} disabled={geoLoading}>{geoLoading ? 'Locating…' : 'Use my location 📍'}</button>
+        {geoError && (<div style={{ color: '#9b2c2c', marginTop: 4, fontSize: 13 }}>{geoError}</div>)}
+        {showGeoConsent && (
+          <div style={{ marginTop: 6, fontSize: 12, color: '#6b7280', textAlign: 'right' }} role="dialog" aria-live="polite">
+            <div>Trust me — we only use your location to suggest nearby places and we don't store it. Your secret's safe with us. Opt out anytime. — Akim Meyer. What? Are you alive?</div>
+            <div style={{ marginTop: 6 }}>
+              <button type="button" onClick={confirmUseMyLocation} style={{ marginRight: 8, padding: '6px 10px', fontSize: 13, borderRadius: 6, cursor: 'pointer' }} disabled={geoLoading}>Yes, continue</button>
+              <button type="button" onClick={cancelUseMyLocation} style={{ padding: '6px 10px', fontSize: 13, borderRadius: 6, cursor: 'pointer' }} disabled={geoLoading}>No, thanks</button>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div style={{ marginBottom: '8px', position: 'relative' }}>
         <label style={labelStyle}>Country: <button type="button" aria-label="Refresh countries" title="Refresh countries" onClick={refreshCountries} style={{ marginLeft: 8, padding: '2px 6px', fontSize: 12, borderRadius: 4, cursor: 'pointer' }}>↻</button></label>
         <input
