@@ -21,7 +21,7 @@ import logging
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import modules
-from .routes import (
+from .persistence import (
     build_search_cache_key,
     ensure_bbox,
     format_venue,
@@ -83,6 +83,8 @@ DISABLE_PREWARM = True  # os.getenv("DISABLE_PREWARM", "false").lower() == "true
 # DDGS provider import is optional at module import time (tests may not have ddgs installed)
 try:
     from city_guides.providers.ddgs_provider import ddgs_search
+    # Re-enabled DDGS for better neighborhood content
+    app.logger.info('DDGS provider enabled for neighborhood search')
 except Exception:
     ddgs_search = None
     app.logger.debug('DDGS provider not available at module import time; ddgs_search set to None')
@@ -579,7 +581,7 @@ async def api_cities():
                 "adminCode1": state_code,
                 "featureClass": "P",  # Populated places
                 "featureCode": "PPL",  # Populated place
-                "maxRows": 50,
+                "maxRows": 500,
                 "orderby": "population",
                 "username": geonames_user
             }
@@ -644,8 +646,67 @@ async def api_neighborhoods():
         app.logger.exception('Failed to fetch neighborhoods')
         return jsonify([])
 
+@app.route('/geocode', methods=['POST'])
+async def geocode():
+    """Geocode a city/neighborhood to get coordinates"""
+    payload = await request.get_json(silent=True) or {}
+    city = payload.get('city', '').strip()
+    neighborhood = payload.get('neighborhood', '').strip()
+    
+    if not city:
+        return jsonify({'error': 'city required'}), 400
+    
+    try:
+        # Try to geocode city + neighborhood first, then city alone
+        query = f"{neighborhood}, {city}" if neighborhood else city
+        result = await geocode_city(query)
+        
+        if not result:
+            return jsonify({'error': 'geocode_failed'}), 400
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.exception('Geocoding failed')
+        return jsonify({'error': 'geocode_failed'}), 500
+
+@app.route("/search", methods=["POST"])
+async def search():
+    """Search for venues and places in a city"""
+    print(f"[SEARCH ROUTE] Search request received")
+    payload = await request.get_json(silent=True) or {}
+    print(f"[SEARCH ROUTE] Payload: {payload}")
+    
+    # Lightweight heuristic to decide whether to cache this search (focuses on food/top queries)
+    city = (payload.get("query") or "").strip()
+    q = (payload.get("category") or "").strip().lower()
+    neighborhood = payload.get("neighborhood")
+    should_cache = False  # disabled for testing
+    
+    if not city:
+        return jsonify({"error": "city required"}), 400
+    
+    try:
+        # Use the search implementation from routes
+        from .routes import _search_impl
+        result = await asyncio.to_thread(_search_impl, payload)
+        
+        if should_cache and redis_client:
+            cache_key = build_search_cache_key(city, q, neighborhood)
+            try:
+                await redis_client.set(cache_key, json.dumps(result), ex=PREWARM_TTL)
+                app.logger.info("Cached search result for %s/%s", city, q)
+            except Exception:
+                app.logger.exception("Failed to cache search result")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.exception('Search failed')
+        return jsonify({"error": "search_failed", "details": str(e)}), 500
+
 @app.route('/generate_quick_guide', methods=['POST'])
-async def generate_quick_guide(skip_cache=False):
+async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
     """Generate a neighborhood quick_guide using Wikipedia and local data-first heuristics.
     POST payload: { city: "City Name", neighborhood: "Neighborhood Name" }
     Returns: { quick_guide: str, source: 'cache'|'wikipedia'|'data-first', cached: bool, source_url?: str }
@@ -668,96 +729,89 @@ async def generate_quick_guide(skip_cache=False):
         try:
             with open(cache_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            # Add quality check before returning cache
-            if 'quick_guide' in data and (re.match(r'^.+ is a neighborhood in .+\.$', data['quick_guide']) or data.get('confidence', 'low') == 'low'):
-                cache_file.unlink(missing_ok=True)
-                # Skip cache on retry to avoid infinite loop
-                return await generate_quick_guide(skip_cache=True)
             resp = {
                 'quick_guide': data.get('quick_guide'),
                 'source': data.get('source', 'cache'),
                 'cached': True,
                 'source_url': data.get('source_url'),
             }
-            if data.get('mapillary_images'):
-                resp['mapillary_images'] = data.get('mapillary_images')
             if data.get('generated_at'):
                 resp['generated_at'] = data.get('generated_at')
 
-            # EARLY: If raw cached content looks like DDGS disambiguation/promotional UI, replace before neutralization
-            try:
-                from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
-                raw_q = data.get('quick_guide') or ''
-                src = data.get('source') or ''
-                if src in ('ddgs', 'synthesized') and (looks_like_ddgs_disambiguation_text(raw_q) or 'missing:' in raw_q.lower()):
-                    app.logger.info('Replacing raw cached %s quick_guide for %s/%s due to disambiguation/promotional content (early replacement)', src, city, neighborhood)
-                    try:
-                        from city_guides.src.synthesis_enhancer import SynthesisEnhancer
-                        new_para = SynthesisEnhancer.generate_neighborhood_paragraph(neighborhood, city)
-                        resp['quick_guide'] = new_para
-                        resp['source'] = 'synthesized'
-                        resp['source_url'] = None
+            # Skip cache quality check if disabled
+            if not disable_quality_check:
+                # EARLY: If raw cached content looks like DDGS disambiguation/promotional UI, replace before neutralization
+                try:
+                    from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
+                    raw_q = data.get('quick_guide') or ''
+                    src = data.get('source') or ''
+                    if src in ('ddgs', 'synthesized') and (looks_like_ddgs_disambiguation_text(raw_q) or 'missing:' in raw_q.lower()):
+                        app.logger.info('Replacing raw cached %s quick_guide for %s/%s due to disambiguation/promotional content (early replacement)', src, city, neighborhood)
                         try:
-                            with open(cache_file, 'w', encoding='utf-8') as f:
-                                json.dump({'quick_guide': resp['quick_guide'], 'source': resp['source'], 'generated_at': time.time(), 'source_url': None}, f, ensure_ascii=False, indent=2)
-                        except Exception:
-                            app.logger.exception('Failed to persist synthesized replacement for cached disambiguation (early)')
-                        return jsonify(resp)
-                    except Exception:
-                        app.logger.exception('Failed to synthesize replacement for cached disambiguation (early)')
-                        try:
-                            cache_file.unlink()
-                        except Exception:
-                            pass
-            except Exception:
-                app.logger.exception('Failed to validate raw cached quick_guide')
-
-            # Neutralize cached quick_guide tone before returning (remove first-person/promotional voice)
-            try:
-                from city_guides.src.synthesis_enhancer import SynthesisEnhancer
-                resp['quick_guide'] = SynthesisEnhancer.neutralize_tone(resp.get('quick_guide') or '', neighborhood=neighborhood, city=city, max_length=400)
-            except Exception:
-                app.logger.exception('Failed to neutralize cached quick_guide')
-
-            # If cached content is a simple 'X is a neighborhood in Y.' from data-first, try geo enrichment
-            try:
-                if resp.get('source') == 'data-first' and re.match(r'^.+ is a neighborhood in .+\.$', (resp.get('quick_guide') or '')):
-                    try:
-                        from city_guides.src.geo_enrichment import enrich_neighborhood, build_enriched_quick_guide
-                        enrichment = await enrich_neighborhood(city, neighborhood, session=aiohttp_session)
-                        if enrichment and (enrichment.get('text') or (enrichment.get('pois') and len(enrichment.get('pois'))>0)):
-                            resp['quick_guide'] = build_enriched_quick_guide(neighborhood, city, enrichment)
-                            resp['source'] = 'geo-enriched'
-                            resp['confidence'] = 'medium'
+                            from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+                            new_para = SynthesisEnhancer.generate_neighborhood_paragraph(neighborhood, city)
+                            resp['quick_guide'] = new_para
+                            resp['source'] = 'synthesized'
+                            resp['source_url'] = None
                             try:
                                 with open(cache_file, 'w', encoding='utf-8') as f:
-                                    json.dump({'quick_guide': resp['quick_guide'], 'source': resp['source'], 'generated_at': time.time(), 'source_url': None, 'confidence': resp['confidence']}, f, ensure_ascii=False, indent=2)
+                                    json.dump({'quick_guide': resp['quick_guide'], 'source': resp['source'], 'generated_at': time.time(), 'source_url': None}, f, ensure_ascii=False, indent=2)
                             except Exception:
-                                app.logger.exception('Failed to persist geo-enriched replacement for cached entry')
-                            return jsonify(resp)
-                    except Exception:
-                        app.logger.exception('Geo enrichment for cached entry failed')
-            except Exception:
-                app.logger.exception('Failed to attempt geo-enrichment on cached quick_guide')
+                                app.logger.exception('Failed to persist synthesized replacement for cached disambiguation (early)')
+                        except Exception:
+                            app.logger.exception('Failed to synthesize replacement for cached disambiguation (early)')
+                            try:
+                                cache_file.unlink()
+                            except Exception:
+                                pass
+                        return jsonify(resp)
+                except Exception:
+                    app.logger.exception('Failed to validate raw cached quick_guide')
 
-            # Compute confidence for cached snippet (backfill if missing)
-            try:
-                cached_src = data.get('source') or ''
-                cached_conf = data.get('confidence')
-                if not cached_conf:
-                    if cached_src == 'wikipedia':
-                        resp['confidence'] = 'high'
-                    elif cached_src == 'ddgs':
-                        resp['confidence'] = 'medium'
-                    elif cached_src == 'synthesized':
-                        # conservative: synthesized cached snippets without recorded evidence are low confidence
-                        resp['confidence'] = 'low'
-                    else:
-                        resp['confidence'] = 'low'
-                else:
-                    resp['confidence'] = cached_conf
-            except Exception:
-                resp['confidence'] = 'low' 
+                # Neutralize cached quick_guide tone before returning (remove first-person/promotional voice)
+                try:
+                    from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+                    resp['quick_guide'] = SynthesisEnhancer.neutralize_tone(resp.get('quick_guide') or '', neighborhood=neighborhood, city=city, max_length=400)
+                except Exception:
+                    app.logger.exception('Failed to neutralize cached quick_guide')
+
+                # If cached content is a simple 'X is a neighborhood in Y.' from data-first, try geo enrichment
+                try:
+                    if resp.get('source') == 'data-first' and re.match(r'^.+ is a neighborhood in .+\.$', (resp.get('quick_guide') or '')):
+                        try:
+                            from city_guides.src.geo_enrichment import enrich_neighborhood, build_enriched_quick_guide
+                            enrichment = await enrich_neighborhood(city, neighborhood, session=aiohttp_session)
+                            if enrichment and (enrichment.get('text') or (enrichment.get('pois') and len(enrichment.get('pois'))>0)):
+                                resp['quick_guide'] = build_enriched_quick_guide(neighborhood, city, enrichment)
+                                resp['source'] = 'geo-enriched'
+                                resp['confidence'] = 'medium'
+                                try:
+                                    with open(cache_file, 'w', encoding='utf-8') as f:
+                                        json.dump({'quick_guide': resp['quick_guide'], 'source': resp['source'], 'generated_at': time.time(), 'source_url': None, 'confidence': resp['confidence']}, f, ensure_ascii=False, indent=2)
+                                except Exception:
+                                    app.logger.exception('Failed to persist geo-enriched replacement for cached entry')
+                                return jsonify(resp)
+                        except Exception:
+                            app.logger.exception('Geo enrichment for cached entry failed')
+                except Exception:
+                    app.logger.exception('Failed to attempt geo-enrichment on cached quick_guide')
+
+                # Compute confidence for cached snippet (backfill if missing)
+                try:
+                    cached_src = data.get('source') or ''
+                    cached_conf = data.get('confidence')
+                    if not cached_conf:
+                        if cached_src == 'wikipedia':
+                            resp['confidence'] = 'high'
+                        elif cached_src == 'ddgs':
+                            resp['confidence'] = 'medium'
+                        elif cached_src == 'synthesized':
+                            # conservative: synthesized cached snippets without recorded evidence are low confidence
+                            resp['confidence'] = 'low'
+                        else:
+                            resp['confidence'] = 'low'
+                except Exception:
+                    resp['confidence'] = 'low' 
 
             # If cached content is a DDGS/synthesized hit that looks like a disambiguation or promotional snippet,
             # replace it immediately with a synthesized neutral paragraph and return that (avoid falling-through returns)
@@ -786,27 +840,7 @@ async def generate_quick_guide(skip_cache=False):
                     except Exception:
                         pass
                     # fall through to regeneration
-            # If cached snippet passed sanity checks, but is low confidence, replace with minimal factual fallback
-            if resp.get('confidence') == 'low' and src in ('synthesized', 'ddgs'):
-                app.logger.info('Replacing cached low-confidence quick_guide for %s/%s with minimal factual fallback', city, neighborhood)
-                try:
-                    minimal = f"{neighborhood} is a neighborhood in {city}."
-                    resp['quick_guide'] = minimal
-                    resp['source'] = 'data-first'
-                    resp['source_url'] = None
-                    resp['confidence'] = 'low'
-                    try:
-                        with open(cache_file, 'w', encoding='utf-8') as f:
-                            json.dump({'quick_guide': resp['quick_guide'], 'source': resp['source'], 'generated_at': time.time(), 'source_url': None, 'confidence': resp['confidence']}, f, ensure_ascii=False, indent=2)
-                    except Exception:
-                        app.logger.exception('Failed to persist minimal replacement for cached low-confidence quick_guide')
-                    return jsonify(resp)
-                except Exception:
-                    app.logger.exception('Failed to synthesize minimal fallback for cached low-confidence entry')
-                    try:
-                        cache_file.unlink()
-                    except Exception:
-                        pass
+            # Keep synthesized content even if low confidence - it's better than the basic fallback
             return jsonify(resp)
 
             # If the cached content is from Wikipedia, run a stricter relevance check
@@ -860,8 +894,8 @@ async def generate_quick_guide(skip_cache=False):
     except Exception as e:
         app.logger.exception("Failed to validate city/neighborhood combination")
 
-    # Try Wikipedia summary first using a relevance helper
-    wiki_title_candidates = [f"{neighborhood}, {city}", f"{neighborhood}"]
+    # SKIP Wikipedia for neighborhoods - go directly to synthesis
+    # Wikipedia is unreliable for neighborhood content and often returns formal/dated info
     wiki_summary = None
     wiki_url = None
 
@@ -914,9 +948,24 @@ async def generate_quick_guide(skip_cache=False):
         event_keywords = ['fire', 'wildfire', 'hurricane', 'earthquake', 'storm', 'flood', 'tornado', 'volcano', 'massacre', 'riot', 'disaster', 'accident', 'attack']
 
         # If page mentions the city or neighborhood explicitly, consider it relevant
-        if city.lower() in extract_text or city.lower() in title_text:
-            return True
-        if neighborhood.lower() in extract_text or neighborhood.lower() in title_text:
+        # But be more strict when city is a country name to avoid wrong matches
+        city_lower = city.lower()
+        neighborhood_lower = neighborhood.lower()
+        
+        # Check if city is a country name (common countries)
+        country_names = {'mexico', 'united states', 'canada', 'spain', 'france', 'germany', 'italy', 'uk', 'britain', 'australia', 'japan', 'china', 'india', 'brazil', 'argentina'}
+        is_country = city_lower in country_names
+        
+        if is_country:
+            # For country names, require both city AND neighborhood to be mentioned
+            if (city_lower in extract_text or city_lower in title_text) and (neighborhood_lower in extract_text or neighborhood_lower in title_text):
+                return True
+        else:
+            # For regular cities, either city or neighborhood mention is fine
+            if city_lower in extract_text or city_lower in title_text:
+                return True
+                
+        if neighborhood_lower in extract_text or neighborhood_lower in title_text:
             # Be careful: neighborhood may appear in the name of an event/article (e.g., "Las Conchas Fire").
             # If the page title combines neighborhood + an event keyword (e.g., "Las Conchas Fire"), reject it unless the page also mentions the city.
             if any(ev in title_text for ev in event_keywords):
@@ -934,36 +983,14 @@ async def generate_quick_guide(skip_cache=False):
     # Delegate DDGS/web snippet filtering to a dedicated module to keep imports light for tests
     from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text as _looks_like_ddgs_disambiguation_text
 
-    for title in wiki_title_candidates:
-        try:
-            safe_title = title.replace(' ', '_')
-            url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{safe_title}"
-            async with aiohttp_session.get(url, timeout=aiohttp.ClientTimeout(total=6)) as resp:  # type: ignore
-                if resp.status == 200:
-                    j = await resp.json()
-                    is_rel = _page_is_relevant(j)
-                    app.logger.debug("Wiki candidate '%s' returned title='%s' relevant=%s", title, (j.get('title') or '')[:200], is_rel)
-                    if not is_rel:
-                        app.logger.debug("Rejected wiki candidate '%s' as not relevant (title=%s)", title, (j.get('title') or ''))
-                        continue
-                    extract = j.get('extract') or j.get('description')
-                    if extract:
-                        wiki_summary = extract
-                        wiki_url = j.get('content_urls', {}).get('desktop', {}).get('page') or j.get('canonical') or url
-                        app.logger.info("Accepted wiki quick_guide from title '%s' for %s/%s", j.get('title'), city, neighborhood)
-                        break
-        except Exception:
-            continue
+    # SKIP Wikipedia fetching for neighborhoods
+    # Wikipedia is unreliable for neighborhood content and often returns formal/dated info
 
     synthesized = None
     source = None
     source_url = None
-    if wiki_summary:
-        synthesized = f"{wiki_summary}"
-        source = 'wikipedia'
-        source_url = wiki_url
 
-    # If Wikipedia didn't provide a good summary, prefer DDGS-derived synthesis when possible
+    # Go directly to DDGS-derived synthesis for neighborhoods
     if not synthesized:
         try:
             # Build more specific DDGS queries with geographic context
@@ -980,13 +1007,25 @@ async def generate_quick_guide(skip_cache=False):
             else:
                 city_name = city
                 
-            # Build specific queries with geographic context
+            # Build specific queries with geographic context - include real estate sources
             ddgs_queries = [
                 f"{neighborhood} {city_name}{geographic_context} travel guide",
                 f"{neighborhood} {city_name}{geographic_context} neighborhood information", 
                 f"what is {neighborhood} {city_name}{geographic_context} like",
                 f"{neighborhood} district {city_name}{geographic_context}",
-                f"visit {neighborhood} {city_name}{geographic_context}",
+                f"{neighborhood} Tijuana Municipality",  # Specific for areas near Tijuana
+                f"{neighborhood} Baja California Mexico",  # Broader geographic context
+                f"{neighborhood} beach area Playas de Tijuana",  # Specific beach reference
+                # Real estate focused queries - these always have good neighborhood data
+                f"{neighborhood} {city_name} real estate neighborhood guide",
+                f"{neighborhood} {city_name} homes for sale neighborhood information",
+                f"{neighborhood} {city_name} properties neighborhood overview",
+                f"{neighborhood} {city_name} realtor neighborhood profile",
+                f"{neighborhood} {city_name} Zillow neighborhood information",
+                # Wikipedia queries for factual data
+                f"{neighborhood} {city_name} Wikipedia",
+                f"{neighborhood} Tijuana Municipality Wikipedia",
+                f"{neighborhood} Baja California Wikipedia"
             ]
             ddgs_results = []
             for q in ddgs_queries:
@@ -995,8 +1034,10 @@ async def generate_quick_guide(skip_cache=False):
                         app.logger.debug('DDGS provider not available at runtime; skipping query %s', q)
                         continue
                     res = await ddgs_search(q, engine="google", max_results=6)
-                    app.logger.debug('DDGS: query=%s got %d results', q, len(res) if res else 0)
+                    app.logger.info('DDGS: query="%s" got %d results', q, len(res) if res else 0)
                     if res:
+                        for i, r in enumerate(res[:3]):  # Log first 3 results
+                            app.logger.info('DDGS result %d: title="%s" body="%s"', i, (r.get('title') or '')[:100], (r.get('body') or '')[:100])
                         ddgs_results.extend(res)
                 except Exception as e:
                     app.logger.debug('DDGS query failed for %s: %s', q, e)
@@ -1040,10 +1081,48 @@ async def generate_quick_guide(skip_cache=False):
                 if _looks_like_ddgs_disambiguation_text(txt):
                     app.logger.debug('Filtered DDGS candidate as disambiguation/promotional: %s', (r.get('title') or '')[:120])
                     continue
-                # Consider relevant if mentions neighborhood or city or contains travel keywords
+                # Consider relevant only if it specifically mentions the neighborhood AND provides substantial content
                 lower = txt.lower()
-                if neighborhood.lower() in lower or city.lower() in lower or any(k in lower for k in ['travel', 'guide', 'colonia', 'neighborhood', 'transit', 'bus', 'train']):
+                title_lower = (r.get('title') or '').lower()
+                
+                # Must mention the exact neighborhood name
+                mentions_neighborhood = neighborhood.lower() in lower or neighborhood.lower() in title_lower
+                
+                # Must be substantial, informative content (not just promotional fluff)
+                is_substantial = len(txt) >= 100 and any(phrase in lower for phrase in [
+                    'neighborhood', 'area', 'district', 'located', 'residential', 'beach', 'attractions', 
+                    'amenities', 'shops', 'restaurants', 'streets', 'community', 'town', 'municipality',
+                    'baja california', 'tijuana', 'playas', 'near', 'proximity', 'primarily',
+                    # Real estate indicators
+                    'homes', 'properties', 'real estate', 'realtor', 'zillow', 'for sale',
+                    'population', 'median', 'average', 'price', 'market'
+                ])
+                
+                # Filter out generic promotional/travel booking content, but allow real estate and Wikipedia
+                is_generic_promo = any(keyword in lower for keyword in [
+                    'uber', 'lyft', 'taxi', 'booking', 'reservation', 'schedule', 'app', 'download',
+                    'guide to getting around', 'transportation service', 'ride sharing',
+                    'ready to explore', 'discover must-see', 'fun things to do', 'planning a trip',
+                    'where to stay', 'trip.com', 'booking.com', 'expedia'
+                ])
+                
+                # Allow real estate and Wikipedia sources even if they sound promotional
+                href = (r.get('href') or r.get('url') or '')
+                is_good_source = any(domain in href.lower() for domain in [
+                    'wikipedia.org', 'realtor.com', 'zillow.com', 'redfin.com', 'trulia.com',
+                    'homes.com', 'loopnet.com', 'apartments.com', 'mls'
+                ])
+                
+                if is_good_source:
+                    is_generic_promo = False  # Override for good sources
+                
+                app.logger.info("DDGS filtering for %s/%s: mentions_neighborhood=%s, is_substantial=%s, is_generic_promo=%s", 
+                              city, neighborhood, mentions_neighborhood, is_substantial, is_generic_promo)
+                
+                if mentions_neighborhood and is_substantial and not is_generic_promo:
                     relevant.append(r)
+                else:
+                    app.logger.info("Filtered DDGS result: %s", (r.get('title') or '')[:100])
             # If no clearly relevant results, but we have ddgs hits, treat the top hits as possible candidates
             if not relevant and ddgs_results:
                 app.logger.debug('No clearly relevant DDGS hits for %s/%s but using top search results', city, neighborhood)
@@ -1051,48 +1130,38 @@ async def generate_quick_guide(skip_cache=False):
 
             if relevant:
                 app.logger.debug("DDGS candidates for %s/%s: %s", city, neighborhood, [ (r.get('title'), r.get('href') or r.get('url')) for r in relevant ])
-                # Try to synthesize into concise English using the semantic module
-                snippets = []
-                for r in relevant[:6]:
-                    title = (r.get('title') or '').strip()
-                    body = (r.get('body') or '').strip()
-                    href = r.get('href') or r.get('url') or ''
-                    snippet = f"{title}: {body} ({href})" if title else f"{body} ({href})"
-                    snippets.append(snippet)
-                context_text = '\n\n'.join(snippets)
                 
-                # If no web snippets found, don't bother with DDGS synthesis - use fallback
-                if not context_text.strip() or len(relevant) == 0:
-                    app.logger.info(f"No web snippets found for {neighborhood}, {city} - skipping DDGS synthesis")
-                    synthesized = None  # Will trigger fallback to SynthesisEnhancer
-                else:
-                    synth_prompt = (
-                        f"Synthesize a concise (2-4 sentence) English quick guide for the neighborhood '{neighborhood}, {city}'. "
-                        f"Use only the facts from the following web snippets; keep it travel-focused (type of area, notable features, transit/access, quick local tips). "
-                        f"Answer in English.\n\nWeb snippets:\n{context_text}"
-                    )
-                    app.logger.info(f"DDGS synthesis prompt for {neighborhood}, {city}: {synth_prompt[:500]}...")
-                    app.logger.info(f"Context text length: {len(context_text)}, Snippets count: {len(relevant)}")
-                try:
-                    # Only run DDGS synthesis if we have web snippets
-                    if context_text.strip() and len(relevant) > 0:
-                        resp = await semantic.search_and_reason(synth_prompt, city=city, mode='rational', session=aiohttp_session)
-                        if isinstance(resp, dict):
-                            resp_text = str(resp.get('answer') or resp.get('text') or '')
-                        else:
-                            resp_text = str(resp or '')
-                        resp_text = resp_text.strip()
-                        app.logger.debug("DDGS synthesis response for %s/%s: %s", city, neighborhood, resp_text[:200])
-                        # Basic sanity check: length and mention of the city/neighborhood or travel keyword
-                        if len(resp_text) >= 40 and (city.lower() in resp_text.lower() or neighborhood.lower() in resp_text.lower() or any(k in resp_text.lower() for k in ['travel', 'guide', 'transit', 'bus', 'train'])):
-                            synthesized = resp_text
-                            source = 'ddgs'
-                            source_url = relevant[0].get('href') or relevant[0].get('url')
+                # Try to use the best DDGS result directly if it's good enough
+                best_result = relevant[0]
+                title = (best_result.get('title') or '').strip()
+                body = (best_result.get('body') or '').strip()
+                
+                # If the DDGS result looks good (mentions neighborhood/city and is substantial), use it directly
+                combined_text = f"{title}. {body}" if title and body else (title or body)
+                if (len(combined_text) >= 50 and 
+                    (neighborhood.lower() in combined_text.lower() or city.lower() in combined_text.lower()) and
+                    not _looks_like_ddgs_disambiguation_text(combined_text)):
+                    # Add attribution for the source
+                    source_domain = None
+                    href = best_result.get('href') or best_result.get('url') or ''
+                    if href:
+                        try:
+                            from urllib.parse import urlparse
+                            source_domain = urlparse(href).netloc
+                        except Exception:
+                            source_domain = 'web source'
+                    
+                    # Allow more characters and add attribution
+                    if source_domain:
+                        synthesized = f"{combined_text[:800]} (Source: {source_domain})"
                     else:
-                        # Skip DDGS synthesis when no snippets found
-                        synthesized = None
-                except Exception:
-                    app.logger.exception('ddgs synthesis failed')
+                        synthesized = combined_text[:800]
+                    source = 'ddgs'
+                    source_url = href
+                    app.logger.info("Used DDGS result directly for %s/%s with attribution", city, neighborhood)
+                else:
+                    # Fall back to synthesis if direct result isn't good enough
+                    synthesized = None
 
                 # If semantic synthesis failed or returned poor text, fall back to simple snippet composition
                 if not synthesized:
@@ -1236,12 +1305,21 @@ async def generate_quick_guide(skip_cache=False):
             app.logger.exception("ddgs fallback failed for %s, %s", neighborhood, city)
 
         # Final generic fallback if nothing else matched: synthesize a better paragraph
+        app.logger.info("Reached synthesis fallback for %s/%s, synthesized=%s", city, neighborhood, bool(synthesized))
         if not synthesized:
             try:
+                # Add the parent directory to Python path to ensure import works
+                parent_dir = str(Path(__file__).parent.parent)
+                if parent_dir not in sys.path:
+                    sys.path.insert(0, parent_dir)
+                
                 from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+                app.logger.info("About to call SynthesisEnhancer.generate_neighborhood_paragraph for %s/%s", city, neighborhood)
                 synthesized = SynthesisEnhancer.generate_neighborhood_paragraph(neighborhood, city)
                 source = 'synthesized'
-            except Exception:
+                app.logger.info("Successfully generated synthesized paragraph for %s/%s: %s", city, neighborhood, synthesized[:100])
+            except Exception as e:
+                app.logger.exception("SynthesisEnhancer failed for %s/%s: %s", city, neighborhood, str(e))
                 synthesized = f"{neighborhood} is a neighborhood in {city}."
                 source = 'data-first'
 
@@ -1263,41 +1341,141 @@ async def generate_quick_guide(skip_cache=False):
     except Exception:
         app.logger.exception('Failed to validate synthesized quick_guide')
 
+    # Enhance with Wikipedia neighborhood data if available
+    wikipedia_enhancement = ""
+    try:
+        from city_guides.providers.wikipedia_neighborhood_provider import wikipedia_neighborhood_provider
+        wiki_data = await wikipedia_neighborhood_provider.get_neighborhood_data(city, neighborhood, aiohttp_session)
+        if wiki_data:
+            wiki_info = wikipedia_neighborhood_provider.extract_neighborhood_info(wiki_data)
+            
+            # Build enhancement from Wikipedia data
+            enhancements = []
+            
+            if wiki_info.get('description'):
+                # Use the Wikipedia description as the primary enhancement
+                wikipedia_enhancement = wiki_info['description']
+            else:
+                # Fallback to basic info
+                if wiki_info.get('coordinates'):
+                    lat = wiki_info['coordinates'].get('lat')
+                    lon = wiki_info['coordinates'].get('lon')
+                    if lat and lon:
+                        enhancements.append(f"Location: {lat}, {lon}")
+                
+                if wiki_info.get('name'):
+                    enhancements.append(f"Official name: {wiki_info['name']}")
+            
+            if enhancements and not wikipedia_enhancement:
+                wikipedia_enhancement = f" {' '.join(enhancements)}."
+            
+            if wikipedia_enhancement:
+                app.logger.info(f"Wikipedia data found for {city}/{neighborhood}: {wikipedia_enhancement[:100]}")
+    except Exception as e:
+        app.logger.debug(f'Wikipedia neighborhood data fetch failed for {city}/{neighborhood}: {e}')
+
+    # Enhance with Groq AI content if Wikipedia failed AND content is sparse
+    groq_enhancement = ""
+    if not wikipedia_enhancement and _is_content_sparse_or_low_quality(synthesized, neighborhood, city):
+        try:
+            from city_guides.providers.groq_neighborhood_provider import groq_neighborhood_provider
+            groq_data = await groq_neighborhood_provider.generate_neighborhood_content(city, neighborhood, aiohttp_session)
+            if groq_data:
+                groq_info = groq_neighborhood_provider.extract_neighborhood_info(groq_data)
+                
+                if groq_info.get('description'):
+                    groq_enhancement = groq_info['description']
+                    app.logger.info(f"Groq enhanced sparse content for {city}/{neighborhood}: {groq_enhancement[:100]}")
+        except Exception as e:
+            app.logger.debug(f'Groq neighborhood generation failed for {city}/{neighborhood}: {e}')
+
+    # Enhance with Teleport data if available (final fallback)
+    teleport_enhancement = ""
+    if not wikipedia_enhancement and not groq_enhancement:  # Only try Teleport if both Wikipedia and Groq failed
+        try:
+            cost_data = get_cost_estimates(city)
+            if cost_data and len(cost_data) > 0:
+                # Extract key metrics from Teleport data
+                avg_costs = []
+                for item in cost_data[:3]:  # Top 3 cost items
+                    label = item.get('label', '')
+                    value = item.get('value', '')
+                    if label and value:
+                        avg_costs.append(f"{label}: {value}")
+                
+                if avg_costs:
+                    teleport_enhancement = f" Average costs include {', '.join(avg_costs[:2])}."
+        except Exception:
+            app.logger.debug('Teleport data fetch failed for %s', city)
+
+    # Combine enhancement data with synthesized content
+    enhancement_text = wikipedia_enhancement or groq_enhancement or teleport_enhancement
+    if enhancement_text and synthesized:
+        # Insert enhancement data after the first sentence
+        sentences = re.split(r'(?<=[.!?])\s+', synthesized)
+        if len(sentences) > 1:
+            synthesized = f"{sentences[0]} {enhancement_text}{' '.join(sentences[1:])}"
+        else:
+            synthesized = f"{synthesized} {enhancement_text}"
+        
+        if wikipedia_enhancement:
+            source = f"{source}+wikipedia"
+            confidence = 'high'  # Wikipedia is high confidence
+        elif groq_enhancement:
+            source = f"{source}+groq"
+            confidence = 'medium'  # Groq is medium confidence
+        elif teleport_enhancement:
+            source = f"{source}+teleport"
+            confidence = 'medium'  # Upgrade confidence with Teleport data
+
     # Determine confidence level for the returned quick guide
     # - high: sourced from Wikipedia
-    # - medium: DDGS-derived or synthesized with DDGS evidence
+    # - medium: DDGS-derived or synthesized with DDGS evidence or Groq/Teleport data
     # - low: synthesized with no supporting web/wiki evidence (fall back to minimal factual sentence)
     confidence = 'low'
     try:
         if source == 'wikipedia':
             confidence = 'high'
+        elif source == 'synthesized+wikipedia':
+            confidence = 'high'
         elif source == 'ddgs':
+            confidence = 'medium'
+        elif source == 'ddgs+wikipedia':
+            confidence = 'high'
+        elif source == 'synthesized+groq':
+            confidence = 'medium'
+        elif source == 'ddgs+groq':
+            confidence = 'medium'
+        elif source == 'synthesized+teleport':
+            confidence = 'medium'
+        elif source == 'ddgs+teleport':
             confidence = 'medium'
         elif source == 'synthesized':
             if isinstance(ddgs_results, list) and len(ddgs_results) > 0:
                 confidence = 'medium'
             else:
                 confidence = 'low'
+
+        # If confidence is low, attempt geo enrichment to enhance existing content
+        if confidence == 'low' and source != 'synthesized':
+            try:
+                from city_guides.src.geo_enrichment import enrich_neighborhood, build_enriched_quick_guide
+                enrichment = await enrich_neighborhood(city, neighborhood, session=aiohttp_session)
+                if enrichment and (enrichment.get('text') or (enrichment.get('pois') and len(enrichment.get('pois')) > 0)):
+                    synthesized = build_enriched_quick_guide(neighborhood, city, enrichment)
+                    source = 'geo-enriched'
+                    confidence = 'medium'
+                else:
+                    # Only use fallback if we don't already have synthesized content
+                    if not synthesized or source != 'synthesized':
+                        synthesized = f"{neighborhood} is a neighborhood in {city}."
+                        source = source or 'data-first'
+            except Exception:
+                confidence = 'low'
     except Exception:
         confidence = 'low'
 
-    # If confidence is low, attempt geo enrichment before returning minimal fallback
-    if confidence == 'low':
-        try:
-            from city_guides.src.geo_enrichment import enrich_neighborhood, build_enriched_quick_guide
-            enrichment = await enrich_neighborhood(city, neighborhood, session=aiohttp_session)
-            if enrichment and (enrichment.get('text') or (enrichment.get('pois') and len(enrichment.get('pois')) > 0)):
-                synthesized = build_enriched_quick_guide(neighborhood, city, enrichment)
-                source = 'geo-enriched'
-                confidence = 'medium'
-            else:
-                synthesized = f"{neighborhood} is a neighborhood in {city}."
-                source = source or 'data-first'
-        except Exception:
-            synthesized = f"{neighborhood} is a neighborhood in {city}."
-            source = source or 'data-first'
-
-    out = {'quick_guide': synthesized, 'source': source or 'data-first', 'confidence': confidence, 'cached': False, 'generated_at': time.time(), 'source_url': source_url} 
+    out = {'quick_guide': synthesized, 'source': source or 'data-first', 'confidence': confidence, 'cached': False, 'generated_at': time.time(), 'source_url': source_url}
 
     # Try to enrich quick guide with Mapillary thumbnails (if available)
     mapillary_images = []
@@ -1416,6 +1594,38 @@ async def generate_quick_guide(skip_cache=False):
     if mapillary_images:
         resp['mapillary_images'] = mapillary_images
     return jsonify(resp)
+
+def _is_content_sparse_or_low_quality(content: str, neighborhood: str, city: str) -> bool:
+    """Check if content lacks specifics and should trigger Groq/other enhancements."""
+    if not content or len(content.strip()) < 50:
+        return True
+
+    content_lower = content.lower()
+
+    generic_patterns = [
+        f"{neighborhood.lower()} is a neighborhood in {city.lower()}",
+        f"{neighborhood.lower()} is a neighborhood",
+        "is a neighborhood in",
+        "is located in",
+        "is situated in",
+        "is part of"
+    ]
+    if any(pattern in content_lower for pattern in generic_patterns):
+        return True
+
+    detail_indicators = [
+        'market', 'shop', 'café', 'restaurant', 'beach', 'park', 'school',
+        'hotel', 'museum', 'church', 'plaza', 'street', 'avenue',
+        'transport', 'bus', 'taxi', 'metro', 'subway', 'train',
+        'architecture', 'building', 'view', 'scenic', 'historic',
+        'traditional', 'local', 'authentic', 'popular', 'famous'
+    ]
+    has_details = any(indicator in content_lower for indicator in detail_indicators)
+
+    sentences = [s.strip() for s in content.split('.') if s.strip()]
+    avg_sentence_length = sum(len(s) for s in sentences) / len(sentences) if sentences else 0
+
+    return not has_details or avg_sentence_length < 15 or len(content.strip()) < 100
 
 # --- Helper Functions ---
 

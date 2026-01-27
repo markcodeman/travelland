@@ -139,7 +139,7 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
 
         // Neighborhoods: populate and auto-select first if available
         if (Array.isArray(data?.neighborhoods) && data.neighborhoods.length > 0) {
-          const mapped = data.neighborhoods.map(n => ({ id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id }));
+          const mapped = data.neighborhoods.map((n, index) => ({ key: index, id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id }));
           setNeighborhoods(mapped);
           // Auto-select top candidate
           setSelectedNeighborhood(mapped[0].name);
@@ -323,30 +323,30 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
           const resp = await fetch(`/neighborhoods?city=${encodeURIComponent(cityName)}&lang=en`);
           const data = await resp.json();
           if (data?.neighborhoods?.length > 0) {
-            cityData = data.neighborhoods.map(n => ({ id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id })).filter(n => n.name);
+            cityData = data.neighborhoods.map((n, index) => ({ key: index, id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id })).filter(n => n.name);
           }
         } catch {}
         try {
           const resp = await fetch(`/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
           const data = await resp.json();
           if (data?.neighborhoods?.length > 0) {
-            coordData = data.neighborhoods.map(n => ({ id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id })).filter(n => n.name);
+            coordData = data.neighborhoods.map((n, index) => ({ key: index, id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id })).filter(n => n.name);
           }
         } catch {}
         // Merge and dedupe by name
         const merged = [...cityData, ...coordData];
         const seen = new Set();
-        const deduped = merged.filter(n => {
+        const deduped = merged.filter((n, index) => {
           if (seen.has(n.name)) return false;
           seen.add(n.name);
           return true;
-        });
+        }).map((n, index) => ({ ...n, key: index }));
         setNeighborhoods(deduped);
       } else {
         // Default: use legacy endpoint
         const response = await fetch(`${API_BASE}/api/locations/neighborhoods?countryCode=${countryCode}&cityName=${encodeURIComponent(cityName)}`);
         const data = await response.json();
-        setNeighborhoods(data);
+        setNeighborhoods(data.map((n, index) => ({ ...n, key: index })));
       }
     } catch (error) {
       console.error('Failed to fetch neighborhoods:', error);
