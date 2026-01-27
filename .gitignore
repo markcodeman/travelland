@@ -25,6 +25,28 @@ __pycache__/
 .windsurf/
 .clinerules
 CLINE_CLI_GUIDE.md
+FEATURE_IDEAS.md
+REFACTORING_SUMMARY.md
+dev-fast.sh
+
+# Local docs
+city_guides/docs/WINDSURF_IDE_PERFORMANCE.md
+
+# Local tests/helpers
+city_guides/tests/test_health_smoke.py
+city_guides/tests/test_reverse_lookup.py
+test_bbox_filtering.py
+test_bbox_simple.py
+test_cache_fix.py
+test_frontend.py
+
+# Frontend temp assets
+frontend/public/favicon.ico
+frontend/public/favicon.svg
+
+# Next-app local routes
+next-app/app/healthz/
+next-app/app/smoke/
 
 # Python build artifacts
 .Python
