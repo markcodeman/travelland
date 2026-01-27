@@ -35,13 +35,13 @@ const API_BASE = '';
 
 function App() {
   const [location, setLocation] = useState({
-    country: 'MX',
+    country: '',
     state: '',
-    city: 'Tlaquepaque',
+    city: '',
     neighborhood: '',
-    countryName: 'Mexico',
+    countryName: '',
     stateName: '',
-    cityName: 'Tlaquepaque',
+    cityName: '',
     neighborhoodName: ''
   });
   const [neighborhoodOptions, setNeighborhoodOptions] = useState([]);
@@ -136,16 +136,6 @@ function App() {
     }
     return useFallback ? NEIGHBORHOOD_FALLBACKS[cityName] || [] : [];
   }, [fetchAPI]);
-
-  // Auto-load Tlaquepaque neighborhoods on mount
-  useEffect(() => {
-    const autoLoadNeighborhoods = async () => {
-      const neighborhoods = await fetchNeighborhoods('Tlaquepaque');
-      setNeighborhoodOptions(neighborhoods);
-    };
-    
-    autoLoadNeighborhoods();
-  }, []); // Empty dependency array - runs once on mount
 
   // Fetch neighborhoods effect
   useEffect(() => {
