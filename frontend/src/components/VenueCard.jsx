@@ -1,6 +1,5 @@
 import React from 'react';
 
-
 export default function VenueCard({ venue, onDirections, onMap, onSave, onAddToItinerary }) {
   // If this is a backend "fallback" (no real POIs), render a muted, non-prominent row
   if ((venue || {}).provider === 'fallback') {
@@ -23,6 +22,20 @@ export default function VenueCard({ venue, onDirections, onMap, onSave, onAddToI
     );
   }
 
+  const getMapsUrl = (venue) => {
+    if (venue.place_id) return `https://www.google.com/maps/place/?q=place_id:${venue.place_id}`;
+    // Prioritize venue name + city over coordinates for better search results
+    if (venue.name) {
+      const city = venue.city || 'Tokyo'; // Default to Tokyo if no city specified
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.name + ' ' + city)}`;
+    }
+    if ((venue.latitude || venue.lat) && (venue.longitude || venue.lon)) {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((venue.latitude || venue.lat) + ',' + (venue.longitude || venue.lon))}`;
+    }
+    if (venue.address) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.name + ' ' + venue.address)}`;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.name)}`;
+  };
+
   return (
     <div className="venue-card rounded-xl border border-gray-200 bg-white p-4 shadow-md flex flex-col">
       <div className="flex items-center gap-2 mb-2">
@@ -36,7 +49,26 @@ export default function VenueCard({ venue, onDirections, onMap, onSave, onAddToI
         ) : null}
       </div>
       {venue.image && (
-        <img className="w-full h-40 object-cover rounded-lg mb-2" src={venue.image} alt={venue.name} />
+        <div className="venue-image-container">
+          <img 
+            className="venue-image" 
+            src={venue.image} 
+            alt={venue.name} 
+            onError={(e) => {
+              // Fallback to placeholder if image fails to load
+              e.target.src = `https://picsum.photos/seed/${encodeURIComponent(venue.name)}/400/200.jpg`;
+            }}
+          />
+        </div>
+      )}
+      {!venue.image && (
+        <div className="venue-image-container">
+          <img 
+            className="venue-image" 
+            src={`https://picsum.photos/seed/${encodeURIComponent(venue.name + venue.address || '')}/400/200.jpg`}
+            alt={venue.name}
+          />
+        </div>
       )}
       <div className="mb-2">
         {venue.address && <div className="text-gray-500 text-sm mb-1">{venue.address}</div>}
@@ -49,29 +81,14 @@ export default function VenueCard({ venue, onDirections, onMap, onSave, onAddToI
             className="inline-block bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm font-medium transition"
           >Add to Itinerary</button>
         )}
-        {((venue.latitude && venue.longitude) || (venue.osm_url && venue.osm_url.includes('openstreetmap')))
-          ? (
-            <a
-              href={
-                (venue.latitude && venue.longitude)
-                  ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.latitude + ',' + venue.longitude)}`
-                  : (venue.osm_url || venue.mapsUrl || venue.website)
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm font-medium transition"
-            >Open in Google Maps</a>
-          )
-          : (
-            (venue.mapsUrl || venue.website) && (
-              <a
-                href={venue.mapsUrl || venue.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 text-sm font-medium transition"
-              >Open Link</a>
-            )
-          )}
+        <a 
+          href={getMapsUrl(venue)}
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="inline-block bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm font-medium transition"
+        >
+          Open in Google Maps
+        </a>
       </div>
     </div>
   );

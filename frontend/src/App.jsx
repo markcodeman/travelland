@@ -2,14 +2,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './styles/app.css';
 import AutocompleteInput from './components/AutocompleteInput';
 import WeatherDisplay from './components/WeatherDisplay';
-import SearchResults from './components/SearchResults';
 import Header from './components/Header';
 import SuggestionChips from './components/SuggestionChips';
 import MarcoChat from './components/MarcoChat';
 import DreamInput from './components/DreamInput';
 import HeroImage from './components/HeroImage';
-import VenueGrid from './components/VenueGrid';
-import { getHeroImage, getHeroImageMeta, getVenueImages, getVenueImageMeta } from './services/imageService';
+import { getHeroImage, getHeroImageMeta } from './services/imageService';
 
 // Constants moved outside component to avoid recreation
 const CITY_LIST = ['Rio de Janeiro', 'London', 'New York', 'Lisbon'];
@@ -130,11 +128,8 @@ function App() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [cityGuideLoading, setCityGuideLoading] = useState(false);
   const [parsedIntent, setParsedIntent] = useState('');
-  const [venues, setVenues] = useState([]);
   const [heroImage, setHeroImage] = useState('');
   const [heroImageMeta, setHeroImageMeta] = useState({});
-  const [venueImageUrls, setVenueImageUrls] = useState([]);
-  const [venueImageMetas, setVenueImageMetas] = useState([]);
 
   // Memoized API call functions
   const fetchAPI = useCallback(async (endpoint, options = {}) => {
@@ -179,34 +174,6 @@ function App() {
     return () => { cancelled = true; };
   }, [location.city]);
 
-  // Fetch venue images when venues change
-  useEffect(() => {
-    let cancelled = false;
-    if (!location.city || !venues.length) {
-      setVenueImageUrls([]);
-      setVenueImageMetas([]);
-      return;
-    }
-
-    (async () => {
-      try {
-        const imageUrls = await getVenueImages(location.city, parsedIntent || selectedSuggestion, venues.length);
-        const imageMetas = await getVenueImageMeta(location.city, parsedIntent || selectedSuggestion, venues.length);
-        if (!cancelled) {
-          setVenueImageUrls(imageUrls);
-          setVenueImageMetas(imageMetas);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setVenueImageUrls([]);
-          setVenueImageMetas([]);
-        }
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [location.city, venues, parsedIntent, selectedSuggestion]);
-
   const normalizeCityName = useCallback((cityValue) => {
     if (!cityValue) return cityValue;
     let name = cityValue.trim();
@@ -235,10 +202,9 @@ function App() {
       setParsedIntent(loc.intent);
     }
     
-    // Generate venues immediately for visual feedback
-    if (loc.city) {
-      const sampleVenues = generateSampleVenues(loc.city, loc.intent);
-      setVenues(sampleVenues);
+    // Don't generate fake venues - wait for real API data
+    if (loc.city && !venues.length) {
+      setVenues([]);
     }
   }, [normalizeCityName]);
 
@@ -352,7 +318,7 @@ function App() {
 
       setCityGuideLoading(true);
       try {
-        const data = await fetchQuickGuide({ query: location.city, state: location.state, country: location.country });
+        const data = await fetchQuickGuide({ query: location.city, state: location.state, country: location.country, intent: location.intent });
         if (mounted && data?.quick_guide) {
           setResults(data);
         }
@@ -481,7 +447,7 @@ function App() {
           state: location.state,
           country: location.country,
           ...(location.neighborhood && neighborhoodOptIn && { neighborhood: location.neighborhood }),
-          ...(displayCategory && { category: displayCategory })
+          ...(displayCategory && { category: displayCategory, intent: displayCategory })
         })
       ]);
 
@@ -541,10 +507,15 @@ function App() {
           };
         });
 
-        // Create sample venues for visual grid if no venues exist
-        if (!venues.length && quickGuideData.quick_guide) {
-          const sampleVenues = generateSampleVenues(location.city, parsedIntent || selectedSuggestion);
-          setVenues(sampleVenues);
+        // Use real venues from search results if available
+        if (quickGuideData?.venues && quickGuideData.venues.length > 0) {
+          setVenues(quickGuideData.venues);
+        } else if (!displayCategory && quickGuideData.quick_guide) {
+          // Don't show mock venues when just browsing city guides
+          setVenues([]);
+        } else if (displayCategory && !venues.length && quickGuideData.quick_guide) {
+          // Don't generate fake venues - wait for real API data
+          setVenues([]);
         }
 
         // Start synthesis in background only when we have real guide text
@@ -557,7 +528,10 @@ function App() {
             .then(synthData => {
               if (synthData?.synthesized_venues) {
                 setSynthResults(synthData.synthesized_venues);
-                setVenues(synthData.synthesized_venues);
+                // Only replace venues if we don't already have real venues
+                if (!quickGuideData?.venues || quickGuideData.venues.length === 0) {
+                  setVenues(synthData.synthesized_venues);
+                }
                 setResults(prev => ({
                   ...prev,
                   synthesized_venues: synthData.synthesized_venues
@@ -657,18 +631,6 @@ function App() {
           />
         )}
 
-        {/* Venue Grid - Visual Results */}
-        {(venues.length > 0 || cityGuideLoading) && (
-          <VenueGrid 
-            venues={venues}
-            loading={cityGuideLoading}
-            city={location.cityName}
-            intent={parsedIntent || selectedSuggestion}
-            imageUrls={venueImageUrls}
-            imageMetas={venueImageMetas}
-          />
-        )}
-
         {location.city && cityGuideLoading && (
           <div className="quick-guide quick-guide--loading" aria-live="polite" aria-busy="true">
             <div className="loading-pill" />
@@ -711,15 +673,13 @@ function App() {
           <MarcoChat
             city={location.city}
             neighborhood={location.neighborhood}
-            venues={results?.venues?.slice(0, 6) || []}
+            venues={[]}
             category={SUGGESTION_MAP[selectedSuggestion] || (typeof category === 'string' ? category : '')}
             initialInput={SUGGESTION_MAP[selectedSuggestion] || ''}
             wikivoyage={results?.wikivoyage}
             onClose={() => setMarcoOpen(false)}
           />
         )}
-        
-        <SearchResults results={results} cityImage={heroImage} cityImageMeta={heroImageMeta} />
       </div>
     </div>
   );

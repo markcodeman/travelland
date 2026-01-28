@@ -60,7 +60,10 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       });
       const data = await resp.json();
       const fetchedVenues = (data.venues || []).filter(v => v.provider !== 'wikivoyage');
+      console.log('Fetched venues:', fetchedVenues.length, fetchedVenues.slice(0, 3));
+      
       if (fetchedVenues.length > 0) {
+        // Use REAL venue data from backend
         setMessages([{ role: 'assistant', venues: fetchedVenues.slice(0, 10) }]);
       } else {
         const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and found some great ${category} options! Let me search for more details.`;
@@ -131,8 +134,8 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
   const handleSubmit = () => {
     console.debug('handleSubmit', { category, input, loading });
     if (!input.trim() || loading) return;
-    // If there's a category and no typed input, we want to fetch category venues instead
-    if (category && !input.trim()) {
+    // If there's a category and input matches the category, fetch venues instead of AI chat
+    if (category && input.trim().toLowerCase().includes(category.toLowerCase())) {
       console.debug('handleSubmit -> fetching venues for category', category);
       fetchVenuesForCategory();
       return;
@@ -169,10 +172,10 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                           key={venue.id || idx}
                           venue={{
                             ...venue,
+                            city: city, // Add city for better Google Maps search
                             emoji: (venue.description || '').toLowerCase().includes('tea') ? '🫖' : (venue.description || '').toLowerCase().includes('coffee') ? '☕' : '📍',
                             sustainability: venue.tags?.includes('eco') ? '♻️' : '',
-                            pricing: venue.price_level ? '💰'.repeat(venue.price_level) : '',
-                            mapsUrl: venue.latitude && venue.longitude ? `https://www.google.com/maps/search/?api=1&query=${venue.latitude},${venue.longitude}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((venue.name || venue.title || '') + ' ' + (venue.city || ''))}`
+                            pricing: venue.price_level ? '💰'.repeat(venue.price_level) : ''
                           }}
                           onAddToItinerary={(v) => {
                             const newDay = {
