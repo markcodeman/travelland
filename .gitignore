@@ -89,6 +89,9 @@ restart_and_tail.sh
 # Node modules
 node_modules/
 
+# Next.js build output (Turbo Pack)
+.next/
+
 # Project specific
 *.json
 !package.json

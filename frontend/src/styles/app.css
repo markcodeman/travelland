@@ -255,6 +255,44 @@ select, input[type="text"] {
   box-shadow: 0 2px 8px rgba(16,24,40,0.04);
   margin-bottom: 12px;
 }
+.quick-guide--loading {
+  position: relative;
+  overflow: hidden;
+}
+.loading-pill {
+  width: 72px;
+  height: 12px;
+  border-radius: 999px;
+  background: #e6edf5;
+  margin-bottom: 12px;
+}
+.loading-title {
+  width: 55%;
+  height: 18px;
+  border-radius: 6px;
+  background: #e2e8f0;
+  margin-bottom: 10px;
+}
+.loading-line {
+  width: 100%;
+  height: 12px;
+  border-radius: 6px;
+  background: #edf2f7;
+  margin-bottom: 8px;
+}
+.loading-footnote {
+  font-size: 0.85em;
+  color: #6b7a86;
+  margin-top: 6px;
+}
+.loading-pulse {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0% { opacity: 0.45; }
+  50% { opacity: 1; }
+  100% { opacity: 0.45; }
+}
 .quick-guide h2 { margin: 0 0 8px 0; color: #163a6a; }
 .quick-guide p { margin: 0; color: #334e68; line-height: 1.45; }
 
@@ -409,6 +447,59 @@ pre {
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+}
+
+.neighborhood-optin {
+  margin: 12px 0;
+  padding: 10px 14px;
+  background: #f0f5ff;
+  border: 1px solid #d6e4ff;
+  border-radius: 10px;
+  font-size: 0.95em;
+  color: #1c3f7c;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.neighborhood-optin button {
+  margin-top: 0;
+  background: #1c3f7c;
+  font-size: 0.85em;
+  padding: 6px 12px;
+}
+
+.venues-toggle {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid #ccd7e0;
+  background: #fff;
+  color: #1c3f7c;
+  font-size: 0.85em;
+  cursor: pointer;
+}
+
+.city-guide-actions {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.city-guide-button {
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: none;
+  background: #ffe9d6;
+  color: #7a3b00;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(255, 141, 41, 0.25);
+}
+.city-guide-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .marco-header {
