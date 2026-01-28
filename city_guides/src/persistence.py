@@ -940,7 +940,7 @@ def _is_relevant_wikimedia_image(wik_img: Dict, city_name: str, neighborhood_nam
 
 
 def _search_impl(payload):
-    """Core search implementation - simplified version"""
+    """Core search implementation with real provider integrations"""
     print(f"[SEARCH DEBUG] _search_impl called with payload: {payload}")
     
     city_input = (payload.get("query") or "").strip()
@@ -956,18 +956,14 @@ def _search_impl(payload):
     q = (payload.get("category") or "").strip().lower()
     neighborhood = payload.get("neighborhood")
     
-    # For now, return a simple response to get the endpoint working
-    # TODO: Implement full search logic with providers
-    return {
-        "venues": [
-            {
-                "id": "placeholder-1",
-                "name": f"Sample venue in {city}",
-                "address": city,
-                "description": f"Sample result for {q} search in {city}",
-                "provider": "placeholder"
-            }
-        ],
+    # Initialize result structure
+    result = {
+        "venues": [],
+        "quick_guide": "",
+        "summary": "",
+        "city": city,
+        "category": q,
+        "neighborhood": neighborhood,
         "debug_info": {
             "city": city,
             "category": q,
@@ -975,6 +971,245 @@ def _search_impl(payload):
             "limit": limit
         }
     }
+    
+    # Import providers here to avoid circular imports
+    wikipedia_search = None
+    mapillary_search = None
+    try:
+        from city_guides.providers import multi_provider
+        print("[SEARCH DEBUG] Successfully imported multi_provider")
+    except Exception as e:
+        print(f"[SEARCH DEBUG] Failed to import multi_provider: {e}")
+        result["debug_info"]["multi_provider_error"] = str(e)
+        return result
+    
+    # Try to import Wikipedia provider, but don't fail if it's not available
+    try:
+        import aiohttp
+        wikipedia_search = True  # We'll implement our own simple Wikipedia fetch
+        print("[SEARCH DEBUG] Wikipedia support available")
+    except Exception as e:
+        print(f"[SEARCH DEBUG] Wikipedia not available: {e}")
+        result["debug_info"]["wikipedia_warning"] = str(e)
+        # Continue without Wikipedia
+    
+    # Try to import image providers for city and venue images
+    try:
+        from city_guides.providers.image_provider import get_banner_for_city
+        city_image_search = get_banner_for_city
+        print("[SEARCH DEBUG] City image provider available")
+    except Exception as e:
+        print(f"[SEARCH DEBUG] City image provider not available: {e}")
+        city_image_search = None
+    
+    # Try to import Mapillary for venue images
+    try:
+        from city_guides.providers.mapillary_provider import async_search_images_near
+        mapillary_search = async_search_images_near
+        print("[SEARCH DEBUG] Mapillary support available")
+    except Exception as e:
+        print(f"[SEARCH DEBUG] Mapillary not available: {e}")
+        result["debug_info"]["mapillary_warning"] = str(e)
+        # Continue without Mapillary
+    
+    try:
+        from city_guides.providers.geocoding import geocode_city
+        print("[SEARCH DEBUG] Successfully imported geocode_city")
+    except Exception as e:
+        print(f"[SEARCH DEBUG] Failed to import geocode_city: {e}")
+        result["debug_info"]["geocoding_error"] = str(e)
+        return result
+    
+    import asyncio
+    print("[SEARCH DEBUG] Successfully imported asyncio")
+    
+    # Get city coordinates for bbox-based searches
+    city_coords = None
+    bbox = None
+    
+    try:
+        # Try to geocode the city
+        print(f"[SEARCH DEBUG] Geocoding city: {city}")
+        # geocode_city returns a coroutine, so we need to run it in an event loop
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            city_coords = loop.run_until_complete(geocode_city(city))
+            if city_coords:
+                print(f"[SEARCH DEBUG] City coordinates: {city_coords}")
+                bbox = [
+                    city_coords.get('lon', 0) - 0.05,  # min_lon
+                    city_coords.get('lat', 0) - 0.05,  # min_lat  
+                    city_coords.get('lon', 0) + 0.05,  # max_lon
+                    city_coords.get('lat', 0) + 0.05   # max_lat
+                ]
+                result["debug_info"]["city_coords"] = city_coords
+                result["debug_info"]["bbox"] = bbox
+            else:
+                print("[SEARCH DEBUG] Failed to geocode city")
+        finally:
+            loop.close()
+    except Exception as e:
+        print(f"[SEARCH DEBUG] Geocoding error: {e}")
+        result["debug_info"]["geocoding_error"] = str(e)
+    
+    # Search for venues using multi_provider ONLY if user specified a category
+    # If no category, just return city guide without venues
+    if q:
+        try:
+            print(f"[SEARCH DEBUG] Searching for venues with category: {q}")
+            
+            # Map common categories to POI types
+            poi_type = "restaurant"  # default
+            category_mapping = {
+                "food": "restaurant",
+                "restaurants": "restaurant", 
+                "dining": "restaurant",
+                "hotel": "hotel",
+                "hotels": "hotel",
+                "accommodation": "hotel",
+                "attractions": "tourism",
+                "attraction": "tourism",
+                "sights": "tourism",
+                "shopping": "shop",
+                "shops": "shop",
+                "nightlife": "amenity",
+                "entertainment": "amenity"
+            }
+            poi_type = category_mapping.get(q, q)
+            
+            print(f"[SEARCH DEBUG] Mapped category '{q}' to POI type '{poi_type}'")
+            
+            # Use asyncio to run the async discovery
+            async def get_venues_with_images():
+                venues = await multi_provider.async_discover_pois(
+                    city=city,
+                    poi_type=poi_type,
+                    limit=limit,
+                    bbox=bbox,
+                    timeout=10.0
+                )
+                
+                # Format venues for response and add images
+                formatted_venues = []
+                for venue in venues[:limit]:
+                    formatted_venue = {
+                        "id": venue.get("id", ""),
+                        "name": venue.get("name", ""),
+                        "address": venue.get("address", ""),
+                        "description": venue.get("description", ""),
+                        "lat": venue.get("lat"),
+                        "lon": venue.get("lon"),
+                        "provider": venue.get("provider", ""),
+                        "tags": venue.get("tags", {}),
+                        "osm_url": venue.get("osm_url", "")
+                    }
+                    
+                    # Add images if Mapillary is available and venue has coordinates
+                    if mapillary_search and formatted_venue.get("lat") and formatted_venue.get("lon"):
+                        try:
+                            images = await mapillary_search(
+                                lat=formatted_venue["lat"],
+                                lon=formatted_venue["lon"],
+                                radius_m=50,
+                                limit=2
+                            )
+                            if images:
+                                formatted_venue["images"] = [
+                                    {
+                                        "id": img.get("id"),
+                                        "url": img.get("url"),
+                                        "lat": img.get("lat"),
+                                        "lon": img.get("lon")
+                                    } for img in images
+                                ]
+                        except Exception as e:
+                            print(f"[SEARCH DEBUG] Failed to fetch images for {formatted_venue['name']}: {e}")
+                    
+                    formatted_venues.append(formatted_venue)
+                
+                return formatted_venues
+            
+            # Run in event loop
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                formatted_venues = loop.run_until_complete(get_venues_with_images())
+                print(f"[SEARCH DEBUG] Found {len(formatted_venues)} venues")
+                
+                result["venues"] = formatted_venues
+                result["debug_info"]["venues_found"] = len(formatted_venues)
+                
+            finally:
+                loop.close()
+                
+        except Exception as e:
+            print(f"[SEARCH DEBUG] Venue search error: {e}")
+            result["debug_info"]["venue_search_error"] = str(e)
+    else:
+        print(f"[SEARCH DEBUG] No category specified, skipping venue search - will return city guide only")
+    
+    # Generate quick guide using Wikipedia for CITY-level searches only
+    # Neighborhood searches should use the existing /generate_quick_guide endpoint
+    if wikipedia_search and not neighborhood and city:
+        try:
+            print(f"[SEARCH DEBUG] Generating city-wide Wikipedia quick guide for {city}")
+            
+            async def get_city_guide():
+                # Simple Wikipedia API call with proper User-Agent
+                url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{city.replace(' ', '_')}"
+                headers = {"User-Agent": "TravelLand/1.0 (travel-guide-app; https://github.com/example/travelland)"}
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=10), headers=headers) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            extract = data.get('extract')
+                            if extract:
+                                # Add city image if available
+                                city_image = None
+                                if city_image_search:
+                                    try:
+                                        image_info = await city_image_search(city, session=session)
+                                        if image_info and image_info.get('image_url'):
+                                            city_image = {
+                                                'url': image_info['image_url'],
+                                                'attribution': image_info.get('attribution'),
+                                                'source': 'wikipedia'
+                                            }
+                                    except Exception as e:
+                                        print(f"[SEARCH DEBUG] Failed to fetch city image: {e}")
+                                
+                                return {
+                                    'guide': extract,
+                                    'image': city_image
+                                }
+                        return None
+            
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                city_guide_result = loop.run_until_complete(get_city_guide())
+                if city_guide_result:
+                    result["quick_guide"] = city_guide_result['guide']
+                    if city_guide_result.get('image'):
+                        result["city_image"] = city_guide_result['image']
+                    result["source"] = "wikipedia_city"
+                    print("[SEARCH DEBUG] Generated city-wide quick guide using Wikipedia")
+                else:
+                    print("[SEARCH DEBUG] No Wikipedia results for city")
+            finally:
+                loop.close()
+                
+        except Exception as e:
+            print(f"[SEARCH DEBUG] Wikipedia city guide generation error: {e}")
+            result["debug_info"]["city_guide_error"] = str(e)
+    elif neighborhood:
+        print(f"[SEARCH DEBUG] Neighborhood specified ({neighborhood}), skipping city-level Wikipedia guide (will use /generate_quick_guide endpoint)")
+    else:
+        print("[SEARCH DEBUG] Wikipedia not available or no city specified, skipping quick guide generation")
+    
+    print(f"[SEARCH DEBUG] Final result: {len(result.get('venues', []))} venues, quick_guide: {bool(result.get('quick_guide'))}")
+    return result
 
 
 # Re-export key functions for backward compatibility

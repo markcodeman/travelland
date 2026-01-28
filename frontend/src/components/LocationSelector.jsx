@@ -3,7 +3,15 @@ import React, { useState, useEffect } from 'react';
 // Use Vite proxy: API_BASE should be empty string for local dev
 const API_BASE = '';
 
-const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
+const LocationSelector = ({
+  onLocationChange,
+  initialLocation = {},
+  neighborhoodOptions = [],
+  neighborhoodOptIn = false,
+  onToggleNeighborhood,
+  onCityGuide,
+  canTriggerCityGuide,
+}) => {
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
@@ -157,6 +165,21 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
     }, { enableHighAccuracy: false, timeout: 10000 });
   }; 
 
+  useEffect(() => {
+    if (!neighborhoodOptIn) {
+      setNeighborhoods([]);
+      return;
+    }
+    if (Array.isArray(neighborhoodOptions) && neighborhoodOptions.length > 0) {
+      const mapped = neighborhoodOptions.map((name, index) => ({
+        key: `${name}-${index}`,
+        id: name,
+        name,
+      }));
+      setNeighborhoods(mapped);
+    }
+  }, [neighborhoodOptions, neighborhoodOptIn]);
+
   // Filtered options
   const filteredCountries = countries.filter(country =>
     country.name.toLowerCase().includes(countryInput.toLowerCase())
@@ -305,6 +328,10 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
   };
 
   const fetchNeighborhoodsForCity = async (countryCode, cityName) => {
+    if (!neighborhoodOptIn) {
+      setNeighborhoods([]);
+      return;
+    }
     if (!countryCode || !cityName) {
       setNeighborhoods([]);
       setSelectedNeighborhood('');
@@ -380,8 +407,12 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
 
   // Fetch neighborhoods when city changes
   useEffect(() => {
-    fetchNeighborhoodsForCity(selectedCountry, selectedCity);
-  }, [selectedCountry, selectedCity]);
+    if (neighborhoodOptIn) {
+      fetchNeighborhoodsForCity(selectedCountry, selectedCity);
+    } else {
+      setNeighborhoods([]);
+    }
+  }, [selectedCountry, selectedCity, neighborhoodOptIn]);
 
   // Notify parent of location changes
   useEffect(() => {
@@ -644,9 +675,9 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
               overflowY: 'auto',
               zIndex: 1000
             }}>
-              {filteredCities.map(city => (
+              {filteredCities.map((city, index) => (
                 <div
-                  key={city.id}
+                  key={city.id || city.geonameId || `${city.name}-${index}`}
                   onClick={() => handleCitySelect(city)}
                   style={{
                     padding: '8px',
@@ -661,12 +692,40 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
               ))}
             </div>
           )}
+          <div className="city-guide-actions">
+            <button
+              className="city-guide-button"
+              type="button"
+              onClick={onCityGuide}
+              disabled={!canTriggerCityGuide}
+            >
+              👉 City guide
+            </button>
+          </div>
         </div>
       )}
 
-      {selectedCity && (
+      {selectedCity && !neighborhoodOptIn && onToggleNeighborhood && (
+        <div className="neighborhood-optin">
+          <div>
+            Want a hyper-local guide? Enable neighborhoods to pick a specific area once options load.
+          </div>
+          <button type="button" onClick={onToggleNeighborhood}>Go deeper</button>
+        </div>
+      )}
+
+      {selectedCity && neighborhoodOptIn && (
         <div style={{ marginBottom: '8px', position: 'relative' }}>
-          <label style={labelStyle}>Neighborhood (optional): <button type="button" aria-label="Refresh neighborhoods" title="Refresh neighborhoods" onClick={refreshNeighborhoods} style={{ marginLeft: 8, padding: '2px 6px', fontSize: 12, borderRadius: 4, cursor: 'pointer' }}>↻</button> <button type="button" aria-label="Use my location" title="Use my location" onClick={handleUseMyLocation} style={{ marginLeft: 8, padding: '2px 8px', fontSize: 12, borderRadius: 4, cursor: 'pointer' }} disabled={geoLoading}>{geoLoading ? 'Locating…' : 'Use my location 📍'}</button></label>
+          <label style={labelStyle}>
+            Neighborhood (optional):
+            <button type="button" aria-label="Refresh neighborhoods" title="Refresh neighborhoods" onClick={refreshNeighborhoods} style={{ marginLeft: 8, padding: '2px 6px', fontSize: 12, borderRadius: 4, cursor: 'pointer' }}>↻</button>
+            <button type="button" aria-label="Use my location" title="Use my location" onClick={handleUseMyLocation} style={{ marginLeft: 8, padding: '2px 8px', fontSize: 12, borderRadius: 4, cursor: 'pointer' }} disabled={geoLoading}>{geoLoading ? 'Locating…' : 'Use my location 📍'}</button>
+            {onToggleNeighborhood && (
+              <button type="button" style={{ marginLeft: 8, padding: '2px 8px', fontSize: 12, borderRadius: 4, cursor: 'pointer', background: '#f5f5f5', color: '#333' }} onClick={onToggleNeighborhood}>
+                Hide
+              </button>
+            )}
+          </label>
           <input
             type="text"
             value={neighborhoodInput}
@@ -676,6 +735,24 @@ const LocationSelector = ({ onLocationChange, initialLocation = {} }) => {
             style={selectStyle}
             disabled={loading.neighborhoods}
           />
+          <div className="neighborhood-status-wrap">
+            {loading.neighborhoods ? (
+              <div className="neighborhood-status neighborhood-status--loading" role="status" aria-live="polite">
+                <span className="status-spinner" aria-hidden="true" />
+                <span>Loading neighborhoods… pick one to unlock a hyper-local guide.</span>
+              </div>
+            ) : neighborhoods.length > 0 ? (
+              !selectedNeighborhood && (
+                <div className="neighborhood-status neighborhood-status--ready">
+                  Neighborhood suggestions are ready. Choose one for a deeper quick guide.
+                </div>
+              )
+            ) : (
+              <div className="neighborhood-status neighborhood-status--empty">
+                We couldn’t find neighborhoods right now—you can still explore the city guide.
+              </div>
+            )}
+          </div>
           {showNeighborhoodDropdown && filteredNeighborhoods.length > 0 && (
             <div style={{
               position: 'absolute',

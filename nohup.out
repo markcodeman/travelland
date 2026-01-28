@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/home/markm/TravelLand/./venv/bin/hypercorn", line 8, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/markm/TravelLand/venv/lib/python3.12/site-packages/hypercorn/__main__.py", line 312, in main
+    return run(config)
+           ^^^^^^^^^^^
+  File "/home/markm/TravelLand/venv/lib/python3.12/site-packages/hypercorn/run.py", line 39, in run
+    sockets = config.create_sockets()
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/markm/TravelLand/venv/lib/python3.12/site-packages/hypercorn/config.py", line 208, in create_sockets
+    insecure_sockets = self._create_sockets(self.bind)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/markm/TravelLand/venv/lib/python3.12/site-packages/hypercorn/config.py", line 275, in _create_sockets
+    sock.bind(binding)
+OSError: [Errno 98] Address already in use

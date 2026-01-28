@@ -11,6 +11,7 @@ export default defineConfig({
       '/api/chat': 'http://localhost:3000',
       '/api': 'http://localhost:5010',
       '/search': 'http://localhost:5010',
+      '/synthesize': 'http://localhost:5010',
       '/neighborhoods': 'http://localhost:5010',
       '/geocode': 'http://localhost:5010',
       // Backend endpoints used without /api prefix in the frontend
