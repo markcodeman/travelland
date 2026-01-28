@@ -1,3 +1,10 @@
+try:
+    from city_guides.providers.wikipedia_provider import fetch_wikipedia_summary
+    WIKI_CITY_AVAILABLE = True
+except Exception:
+    fetch_wikipedia_summary = None
+    WIKI_CITY_AVAILABLE = False
+
 """
 Refactored TravelLand app.py with modular structure
 """
@@ -61,7 +68,7 @@ from .neighborhood_disambiguator import NeighborhoodDisambiguator
 app = Quart(__name__, static_folder="/home/markm/TravelLand/city_guides/static", static_url_path='', template_folder="/home/markm/TravelLand/city_guides/templates")
 
 # Configure CORS
-cors(app, allow_origin="http://localhost:5174", allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+cors(app, allow_origin=["http://localhost:5174", "https://travelland-w0ny.onrender.com"], allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
 # Global async clients
 aiohttp_session: aiohttp.ClientSession | None = None
@@ -79,6 +86,71 @@ PREWARM_TTL = int(os.getenv("SEARCH_PREWARM_TTL", "3600"))
 NEIGHBORHOOD_CACHE_TTL = int(os.getenv("NEIGHBORHOOD_CACHE_TTL", 60 * 60 * 24 * 7))  # 7 days
 POPULAR_CITIES = [c.strip() for c in os.getenv("POPULAR_CITIES", "London,Paris,New York,Tokyo,Rome,Barcelona").split(",") if c.strip()]
 DISABLE_PREWARM = True  # os.getenv("DISABLE_PREWARM", "false").lower() == "true"
+
+
+async def fetch_city_wikipedia(city: str, state: str | None = None, country: str | None = None) -> tuple[str, str] | None:
+    """Return (summary, url) for the given city using Wikipedia."""
+    if not (WIKI_CITY_AVAILABLE and city):
+        return None
+
+    def _candidates():
+        base = city.strip()
+        seen = set()
+        for candidate in [
+            base,
+            f"{base}, {state}" if state else None,
+            f"{base}, {country}" if country else None,
+            f"{base}, {state}, {country}" if state and country else None,
+        ]:
+            if candidate:
+                normalized = candidate.strip()
+                if normalized.lower() not in seen:
+                    seen.add(normalized.lower())
+                    yield normalized
+
+    async def _fetch_for_title(title: str):
+        slug = title.replace(' ', '_')
+        summary = await fetch_wikipedia_summary(title, lang="en", city=city)
+        if summary:
+            return summary.strip(), f"https://en.wikipedia.org/wiki/{slug}"
+        return None
+
+    # Try direct titles first
+    for title in _candidates():
+        try:
+            result = await _fetch_for_title(title)
+            if result:
+                return result
+        except Exception:
+            app.logger.exception('Direct Wikipedia summary fetch failed for %s via %s', city, title)
+
+    # Fallback: use Wikipedia open search with candidates
+    try:
+        async with aiohttp.ClientSession() as session:
+            for title in _candidates():
+                params = {
+                    "action": "opensearch",
+                    "search": title,
+                    "limit": 1,
+                    "namespace": 0,
+                    "format": "json",
+                }
+                async with session.get("https://en.wikipedia.org/w/api.php", params=params, timeout=6) as resp:
+                    if resp.status != 200:
+                        continue
+                    data = await resp.json()
+                    if isinstance(data, list) and len(data) >= 2 and data[1]:
+                        best_title = data[1][0]
+                        try:
+                            result = await _fetch_for_title(best_title)
+                            if result:
+                                return result
+                        except Exception:
+                            app.logger.exception('OpenSearch Wikipedia summary failed for %s via %s', city, best_title)
+    except Exception:
+        app.logger.exception('Wikipedia open search failed for %s', city)
+
+    return None
 
 # DDGS provider import is optional at module import time (tests may not have ddgs installed)
 try:
@@ -681,6 +753,8 @@ async def search():
     city = (payload.get("query") or "").strip()
     q = (payload.get("category") or "").strip().lower()
     neighborhood = payload.get("neighborhood")
+    state_name = (payload.get("state") or payload.get("stateName") or "").strip()
+    country_name = (payload.get("country") or payload.get("countryName") or "").strip()
     should_cache = False  # disabled for testing
     
     if not city:
@@ -690,6 +764,22 @@ async def search():
         # Use the search implementation from routes
         from .routes import _search_impl
         result = await asyncio.to_thread(_search_impl, payload)
+
+        # If no quick_guide/summary provided by upstream providers, supplement with Wikipedia summary
+        if WIKI_CITY_AVAILABLE and isinstance(result, dict):
+            has_quick = bool((result.get('quick_guide') or '').strip())
+            has_summary = bool((result.get('summary') or '').strip())
+            if not has_quick and not has_summary:
+                try:
+                    wiki_data = await fetch_city_wikipedia(city, state_name or None, country_name or None)
+                    if wiki_data:
+                        summary, url = wiki_data
+                        result['quick_guide'] = summary
+                        result['source'] = 'wikipedia'
+                        result['cached'] = False
+                        result['source_url'] = url
+                except Exception:
+                    app.logger.exception('Wikipedia city fallback failed for %s', city)
         
         if should_cache and redis_client:
             cache_key = build_search_cache_key(city, q, neighborhood)
@@ -704,6 +794,44 @@ async def search():
     except Exception as e:
         app.logger.exception('Search failed')
         return jsonify({"error": "search_failed", "details": str(e)}), 500
+
+@app.route('/synthesize', methods=['POST'])
+async def synthesize():
+    """Synthesize venues from search results using AI enhancement"""
+    try:
+        data = await request.get_json(silent=True) or {}
+        search_result = data.get('search_result')
+        
+        if not search_result:
+            return jsonify({'error': 'search_result required'}), 400
+        
+        # For now, return a simple synthesis based on available venues
+        # In the future, this could use AI to enhance the venue data
+        venues = search_result.get('venues', [])
+        synthesized_venues = []
+        
+        for venue in venues[:10]:  # Limit to 10 venues
+            synthesized_venue = {
+                'id': venue.get('id'),
+                'name': venue.get('name'),
+                'address': venue.get('address'),
+                'description': venue.get('description') or f'A popular {search_result.get("category", "spot")} in {search_result.get("city", "the city")}',
+                'lat': venue.get('lat'),
+                'lon': venue.get('lon'),
+                'provider': venue.get('provider', 'osm'),
+                'tags': venue.get('tags', {}),
+                'enhanced_description': venue.get('description') or f'Great option for {search_result.get("category", "dining")} in the area'
+            }
+            synthesized_venues.append(synthesized_venue)
+        
+        return jsonify({
+            'synthesized_venues': synthesized_venues,
+            'total': len(synthesized_venues)
+        })
+        
+    except Exception as e:
+        app.logger.exception('Synthesis failed')
+        return jsonify({'error': 'synthesis_failed', 'details': str(e)}), 500
 
 @app.route('/generate_quick_guide', methods=['POST'])
 async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
@@ -1822,41 +1950,429 @@ async def _get_countries():
         except Exception:
             return []
 
-def _search_impl(payload):
-    """Core search implementation - moved to module level for reusability"""
-    # This is a simplified version of the search logic
-    # In a real implementation, this would contain the full search logic
-    # but for brevity, we'll return a basic structure
-    city = (payload.get("query") or "").strip()
-    q = (payload.get("category") or "").strip().lower()
-    
-    # Basic validation
-    if not city:
-        return {"error": "City not found or invalid"}
-    
-    # Mock results for demonstration
-    results = []
-    if q and "food" in q:
-        results = [
-            {
-                "id": "mock-restaurant-1",
-                "name": "Local Eatery",
-                "description": "Great local food",
-                "budget": "cheap",
-                "price_range": "$",
-                "address": "123 Main St",
-                "latitude": 40.7128,
-                "longitude": -74.0060,
-                "provider": "mock"
-            }
-        ]
-    
-    return {
-        "venues": results,
-        "city": city,
-        "partial": False,
-        "debug_info": {"city": city, "query": q}
-    }
+@app.route('/api/parse-dream', methods=['POST'])
+async def parse_dream():
+    """Parse natural language travel dreams into structured location data.
+    Accepts queries like "Paris cafes", "Tokyo nightlife", "Barcelona beaches"
+    Returns: { city, country, state, neighborhood, intent, confidence }
+    """
+    try:
+        payload = await request.get_json(silent=True) or {}
+        query = (payload.get('query') or '').strip()
+        
+        if not query:
+            return jsonify({'error': 'query required'}), 400
+        
+        # Initialize result
+        result = {
+            'city': '',
+            'country': '',
+            'state': '',
+            'neighborhood': '',
+            'cityName': '',
+            'countryName': '',
+            'stateName': '',
+            'neighborhoodName': '',
+            'intent': '',
+            'confidence': 'low'
+        }
+        
+        # Common city mappings for quick recognition
+        city_mappings = {
+            'paris': {'city': 'Paris', 'country': 'FR', 'countryName': 'France'},
+            'tokyo': {'city': 'Tokyo', 'country': 'JP', 'countryName': 'Japan'},
+            'london': {'city': 'London', 'country': 'GB', 'countryName': 'United Kingdom'},
+            'new york': {'city': 'New York', 'country': 'US', 'countryName': 'United States', 'state': 'NY', 'stateName': 'New York'},
+            'barcelona': {'city': 'Barcelona', 'country': 'ES', 'countryName': 'Spain', 'state': 'CT', 'stateName': 'Catalonia'},
+            'rome': {'city': 'Rome', 'country': 'IT', 'countryName': 'Italy'},
+            'amsterdam': {'city': 'Amsterdam', 'country': 'NL', 'countryName': 'Netherlands'},
+            'berlin': {'city': 'Berlin', 'country': 'DE', 'countryName': 'Germany'},
+            'lisbon': {'city': 'Lisbon', 'country': 'PT', 'countryName': 'Portugal'},
+            'rio de janeiro': {'city': 'Rio de Janeiro', 'country': 'BR', 'countryName': 'Brazil', 'state': 'RJ', 'stateName': 'Rio de Janeiro'},
+            'sydney': {'city': 'Sydney', 'country': 'AU', 'countryName': 'Australia', 'state': 'NSW', 'stateName': 'New South Wales'},
+            'dubai': {'city': 'Dubai', 'country': 'AE', 'countryName': 'United Arab Emirates'},
+            'singapore': {'city': 'Singapore', 'country': 'SG', 'countryName': 'Singapore'},
+            'bangkok': {'city': 'Bangkok', 'country': 'TH', 'countryName': 'Thailand'},
+            'mumbai': {'city': 'Mumbai', 'country': 'IN', 'countryName': 'India', 'state': 'MH', 'stateName': 'Maharashtra'},
+            'toronto': {'city': 'Toronto', 'country': 'CA', 'countryName': 'Canada', 'state': 'ON', 'stateName': 'Ontario'},
+            'vancouver': {'city': 'Vancouver', 'country': 'CA', 'countryName': 'Canada', 'state': 'BC', 'stateName': 'British Columbia'},
+            'mexico city': {'city': 'Mexico City', 'country': 'MX', 'countryName': 'Mexico', 'state': 'DF', 'stateName': 'Distrito Federal'},
+            'buenos aires': {'city': 'Buenos Aires', 'country': 'AR', 'countryName': 'Argentina'},
+            'cape town': {'city': 'Cape Town', 'country': 'ZA', 'countryName': 'South Africa'},
+            'cairo': {'city': 'Cairo', 'country': 'EG', 'countryName': 'Egypt'},
+            'istanbul': {'city': 'Istanbul', 'country': 'TR', 'countryName': 'Turkey'},
+            'moscow': {'city': 'Moscow', 'country': 'RU', 'countryName': 'Russia'},
+            'madrid': {'city': 'Madrid', 'country': 'ES', 'countryName': 'Spain'},
+            'prague': {'city': 'Prague', 'country': 'CZ', 'countryName': 'Czech Republic'},
+            'vienna': {'city': 'Vienna', 'country': 'AT', 'countryName': 'Austria'},
+            'budapest': {'city': 'Budapest', 'country': 'HU', 'countryName': 'Hungary'},
+            'stockholm': {'city': 'Stockholm', 'country': 'SE', 'countryName': 'Sweden'},
+            'oslo': {'city': 'Oslo', 'country': 'NO', 'countryName': 'Norway'},
+            'helsinki': {'city': 'Helsinki', 'country': 'FI', 'countryName': 'Finland'},
+            'copenhagen': {'city': 'Copenhagen', 'country': 'DK', 'countryName': 'Denmark'},
+            'warsaw': {'city': 'Warsaw', 'country': 'PL', 'countryName': 'Poland'},
+            'athens': {'city': 'Athens', 'country': 'GR', 'countryName': 'Greece'},
+            'dublin': {'city': 'Dublin', 'country': 'IE', 'countryName': 'Ireland'},
+            'reykjavik': {'city': 'Reykjavik', 'country': 'IS', 'countryName': 'Iceland'},
+            'zurich': {'city': 'Zurich', 'country': 'CH', 'countryName': 'Switzerland'},
+        }
+
+        # Region mappings for areas that aren't specific cities
+        region_mappings = {
+            'swiss alps': {'city': 'Zurich', 'country': 'CH', 'countryName': 'Switzerland', 'region': 'Swiss Alps'},
+            'alps': {'city': 'Zurich', 'country': 'CH', 'countryName': 'Switzerland', 'region': 'Alps'},
+            'caribbean': {'city': 'Nassau', 'country': 'BS', 'countryName': 'Bahamas', 'region': 'Caribbean'},
+            'mediterranean': {'city': 'Barcelona', 'country': 'ES', 'countryName': 'Spain', 'region': 'Mediterranean'},
+            'balkans': {'city': 'Athens', 'country': 'GR', 'countryName': 'Greece', 'region': 'Balkans'},
+            'scandinavia': {'city': 'Stockholm', 'country': 'SE', 'countryName': 'Sweden', 'region': 'Scandinavia'},
+            'rocky mountains': {'city': 'Denver', 'country': 'US', 'countryName': 'United States', 'region': 'Rocky Mountains'},
+            'himalayas': {'city': 'Kathmandu', 'country': 'NP', 'countryName': 'Nepal', 'region': 'Himalayas'},
+            'sahara': {'city': 'Cairo', 'country': 'EG', 'countryName': 'Egypt', 'region': 'Sahara'},
+        }
+        
+        # Common neighborhood mappings
+        neighborhood_mappings = {
+            'brooklyn': {'city': 'New York', 'neighborhood': 'Brooklyn', 'country': 'US', 'state': 'NY'},
+            'manhattan': {'city': 'New York', 'neighborhood': 'Manhattan', 'country': 'US', 'state': 'NY'},
+            'shoreditch': {'city': 'London', 'neighborhood': 'Shoreditch', 'country': 'GB'},
+            'camden': {'city': 'London', 'neighborhood': 'Camden', 'country': 'GB'},
+            'soho': {'city': 'London', 'neighborhood': 'Soho', 'country': 'GB'},
+            'copacabana': {'city': 'Rio de Janeiro', 'neighborhood': 'Copacabana', 'country': 'BR', 'state': 'RJ'},
+            'ipanema': {'city': 'Rio de Janeiro', 'neighborhood': 'Ipanema', 'country': 'BR', 'state': 'RJ'},
+            'santa teresa': {'city': 'Rio de Janeiro', 'neighborhood': 'Santa Teresa', 'country': 'BR', 'state': 'RJ'},
+            'leblon': {'city': 'Rio de Janeiro', 'neighborhood': 'Leblon', 'country': 'BR', 'state': 'RJ'},
+            'alfama': {'city': 'Lisbon', 'neighborhood': 'Alfama', 'country': 'PT'},
+            'baixa': {'city': 'Lisbon', 'neighborhood': 'Baixa', 'country': 'PT'},
+            'chiado': {'city': 'Lisbon', 'neighborhood': 'Chiado', 'country': 'PT'},
+            'bairro alto': {'city': 'Lisbon', 'neighborhood': 'Bairro Alto', 'country': 'PT'},
+            'belém': {'city': 'Lisbon', 'neighborhood': 'Belém', 'country': 'PT'},
+        }
+        
+        # Intent keywords
+        intent_keywords = {
+            'coffee': ['coffee', 'cafe', 'cafes', 'espresso', 'latte', 'cappuccino'],
+            'nightlife': ['nightlife', 'bars', 'club', 'clubs', 'party', 'drinks', 'pub', 'pubs'],
+            'beaches': ['beach', 'beaches', 'coast', 'shore', 'ocean', 'sea', 'sand'],
+            'food': ['food', 'eat', 'restaurant', 'restaurants', 'dining', 'cuisine', 'dish'],
+            'shopping': ['shop', 'shopping', 'mall', 'stores', 'boutique', 'market'],
+            'culture': ['museum', 'museums', 'art', 'culture', 'gallery', 'historical', 'monument'],
+            'nature': ['park', 'parks', 'nature', 'hiking', 'garden', 'outdoor'],
+            'romance': ['romantic', 'romance', 'couples', 'date', 'sunset'],
+            'adventure': ['adventure', 'adventurous', 'extreme', 'thrill'],
+            'relaxation': ['relax', 'relaxing', 'spa', 'peaceful', 'quiet'],
+        }
+        
+        # Parse the query
+        query_lower = query.lower()
+        
+        # Dynamic fuzzy matching using Levenshtein distance
+        def levenshtein_distance(s1, s2):
+            """Calculate Levenshtein distance between two strings"""
+            if len(s1) < len(s2):
+                return levenshtein_distance(s2, s1)
+            
+            if len(s2) == 0:
+                return len(s1)
+            
+            previous_row = list(range(len(s2) + 1))
+            for i, c1 in enumerate(s1):
+                current_row = [i + 1]
+                for j, c2 in enumerate(s2):
+                    insertions = previous_row[j + 1] + 1
+                    deletions = current_row[j] + 1
+                    substitutions = previous_row[j] + (c1 != c2)
+                    current_row.append(min(insertions, deletions, substitutions))
+                previous_row = current_row
+            
+            return previous_row[-1]
+        
+        def find_best_match(query, options, max_distance=2):
+            """Find best fuzzy match from options"""
+            best_match = None
+            best_score = float('inf')
+            
+            for option in options:
+                distance = levenshtein_distance(query, option)
+                if distance <= max_distance and distance < best_score:
+                    best_score = distance
+                    best_match = option
+            
+            return best_match
+        
+        # Combine all searchable locations
+        all_regions = list(region_mappings.keys())
+        all_cities = list(city_mappings.keys())
+        all_neighborhoods = list(neighborhood_mappings.keys())
+        
+        # Try fuzzy matching for regions first
+        region_match = find_best_match(query_lower, all_regions)
+        if region_match:
+            mapping = region_mappings[region_match]
+            result.update(mapping)
+            result['cityName'] = mapping['city']
+            result['countryName'] = mapping['countryName']
+            if 'region' in mapping:
+                result['region'] = mapping['region']
+            result['confidence'] = 'medium'
+        
+        # Check for explicit neighborhoods first
+        neighborhood_match = find_best_match(query_lower, all_neighborhoods)
+        if neighborhood_match:
+            hood_data = neighborhood_mappings[neighborhood_match]
+            result.update(hood_data)
+            result['neighborhoodName'] = hood_data['neighborhood']
+            result['cityName'] = hood_data['city']
+            result['confidence'] = 'high'
+        
+        # If no neighborhood found, check for cities
+        if not result['city']:
+            city_match = find_best_match(query_lower, all_cities)
+            if city_match:
+                city_data = city_mappings[city_match]
+                result.update(city_data)
+                result['cityName'] = city_data['city']
+                result['confidence'] = 'high'
+        
+        # Extract intent
+        detected_intent = []
+        for intent, keywords in intent_keywords.items():
+            if any(keyword in query_lower for keyword in keywords):
+                detected_intent.append(intent)
+        
+        if detected_intent:
+            result['intent'] = ', '.join(detected_intent)
+            # Boost confidence if we have both location and intent
+            if result['city'] and result['confidence'] == 'high':
+                result['confidence'] = 'very_high'
+            elif result['city']:
+                result['confidence'] = 'medium'
+        
+        # If no city found, try to extract using AI as fallback
+        if not result['city']:
+            try:
+                # Use Groq for natural language parsing as fallback
+                from city_guides.groq.traveland_rag import recommender
+                if recommender.api_key:
+                    messages = [
+                        {"role": "system", "content": "Extract location information from travel queries. Return JSON with city, country, and optionally state/neighborhood. Be conservative - only return locations you're confident about."},
+                        {"role": "user", "content": f"Extract location from: {query}"}
+                    ]
+                    response = recommender.call_groq_chat(messages, timeout=10)
+                    if response:
+                        import json
+                        parsed = json.loads(response["choices"][0]["message"]["content"])
+                        if parsed.get('city'):
+                            result.update(parsed)
+                            result['cityName'] = parsed.get('city', '')
+                            result['countryName'] = parsed.get('country', '')
+                            result['stateName'] = parsed.get('state', '')
+                            result['neighborhoodName'] = parsed.get('neighborhood', '')
+                            result['confidence'] = 'medium'
+            except Exception as e:
+                app.logger.warning(f"AI parsing fallback failed: {e}")
+        
+        # Final fallback: try simple city name extraction
+        if not result['city']:
+            words = query.lower().split()
+            # Check multi-word regions first
+            query_lower = query.lower()
+            for region_name, mapping in region_mappings.items():
+                if region_name in query_lower:
+                    result.update(mapping)
+                    result['cityName'] = mapping['city']
+                    result['countryName'] = mapping['countryName']
+                    if 'region' in mapping:
+                        result['region'] = mapping['region']
+                    result['confidence'] = 'low'
+                    break
+            
+            # If still no city, check single words
+            if not result['city']:
+                for word in words:
+                    if word in city_mappings:
+                        mapping = city_mappings[word]
+                        result.update(mapping)
+                        result['cityName'] = mapping['city']
+                        result['countryName'] = mapping['countryName']
+                        if 'stateName' in mapping:
+                            result['stateName'] = mapping['stateName']
+                        result['confidence'] = 'low'
+                        break
+        
+        # Clean up result
+        if not result['city']:
+            return jsonify({'error': 'no_location_detected', 'query': query}), 400
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.exception('Dream parsing failed')
+        return jsonify({'error': 'parsing_failed', 'details': str(e)}), 500
+
+@app.route('/api/location-suggestions', methods=['POST'])
+async def location_suggestions():
+    """Provide location suggestions based on partial input with learning weights"""
+    try:
+        payload = await request.get_json(silent=True) or {}
+        query = (payload.get('query') or '').strip().lower()
+        
+        if len(query) < 2:
+            return jsonify({'suggestions': []})
+        
+        suggestions = []
+        
+        # Levenshtein distance function
+        def levenshtein_distance(s1, s2):
+            if len(s1) < len(s2):
+                return levenshtein_distance(s2, s1)
+            
+            if len(s2) == 0:
+                return len(s1)
+            
+            previous_row = list(range(len(s2) + 1))
+            for i, c1 in enumerate(s1):
+                current_row = [i + 1]
+                for j, c2 in enumerate(s2):
+                    insertions = previous_row[j + 1] + 1
+                    deletions = current_row[j] + 1
+                    substitutions = previous_row[j] + (c1 != c2)
+                    current_row.append(min(insertions, deletions, substitutions))
+                previous_row = current_row
+            
+            return previous_row[-1]
+        
+        # Define mappings here (could be moved to global scope)
+        city_mappings = {
+            'paris': {'city': 'Paris', 'country': 'FR', 'countryName': 'France'},
+            'tokyo': {'city': 'Tokyo', 'country': 'JP', 'countryName': 'Japan'},
+            'london': {'city': 'London', 'country': 'GB', 'countryName': 'United Kingdom'},
+            'new york': {'city': 'New York', 'country': 'US', 'countryName': 'United States', 'state': 'NY', 'stateName': 'New York'},
+            'barcelona': {'city': 'Barcelona', 'country': 'ES', 'countryName': 'Spain', 'state': 'CT', 'stateName': 'Catalonia'},
+            'rome': {'city': 'Rome', 'country': 'IT', 'countryName': 'Italy'},
+            'amsterdam': {'city': 'Amsterdam', 'country': 'NL', 'countryName': 'Netherlands'},
+            'berlin': {'city': 'Berlin', 'country': 'DE', 'countryName': 'Germany'},
+            'lisbon': {'city': 'Lisbon', 'country': 'PT', 'countryName': 'Portugal'},
+            'rio de janeiro': {'city': 'Rio de Janeiro', 'country': 'BR', 'countryName': 'Brazil', 'state': 'RJ', 'stateName': 'Rio de Janeiro'},
+            'sydney': {'city': 'Sydney', 'country': 'AU', 'countryName': 'Australia', 'state': 'NSW', 'stateName': 'New South Wales'},
+            'dubai': {'city': 'Dubai', 'country': 'AE', 'countryName': 'United Arab Emirates'},
+            'singapore': {'city': 'Singapore', 'country': 'SG', 'countryName': 'Singapore'},
+            'bangkok': {'city': 'Bangkok', 'country': 'TH', 'countryName': 'Thailand'},
+            'mumbai': {'city': 'Mumbai', 'country': 'IN', 'countryName': 'India', 'state': 'MH', 'stateName': 'Maharashtra'},
+            'toronto': {'city': 'Toronto', 'country': 'CA', 'countryName': 'Canada', 'state': 'ON', 'stateName': 'Ontario'},
+            'vancouver': {'city': 'Vancouver', 'country': 'CA', 'countryName': 'Canada', 'state': 'BC', 'stateName': 'British Columbia'},
+            'mexico city': {'city': 'Mexico City', 'country': 'MX', 'countryName': 'Mexico', 'state': 'DF', 'stateName': 'Distrito Federal'},
+            'buenos aires': {'city': 'Buenos Aires', 'country': 'AR', 'countryName': 'Argentina'},
+            'cape town': {'city': 'Cape Town', 'country': 'ZA', 'countryName': 'South Africa'},
+            'cairo': {'city': 'Cairo', 'country': 'EG', 'countryName': 'Egypt'},
+            'istanbul': {'city': 'Istanbul', 'country': 'TR', 'countryName': 'Turkey'},
+            'moscow': {'city': 'Moscow', 'country': 'RU', 'countryName': 'Russia'},
+            'madrid': {'city': 'Madrid', 'country': 'ES', 'countryName': 'Spain'},
+            'prague': {'city': 'Prague', 'country': 'CZ', 'countryName': 'Czech Republic'},
+            'vienna': {'city': 'Vienna', 'country': 'AT', 'countryName': 'Austria'},
+            'budapest': {'city': 'Budapest', 'country': 'HU', 'countryName': 'Hungary'},
+            'stockholm': {'city': 'Stockholm', 'country': 'SE', 'countryName': 'Sweden'},
+            'oslo': {'city': 'Oslo', 'country': 'NO', 'countryName': 'Norway'},
+            'helsinki': {'city': 'Helsinki', 'country': 'FI', 'countryName': 'Finland'},
+            'copenhagen': {'city': 'Copenhagen', 'country': 'DK', 'countryName': 'Denmark'},
+            'warsaw': {'city': 'Warsaw', 'country': 'PL', 'countryName': 'Poland'},
+            'athens': {'city': 'Athens', 'country': 'GR', 'countryName': 'Greece'},
+            'dublin': {'city': 'Dublin', 'country': 'IE', 'countryName': 'Ireland'},
+            'reykjavik': {'city': 'Reykjavik', 'country': 'IS', 'countryName': 'Iceland'},
+            'zurich': {'city': 'Zurich', 'country': 'CH', 'countryName': 'Switzerland'},
+        }
+        
+        region_mappings = {
+            'swiss alps': {'city': 'Zurich', 'country': 'CH', 'countryName': 'Switzerland', 'region': 'Swiss Alps'},
+            'alps': {'city': 'Zurich', 'country': 'CH', 'countryName': 'Switzerland', 'region': 'Alps'},
+            'caribbean': {'city': 'Nassau', 'country': 'BS', 'countryName': 'Bahamas', 'region': 'Caribbean'},
+            'mediterranean': {'city': 'Barcelona', 'country': 'ES', 'countryName': 'Spain', 'region': 'Mediterranean'},
+            'balkans': {'city': 'Athens', 'country': 'GR', 'countryName': 'Greece', 'region': 'Balkans'},
+            'scandinavia': {'city': 'Stockholm', 'country': 'SE', 'countryName': 'Sweden', 'region': 'Scandinavia'},
+            'rocky mountains': {'city': 'Denver', 'country': 'US', 'countryName': 'United States', 'region': 'Rocky Mountains'},
+            'himalayas': {'city': 'Kathmandu', 'country': 'NP', 'countryName': 'Nepal', 'region': 'Himalayas'},
+            'sahara': {'city': 'Cairo', 'country': 'EG', 'countryName': 'Egypt', 'region': 'Sahara'},
+        }
+        
+        # Get all locations with their weights
+        all_locations = []
+        
+        # Trending destinations 2025 (higher priority)
+        trending_destinations = {
+            'london': 3.0, 'barcelona': 3.0, 'bangkok': 3.0, 'paris': 3.0,
+            'rome': 3.0, 'tokyo': 3.0, 'new york': 3.0, 'amsterdam': 3.0,
+            'dubai': 3.0, 'singapore': 3.0, 'venice': 2.5, 'prague': 2.5,
+            'madrid': 2.5, 'berlin': 2.5, 'vienna': 2.5, 'zurich': 2.5,
+            'copenhagen': 2.5, 'stockholm': 2.5, 'oslo': 2.5, 'helsinki': 2.5,
+            'warsaw': 2.5, 'athens': 2.5, 'dublin': 2.5, 'edinburgh': 2.5,
+            'lisbon': 2.5, 'budapest': 2.5, 'istanbul': 2.5, 'cairo': 2.5,
+            'mumbai': 2.5
+        }
+        
+        # Add cities with weights (base weight + trending bonus)
+        for city, data in city_mappings.items():
+            base_weight = get_location_weight(city)
+            trending_bonus = trending_destinations.get(city, 1.0)
+            weight = base_weight * trending_bonus
+            if query in city or levenshtein_distance(query, city) <= 2:
+                all_locations.append({
+                    'display_name': data['city'],
+                    'detail': data['countryName'],
+                    'type': 'city',
+                    'weight': weight,
+                    'exact_match': query == city
+                })
+        
+        # Add regions with weights
+        for region, data in region_mappings.items():
+            weight = get_location_weight(region)
+            if query in region or levenshtein_distance(query, region) <= 2:
+                all_locations.append({
+                    'display_name': data['city'],
+                    'detail': f"{data['countryName']} - {region}",
+                    'type': 'region',
+                    'weight': weight,
+                    'exact_match': query == region
+                })
+        
+        # Sort by weight and relevance
+        all_locations.sort(key=lambda x: (not x['exact_match'], -x['weight'], len(x['display_name'])))
+        
+        # Return top 5 suggestions
+        suggestions = all_locations[:5]
+        
+        return jsonify({'suggestions': suggestions})
+        
+    except Exception as e:
+        app.logger.exception('Location suggestions failed')
+        return jsonify({'error': 'suggestions_failed'}), 500
+
+@app.route('/api/log-suggestion-success', methods=['POST'])
+async def log_suggestion_success():
+    """Log successful suggestion usage for learning"""
+    try:
+        payload = await request.get_json(silent=True) or {}
+        suggestion = payload.get('suggestion', '').strip().lower()
+        
+        if suggestion:
+            increment_location_weight(suggestion)
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        app.logger.exception('Failed to log suggestion success')
+        return jsonify({'error': 'logging_failed'}), 500
+
+# Simple in-memory learning storage (could be moved to database)
+_location_weights = {}
+
+def get_location_weight(location):
+    """Get learning weight for a location"""
+    return _location_weights.get(location.lower(), 1.0)
+
+def increment_location_weight(location):
+    """Increment weight for successful location"""
+    key = location.lower()
+    _location_weights[key] = _location_weights.get(key, 1.0) + 0.1
 
 if __name__ == "__main__":
     # Load environment variables from .env file manually
