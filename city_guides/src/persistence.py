@@ -953,7 +953,7 @@ def _search_impl(payload):
     except Exception:
         limit = 10
     
-    q = (payload.get("category") or "").strip().lower()
+    q = (payload.get("category") or payload.get("intent") or "").strip().lower()
     neighborhood = payload.get("neighborhood")
     
     # Initialize result structure
@@ -1093,10 +1093,29 @@ def _search_impl(payload):
                 # Format venues for response and add images
                 formatted_venues = []
                 for venue in venues[:limit]:
+                    # First try venue's native address
+                    address = venue.get("address", "")
+                    
+                    # If no address but has coordinates, try to format nicely
+                    if not address and venue.get("lat") and venue.get("lon"):
+                        address = f"📍 Approximate location: {venue['lat']:.4f}, {venue['lon']:.4f}"
+                    
+                    # If address exists but is coordinates, reformat
+                    elif address and ',' in address and '.' in address:
+                        try:
+                            lat, lon = map(float, address.split(','))
+                            address = f"📍 Approximate location: {lat:.4f}, {lon:.4f}"
+                        except ValueError:
+                            pass
+                    
+                    # Standardize address presentation
+                    if not address.startswith("📍"):
+                        address = f"📍 {address}" if address else "📍 Location unknown"
+                    
                     formatted_venue = {
                         "id": venue.get("id", ""),
                         "name": venue.get("name", ""),
-                        "address": venue.get("address", ""),
+                        "address": address,
                         "description": venue.get("description", ""),
                         "lat": venue.get("lat"),
                         "lon": venue.get("lon"),

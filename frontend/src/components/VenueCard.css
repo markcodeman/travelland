@@ -45,9 +45,48 @@
 .venue-groq.high { box-shadow: 0 4px 10px rgba(122,75,20,0.08) }
 .venue-image {
   width: 100%;
+  height: 120px;
   border-radius: 8px;
   object-fit: cover;
-  max-height: 180px;
+  display: block;
+}
+
+.venue-image-container {
+  position: relative;
+  margin-bottom: 8px;
+  z-index: 1;
+}
+
+/* Ensure links are never hidden by image hover */
+.venue-card a {
+  position: relative;
+  z-index: 10;
+}
+
+.venue-actions {
+  position: relative;
+  z-index: 10;
+}
+
+/* Prevent any hover overlays from covering links */
+.venue-image-container:hover {
+  z-index: 1;
+}
+
+.venue-card:hover .venue-actions {
+  z-index: 11;
+}
+
+@media (max-width: 768px) {
+  .venue-image {
+    height: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .venue-image {
+    height: 80px;
+  }
 }
 .venue-details {
   color: #444;

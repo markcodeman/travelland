@@ -1,4 +1,4 @@
-# Virtual environments
+con# Virtual environments
 .venv/
 .venv-playwright/
 venv/
@@ -95,6 +95,7 @@ node_modules/
 # Project specific
 *.json
 !package.json
+mcp_config.json
 last_search_response.json
 city_guides/.venv/
 city_guides/.env

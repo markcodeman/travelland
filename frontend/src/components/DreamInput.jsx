@@ -131,8 +131,8 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
         intent: parsed.intent || ''
       });
 
-      // Trigger city guide immediately after location change
-      if (parsed.city && canTriggerCityGuide) {
+      // Trigger city guide only if there's an intent (category), otherwise let user choose
+      if (parsed.city && canTriggerCityGuide && parsed.intent) {
         setTimeout(() => onCityGuide(), 800);
       }
     }
@@ -203,7 +203,7 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
             top: sparkle.y,
             width: sparkle.size,
             height: sparkle.size,
-            animationDuration: `${sparkle.duration}ms`
+            '--duration': `${sparkle.duration}ms`
           }}
         />
       ))}
@@ -213,9 +213,9 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
         <div className="prompt-text">
           {currentPrompt}
           <div className="prompt-dots">
-            <span>.</span>
-            <span>.</span>
-            <span>.</span>
+            <span></span>
+            <span></span>
+            <span></span>
           </div>
         </div>
       </div>
@@ -260,33 +260,24 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
             <span className="wand-icon">🪄</span>
           </button>
         </div>
-
-        {/* Processing indicator */}
-        {isProcessing && (
-          <div className="processing-text">
-            <span className="processing-dots">
-              <span>•</span>
-              <span>•</span>
-              <span>•</span>
-            </span>
-            Weaving your travel dreams...
-          </div>
-        )}
-
-        {/* Helper text */}
-        <div className="dream-helper">
-          ✨ Describe your perfect destination in natural language
-        </div>
       </form>
 
-      {/* Location display when parsed */}
-      {dreamInput && (
-        <div className="parsed-location">
-          <div className="location-preview">
-            📍 Your dream destination awaits...
+      {/* Processing indicator */}
+      {isProcessing && (
+        <div className="processing-text">
+          <div className="processing-dots">
+            <span></span>
+            <span></span>
+            <span></span>
           </div>
+          <span>Weaving your travel dreams...</span>
         </div>
       )}
+
+      {/* Helper text */}
+      <div className="dream-helper">
+        ✨ Describe your perfect destination in natural language
+      </div>
     </div>
   );
 };

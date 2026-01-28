@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom animations */
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.animate-sparkle {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.skeleton-shimmer {
+  animation: shimmer 1.5s infinite;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+}
+
+/* Force Tailwind utilities to work */
+.w-full {
+  width: 100% !important;
+}
+.px-6 {
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+}
+.py-4 {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+.text-lg {
+  font-size: 1.125rem !important;
+}
+.border-2 {
+  border-width: 2px !important;
+}
+.border-purple-200 {
+  border-color: #e9d5ff !important;
+}
+.rounded-2xl {
+  border-radius: 1rem !important;
+}
+.focus\:outline-none:focus {
+  outline: none !important;
+}
+.focus\:border-purple-500:focus {
+  border-color: #a855f7 !important;
+}
+.focus\:ring-4:focus {
+  --tw-ring-shadow: 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentColor) !important;
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000) !important;
+}
+.focus\:ring-purple-200:focus {
+  --tw-ring-color: #e9d5ff !important;
+}
+.transition-all {
+  transition-property: all !important;
+}
+.duration-300 {
+  transition-duration: 300ms !important;
+}
+
+@layer components {
+  .dream-input {
+    padding: 1rem 1.5rem !important;
+    font-size: 1.125rem !important;
+    border: 2px solid #e9d5ff !important;
+    border-radius: 1rem !important;
+    outline: none;
+    transition: all 300ms;
+  }
+
+  .dream-input:focus {
+    border-color: #a855f7 !important;
+    box-shadow: 0 0 0 4px #e9d5ff, 0 10px 15px -3px rgba(168, 85, 247, 0.1) !important;
+  }
+
+  .sparkle {
+    position: absolute;
+    pointer-events: none;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.8) 0%, transparent 70%);
+  }
+
+  .venue-card {
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition-property: all;
+    transition-duration: 300ms;
+  }
+
+  .venue-card:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-0.25rem);
+  }
+
+  .venue-btn {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    transition-property: all;
+    transition-duration: 200ms;
+  }
+
+  .venue-btn.primary {
+    background-image: linear-gradient(to right, #a855f7, #9333ea);
+    color: white;
+  }
+
+  .venue-btn.primary:hover {
+    background-image: linear-gradient(to right, #9333ea, #7e22ce);
+  }
+
+  .venue-btn.secondary {
+    background-color: #f3f4f6;
+    color: #374151;
+  }
+
+  .venue-btn.secondary:hover {
+    background-color: #e5e7eb;
+  }
+}
