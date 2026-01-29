@@ -127,15 +127,13 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     try {
       // Use the Groq-backed chat API on the same origin (Next.js or proxied)
       const payload = {
-        // include the message we just sent so the handler has the latest user input
-        messages: [...messages, msg].map(m => ({ role: m.role, text: m.text })),
+        query: text, // Send the current message as query
         city: city,
         neighborhood: neighborhood,
         category: category,
         venues: venues,
         session_id: sessionId,
-        state: "Virginia",
-        city: "Tysons"
+        max_results: 8
       };
 
       if (userLocation) {
@@ -144,7 +142,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       }
 
       // Always use the backend's decision logic for endpoint selection
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/chat/rag', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -358,11 +356,15 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                           // Extract list items from markdown-like text
                           const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
                           const bulletRe = /^[-•*]\s+(.*)$/;
-                          const numberedRe = /^\d+\.\s+(.*)$/;
+                          const numberedRe = /^\d+\.\s+\*\*(.+?)\*\*:?\s*(.*)$/; // Fixed to handle **Bold**: format
                           for (const line of lines) {
                             let m = line.match(bulletRe) || line.match(numberedRe);
                             if (m) {
-                              items.push(m[1].replace(/^\*\*|\*\*$/g, '').trim());
+                              const name = m[1] ? m[1].trim() : '';
+                              const desc = m[2] ? m[2].trim() : '';
+                              if (name) {
+                                items.push(desc ? `${name}. ${desc}` : name);
+                              }
                             }
                           }
                           if (items.length === 0) {
@@ -398,13 +400,53 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                               let [name, ...descParts] = item.split(/\*\*|\.|\:|\-/);
                               name = name.trim();
                               const description = descParts.join('.').trim();
-                              // Heuristic emoji selection
+                              // Heuristic emoji selection and category detection
                               const lower = name.toLowerCase();
                               let emoji = '📍';
-                              if (/(coffee|cafe|espresso|latte|tea)/i.test(lower)) emoji = '☕';
-                              else if (/(museum|gallery|historic|cathedral|monument)/i.test(lower)) emoji = '🏛️';
-                              else if (/(park|garden|outdoor)/i.test(lower)) emoji = '🌳';
-                              else if (/(bar|pub|cocktail|wine|beer)/i.test(lower)) emoji = '🍸';
+                              let tags = '';
+                              let category = '';
+                              
+                              if (/(coffee|cafe|espresso|latte|tea)/i.test(lower)) {
+                                emoji = '☕';
+                                tags = 'amenity=cafe,cuisine=coffee';
+                                category = 'cafe';
+                              }
+                              else if (/(museum|museu|gallery|historic|cathedral|monument)/i.test(lower)) {
+                                emoji = '🏛️';
+                                tags = 'tourism=museum';
+                                category = 'museum';
+                              }
+                              else if (/(park|parc|garden|jardins|outdoor)/i.test(lower)) {
+                                emoji = '🌳';
+                                tags = 'leisure=park';
+                                category = 'park';
+                              }
+                              else if (/(bar|pub|cocktail|wine|beer)/i.test(lower)) {
+                                emoji = '🍸';
+                                tags = 'amenity=bar';
+                                category = 'bar';
+                              }
+                              else if (/(restaurant|food|dining)/i.test(lower)) {
+                                emoji = '🍽️';
+                                tags = 'amenity=restaurant';
+                                category = 'restaurant';
+                              }
+                              else if (/(hotel|accommodation)/i.test(lower)) {
+                                emoji = '🏨';
+                                tags = 'tourism=hotel';
+                                category = 'hotel';
+                              }
+                              else if (/(shop|store|mall)/i.test(lower)) {
+                                emoji = '🛍️';
+                                tags = 'shop=retail';
+                                category = 'shop';
+                              }
+                              else if (/(beach|platja)/i.test(lower)) {
+                                emoji = '🏖️';
+                                tags = 'natural=beach';
+                                category = 'beach';
+                              }
+                              
                               // Generate a Google Maps search URL using name and city
                               const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + (city ? ' ' + city : ''))}`;
                               return (
@@ -414,6 +456,9 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                                     name,
                                     description,
                                     emoji,
+                                    tags,
+                                    category,
+                                    city: city || '',
                                     provider: '',
                                     mapsUrl,
                                   }}

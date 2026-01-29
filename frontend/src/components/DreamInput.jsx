@@ -189,6 +189,8 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ suggestion: suggestion.display_name })
     });
+    // Trigger parsing after selecting suggestion
+    setTimeout(() => handleDreamSubmit(new Event('submit')), 100);
   };
 
   return (

@@ -2,7 +2,7 @@
 # Supports Google, Brave, Yahoo, Yandex, DuckDuckGo
 # No API key required, 100% free
 
-from ddgs import DDGS
+from duckduckgo_search import DDGS
 
 async def ddgs_search(query, engine="google", max_results=10):
     """

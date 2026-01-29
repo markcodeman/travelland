@@ -128,6 +128,7 @@ function App() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [cityGuideLoading, setCityGuideLoading] = useState(false);
   const [parsedIntent, setParsedIntent] = useState('');
+  const [venues, setVenues] = useState([]);
   const [heroImage, setHeroImage] = useState('');
   const [heroImageMeta, setHeroImageMeta] = useState({});
 
@@ -206,7 +207,7 @@ function App() {
     if (loc.city && !venues.length) {
       setVenues([]);
     }
-  }, [normalizeCityName]);
+  }, [normalizeCityName, venues]);
 
   // Consolidated fetch neighborhoods function
   const fetchNeighborhoods = useCallback(async (cityName, useFallback = true) => {

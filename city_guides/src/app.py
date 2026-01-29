@@ -207,7 +207,8 @@ async def api_chat_rag():
                 if city_name:
                     city = city_name
             # Fetch venues for the coordinates
-            venues = await multi_provider.async_discover_pois("", poi_type="all", limit=10, lat=lat, lon=lon)
+            # Fetch venues for the coordinates using reverse geocoded city
+            venues = await multi_provider.async_discover_pois(city, poi_type="all", limit=10)
             # Add venue context to the query
             venue_context = "\n\nNearby venues: " + ", ".join([v['name'] for v in venues]) if venues else ""
             full_query += venue_context
@@ -218,7 +219,7 @@ async def api_chat_rag():
                 lat = geocoded.get('lat')
                 lon = geocoded.get('lon')
                 if lat and lon:
-                    venues = await multi_provider.async_discover_pois(city, poi_type="all", limit=10, lat=lat, lon=lon)
+                    venues = await multi_provider.async_discover_pois(city, poi_type="all", limit=10)
                     venue_context = "\n\nNearby venues: " + ", ".join([v['name'] for v in venues]) if venues else ""
                     full_query += venue_context
 
