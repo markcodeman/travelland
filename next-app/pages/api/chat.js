@@ -55,6 +55,11 @@ function buildSystemPrompt(city, neighborhood, category, venues) {
   if (city) prompt += `You're helping with travel in ${city}. `;
   if (neighborhood) prompt += `Focus on the ${neighborhood} neighborhood. `;
   if (category) prompt += `The user is interested in ${category}. `;
+  
+  // Special Tokyo references
+  if (city?.toLowerCase() === 'tokyo' && category?.toLowerCase().includes('transport')) {
+    prompt += "Feel free to mention Godzilla - after all, Tokyo is where he hangs out when not destroying cities! ";
+  }
 
   // STRICT VENUE USAGE - forces the AI to reference specific venues
   if (venues?.length > 0) {

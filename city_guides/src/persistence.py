@@ -1074,7 +1074,10 @@ def _search_impl(payload):
                 "shopping": "shop",
                 "shops": "shop",
                 "nightlife": "amenity",
-                "entertainment": "amenity"
+                "entertainment": "amenity",
+                "public transport": "amenity",
+                "transport": "amenity",
+                "transit": "amenity"
             }
             poi_type = category_mapping.get(q, q)
             
@@ -1082,6 +1085,7 @@ def _search_impl(payload):
             
             # Use asyncio to run the async discovery
             async def get_venues_with_images():
+                print(f"[SEARCH DEBUG] Calling multi_provider with poi_type: {poi_type}")
                 venues = await multi_provider.async_discover_pois(
                     city=city,
                     poi_type=poi_type,
@@ -1089,6 +1093,7 @@ def _search_impl(payload):
                     bbox=bbox,
                     timeout=10.0
                 )
+                print(f"[SEARCH DEBUG] multi_provider returned {len(venues)} venues")
                 
                 # Format venues for response and add images
                 formatted_venues = []
@@ -1098,19 +1103,19 @@ def _search_impl(payload):
                     
                     # If no address but has coordinates, try to format nicely
                     if not address and venue.get("lat") and venue.get("lon"):
-                        address = f"📍 Approximate location: {venue['lat']:.4f}, {venue['lon']:.4f}"
+                        address = f"\ud83d\udccd Approximate location: {venue['lat']:.4f}, {venue['lon']:.4f}"
                     
                     # If address exists but is coordinates, reformat
                     elif address and ',' in address and '.' in address:
                         try:
                             lat, lon = map(float, address.split(','))
-                            address = f"📍 Approximate location: {lat:.4f}, {lon:.4f}"
+                            address = f"\ud83d\udccd Approximate location: {lat:.4f}, {lon:.4f}"
                         except ValueError:
                             pass
                     
                     # Standardize address presentation
-                    if not address.startswith("📍"):
-                        address = f"📍 {address}" if address else "📍 Location unknown"
+                    if not address.startswith("\ud83d\udccd"):
+                        address = f"\ud83d\udccd {address}" if address else "\ud83d\udccd Location unknown"
                     
                     formatted_venue = {
                         "id": venue.get("id", ""),
@@ -1140,15 +1145,16 @@ def _search_impl(payload):
                                         "url": img.get("url"),
                                         "lat": img.get("lat"),
                                         "lon": img.get("lon")
-                                    } for img in images
+                                    }
+                                    for img in images
                                 ]
                         except Exception as e:
-                            print(f"[SEARCH DEBUG] Failed to fetch images for {formatted_venue['name']}: {e}")
+                            print(f"[SEARCH DEBUG] Mapillary error: {e}")
                     
                     formatted_venues.append(formatted_venue)
                 
                 return formatted_venues
-            
+                
             # Run in event loop
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -1156,8 +1162,20 @@ def _search_impl(payload):
                 formatted_venues = loop.run_until_complete(get_venues_with_images())
                 print(f"[SEARCH DEBUG] Found {len(formatted_venues)} venues")
                 
-                result["venues"] = formatted_venues
-                result["debug_info"]["venues_found"] = len(formatted_venues)
+                # Filter for public transport venues if category is public transport
+                if q == "public transport":
+                    transport_venues = []
+                    for venue in formatted_venues:
+                        tags_str = venue.get("tags", "")
+                        # Check if the tags string contains transport-related keywords
+                        if "railway" in tags_str or "station" in tags_str or "bus_station" in tags_str or "ferry_terminal" in tags_str or "public_transport" in tags_str:
+                            transport_venues.append(venue)
+                    result["venues"] = transport_venues
+                    print(f"[SEARCH DEBUG] Filtered to {len(transport_venues)} transport venues")
+                else:
+                    result["venues"] = formatted_venues
+                
+                result["debug_info"]["venues_found"] = len(result["venues"])
                 
             finally:
                 loop.close()

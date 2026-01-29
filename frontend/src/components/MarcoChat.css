@@ -6,24 +6,26 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.3);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
   padding: 20px;
+  backdrop-filter: blur(5px);
 }
 
 .marco-modal {
-  background-color: white;
+  background-color: rgba(255, 255, 255, 0.95);
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   width: 100%;
-  max-width: 900px;
+  max-width: 1200px;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  backdrop-filter: blur(10px);
 }
 
 .marco-header {
@@ -35,6 +37,33 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.marco-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.marco-city-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.marco-city-info a {
+  color: white;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  transition: background 0.2s;
+}
+
+.marco-city-info a:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .marco-close {

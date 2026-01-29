@@ -676,6 +676,7 @@ function App() {
             venues={[]}
             category={SUGGESTION_MAP[selectedSuggestion] || (typeof category === 'string' ? category : '')}
             initialInput={SUGGESTION_MAP[selectedSuggestion] || ''}
+            results={results}
             wikivoyage={results?.wikivoyage}
             onClose={() => setMarcoOpen(false)}
           />

@@ -184,7 +184,7 @@ from city_guides.groq.traveland_rag import recommender
 async def api_chat_rag():
     """
     RAG chat endpoint: Accepts a user query, runs DDGS web search, synthesizes an answer with Groq, and returns a unified AI response.
-    Request JSON: {"query": "...", "engine": "google" (optional), "max_results": 8 (optional)}
+    Request JSON: {"query": "...", "engine": "google" (optional), "max_results": 8 (optional), "city": "...", "lat": ..., "lon": ...}
     Response JSON: {"answer": "..."}
     """
     try:
@@ -192,11 +192,38 @@ async def api_chat_rag():
         query = (data.get("query") or "").strip()
         engine = data.get("engine", "google")
         max_results = int(data.get("max_results", 8))
+        city = data.get("city", "")
+        lat = data.get("lat")
+        lon = data.get("lon")
         if not query:
             return jsonify({"error": "Missing query"}), 400
 
-        # Run DDGS web search (async)
-        web_results = await ddgs_search(query, engine=engine, max_results=max_results)
+        full_query = query
+        # If lat/lon provided, use them to fetch venues
+        if lat and lon:
+            # Reverse geocode to get city if not provided
+            if not city:
+                city_name = await reverse_geocode(lat, lon)
+                if city_name:
+                    city = city_name
+            # Fetch venues for the coordinates
+            venues = await multi_provider.async_discover_pois("", poi_type="all", limit=10, lat=lat, lon=lon)
+            # Add venue context to the query
+            venue_context = "\n\nNearby venues: " + ", ".join([v['name'] for v in venues]) if venues else ""
+            full_query += venue_context
+        elif city:
+            # Geocode the city to get coordinates
+            geocoded = await geocode_city(city)
+            if geocoded:
+                lat = geocoded.get('lat')
+                lon = geocoded.get('lon')
+                if lat and lon:
+                    venues = await multi_provider.async_discover_pois(city, poi_type="all", limit=10, lat=lat, lon=lon)
+                    venue_context = "\n\nNearby venues: " + ", ".join([v['name'] for v in venues]) if venues else ""
+                    full_query += venue_context
+
+        # Run DDGS web search (async) with the full_query
+        web_results = await ddgs_search(full_query, engine=engine, max_results=max_results)
         # Prepare context for Groq
         context_snippets = []
         for r in web_results:
@@ -211,6 +238,9 @@ async def api_chat_rag():
             "Never mention your sources or that you used web search. Respond as a unified expert, not a search engine."
         )
         user_prompt = f"User query: {query}\n\nRelevant web snippets:\n{context_text}"
+        # Add location context to the prompt if available
+        if city:
+            user_prompt = f"User query: {query} in {city}\n\nRelevant web snippets:\n{context_text}"
 
         messages = [
             {"role": "system", "content": system_prompt},

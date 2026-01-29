@@ -4,7 +4,7 @@ import { Popover, Transition } from '@headlessui/react';
 import VenueCard from './VenueCard';
 import './MarcoChat.css';
 
-export default function MarcoChat({ city, neighborhood, venues, category, initialInput, onClose }) {
+export default function MarcoChat({ city, neighborhood, venues, category, initialInput, onClose, results, wikivoyage }) {
   const [messages, setMessages] = useState([]);
   const [itineraries, setItineraries] = useState(() => {
     const saved = localStorage.getItem('traveland_itineraries');
@@ -13,6 +13,8 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
   const [input, setInput] = useState(initialInput || ''); // allow initial input
   const [sessionId, setSessionId] = useState(localStorage.getItem('marco_session_id') || null);
   const [loading, setLoading] = useState(false);
+  const [funFact, setFunFact] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
   const messagesEndRef = useRef(null);
   const hasSentInitial = useRef(false);
 
@@ -25,6 +27,30 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     if (initialInput !== undefined) setInput(initialInput || '');
   }, [initialInput]);
 
+  // Fetch fun fact when city changes
+  useEffect(() => {
+    if (city && !funFact) {
+      fetchFunFact();
+    }
+  }, [city]);
+
+  const fetchFunFact = async () => {
+    try {
+      const response = await fetch('/api/fun-fact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ city })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setFunFact(data.funFact);
+      }
+    } catch (error) {
+      console.error('Failed to fetch fun fact:', error);
+    }
+  };
+
   // Auto-send venue data or category-based message when chat opens
   useEffect(() => {
     if (!hasSentInitial.current && messages.length === 0) {
@@ -34,10 +60,8 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       if (nonFallbackVenues.length > 0) {
         setMessages([{ role: 'assistant', venues: nonFallbackVenues.slice(0, 10) }]);
       } else if (category) {
-        // Do not auto-run a backend search when the chat opens with a category selected.
-        // Instead, prompt the user and offer an explicit action so the user confirms.
-        const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and can look for ${category} options — if that's what you're into, click "Let's Go" to fetch details.`;
-        setMessages([{ role: 'assistant', text: venueText }]);
+        // Don't show redundant message since we have city guide at top
+        setMessages([]);
       } else {
         const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and I'm ready to help you discover the best spots! What are you interested in - food, attractions, transport, or something else?`;
         setMessages([{ role: 'assistant', text: venueText }]);
@@ -77,6 +101,22 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     }
   };
 
+  const handleUseLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error("Geolocation error", error);
+        }
+      );
+    }
+  };
+
   async function sendMessage(text, query = null) {
     if (!text || !text.trim()) return;
     const msg = { role: 'user', text };
@@ -93,8 +133,15 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
         neighborhood: neighborhood,
         category: category,
         venues: venues,
-        session_id: sessionId
+        session_id: sessionId,
+        state: "Virginia",
+        city: "Tysons"
       };
+
+      if (userLocation) {
+        payload.lat = userLocation.lat;
+        payload.lon = userLocation.lon;
+      }
 
       // Always use the backend's decision logic for endpoint selection
       const response = await fetch('/api/chat', {
@@ -160,6 +207,41 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
         </div>
 
         <div className="marco-messages" role="region" aria-live="polite">
+          {/* City guide as first message */}
+          <div className="marco-msg assistant">
+            <div className="city-guide">
+              <div style={{fontWeight:600, marginBottom:8}}>📍 {city} Travel Guide</div>
+              {funFact && (
+                <div style={{fontSize:14, lineHeight:1.5, color: '#666', fontStyle: 'italic', marginBottom:12, padding: '8px 12px', background: 'rgba(25, 118, 210, 0.05)', borderRadius: '6px', borderLeft: '3px solid #1976d2'}}>
+                  💡 {funFact}
+                </div>
+              )}
+              {results?.quick_guide ? (
+                <div style={{fontSize:14, lineHeight:1.5, color: '#333'}}>
+                  <ReactMarkdown
+                    components={{
+                      a: props => <a {...props} target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', textDecoration: 'underline' }}>{props.children}</a>,
+                      strong: props => <strong style={{ color: '#333' }}>{props.children}</strong>,
+                      p: props => <p style={{ marginBottom: '8px' }}>{props.children}</p>
+                    }}
+                  >
+                    {results.quick_guide}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                <div style={{fontSize:14, color: '#666'}}>
+                  No city guide information available for {city}.
+                </div>
+              )}
+              {results?.source && (
+                <div style={{fontSize:12, color: '#666', marginTop:8}}>
+                  Source: {results.source}{results.source_url && (
+                    <a href={results.source_url} target="_blank" rel="noopener noreferrer" style={{color: '#1976d2', marginLeft: '4px'}}>↗</a>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
           {messages.map((msg, i) => (
             <div key={i} className={`marco-msg ${msg.role}`}>
               {msg.role === 'assistant' && msg.venues ? (
@@ -406,6 +488,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
               </Transition>
             </Popover>
           )}
+          <button onClick={handleUseLocation}>Use my location</button>
           <input
             type="text"
             value={input}

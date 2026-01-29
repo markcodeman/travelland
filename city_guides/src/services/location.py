@@ -38,6 +38,8 @@ city_mappings = {
     'dublin': {'city': 'Dublin', 'country': 'IE', 'countryName': 'Ireland'},
     'reykjavik': {'city': 'Reykjavik', 'country': 'IS', 'countryName': 'Iceland'},
     'zurich': {'city': 'Zurich', 'country': 'CH', 'countryName': 'Switzerland'},
+    'tysons': {'city': 'Tysons', 'country': 'US', 'countryName': 'United States', 'state': 'VA', 'stateName': 'Virginia'},
+    'virginia': {'city': 'Richmond', 'country': 'US', 'countryName': 'United States', 'state': 'VA', 'stateName': 'Virginia'}
 }
 
 # Region mappings for areas that aren't specific cities
@@ -51,6 +53,7 @@ region_mappings = {
     'rocky mountains': {'city': 'Denver', 'country': 'US', 'countryName': 'United States', 'region': 'Rocky Mountains'},
     'himalayas': {'city': 'Kathmandu', 'country': 'NP', 'countryName': 'Nepal', 'region': 'Himalayas'},
     'sahara': {'city': 'Cairo', 'country': 'EG', 'countryName': 'Egypt', 'region': 'Sahara'},
+    'virginia': {'city': 'Richmond', 'country': 'US', 'countryName': 'United States', 'region': 'Virginia'}
 }
 
 def levenshtein_distance(s1, s2):
@@ -73,7 +76,7 @@ def levenshtein_distance(s1, s2):
     
     return previous_row[-1]
 
-def find_best_match(query, options, max_distance=2):
+def find_best_match(query, options, max_distance=3):
     """Find best fuzzy match from options"""
     best_match = None
     best_score = float('inf')
