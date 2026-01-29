@@ -154,7 +154,7 @@ def test_requirements_file():
     print("✓ Testing requirements.txt...")
     try:
         with open(
-            os.path.join(os.path.dirname(__file__), "requirements.txt"), "r"
+            os.path.join(os.path.dirname(__file__), "..", "requirements.txt"), "r"
         ) as f:
             content = f.read()
 
