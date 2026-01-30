@@ -11,8 +11,8 @@ export default defineConfig({
     port: 5174,
     strictPort: true, // Don't switch to another port if 5174 is in use
     proxy: {
-      '/api/chat/rag': 'http://localhost:5010',
       '/api/chat': 'http://localhost:3000',
+      '/api/fun-fact': 'http://localhost:3000',
       '/api': 'http://localhost:5010',
       '/search': 'http://localhost:5010',
       '/synthesize': 'http://localhost:5010',

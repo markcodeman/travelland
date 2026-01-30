@@ -229,7 +229,7 @@ const VenueCard = ({ venue, onAddToItinerary, onDirections, onMap, onSave }) => 
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.name)}`;
   };
 
-  const fallbackImage = process.env.FALLBACK_IMAGE_URL || '';
+  const fallbackImage = import.meta.env.VITE_FALLBACK_IMAGE_URL || '';
 
   return (
     <div className="venue-card rounded-xl border border-gray-200 bg-white shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">

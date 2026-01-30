@@ -90,7 +90,13 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
       return data;
     } catch (error) {
       console.error('Failed to parse dream input:', error);
-      return null;
+      // Fallback: treat input as simple city name
+      return {
+        city: input.trim(),
+        country: '',
+        state: '',
+        intent: ''
+      };
     }
   };
 

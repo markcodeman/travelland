@@ -13,6 +13,11 @@ console.log('Fun Fact API - GROQ_MODEL:', GROQ_MODEL);
 const funFactCache = new Map();
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
+// Cache for Groq models (10 minutes)
+let _cachedModel = null;
+let _cachedModelTs = 0;
+const MODEL_TTL_MS = 10 * 60 * 1000;
+
 async function fetchGroqModels() {
   const resp = await fetch('https://api.groq.com/openai/v1/models', {
     headers: { Authorization: `Bearer ${GROQ_API_KEY}` },
@@ -62,25 +67,46 @@ Generate a fun fact about ${city}:`;
 }
 
 async function generateFunFact(city) {
-  // Clear cache for testing
-  // Check cache first
-  const cacheKey = city.toLowerCase().trim();
-  const cached = funFactCache.get(cacheKey);
-  if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
-    console.log('Returning cached fact for:', city);
-    return cached.fact;
+  // Write debug info to file
+  const fs = require('fs').promises;
+  const debugInfo = {
+    timestamp: new Date().toISOString(),
+    city: city,
+    GROQ_API_KEY_exists: !!GROQ_API_KEY,
+    GROQ_API_KEY_length: GROQ_API_KEY?.length || 0,
+    GROQ_API_KEY_prefix: GROQ_API_KEY?.substring(0, 10) || 'undefined'
+  };
+  
+  try {
+    await fs.writeFile('/tmp/fun-fact-debug.json', JSON.stringify(debugInfo, null, 2));
+  } catch (e) {
+    console.error('Failed to write debug file:', e);
   }
 
-  console.log('=== GENERATING NEW FUN FACT ===');
-  console.log('Generating fun fact for:', city);
-  console.log('GROQ_API_KEY exists:', !!GROQ_API_KEY);
-  console.log('GROQ_API_KEY length:', GROQ_API_KEY?.length || 0);
+  // Test direct Groq API call first
+  try {
+    const testResponse = await fetch('https://api.groq.com/openai/v1/models', {
+      headers: { Authorization: `Bearer ${GROQ_API_KEY}` },
+    });
+    
+    if (!testResponse.ok) {
+      const errorText = await testResponse.text();
+      await fs.writeFile('/tmp/groq-error.txt', `Direct API test failed: ${testResponse.status} - ${errorText}`);
+      return `${city} has many fascinating stories and secrets waiting to be discovered by curious travelers.`;
+    }
+    
+    const testData = await testResponse.json();
+    await fs.writeFile('/tmp/groq-success.txt', `Direct API test success - models: ${testData.data?.length || 0}`);
+    
+  } catch (error) {
+    await fs.writeFile('/tmp/groq-catch-error.txt', `Direct API test catch: ${error.message}`);
+    return `${city} has many fascinating stories and secrets waiting to be discovered by curious travelers.`;
+  }
 
+  // Now try the actual fun fact generation
   try {
     const model = await getGroqModel();
     const prompt = buildFunFactPrompt(city);
-    
-    console.log('Making Groq API call...');
     
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -101,33 +127,29 @@ async function generateFunFact(city) {
       }),
     });
 
-    console.log('Groq API response status:', response.status);
-    console.log('Groq API response headers:', response.headers);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.log('Groq API error response:', errorText);
-      throw new Error(`Groq API error: ${response.status} - ${errorText}`);
+      await fs.writeFile('/tmp/groq-chat-error.txt', `Chat API failed: ${response.status} - ${errorText}`);
+      return `${city} has many fascinating stories and secrets waiting to be discovered by curious travelers.`;
     }
 
     const data = await response.json();
-    console.log('Groq API response data:', data);
-    
     const fact = data.choices?.[0]?.message?.content?.trim();
     
     if (fact) {
       // Cache the result
-      funFactCache.set(cacheKey, {
+      funFactCache.set(city.toLowerCase().trim(), {
         fact: fact,
         timestamp: Date.now()
       });
+      await fs.writeFile('/tmp/fun-fact-success.txt', `Generated fact for ${city}: ${fact}`);
       return fact;
     }
     
+    await fs.writeFile('/tmp/fun-fact-no-fact.txt', `No fact in response for ${city}`);
     throw new Error('No fact generated');
   } catch (error) {
-    console.error('Fun fact generation failed:', error);
-    // Return a fallback fact
+    await fs.writeFile('/tmp/fun-fact-generation-error.txt', `Generation failed: ${error.message}`);
     return `${city} has many fascinating stories and secrets waiting to be discovered by curious travelers.`;
   }
 }
