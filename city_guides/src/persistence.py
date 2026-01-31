@@ -137,6 +137,160 @@ def generate_description(poi: Dict) -> str:
     return f"{base_type}{feature_text}"
 
 
+def enrich_venue_data(venue: Dict, city: str = "") -> Dict:
+    """
+    Enrich venue with human-readable context extracted from tags.
+    Returns dict with venue_type, cuisine, price_level, price_indicator, features, description.
+    """
+    tags = venue.get("tags", {})
+    if isinstance(tags, str):
+        # Parse dot-notation tags like "catering.restaurant,catering.cafe"
+        tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+    else:
+        tag_list = list(tags.keys()) if isinstance(tags, dict) else []
+    
+    # Tag mappings for venue types
+    venue_type_map = {
+        "catering.restaurant": "🍽️ Restaurant",
+        "catering.cafe": "☕ Cafe",
+        "catering.coffee_shop": "☕ Coffee Shop",
+        "catering.bar": "🍺 Bar",
+        "catering.pub": "🍻 Pub",
+        "catering.fast_food": "🍔 Fast Food",
+        "catering.ice_cream": "🍦 Ice Cream",
+        "catering.biergarten": "🍺 Beer Garden",
+        "accommodation.hotel": "🏨 Hotel",
+        "accommodation.hostel": "🏠 Hostel",
+        "tourism.attraction": "🎯 Attraction",
+        "tourism.museum": "🏛️ Museum",
+        "tourism.viewpoint": "📸 Viewpoint",
+        "entertainment.cinema": "🎬 Cinema",
+        "entertainment.theatre": "🎭 Theatre",
+        "commercial.shopping_mall": "🛍️ Shopping Mall",
+        "commercial.supermarket": "🛒 Supermarket",
+        "leisure.park": "🌳 Park",
+        "public_transport.subway": "🚇 Subway Station",
+        "public_transport.bus": "🚌 Bus Stop",
+    }
+    
+    # Extract venue type (prioritize specific types)
+    venue_type = None
+    for tag in tag_list:
+        if tag in venue_type_map:
+            venue_type = venue_type_map[tag]
+            break
+    
+    # If no specific match, check for general categories
+    if not venue_type:
+        tag_str = ",".join(tag_list).lower()
+        if "restaurant" in tag_str:
+            venue_type = "🍽️ Restaurant"
+        elif "cafe" in tag_str or "coffee" in tag_str:
+            venue_type = "☕ Cafe"
+        elif "bar" in tag_str:
+            venue_type = "🍺 Bar"
+        elif "pub" in tag_str:
+            venue_type = "🍻 Pub"
+        elif "hotel" in tag_str:
+            venue_type = "🏨 Hotel"
+        elif "museum" in tag_str:
+            venue_type = "🏛️ Museum"
+        elif "shop" in tag_str or "retail" in tag_str:
+            venue_type = "🛍️ Shop"
+        elif "park" in tag_str:
+            venue_type = "🌳 Park"
+        else:
+            venue_type = "📍 Venue"
+    
+    # Extract cuisine from tags
+    cuisine = None
+    for tag in tag_list:
+        if "=" in tag:
+            key, value = tag.split("=", 1)
+            if key.strip() == "cuisine" and value.strip():
+                cuisine = value.strip().replace("_", " ").replace(";", ", ")
+                cuisine = " ".join(word.title() for word in cuisine.split())
+                break
+    
+    # Determine price level from tags
+    price_level = "mid"
+    price_indicator = "€€"
+    for tag in tag_list:
+        if "=" in tag:
+            key, value = tag.split("=", 1)
+            if key.strip() == "price" or key.strip() == "price_range":
+                val = value.strip().lower()
+                if val in ["cheap", "$", "1", "€"]:
+                    price_level = "cheap"
+                    price_indicator = "€"
+                elif val in ["expensive", "$$$", "3", "€€€"]:
+                    price_level = "expensive"
+                    price_indicator = "€€€"
+                elif val in ["very_expensive", "$$$$", "4", "€€€€"]:
+                    price_level = "luxury"
+                    price_indicator = "€€€€"
+                else:
+                    price_level = "moderate"
+                    price_indicator = "€€"
+                break
+    
+    # Extract features
+    features = []
+    tag_str = ",".join(tag_list).lower()
+    if "wheelchair.yes" in tag_str or "wheelchair=yes" in tag_str:
+        features.append("♿ Accessible")
+    if "outdoor_seating=yes" in tag_str or "terrace" in tag_str:
+        features.append("🌿 Outdoor seating")
+    if "wifi=yes" in tag_str or "internet" in tag_str:
+        features.append("📶 WiFi")
+    if "delivery=yes" in tag_str:
+        features.append("🛵 Delivery")
+    if "takeaway=yes" in tag_str:
+        features.append("🥡 Takeaway")
+    if "vegetarian" in tag_str or "vegan" in tag_str:
+        features.append("🥗 Vegetarian/Vegan")
+    if "halal" in tag_str:
+        features.append("☪️ Halal")
+    if "kosher" in tag_str:
+        features.append("✡️ Kosher")
+    if "live_music" in tag_str or "music" in tag_str:
+        features.append("🎵 Live music")
+    if "reservation=yes" in tag_str:
+        features.append("📅 Reservations")
+    
+    # Generate contextual description
+    description_parts = []
+    
+    # Build description based on venue type and cuisine
+    if cuisine:
+        description_parts.append(f"{cuisine} restaurant")
+    elif venue_type and "Restaurant" in venue_type:
+        description_parts.append("Restaurant")
+    elif venue_type:
+        description_parts.append(venue_type.split()[1] if " " in venue_type else venue_type)
+    
+    # Add location context
+    if city:
+        description_parts.append(f"in {city}")
+    
+    # Add notable features to description
+    if features:
+        feature_text = " • ".join(features[:3])  # Max 3 features
+        if description_parts:
+            description_parts[0] += f" ({feature_text})"
+    
+    description = " ".join(description_parts) if description_parts else "Local venue"
+    
+    return {
+        "venue_type": venue_type or "📍 Venue",
+        "cuisine": cuisine or "",
+        "price_level": price_level,
+        "price_indicator": price_indicator,
+        "features": features,
+        "description": description
+    }
+
+
 def format_venue_for_display(poi: Dict) -> Dict:
     """Format venue for frontend display"""
     address = poi.get('address', '')
@@ -1138,16 +1292,25 @@ def _search_impl(payload):
                     if not address.startswith("📍"):
                         address = f"📍 {address}"
                     
+                    # Enrich venue with human-readable context
+                    enriched_data = enrich_venue_data(venue, city)
+                    
                     formatted_venue = {
                         "id": venue.get("id", ""),
                         "name": venue.get("name", ""),
                         "address": address,
-                        "description": venue.get("description", ""),
+                        "description": enriched_data.get("description", ""),
+                        "venue_type": enriched_data.get("venue_type", ""),
+                        "cuisine": enriched_data.get("cuisine", ""),
+                        "price_level": enriched_data.get("price_level", ""),
+                        "price_indicator": enriched_data.get("price_indicator", ""),
+                        "features": enriched_data.get("features", []),
                         "lat": venue.get("lat"),
                         "lon": venue.get("lon"),
                         "provider": venue.get("provider", ""),
                         "tags": venue.get("tags", {}),
-                        "osm_url": venue.get("osm_url", "")
+                        "osm_url": venue.get("osm_url", ""),
+                        "website": venue.get("website", "")
                     }
                     
                     # Add images if Mapillary is available and venue has coordinates
@@ -1309,6 +1472,7 @@ __all__ = [
     'determine_budget',
     'determine_price_range',
     'generate_description',
+    'enrich_venue_data',
     'format_venue_for_display',
     '_humanize_opening_hours',
     '_compute_open_now',

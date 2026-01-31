@@ -159,65 +159,22 @@ const VenueCard = ({ venue, onAddToItinerary, onDirections, onMap, onSave }) => 
   }
 
   const getVenueDescription = (venue) => {
-    if (venue.description) return venue.description;
+    // Use backend-provided description if available
+    if (venue.description && venue.description !== 'Local venue') {
+      return venue.description;
+    }
     
-    // Extract real info from tags - backend sends array like ["catering.restaurant", "wheelchair.yes"]
-    const tags = venue.tags || [];
-    const tagArray = Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t => t.trim()) : []);
-    
-    let description = [];
-    
-    // Map dot-notation tags to human-readable descriptions
-    const tagMap = {
-      'catering.restaurant': '🍽️ Restaurant',
-      'catering.cafe': '☕ Cafe',
-      'catering.bar': '🍺 Bar',
-      'catering.pub': '🍻 Pub',
-      'catering.fast_food': '🍔 Fast Food',
-      'catering.ice_cream': '🍦 Ice Cream',
-      'catering.biergarten': '🍺 Beer Garden',
-      'wheelchair.yes': '♿ Accessible',
-      'building.catering': null, // Skip generic
-      'catering': null, // Skip generic
-      'building': null, // Skip generic
-      'shop': '🛍️ Shop',
-      'tourism.attraction': '🎯 Attraction',
-      'tourism.viewpoint': '📸 Viewpoint',
-      'tourism.hotel': '🏨 Hotel'
-    };
-    
-    // Extract specific venue type
-    let venueType = null;
-    let features = [];
-    
-    tagArray.forEach(tag => {
-      // Check for cuisine in tag (e.g., "cuisine=italian")
-      if (tag.includes('=')) {
-        const [key, value] = tag.split('=');
-        if (key.trim() === 'cuisine' && value) {
-          const cuisine = value.trim().replace(';', ' & ');
-          description.push(`${cuisine.charAt(0).toUpperCase() + cuisine.slice(1)}`);
-        }
-      } else {
-        // Handle dot-notation tags
-        const mapped = tagMap[tag];
-        if (mapped) {
-          if (mapped.startsWith('🍽️') || mapped.startsWith('☕') || mapped.startsWith('🍺') || mapped.startsWith('🍻') || mapped.startsWith('🍔') || mapped.startsWith('🍦') || mapped.startsWith('🏨')) {
-            venueType = mapped;
-          } else if (!mapped.startsWith('♿')) {
-            features.push(mapped);
-          } else {
-            features.push(mapped);
-          }
-        }
-      }
-    });
-    
-    // Build description
+    // Build from enriched data
     const parts = [];
-    if (venueType) parts.push(venueType);
-    if (description.length > 0) parts.push(description.join(' • '));
-    if (features.length > 0) parts.push(features.join(' • '));
+    if (venue.venue_type) {
+      parts.push(venue.venue_type);
+    }
+    if (venue.cuisine) {
+      parts.push(venue.cuisine);
+    }
+    if (venue.features && venue.features.length > 0) {
+      parts.push(venue.features.slice(0, 3).join(' • '));
+    }
     
     return parts.length > 0 ? parts.join(' • ') : 'Local venue';
   };
@@ -273,35 +230,48 @@ const VenueCard = ({ venue, onAddToItinerary, onDirections, onMap, onSave }) => 
       
       {/* Venue Details */}
       <div className="p-4">
-        <div className="mb-3">
-          <p className="text-gray-700 text-sm">{getVenueDescription(venue)}</p>
+        {/* Venue Type & Price Row */}
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-900">
+            {venue.venue_type || '📍 Venue'}
+          </span>
+          {venue.price_indicator && (
+            <span className="text-sm font-medium text-green-700">
+              {venue.price_indicator}
+            </span>
+          )}
         </div>
         
-        {/* Additional Info */}
-        {(venue.rating || venue.price_range || venue.cuisine) && (
+        {/* Cuisine */}
+        {venue.cuisine && (
+          <div className="mb-2 text-sm text-gray-700">
+            🍽️ {venue.cuisine}
+          </div>
+        )}
+        
+        {/* Description */}
+        <div className="mb-3">
+          <p className="text-gray-600 text-sm">{getVenueDescription(venue)}</p>
+        </div>
+        
+        {/* Features as Badges */}
+        {venue.features && venue.features.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
-            {venue.rating && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                ⭐ {venue.rating}
+            {venue.features.slice(0, 4).map((feature, idx) => (
+              <span 
+                key={idx}
+                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
+              >
+                {feature}
               </span>
-            )}
-            {venue.price_range && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                💰 {venue.price_range}
-              </span>
-            )}
-            {venue.cuisine && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                🍽️ {venue.cuisine}
-              </span>
-            )}
+            ))}
           </div>
         )}
         
         {/* Address */}
-        {venue.address && !venue.address.includes('📍') && (
+        {venue.address && (
           <div className="mb-3 text-sm text-gray-600">
-            📍 {venue.address}
+            📍 {venue.address.replace('📍 ', '')}
           </div>
         )}
         
