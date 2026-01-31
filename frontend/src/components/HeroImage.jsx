@@ -54,7 +54,7 @@ const HeroImage = ({ city, intent, loading, heroImage, heroImageMeta }) => {
                   </p>
                 )}
                 <div className="hero-attribution">
-                  <small>Photo by <a href={heroImageMeta.profileUrl || 'https://unsplash.com'} target="_blank" rel="noopener noreferrer">{heroImageMeta.photographer || 'Unsplash'}</a> on <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer">Unsplash</a></small>
+                  <small>Photo by <a href={heroImageMeta.profileUrl ? `${heroImageMeta.profileUrl}?utm_source=travelland&utm_medium=referral` : 'https://unsplash.com'} target="_blank" rel="noopener noreferrer">{heroImageMeta.photographer || 'Unsplash'}</a> on <a href="https://unsplash.com?utm_source=travelland&utm_medium=referral" target="_blank" rel="noopener noreferrer">Unsplash</a></small>
                 </div>
               </div>
             </div>

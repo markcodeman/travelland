@@ -1,81 +1,50 @@
 const DEFAULT_HERO = 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80';
 const DEFAULT_VENUE = 'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=800&q=80';
 
+// Category-specific fallback images for when APIs fail
+const CATEGORY_FALLBACKS = {
+  nightlife: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1600&q=80',
+  bar: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1600&q=80',
+  food: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=80',
+  dining: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=80',
+  restaurant: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1600&q=80',
+  coffee: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1600&q=80',
+  cafe: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1600&q=80',
+  culture: 'https://images.unsplash.com/photo-1566127444979-b3d2b654e3d7?auto=format&fit=crop&w=1600&q=80',
+  museum: 'https://images.unsplash.com/photo-1566127444979-b3d2b654e3d7?auto=format&fit=crop&w=1600&q=80',
+  historic: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1600&q=80',
+  shopping: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1600&q=80',
+  nature: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80',
+  park: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1600&q=80',
+  beach: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80',
+  landmark: 'https://images.unsplash.com/photo-1533929736458-ca588d08c8be?auto=format&fit=crop&w=1600&q=80',
+  default: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1600&q=80'
+};
+
 const HERO_FALLBACKS = {
-  paris: {
-    url: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1600&q=80',
-    photographer: 'Pierre Blaché',
-    profileUrl: 'https://unsplash.com/@pierreblache'
-  },
-  london: {
-    url: 'https://images.unsplash.com/photo-1431440869543-efaf3388c585?auto=format&fit=crop&w=1600&q=80',
-    photographer: 'Luke Stackpoole',
-    profileUrl: 'https://unsplash.com/@lukestack'
-  },
-  tokyo: {
-    url: 'https://images.unsplash.com/photo-1505060280389-60df856a37e0?auto=format&fit=crop&w=1600&q=80',
-    photographer: 'Javier Miranda',
-    profileUrl: 'https://unsplash.com/@javiermiranda'
-  },
-  'new york': {
-    url: 'https://images.unsplash.com/photo-1469478712025-ead91e0b867b?auto=format&fit=crop&w=1600&q=80',
-    photographer: 'David Vives',
-    profileUrl: 'https://unsplash.com/@davidvives'
-  },
-  bangkok: {
-    url: 'https://images.unsplash.com/photo-1618889128235-93807ca6b114?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    photographer: 'Rizky Ananda',
-    profileUrl: 'https://unsplash.com/@rizkyananda'
-  },
-  barcelona: {
-    url: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1600&q=80',
-    photographer: 'Enric Cruz López',
-    profileUrl: 'https://unsplash.com/@enriccruzlopez'
-  },
-  rome: {
-    url: 'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1600&q=80',
-    photographer: 'Cameron Venti',
-    profileUrl: 'https://unsplash.com/@cameronventi'
-  }
+  paris: 'https://images.unsplash.com/photo-1768201200491-f3f2439f807c?auto=format&fit=crop&w=1600&q=80',
+  london: 'https://images.unsplash.com/photo-1431440869543-efaf3388c585?auto=format&fit=crop&w=1600&q=80',
+  tokyo: 'https://images.unsplash.com/photo-1505060280389-60df856a37e0?auto=format&fit=crop&w=1600&q=80',
+  'new york': 'https://images.unsplash.com/photo-1469478712025-ead91e0b867b?auto=format&fit=crop&w=1600&q=80',
+  bangkok: 'https://images.unsplash.com/photo-1618889128235-93807ca6b114?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  barcelona: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1600&q=80',
+  rome: 'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1600&q=80',
+  hallstatt: 'https://images.unsplash.com/photo-1500530852021-4673b1e67461?auto=format&fit=crop&w=1600&q=80'
 };
 
 const VENUE_FALLBACKS = {
   bangkok: {
     default: [
-      {
-        url: 'https://images.unsplash.com/photo-1616047493036-0e1d5ab21dab?w=800&auto=format&fit=crop&q=80&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjN8fGJhbmdrb2t8ZW58MHwwfDB8fHww',
-        photographer: 'Rizky Ananda',
-        profileUrl: 'https://unsplash.com/@rizkyananda'
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1550487221-3750d2cb0b3c?w=800&auto=format&fit=crop&q=80&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-        photographer: 'Rizky Ananda',
-        profileUrl: 'https://unsplash.com/@rizkyananda'
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1528181304800-259b08848526?w=800&auto=format&fit=crop&q=80&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MzJ8fGJhbmdrb2t8ZW58MHwwfDB8fHww',
-        photographer: 'Rizky Ananda',
-        profileUrl: 'https://unsplash.com/@rizkyananda'
-      }
+      'https://images.unsplash.com/photo-1616047493036-0e1d5ab21dab?w=800&auto=format&fit=crop&q=80&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjN8fGJhbmdrb2t8ZW58MHwwfDB8fHww',
+      'https://images.unsplash.com/photo-1550487221-3750d2cb0b3c?w=800&auto=format&fit=crop&q=80&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+      'https://images.unsplash.com/photo-1528181304800-259b08848526?w=800&auto=format&fit=crop&q=80&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MzJ8fGJhbmdrb2t8ZW58MHwwfDB8fHww'
     ],
     food: [
-      {
-        url: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
-        photographer: 'Maehl Thomas',
-        profileUrl: 'https://unsplash.com/@maehlthomas'
-      },
-      {
-        url: 'https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=800&q=80',
-        photographer: 'Maehl Thomas',
-        profileUrl: 'https://unsplash.com/@maehlthomas'
-      }
+      'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=800&q=80'
     ],
     nightlife: [
-      {
-        url: 'https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&fit=crop&w=800&q=80',
-        photographer: 'Maehl Thomas',
-        profileUrl: 'https://unsplash.com/@maehlthomas'
-      }
+      'https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&fit=crop&w=800&q=80'
     ]
   },
   paris: {
@@ -109,6 +78,16 @@ const fetchCityCoordinates = async (city) => {
     console.warn('City geocode failed', err);
   }
   return null;
+};
+
+const fetchSourceUnsplashImage = (query) => {
+  if (!query) return null;
+  const encoded = encodeURIComponent(query);
+  return {
+    url: `https://source.unsplash.com/1600x900/?${encoded}`,
+    photographer: 'Unsplash',
+    profileUrl: 'https://unsplash.com'
+  };
 };
 
 const fetchMapillaryImages = async (city, count = 4) => {
@@ -154,158 +133,194 @@ const buildPixabayUrl = (query, perPage = 6) => {
 
 const UNSPLASH_BASE = 'https://api.unsplash.com';
 
-const fetchUnsplashPhotos = async (query, perPage = 1) => {
-  const key = import.meta.env.VITE_UNSPLASH_KEY;
-  console.log('Unsplash API check:', { key: key ? 'exists' : 'missing', query, perPage });
-  if (!key) return null;
-
-  const params = new URLSearchParams({
-    query,
-    per_page: String(perPage),
-    orientation: 'landscape',
-    content_filter: 'high'
-  });
-
+const fetchUnsplashPhotos = async (query, perPage = 3) => {
+  console.log('Unsplash API check (secure proxy):', { query, perPage });
+  
   try {
-    const resp = await fetch(`${UNSPLASH_BASE}/search/photos?${params}`, {
+    const resp = await fetch('/api/unsplash-search', {
+      method: 'POST',
       headers: {
-        'Authorization': `Client-ID ${key}`
-      }
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        query,
+        per_page: perPage
+      })
     });
-    console.log('Unsplash API response:', resp.status);
+    
+    console.log('Unsplash proxy response:', resp.status);
     if (!resp.ok) return null;
+    
     const data = await resp.json();
-    console.log('Unsplash API results:', data.results?.length || 0, 'photos for', query);
-    return data.results;
+    console.log('Unsplash proxy results:', data.photos?.length || 0, 'photos for', query);
+    return data.photos;
   } catch (err) {
-    console.warn('Unsplash API fetch failed', err);
+    console.warn('Unsplash proxy fetch failed', err);
     return null;
   }
 };
 
-export const getHeroImage = async (city) => {
-  if (!city) return DEFAULT_HERO;
-
-  // Try Unsplash API first
-  const photos = await fetchUnsplashPhotos(`${city} skyline`, 1);
-  if (photos?.length) {
-    const photo = photos[0];
-    // Trigger download event
-    try {
-      await fetch(photo.links.download_location, { method: 'GET' });
-    } catch (err) {
-      console.warn('Failed to trigger Unsplash download', err);
-    }
-    return photo.urls.regular || photo.urls.full;
-  }
-
-  // Wikimedia Commons fallback
+const fetchPixabayPhoto = async (query, perPage = 3) => {
+  console.log('Pixabay API check (secure proxy):', { query, perPage });
+  
   try {
-    const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(city + ' skyline')}&gsrlimit=1&prop=imageinfo&iiprop=url&format=json&origin=*`;
-    const wikiResp = await fetch(wikiUrl);
-    if (wikiResp.ok) {
-      const wikiData = await wikiResp.json();
-      const pages = wikiData?.query?.pages;
-      if (pages) {
-        const firstPage = Object.values(pages)[0];
-        const img = firstPage?.imageinfo?.[0]?.url;
-        if (img) return img;
-      }
-    }
+    const resp = await fetch('/api/pixabay-search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        query,
+        per_page: perPage
+      })
+    });
+    
+    console.log('Pixabay proxy response:', resp.status);
+    if (!resp.ok) return null;
+    
+    const data = await resp.json();
+    console.log('Pixabay proxy results:', data.photos?.length || 0, 'photos for', query);
+    return data.photos;
   } catch (err) {
-    console.warn('Wikimedia hero fetch failed', err);
+    console.warn('Pixabay proxy fetch failed', err);
+    return null;
   }
-
-  // Curated Unsplash fallbacks (primary choice for quality)
-  const fallbackKey = city.toLowerCase();
-  const fallback = HERO_FALLBACKS[fallbackKey];
-  return fallback?.url || DEFAULT_HERO;
 };
 
-export const getHeroImageMeta = async (city) => {
-  if (!city) return { url: DEFAULT_HERO };
+const buildImageQueries = (city, intent) => {
+  const normalizedIntent = intent ? intent.replace(/intent|category/gi, '').trim() : '';
+  const baseQueries = [
+    `${city} ${normalizedIntent}`.trim(),
+    `${city} old town`,
+    `${city} skyline`,
+    `${city} city center`,
+    `${city} travel photography`,
+    `${city} aerial view`
+  ].filter(Boolean);
+  return baseQueries;
+};
 
-  // Try Unsplash API first
-  const photos = await fetchUnsplashPhotos(`${city} skyline`, 1);
-  if (photos?.length) {
-    const photo = photos[0];
-    return {
-      url: photo.urls.regular || photo.urls.full,
-      photographer: photo.user.name,
-      profileUrl: photo.user.links.html,
-      downloadUrl: photo.links.download_location
-    };
+const fetchCityHeroImage = async (city, intent = '') => {
+  const slug = slugifyCity(city);
+  const normalizedIntent = intent.toLowerCase().trim();
+  // Use category-specific fallback or city fallback or generic default
+  const fallback = HERO_FALLBACKS[slug] || 
+    CATEGORY_FALLBACKS[normalizedIntent] || 
+    CATEGORY_FALLBACKS.default;
+  
+  try {
+    // Try secure Unsplash proxy first
+    const photos = await fetchUnsplashPhotos(`${city} ${intent}`, 1);
+    if (photos?.length > 0) {
+      return photos[0].url;
+    }
+  } catch (err) {
+    console.warn('Unsplash hero failed, trying fallback', err);
   }
   
-  const fallbackKey = city.toLowerCase();
-  const fallback = HERO_FALLBACKS[fallbackKey];
-  return fallback || { url: DEFAULT_HERO };
-};
-
-export const getVenueImages = async (city, category, count = 4) => {
-  const metas = await getVenueImageMeta(city, category, count);
-  return metas.map(meta => meta.url);
-};
-
-export const getVenueImageMeta = async (city, category, count = 4) => {
-  if (!city) return Array(count).fill({ url: DEFAULT_VENUE });
-
-  // Try Unsplash API first
-  const query = `${city} ${category || 'landmark'}`;
-  const photos = await fetchUnsplashPhotos(query, count);
-  if (photos?.length) {
-    // Trigger download events
-    photos.forEach(photo => {
-      try {
-        fetch(photo.links.download_location, { method: 'GET' });
-      } catch (err) {
-        console.warn('Failed to trigger Unsplash download', err);
-      }
-    });
-
-    return photos.map(photo => ({
-      url: photo.urls.regular || photo.urls.full,
-      photographer: photo.user.name,
-      profileUrl: photo.user.links.html,
-      downloadUrl: photo.links.download_location
-    }));
-  }
-
-  // Fallback to curated images
-  const fallbackCity = VENUE_FALLBACKS[city.toLowerCase()];
-  const fallbackCategory = category ? fallbackCity?.[category.toLowerCase()] : null;
-  const fallbackDefault = fallbackCity?.default;
-
-  if (fallbackCategory?.length) {
-    return Array(count).fill(0).map((_, idx) => {
-      const item = fallbackCategory[idx % fallbackCategory.length];
-      return typeof item === 'string' ? { url: item } : item;
-    });
-  }
-
-  if (fallbackDefault?.length) {
-    return Array(count).fill(0).map((_, idx) => {
-      const item = fallbackDefault[idx % fallbackDefault.length];
-      return typeof item === 'string' ? { url: item } : item;
-    });
-  }
-
-  return Array(count).fill({ url: DEFAULT_VENUE });
-};
-
-// Trigger Unsplash download event (required by API guidelines)
-export const triggerUnsplashDownload = async (imageUrl) => {
   try {
-    // Extract photo ID from Unsplash URL
-    const match = imageUrl.match(/unsplash\.com\/photos\/([a-zA-Z0-9_-]+)/);
-    if (!match) return;
-    
-    const photoId = match[1];
-    const downloadUrl = `https://api.unsplash.com/photos/${photoId}/download`;
-    
-    // Call download endpoint (no key required for trigger)
-    await fetch(downloadUrl, { method: 'GET' });
+    // Try Pixabay as backup
+    const photos = await fetchPixabayPhoto(`${city} ${intent}`, 1);
+    if (photos?.length > 0) {
+      return photos[0].url;
+    }
   } catch (err) {
-    console.warn('Failed to trigger Unsplash download', err);
+    console.warn('Pixabay hero failed, using fallback', err);
   }
+  
+  return fallback;
+};
+
+const fetchVenueImages = async (city, intent = '', count = 3) => {
+  const slug = slugifyCity(city);
+  const fallback = VENUE_FALLBACKS[slug]?.[intent] || VENUE_FALLBACKS[slug]?.default || [DEFAULT_VENUE];
+  
+  try {
+    // Try secure Unsplash proxy first
+    const photos = await fetchUnsplashPhotos(`${city} ${intent}`, count);
+    if (photos?.length > 0) {
+      return photos.map(photo => ({
+        url: photo.url,
+        photographer: photo.user?.name || 'Unsplash',
+        profileUrl: photo.user?.profile_url || 'https://unsplash.com',
+        description: photo.description || photo.alt_description || ''
+      }));
+    }
+  } catch (err) {
+    console.warn('Unsplash venue failed, trying Pixabay', err);
+  }
+  
+  try {
+    // Try Pixabay as backup
+    const photos = await fetchPixabayPhoto(`${city} ${intent}`, count);
+    if (photos?.length > 0) {
+      return photos.map(photo => ({
+        url: photo.url,
+        photographer: photo.user || 'Pixabay',
+        profileUrl: photo.links?.pixabay || 'https://pixabay.com',
+        description: photo.description || ''
+      }));
+    }
+  } catch (err) {
+    console.warn('Pixabay venue failed, using fallback', err);
+  }
+  
+  return fallback.slice(0, count).map(url => ({
+    url,
+    photographer: 'Unsplash',
+    profileUrl: 'https://unsplash.com',
+    description: ''
+  }));
+};
+
+// Function to trigger Unsplash download event (for attribution)
+const triggerUnsplashDownload = (imageUrl) => {
+  try {
+    // Create a download event for Unsplash attribution
+    const event = new CustomEvent('unsplashDownload', {
+      detail: { imageUrl }
+    });
+    window.dispatchEvent(event);
+  } catch (err) {
+    console.warn('Failed to trigger Unsplash download event', err);
+  }
+};
+
+// Alias functions for compatibility
+const getHeroImage = fetchCityHeroImage;
+const getHeroImageMeta = async (city, intent = '') => {
+  try {
+    const photos = await fetchUnsplashPhotos(`${city} ${intent}`, 1);
+    if (photos?.length > 0) {
+      const photo = photos[0];
+      return {
+        url: photo.url,
+        photographer: photo.user?.name || 'Unsplash',
+        profileUrl: photo.user?.profile_url || 'https://unsplash.com',
+        description: photo.description || photo.alt_description || ''
+      };
+    }
+  } catch (err) {
+    console.warn('Hero image meta failed', err);
+  }
+  
+  return {
+    url: HERO_FALLBACKS[slugifyCity(city)] || DEFAULT_HERO,
+    photographer: 'Unsplash',
+    profileUrl: 'https://unsplash.com',
+    description: `Travel photo of ${city}`
+  };
+};
+
+export {
+  fetchCityHeroImage,
+  fetchVenueImages,
+  fetchUnsplashPhotos,
+  fetchPixabayPhoto,
+  triggerUnsplashDownload,
+  getHeroImage,
+  getHeroImageMeta,
+  buildImageQueries,
+  DEFAULT_HERO,
+  DEFAULT_VENUE
 };

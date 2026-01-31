@@ -15,8 +15,55 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
   const [loading, setLoading] = useState(false);
   const [funFact, setFunFact] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const messagesEndRef = useRef(null);
   const hasSentInitial = useRef(false);
+
+  // Engaging loading messages
+  const thinkingMessages = [
+    "Hmmm, let me think about that...",
+    "Searching my travel knowledge...",
+    "Consulting my local guides...",
+    "Finding the best recommendations...",
+    "Checking my travel notes...",
+    "Exploring possibilities for you...",
+    "Digging into my travel database...",
+    "Crafting the perfect response..."
+  ];
+
+  // Cached quick responses for common queries
+  const quickResponses = {
+    cafes: [
+      "☕ Paris is famous for its café culture! Here are some must-visit spots:",
+      "🥐 For the best croissants and coffee, try these beloved Parisian cafés:",
+      "📍 Let me share some hidden gems where locals actually hang out:"
+    ],
+    restaurants: [
+      "🍽️ Paris has incredible dining options! From bistros to fine dining:",
+      "🥘 For authentic French cuisine, these restaurants are exceptional:",
+      "🌟 Here are some dining spots that capture the essence of Paris:"
+    ],
+    museums: [
+      "🎨 Paris is a paradise for art lovers! Beyond the Louvre:",
+      "🖼️ The city's museums are world-class. Here are my top picks:",
+      "🏛️ From classical to contemporary, Paris has it all:"
+    ],
+    landmarks: [
+      "🗼 Paris's landmarks are iconic! Here are the must-sees:",
+      "🏰 Beyond the Eiffel Tower, discover these incredible sites:",
+      "📸 For the best photos and memories, visit these landmarks:"
+    ],
+    shopping: [
+      "🛍️ Paris is a shopping paradise! From luxury to vintage:",
+      "👗 For the ultimate retail therapy, explore these areas:",
+      "💎 Discover unique Parisian shopping experiences:"
+    ],
+    nightlife: [
+      "🌙 Paris comes alive after dark! Here's where to go:",
+      "🍸 From chic cocktail bars to lively clubs:",
+      "🎭 Experience Paris's vibrant nightlife scene:"
+    ]
+  };
 
   useEffect(() => {
     if (sessionId) localStorage.setItem('marco_session_id', sessionId);
@@ -51,23 +98,18 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     }
   };
 
-  // Auto-send venue data or category-based message when chat opens
+  // Set initial messages when city is available
   useEffect(() => {
-    if (!hasSentInitial.current && messages.length === 0) {
+    if (city && messages.length === 0 && !hasSentInitial.current) {
+      const initialMessage = {
+        id: 'initial',
+        type: 'assistant',
+        content: `I found great info about ${city}! What interests you? ☕ Coffee & tea, 🚌 Transport, 💎 Hidden gems`
+      };
+      setMessages([initialMessage]);
       hasSentInitial.current = true;
-      // Avoid auto-displaying backend fallbacks as 'venues' — only show real provider results
-      const nonFallbackVenues = (venues || []).filter(v => v && v.provider && v.provider !== 'fallback');
-      if (nonFallbackVenues.length > 0) {
-        setMessages([{ role: 'assistant', venues: nonFallbackVenues.slice(0, 10) }]);
-      } else if (category) {
-        // Don't show redundant message since we have city guide at top
-        setMessages([]);
-      } else {
-        const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and I'm ready to help you discover the best spots! What are you interested in - food, attractions, transport, or something else?`;
-        setMessages([{ role: 'assistant', text: venueText }]);
-      }
     }
-  }, [venues, category, messages.length]); // Include category in dependencies
+  }, [city, messages.length]); // Include category in dependencies
 
   const fetchVenuesForCategory = async () => {
     console.debug('fetchVenuesForCategory', { city, neighborhood, category });
@@ -77,7 +119,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
         category: category,
         neighborhood: neighborhood,
       };
-      const resp = await fetch('http://localhost:5010/search', {
+      const resp = await fetch('/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -124,6 +166,47 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     setInput('');
     setLoading(true);
 
+    // Start with an engaging loading message
+    const initialMessage = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
+    setLoadingMessage(initialMessage);
+
+    // Add a quick response for common queries after a short delay
+    const lowerText = text.toLowerCase();
+    let quickResponse = null;
+    
+    if (lowerText.includes('cafe') || lowerText.includes('coffee')) {
+      quickResponse = quickResponses.cafes[Math.floor(Math.random() * quickResponses.cafes.length)];
+    } else if (lowerText.includes('restaurant') || lowerText.includes('food') || lowerText.includes('dining')) {
+      quickResponse = quickResponses.restaurants[Math.floor(Math.random() * quickResponses.restaurants.length)];
+    } else if (lowerText.includes('museum') || lowerText.includes('art') || lowerText.includes('gallery')) {
+      quickResponse = quickResponses.museums[Math.floor(Math.random() * quickResponses.museums.length)];
+    } else if (lowerText.includes('landmark') || lowerText.includes('eiffel') || lowerText.includes('monument')) {
+      quickResponse = quickResponse.landmarks[Math.floor(Math.random() * quickResponses.landmarks.length)];
+    } else if (lowerText.includes('shop') || lowerText.includes('store') || lowerText.includes('boutique')) {
+      quickResponse = quickResponses.shopping[Math.floor(Math.random() * quickResponses.shopping.length)];
+    } else if (lowerText.includes('nightlife') || lowerText.includes('bar') || lowerText.includes('club')) {
+      quickResponse = quickResponses.nightlife[Math.floor(Math.random() * quickResponses.nightlife.length)];
+    }
+
+    // Show quick response after 1.5 seconds if we have one
+    if (quickResponse) {
+      setTimeout(() => {
+        if (loading) {
+          setMessages(m => [...m, { role: 'assistant', text: quickResponse, isQuick: true }]);
+          // Change loading message to indicate we're getting more details
+          setLoadingMessage("Getting more detailed information...");
+        }
+      }, 1500);
+    }
+
+    // Cycle through different loading messages
+    const messageInterval = setInterval(() => {
+      if (loading) {
+        const newMessage = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
+        setLoadingMessage(newMessage);
+      }
+    }, 3000);
+
     try {
       // Use the Groq-backed chat API on the same origin (Next.js or proxied)
       const payload = {
@@ -162,14 +245,12 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       setMessages(m => [...m, { role: 'assistant', text: "I apologize, but I'm having trouble connecting. Please try again in a moment." }]);
       console.error('Chat API failed', e);
     } finally {
+      clearInterval(messageInterval);
       setLoading(false);
+      setLoadingMessage('');
     }
   }
 
-  // Auto-scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
 
   // Helpers for rendering assistant fallback text
   const isGoogleMapsFallback = (text) => /no venues found|see more on google maps|explore more options on google maps|no detailed venues found/i.test(text || '');
@@ -210,17 +291,27 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
             <div className="city-guide">
               <div style={{fontWeight:600, marginBottom:8}}>📍 {city} Travel Guide</div>
               {funFact && (
-                <div style={{fontSize:14, lineHeight:1.5, color: '#666', fontStyle: 'italic', marginBottom:12, padding: '8px 12px', background: 'rgba(25, 118, 210, 0.05)', borderRadius: '6px', borderLeft: '3px solid #1976d2'}}>
-                  💡 {funFact}
-                </div>
-              )}
+                  <div style={{
+                    fontSize:14, 
+                    lineHeight:1.5, 
+                    color: '#666', 
+                    fontStyle: 'italic', 
+                    marginBottom:12, 
+                    padding: '8px 12px', 
+                    background: 'rgba(25, 118, 210, 0.05)', 
+                    borderRadius: '6px', 
+                    borderLeft: '3px solid #1976d2'
+                  }}>
+                    💡 {funFact.replace(/Teleférico da Gaia/g, 'Teleférico de Gaia')}
+                  </div>
+                )}
               {results?.quick_guide ? (
                 <div style={{fontSize:14, lineHeight:1.5, color: '#333'}}>
                   <ReactMarkdown
                     components={{
                       a: props => <a {...props} target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', textDecoration: 'underline' }}>{props.children}</a>,
                       strong: props => <strong style={{ color: '#333' }}>{props.children}</strong>,
-                      p: props => <p style={{ marginBottom: '8px' }}>{props.children}</p>
+                      p: props => <p style={{ marginBottom: '16px', lineHeight: '1.6' }}>{props.children}</p>
                     }}
                   >
                     {results.quick_guide}
@@ -241,7 +332,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
             </div>
           </div>
           {messages.map((msg, i) => (
-            <div key={i} className={`marco-msg ${msg.role}`}>
+            <div key={i} className={`marco-msg ${msg.role} ${msg.isQuick ? 'quick-response' : ''}`}>
               {msg.role === 'assistant' && msg.venues ? (
                 <div className="venue-message">
                   <div style={{fontWeight:700, fontSize:'1.1em', marginBottom:16}}>☕ Here are some great places I found:</div>
@@ -335,6 +426,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                         components={{
                           a: props => <a {...props} target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', textDecoration: 'underline', fontWeight: 600 }}>{props.children}</a>,
                           strong: props => <strong style={{ color: '#333', fontWeight: 700 }}>{props.children}</strong>,
+                          p: props => <p style={{ marginBottom: '16px', lineHeight: '1.6' }}>{props.children}</p>,
                           li: props => <li style={{ marginBottom: 6 }}>{props.children}</li>,
                           small: props => <small style={{ color: '#888', fontSize: '0.95em' }}>{props.children}</small>,
                           span: props => <span style={{ color: '#1976d2', fontWeight: 600 }}>{props.children}</span>
@@ -478,7 +570,15 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
           ))}
           {loading && (
             <div className="marco-msg assistant">
-              <div className="loading-dots">...</div>
+              <div className="loading-message">
+                <div className="thinking-emoji">🤔</div>
+                <div className="thinking-text">{loadingMessage || "Thinking..."}</div>
+                <div className="loading-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
             </div>
           )}
           <div ref={messagesEndRef} />

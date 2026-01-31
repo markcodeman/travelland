@@ -1073,7 +1073,7 @@ def _search_impl(payload):
                 "sights": "tourism",
                 "shopping": "shop",
                 "shops": "shop",
-                "nightlife": "amenity",
+                "nightlife": "bar",  # Search for bars specifically
                 "entertainment": "amenity",
                 "public transport": "amenity",
                 "transport": "amenity",
@@ -1100,22 +1100,43 @@ def _search_impl(payload):
                 for venue in venues[:limit]:
                     # First try venue's native address
                     address = venue.get("address", "")
+                    lat = venue.get("lat")
+                    lon = venue.get("lon")
                     
-                    # If no address but has coordinates, try to format nicely
-                    if not address and venue.get("lat") and venue.get("lon"):
-                        address = f"\ud83d\udccd Approximate location: {venue['lat']:.4f}, {venue['lon']:.4f}"
+                    # Skip venues with no address or coordinates
+                    if not address and (not lat or not lon):
+                        print(f"[SEARCH DEBUG] Skipping venue '{venue.get('name', 'Unknown')}' - no address or coordinates")
+                        continue
                     
-                    # If address exists but is coordinates, reformat
-                    elif address and ',' in address and '.' in address:
-                        try:
-                            lat, lon = map(float, address.split(','))
-                            address = f"\ud83d\udccd Approximate location: {lat:.4f}, {lon:.4f}"
-                        except ValueError:
-                            pass
+                    # Check if address is just coordinates (e.g., "48.8449, 2.3487")
+                    import re
+                    is_coordinate_only = False
+                    if address and re.match(r'^\s*-?\d+\.?\d*\s*,\s*-?\d+\.?\d*\s*$', address.strip()):
+                        is_coordinate_only = True
+                    
+                    # If no address or coordinate-only, try reverse geocoding
+                    if not address or is_coordinate_only:
+                        if lat and lon:
+                            try:
+                                from city_guides.providers.geocoding import reverse_geocode
+                                print(f"[SEARCH DEBUG] Reverse geocoding '{venue.get('name', 'Unknown')}' at {lat}, {lon}")
+                                geocoded_address = await reverse_geocode(float(lat), float(lon))
+                                if geocoded_address:
+                                    address = geocoded_address
+                                    print(f"[SEARCH DEBUG] Got address: {address[:50]}...")
+                                else:
+                                    print(f"[SEARCH DEBUG] Reverse geocoding failed for '{venue.get('name', 'Unknown')}'")
+                                    continue
+                            except Exception as e:
+                                print(f"[SEARCH DEBUG] Reverse geocoding error for '{venue.get('name', 'Unknown')}': {e}")
+                                continue
+                        else:
+                            print(f"[SEARCH DEBUG] Skipping venue '{venue.get('name', 'Unknown')}' - no coordinates for reverse geocoding")
+                            continue
                     
                     # Standardize address presentation
-                    if not address.startswith("\ud83d\udccd"):
-                        address = f"\ud83d\udccd {address}" if address else "\ud83d\udccd Location unknown"
+                    if not address.startswith("📍"):
+                        address = f"📍 {address}"
                     
                     formatted_venue = {
                         "id": venue.get("id", ""),
@@ -1172,6 +1193,36 @@ def _search_impl(payload):
                             transport_venues.append(venue)
                     result["venues"] = transport_venues
                     print(f"[SEARCH DEBUG] Filtered to {len(transport_venues)} transport venues")
+                elif q == "shopping":
+                    # Filter for shopping venues - shops, boutiques, malls
+                    shopping_venues = []
+                    for venue in formatted_venues:
+                        tags = venue.get("tags", {})
+                        tags_str = str(tags).lower()
+                        # Check for shop-related tags and exclude food
+                        is_shop = any(keyword in tags_str for keyword in ["shop=", "boutique", "mall", "store", "retail"])
+                        is_food = any(keyword in tags_str for keyword in ["restaurant", "cafe", "food", "cuisine", "couscous", "kitchen"])
+                        if is_shop and not is_food:
+                            shopping_venues.append(venue)
+                    # If we filtered too aggressively, return all results
+                    if len(shopping_venues) < 3:
+                        shopping_venues = formatted_venues
+                    result["venues"] = shopping_venues
+                    print(f"[SEARCH DEBUG] Filtered to {len(shopping_venues)} shopping venues")
+                elif q == "nightlife":
+                    # Filter for nightlife venues - bars, pubs, clubs, lounges
+                    nightlife_venues = []
+                    for venue in formatted_venues:
+                        tags = venue.get("tags", {})
+                        tags_str = str(tags).lower()
+                        # Broader check for nightlife-related tags
+                        if any(keyword in tags_str for keyword in ["bar", "pub", "nightclub", "club", "biergarten", "lounge", "cocktail", "wine", "beer"]):
+                            nightlife_venues.append(venue)
+                    # If we filtered too aggressively, return all results
+                    if len(nightlife_venues) < 3:
+                        nightlife_venues = formatted_venues
+                    result["venues"] = nightlife_venues
+                    print(f"[SEARCH DEBUG] Filtered to {len(nightlife_venues)} nightlife venues")
                 else:
                     result["venues"] = formatted_venues
                 

@@ -12,6 +12,20 @@
   overflow: hidden;
 }
 
+/* Hero Image */
+.dream-hero-image {
+  margin-bottom: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.dream-hero-image .pixabay-image-container.hero {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
 /* Sparkle animations */
 .sparkle {
   position: fixed;
@@ -290,8 +304,8 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   transition: background-color 0.2s ease;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 8px;
 }
 
 .suggestion-item:last-child {
@@ -300,6 +314,12 @@
 
 .suggestion-item:hover {
   background: rgba(103, 126, 234, 0.1);
+}
+
+.suggestion-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .suggestion-name {

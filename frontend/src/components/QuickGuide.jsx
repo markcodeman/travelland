@@ -17,7 +17,7 @@ export default function QuickGuide({ guide, images, source, source_url, cityImag
         <div className="quick-guide-hero">
           <img src={cityImage} alt={`${guide.split(' ').slice(0, 3).join(' ')}...`} style={{ width: '100%', height: 'auto', borderRadius: '8px', marginBottom: '8px' }} />
           <div className="quick-guide-attribution">
-            <small>Photo by <a href={cityImageMeta.profileUrl || 'https://unsplash.com'} target="_blank" rel="noopener noreferrer">{cityImageMeta.photographer || 'Unsplash'}</a> on <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer">Unsplash</a></small>
+            <small>Photo by <a href={cityImageMeta.profileUrl ? `${cityImageMeta.profileUrl}?utm_source=travelland&utm_medium=referral` : 'https://unsplash.com'} target="_blank" rel="noopener noreferrer">{cityImageMeta.photographer || 'Unsplash'}</a> on <a href="https://unsplash.com?utm_source=travelland&utm_medium=referral" target="_blank" rel="noopener noreferrer">Unsplash</a></small>
           </div>
         </div>
       )}

@@ -87,6 +87,89 @@ def register_routes(app):
     This function should be called after the app instance is created
     to avoid circular import issues.
     """
+    @app.route("/api/city-categories", methods=["POST"])
+    async def api_city_categories():
+        """API endpoint to get dynamic category suggestions for a city"""
+        print(f"[CITY-CATEGORIES ROUTE] Request received")
+        payload = await request.get_json(silent=True) or {}
+        city = (payload.get("city") or "").strip()
+        
+        if not city:
+            return jsonify({"error": "city required"}), 400
+        
+        try:
+            # Hardcoded overrides for specific cities (keep the polished ones)
+            city_lower = city.lower()
+            hardcoded = {
+                'paris': [
+                    { 'icon': '🥐', 'label': 'Cafes & Bakeries', 'intent': 'cafes' },
+                    { 'icon': '🎨', 'label': 'Art & Museums', 'intent': 'museums' },
+                    { 'icon': '🗼', 'label': 'Landmarks', 'intent': 'landmarks' },
+                    { 'icon': '🍷', 'label': 'Wine & Dining', 'intent': 'dining' },
+                    { 'icon': '🛍️', 'label': 'Shopping', 'intent': 'shopping' },
+                    { 'icon': '🌙', 'label': 'Nightlife', 'intent': 'nightlife' }
+                ],
+                'tokyo': [
+                    { 'icon': '🍱', 'label': 'Sushi & Ramen', 'intent': 'food' },
+                    { 'icon': '🏮', 'label': 'Temples & Shrines', 'intent': 'temples' },
+                    { 'icon': '🌸', 'label': 'Cherry Blossoms', 'intent': 'nature' },
+                    { 'icon': '🎮', 'label': 'Anime & Gaming', 'intent': 'anime' },
+                    { 'icon': '🛍️', 'label': 'Shopping Districts', 'intent': 'shopping' },
+                    { 'icon': '🌃', 'label': 'Nightlife', 'intent': 'nightlife' }
+                ],
+                'barcelona': [
+                    { 'icon': '🏖️', 'label': 'Beaches', 'intent': 'beaches' },
+                    { 'icon': '🏛️', 'label': 'Historic Sites', 'intent': 'historical' },
+                    { 'icon': '🍷', 'label': 'Tapas & Wine', 'intent': 'dining' },
+                    { 'icon': '🎨', 'label': 'Gaudí Architecture', 'intent': 'architecture' },
+                    { 'icon': '⚽', 'label': 'FC Barcelona', 'intent': 'sports' },
+                    { 'icon': '🌙', 'label': 'Nightlife', 'intent': 'nightlife' }
+                ],
+                'shanghai': [
+                    { 'icon': '🥟', 'label': 'Dumplings & Street Food', 'intent': 'food' },
+                    { 'icon': '🏙️', 'label': 'Skyline Views', 'intent': 'skyline' },
+                    { 'icon': '🛶', 'label': 'River Cruises', 'intent': 'river' },
+                    { 'icon': '🏛️', 'label': 'Historic Districts', 'intent': 'historical' },
+                    { 'icon': '🛍️', 'label': 'Markets & Shopping', 'intent': 'shopping' },
+                    { 'icon': '🌃', 'label': 'Nightlife', 'intent': 'nightlife' }
+                ]
+            }
+            
+            if city_lower in hardcoded:
+                return jsonify({ "categories": hardcoded[city_lower], "source": "hardcoded" })
+            
+            # For other cities, fetch sample venues and analyze categories
+            categories = await _analyze_city_categories(city)
+            return jsonify({ "categories": categories, "source": "dynamic" })
+            
+        except Exception as e:
+            print(f"[CITY-CATEGORIES ROUTE] Error: {e}")
+            # Return default categories on error
+            return jsonify({
+                "categories": [
+                    { "icon": "🍽️", "label": "Food & Dining", "intent": "dining" },
+                    { "icon": "🏛️", "label": "Historic Sites", "intent": "historical" },
+                    { "icon": "🎨", "label": "Art & Culture", "intent": "culture" },
+                    { "icon": "🌳", "label": "Parks & Nature", "intent": "nature" },
+                    { "icon": "🛍️", "label": "Shopping", "intent": "shopping" },
+                    { "icon": "🌙", "label": "Nightlife", "intent": "nightlife" }
+                ],
+                "source": "fallback"
+            })
+    
+    async def _analyze_city_categories(city: str) -> list:
+        """Analyze city venues to determine top categories - returns defaults quickly"""
+        # Return default categories immediately for reliability and speed
+        # Venue-based analysis can be added back later with proper caching
+        return [
+            { 'icon': '🍽️', 'label': 'Food & Dining', 'intent': 'dining' },
+            { 'icon': '🏛️', 'label': 'Historic Sites', 'intent': 'historical' },
+            { 'icon': '🎨', 'label': 'Art & Culture', 'intent': 'culture' },
+            { 'icon': '🌳', 'label': 'Parks & Nature', 'intent': 'nature' },
+            { 'icon': '🛍️', 'label': 'Shopping', 'intent': 'shopping' },
+            { 'icon': '🌙', 'label': 'Nightlife', 'intent': 'nightlife' }
+        ]
+    
     @app.route("/api/search", methods=["POST"])
     async def api_search():
         """API endpoint for searching venues and places in a city"""

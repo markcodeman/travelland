@@ -7,6 +7,7 @@ def looks_like_ddgs_disambiguation_text(txt: str) -> bool:
       - contains 'may refer to', 'may also refer to', 'the Spanish word for', 'is the name of', 'is a surname', 'disambiguation'
       - contains explicit site markers like 'youtube.com', 'watch', 'video', 'tripadvisor', 'reviews' that are likely not concise neighborhood summaries
       - very short text with many commas or 'rating X' phrases
+      - architectural, art history, or definition topics that aren't neighborhood-specific
     """
     if not txt:
         return False
@@ -17,6 +18,18 @@ def looks_like_ddgs_disambiguation_text(txt: str) -> bool:
     ]
     if any(p in low for p in bad_phrases):
         return True
+    
+    # Filter out architectural, art history, and definition topics
+    irrelevant_topics = [
+        'architecture', 'architectural style', 'gothic architecture', 'gothic style',
+        'art period', 'art movement', 'historical period', 'medieval',
+        'definition', 'meaning of', 'what is', 'etymology', 'origin of the word',
+        'clothing brand', 'snack brand', 'food product', 'company', 'manufacturer',
+        'music genre', 'literary genre', 'film genre', 'book', 'novel', 'movie'
+    ]
+    if any(topic in low for topic in irrelevant_topics):
+        return True
+    
     # Additional noisy patterns (UI fragments, 'Missing:', 'Show results')
     ui_noise = ['missing:', 'show results', 'show results with', 'looking to visit', 'top tips for', 'top tips', 'watch this video']
     if any(u in low for u in ui_noise):

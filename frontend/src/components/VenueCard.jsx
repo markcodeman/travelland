@@ -161,54 +161,65 @@ const VenueCard = ({ venue, onAddToItinerary, onDirections, onMap, onSave }) => 
   const getVenueDescription = (venue) => {
     if (venue.description) return venue.description;
     
-    // Extract real info from tags
-    const tags = venue.tags || '';
-    const tagMap = {};
-    tags.split(',').forEach(tag => {
-      const [key, value] = tag.split('=');
-      if (key && value) tagMap[key.trim()] = value.trim();
-    });
+    // Extract real info from tags - backend sends array like ["catering.restaurant", "wheelchair.yes"]
+    const tags = venue.tags || [];
+    const tagArray = Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t => t.trim()) : []);
     
     let description = [];
     
-    // Add cuisine type
-    if (tagMap.cuisine) {
-      const cuisine = tagMap.cuisine.replace(';', ' & ');
-      description.push(`${cuisine.charAt(0).toUpperCase() + cuisine.slice(1)} cuisine`);
-    } else if (tagMap.amenity) {
-      description.push(`${tagMap.amenity.charAt(0).toUpperCase() + tagMap.amenity.slice(1)}`);
-    }
+    // Map dot-notation tags to human-readable descriptions
+    const tagMap = {
+      'catering.restaurant': '🍽️ Restaurant',
+      'catering.cafe': '☕ Cafe',
+      'catering.bar': '🍺 Bar',
+      'catering.pub': '🍻 Pub',
+      'catering.fast_food': '🍔 Fast Food',
+      'catering.ice_cream': '🍦 Ice Cream',
+      'catering.biergarten': '🍺 Beer Garden',
+      'wheelchair.yes': '♿ Accessible',
+      'building.catering': null, // Skip generic
+      'catering': null, // Skip generic
+      'building': null, // Skip generic
+      'shop': '🛍️ Shop',
+      'tourism.attraction': '🎯 Attraction',
+      'tourism.viewpoint': '📸 Viewpoint',
+      'tourism.hotel': '🏨 Hotel'
+    };
     
-    // Add opening hours if available
-    if (tagMap['opening_hours']) {
-      description.push('Open daily');
-    }
+    // Extract specific venue type
+    let venueType = null;
+    let features = [];
     
-    // Add contact info
-    if (tagMap['contact:phone']) {
-      description.push('Phone available');
-    }
+    tagArray.forEach(tag => {
+      // Check for cuisine in tag (e.g., "cuisine=italian")
+      if (tag.includes('=')) {
+        const [key, value] = tag.split('=');
+        if (key.trim() === 'cuisine' && value) {
+          const cuisine = value.trim().replace(';', ' & ');
+          description.push(`${cuisine.charAt(0).toUpperCase() + cuisine.slice(1)}`);
+        }
+      } else {
+        // Handle dot-notation tags
+        const mapped = tagMap[tag];
+        if (mapped) {
+          if (mapped.startsWith('🍽️') || mapped.startsWith('☕') || mapped.startsWith('🍺') || mapped.startsWith('🍻') || mapped.startsWith('🍔') || mapped.startsWith('🍦') || mapped.startsWith('🏨')) {
+            venueType = mapped;
+          } else if (!mapped.startsWith('♿')) {
+            features.push(mapped);
+          } else {
+            features.push(mapped);
+          }
+        }
+      }
+    });
     
-    // Add rating if available
-    if (venue.rating) {
-      description.push(`Rated ${venue.rating}/5`);
-    }
+    // Build description
+    const parts = [];
+    if (venueType) parts.push(venueType);
+    if (description.length > 0) parts.push(description.join(' • '));
+    if (features.length > 0) parts.push(features.join(' • '));
     
-    // Add price range if available
-    if (venue.price_range || tagMap.price_range) {
-      const price = venue.price_range || tagMap.price_range;
-      description.push(`${price} price range`);
-    }
-    
-    // Add specific venue type from tags
-    if (tagMap.shop) {
-      description.push(`${tagMap.shop.charAt(0).toUpperCase() + tagMap.shop.slice(1)} shop`);
-    }
-    if (tagMap.tourism) {
-      description.push(`${tagMap.tourism.charAt(0).toUpperCase() + tagMap.tourism.slice(1)}`);
-    }
-    
-    return description.length > 0 ? description.join(' • ') : 'Local venue';
+    return parts.length > 0 ? parts.join(' • ') : 'Local venue';
   };
 
   const getMapsUrl = (venue) => {

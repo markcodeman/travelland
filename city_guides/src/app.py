@@ -18,6 +18,7 @@ from city_guides.src.services.learning import (
     increment_location_weight,
     detect_hemisphere_from_searches
 )
+from city_guides.src.services.pixabay import pixabay_service
 from city_guides.src.utils.seasonal import get_seasonal_destinations
 
 """
@@ -85,6 +86,17 @@ app = Quart(__name__, static_folder="/home/markm/TravelLand/city_guides/static",
 # Configure CORS
 cors(app, allow_origin=["http://localhost:5174", "https://travelland-w0ny.onrender.com"], allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
+# Cleanup Pixabay service on app shutdown
+@app.before_serving
+async def startup():
+    """Initialize services on startup"""
+    pass
+
+@app.after_serving
+async def shutdown():
+    """Clean up services on shutdown"""
+    await pixabay_service.close()
+
 # Global async clients
 aiohttp_session: aiohttp.ClientSession | None = None
 redis_client: aioredis.Redis | None = None
@@ -99,7 +111,7 @@ DEFAULT_PREWARM_CITIES = os.getenv("SEARCH_PREWARM_CITIES", "London,Paris")
 PREWARM_QUERIES = [q.strip() for q in os.getenv("SEARCH_PREWARM_QUERIES", "Top food").split(",") if q.strip()]
 PREWARM_TTL = int(os.getenv("SEARCH_PREWARM_TTL", "3600"))
 NEIGHBORHOOD_CACHE_TTL = int(os.getenv("NEIGHBORHOOD_CACHE_TTL", 60 * 60 * 24 * 7))  # 7 days
-POPULAR_CITIES = [c.strip() for c in os.getenv("POPULAR_CITIES", "London,Paris,New York,Tokyo,Rome,Barcelona").split(",") if c.strip()]
+POPULAR_CITIES = [c.strip() for c in os.getenv("POPULAR_CITIES", "London,Paris,New York,Tokyo,Rome,Barcelona,Bruges,Hallstatt,Chefchaouen,Ravello,Colmar,Sintra,Ghent,Annecy,Kotor,Cesky Krumlov,Rothenburg,Positano").split(",") if c.strip()]
 DISABLE_PREWARM = True  # os.getenv("DISABLE_PREWARM", "false").lower() == "true"
 
 
@@ -169,12 +181,19 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
 
 # DDGS provider import is optional at module import time (tests may not have ddgs installed)
 try:
-    from city_guides.providers.ddgs_provider import ddgs_search
-    # Re-enabled DDGS for better neighborhood content
+    from city_guides.providers.ddgs_provider import ddgs_search as _ddgs_provider_search
+
+    async def ddgs_search(*args, **kwargs):
+        return await _ddgs_provider_search(*args, **kwargs)
+
     app.logger.info('DDGS provider enabled for neighborhood search')
-except Exception:
-    ddgs_search = None
-    app.logger.debug('DDGS provider not available at module import time; ddgs_search set to None')
+except Exception as ddgs_import_err:
+
+    async def ddgs_search(*args, **kwargs):
+        app.logger.warning('DDGS provider unavailable (%s); returning empty results', ddgs_import_err)
+        return []
+
+    app.logger.debug('DDGS provider not available at module import time; falling back to empty search results')
 
 from city_guides.groq.traveland_rag import recommender
 
@@ -193,6 +212,8 @@ async def api_chat_rag():
         engine = data.get("engine", "google")
         max_results = int(data.get("max_results", 8))
         city = data.get("city", "")
+        state = data.get("state", "")
+        country = data.get("country", "")
         lat = data.get("lat")
         lon = data.get("lon")
         if not query:
@@ -223,14 +244,37 @@ async def api_chat_rag():
                     venue_context = "\n\nNearby venues: " + ", ".join([v['name'] for v in venues]) if venues else ""
                     full_query += venue_context
 
-        # Run DDGS web search (async) with the full_query
-        web_results = await ddgs_search(full_query, engine=engine, max_results=max_results)
-        # Prepare context for Groq
         context_snippets = []
-        for r in web_results:
+
+        # Run DDGS web search (async) with the full_query
+        web_results = []
+        try:
+            web_results = await ddgs_search(full_query, engine=engine, max_results=max_results)
+        except Exception:
+            app.logger.exception('DDGS search failed for %s', full_query)
+
+        for r in web_results or []:
             # Only use title + body for context, never URLs
             snippet = f"{r.get('title','')}: {r.get('body','')}"
-            context_snippets.append(snippet)
+            if snippet.strip():
+                context_snippets.append(snippet)
+
+        # Fallback context when DDGS is unavailable or empty
+        if not context_snippets and city:
+            try:
+                wiki_result = await fetch_city_wikipedia(city, state or None, country or None)
+            except Exception:
+                wiki_result = None
+                app.logger.exception('Wikipedia fallback fetch failed for %s', city)
+            if wiki_result:
+                summary, wiki_url = wiki_result
+                context_snippets.append(f"{city} overview: {summary}")
+                context_snippets.append(f"Reference: {wiki_url}")
+        if not context_snippets:
+            context_snippets.append(
+                f"No live web snippets available. Base the answer on trustworthy travel expertise for {city or 'the requested destination'} and general knowledge."
+            )
+
         context_text = "\n\n".join(context_snippets)
 
         # Compose Groq prompt (system + user)
@@ -238,10 +282,8 @@ async def api_chat_rag():
             "You are Marco, a travel AI assistant. Given a user query and a set of recent web search snippets, synthesize a helpful, accurate, and up-to-date answer. "
             "Never mention your sources or that you used web search. Respond as a unified expert, not a search engine."
         )
-        user_prompt = f"User query: {query}\n\nRelevant web snippets:\n{context_text}"
-        # Add location context to the prompt if available
-        if city:
-            user_prompt = f"User query: {query} in {city}\n\nRelevant web snippets:\n{context_text}"
+        location_fragment = f" in {city}" if city else ""
+        user_prompt = f"User query: {query}{location_fragment}\n\nRelevant web snippets:\n{context_text}"
 
         messages = [
             {"role": "system", "content": system_prompt},
@@ -1259,10 +1301,10 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
                 lower = txt.lower()
                 title_lower = (r.get('title') or '').lower()
                 
-                # Must mention the exact neighborhood name
+                # Must mention the exact neighborhood name AND be contextually relevant
                 mentions_neighborhood = neighborhood.lower() in lower or neighborhood.lower() in title_lower
                 
-                # Must be substantial, informative content (not just promotional fluff)
+                # Must be substantial, informative content about the actual neighborhood (not just any content with keywords)
                 is_substantial = len(txt) >= 100 and any(phrase in lower for phrase in [
                     'neighborhood', 'area', 'district', 'located', 'residential', 'beach', 'attractions', 
                     'amenities', 'shops', 'restaurants', 'streets', 'community', 'town', 'municipality',
@@ -1270,6 +1312,13 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
                     # Real estate indicators
                     'homes', 'properties', 'real estate', 'realtor', 'zillow', 'for sale',
                     'population', 'median', 'average', 'price', 'market'
+                ]) and not any(irrelevant_topic in lower for irrelevant_topic in [
+                    # Filter out architectural, art history, and definition topics
+                    'architecture', 'architectural style', 'gothic architecture', 'gothic style',
+                    'art period', 'art movement', 'historical period', 'medieval',
+                    'definition', 'meaning of', 'what is', 'etymology', 'origin of the word',
+                    'clothing brand', 'snack brand', 'food product', 'company', 'manufacturer',
+                    'music genre', 'literary genre', 'film genre', 'book', 'novel', 'movie'
                 ])
                 
                 # Filter out generic promotional/travel booking content, but allow real estate and Wikipedia
@@ -2275,6 +2324,217 @@ async def location_suggestions():
         app.logger.exception('Location suggestions failed')
         return jsonify({'error': 'suggestions_failed'}), 500
 
+@app.route('/api/geonames-search', methods=['POST'])
+async def geonames_search():
+    """Search for any city using GeoNames API"""
+    try:
+        payload = await request.get_json(silent=True) or {}
+        query = (payload.get('query') or '').strip()
+        
+        if len(query) < 2:
+            return jsonify({'suggestions': []})
+        
+        # Get GeoNames username
+        geonames_user = os.getenv("GEONAMES_USERNAME")
+        if not geonames_user:
+            # Try to read from .env file
+            try:
+                env_path = Path(__file__).parent.parent.parent / ".env"
+                if env_path.exists():
+                    with env_path.open("r", encoding="utf-8") as f:
+                        for line in f:
+                            line = line.strip()
+                            if line.startswith("GEONAMES_USERNAME="):
+                                geonames_user = line.split("=", 1)[1].strip().strip('"').strip("'")
+                                break
+            except Exception:
+                pass
+        
+        if not geonames_user:
+            app.logger.warning("GeoNames username not configured")
+            return jsonify({'suggestions': []})
+        
+        # Search GeoNames for cities
+        async with get_session() as session:
+            params = {
+                "username": geonames_user,
+                "q": query,
+                "featureClass": "P",  # Populated places only
+                "maxRows": 10,
+                "style": "FULL"
+            }
+            
+            async with session.get("http://api.geonames.org/searchJSON", params=params, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                if response.status != 200:
+                    app.logger.error(f"GeoNames API error: {response.status}")
+                    return jsonify({'suggestions': []})
+                
+                data = await response.json()
+                suggestions = []
+                
+                for geoname in data.get("geonames", []):
+                    # Extract city information
+                    city_name = geoname.get("name", "")
+                    country_name = geoname.get("countryName", "")
+                    country_code = geoname.get("countryCode", "")
+                    
+                    if not city_name or not country_name:
+                        continue
+                    
+                    # Get emoji for country
+                    country_emoji = ""
+                    try:
+                        if country_code:
+                            # Convert country code to emoji
+                            emoji = "".join([chr(ord(c) + 127397) for c in country_code.upper()])
+                            country_emoji = emoji
+                    except Exception:
+                        pass
+                    
+                    suggestions.append({
+                        "city": city_name,
+                        "country": country_name,
+                        "emoji": country_emoji,
+                        "geonameId": geoname.get("geonameId"),
+                        "lat": geoname.get("lat"),
+                        "lng": geoname.get("lng"),
+                        "population": geoname.get("population"),
+                        "source": "geonames"
+                    })
+                
+                return jsonify({'suggestions': suggestions})
+        
+    except Exception as e:
+        app.logger.exception(f'GeoNames search failed: {e}')
+        return jsonify({'error': 'geonames_search_failed'}), 500
+
+@app.route('/api/unsplash-search', methods=['POST'])
+async def unsplash_search():
+    """Secure proxy for Unsplash API - hides API keys from frontend"""
+    try:
+        payload = await request.get_json(silent=True) or {}
+        query = payload.get('query', '').strip()
+        per_page = min(int(payload.get('per_page', 3)), 10)
+        
+        if not query:
+            return jsonify({'error': 'query_required'}), 400
+        
+        # Get Unsplash key from environment (never exposed to frontend)
+        unsplash_key = os.getenv("UNSPLASH_KEY")
+        if not unsplash_key:
+            app.logger.warning("Unsplash key not configured")
+            return jsonify({'photos': []})
+        
+        # Make secure request to Unsplash
+        params = {
+            'query': query,
+            'per_page': per_page,
+            'orientation': 'landscape',
+            'content_filter': 'high',
+            'order_by': 'relevant'
+        }
+        
+        headers = {
+            'Authorization': f'Client-ID {unsplash_key}'
+        }
+        
+        async with get_session() as session:
+            async with session.get(
+                f"https://api.unsplash.com/search/photos",
+                params=params,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
+                if response.status != 200:
+                    app.logger.error(f"Unsplash API error: {response.status}")
+                    return jsonify({'photos': []})
+                
+                data = await response.json()
+                
+                # Transform response to only expose necessary data
+                photos = []
+                for photo in data.get('results', []):
+                    photos.append({
+                        'id': photo['id'],
+                        'url': photo['urls']['regular'],
+                        'thumb_url': photo['urls']['thumb'],
+                        'description': photo.get('description', ''),
+                        'alt_description': photo.get('alt_description', ''),
+                        'user': {
+                            'name': photo['user']['name'],
+                            'username': photo['user']['username'],
+                            'profile_url': photo['user']['links']['html']
+                        },
+                        'links': {
+                            'unsplash': photo['links']['html']
+                        }
+                    })
+                
+                return jsonify({'photos': photos})
+        
+    except Exception as e:
+        app.logger.exception(f'Unsplash proxy failed: {e}')
+        return jsonify({'error': 'unsplash_search_failed'}), 500
+
+@app.route('/api/pixabay-search', methods=['POST'])
+async def pixabay_search():
+    """Secure proxy for Pixabay API - hides API keys from frontend"""
+    try:
+        payload = await request.get_json(silent=True) or {}
+        query = payload.get('query', '').strip()
+        per_page = min(int(payload.get('per_page', 3)), 20)
+        
+        if not query:
+            return jsonify({'photos': []})
+        
+        # Get Pixabay key from environment (never exposed to frontend)
+        pixabay_key = os.getenv("PIXABAY_KEY")
+        if not pixabay_key:
+            app.logger.warning("Pixabay key not configured")
+            return jsonify({'photos': []})
+        
+        # Make secure request to Pixabay
+        params = {
+            'key': pixabay_key,
+            'q': query,
+            'per_page': per_page,
+            'safesearch': 'true',
+            'image_type': 'photo',
+            'orientation': 'horizontal'
+        }
+        
+        async with get_session() as session:
+            async with session.get(
+                "https://pixabay.com/api/",
+                params=params,
+                timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
+                if response.status != 200:
+                    app.logger.error(f"Pixabay API error: {response.status}")
+                    return jsonify({'photos': []})
+                
+                data = await response.json()
+                
+                # Transform response to only expose necessary data
+                photos = []
+                for hit in data.get('hits', []):
+                    photos.append({
+                        'id': hit['id'],
+                        'url': hit['webformatURL'],
+                        'thumb_url': hit['previewURL'],
+                        'description': hit.get('tags', ''),
+                        'user': hit.get('user', 'Pixabay User'),
+                        'links': {
+                            'pixabay': hit['pageURL']
+                        }
+                    })
+                
+                return jsonify({'photos': photos})
+        
+    except Exception as e:
+        app.logger.exception(f'Pixabay proxy failed: {e}')
+        return jsonify({'error': 'pixabay_search_failed'}), 500
+
 @app.route('/api/log-suggestion-success', methods=['POST'])
 async def log_suggestion_success():
     """Log successful suggestion usage for learning"""
@@ -2302,6 +2562,10 @@ def increment_location_weight(location):
     """Increment weight for successful location"""
     key = location.lower()
     _location_weights[key] = _location_weights.get(key, 1.0) + 0.1
+
+# Import and register routes from routes module
+from .routes import register_routes
+register_routes(app)
 
 if __name__ == "__main__":
     # Load environment variables from .env file manually

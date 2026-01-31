@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import './styles/app.css';
 import AutocompleteInput from './components/AutocompleteInput';
 import WeatherDisplay from './components/WeatherDisplay';
 import Header from './components/Header';
 import SuggestionChips from './components/SuggestionChips';
 import MarcoChat from './components/MarcoChat';
-import DreamInput from './components/DreamInput';
+import SimpleLocationSelector from './components/SimpleLocationSelector';
+import CitySuggestions from './components/CitySuggestions';
 import HeroImage from './components/HeroImage';
 import { getHeroImage, getHeroImageMeta } from './services/imageService';
 
@@ -114,6 +115,7 @@ function App() {
   const [neighborhoodOptions, setNeighborhoodOptions] = useState([]);
   const [neighborhoodOptIn, setNeighborhoodOptIn] = useState(false);
   const [category, setCategory] = useState('');
+  const [categoryLabel, setCategoryLabel] = useState('');
   const [generating, setGenerating] = useState(false);
   const [weather, setWeather] = useState(null);
   const [weatherError, setWeatherError] = useState(null);
@@ -131,6 +133,27 @@ function App() {
   const [venues, setVenues] = useState([]);
   const [heroImage, setHeroImage] = useState('');
   const [heroImageMeta, setHeroImageMeta] = useState({});
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const marcoOpenTimerRef = useRef(null);
+
+  const clearMarcoOpenTimer = useCallback(() => {
+    if (marcoOpenTimerRef.current) {
+      clearTimeout(marcoOpenTimerRef.current);
+      marcoOpenTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleMarcoOpen = useCallback(() => {
+    clearMarcoOpenTimer();
+    marcoOpenTimerRef.current = setTimeout(() => {
+      setMarcoOpen(true);
+      marcoOpenTimerRef.current = null;
+    }, 1000);
+  }, [clearMarcoOpenTimer]);
+
+  useEffect(() => {
+    return () => clearMarcoOpenTimer();
+  }, [clearMarcoOpenTimer]);
 
   // Memoized API call functions
   const fetchAPI = useCallback(async (endpoint, options = {}) => {
@@ -158,8 +181,8 @@ function App() {
 
     (async () => {
       try {
-        const imageUrl = await getHeroImage(location.city);
-        const imageMeta = await getHeroImageMeta(location.city);
+        const imageUrl = await getHeroImage(location.city, parsedIntent || categoryLabel || category);
+        const imageMeta = await getHeroImageMeta(location.city, parsedIntent || categoryLabel || category);
         if (!cancelled) {
           setHeroImage(imageUrl);
           setHeroImageMeta(imageMeta);
@@ -173,7 +196,7 @@ function App() {
     })();
 
     return () => { cancelled = true; };
-  }, [location.city]);
+  }, [location.city, parsedIntent, categoryLabel, category]);
 
   const normalizeCityName = useCallback((cityValue) => {
     if (!cityValue) return cityValue;
@@ -188,8 +211,8 @@ function App() {
     return name;
   }, []);
 
-  // DreamInput location change handler
-  const handleDreamLocationChange = useCallback((loc) => {
+  // SimpleLocationSelector location change handler
+  const handleSimpleLocationChange = useCallback((loc) => {
     const normalizedCity = normalizeCityName(loc.city);
     setLocation(prev => ({
       ...prev,
@@ -197,7 +220,28 @@ function App() {
       city: normalizedCity,
       cityName: normalizedCity,
     }));
-    
+
+    // Show city suggestions when a city is selected
+    if (normalizedCity) {
+      setShowCitySuggestions(true);
+      
+      // Auto-scroll to categories after city selection
+      setTimeout(() => {
+        const categoriesElement = document.querySelector('.city-suggestions');
+        if (categoriesElement) {
+          categoriesElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+          });
+        }
+      }, 100);
+    }
+
+    // Reset category selections when city changes
+    setCategory('');
+    setCategoryLabel('');
+    setSelectedSuggestion('');
+
     // Store intent for visual components
     if (loc.intent) {
       setParsedIntent(loc.intent);
@@ -420,16 +464,17 @@ function App() {
 
 
   // Main search function - defined with useCallback to avoid recreation
-  const handleSearch = useCallback(async (overrideCategory = null) => {
-    if (!location.city?.trim()) {
+  const handleSearch = useCallback(async (overrideCategory = null, cityOverride = null) => {
+    const searchCity = cityOverride || location.city;
+    if (!searchCity?.trim()) {
       setWeatherError('Please select a city before searching.');
       return;
     }
 
-    const displayCategory = overrideCategory || category;
+    const displayCategory = overrideCategory || categoryLabel || category;
     const message = location.neighborhood 
-      ? `Finding ${displayCategory || 'great spots'} in ${location.neighborhood}, ${location.city}...`
-      : `Finding ${displayCategory || 'great spots'} in ${location.city}...`;
+      ? `Finding ${displayCategory || 'great spots'} in ${location.neighborhood}, ${searchCity}...`
+      : `Finding ${displayCategory || 'great spots'} in ${searchCity}...`;
     
     setLoadingMessage(message);
     setLoading(true);
@@ -440,11 +485,11 @@ function App() {
       const [geoData, quickGuideData] = await Promise.all([
         fetchAPI('/geocode', {
           method: 'POST',
-          body: JSON.stringify({ city: location.city, neighborhood: '', country: location.country })
+          body: JSON.stringify({ city: searchCity, neighborhood: '', country: location.country })
         }).catch(() => null),
         
         fetchQuickGuide({
-          query: location.city,
+          query: searchCity,
           state: location.state,
           country: location.country,
           ...(location.neighborhood && neighborhoodOptIn && { neighborhood: location.neighborhood }),
@@ -474,23 +519,23 @@ function App() {
 
       // Fetch weather if we have coordinates
       if (geoData?.lat && geoData?.lon) {
-        await fetchWeatherData(location.city, location.neighborhood);
+        await fetchWeatherData(searchCity, location.neighborhood);
       }
 
       // Set results from quick guide
       if (!quickGuideData) {
         setResults({
-          quick_guide: buildCityFallback(location.city),
+          quick_guide: buildCityFallback(searchCity),
           source: 'fallback',
           cached: false,
         });
       } else {
         setResults(() => {
           if (quickGuideData.quick_guide) {
-            if (looksLikeMisalignedGuide(quickGuideData.quick_guide, location.city)) {
+            if (looksLikeMisalignedGuide(quickGuideData.quick_guide, searchCity)) {
               return {
                 ...quickGuideData,
-                quick_guide: buildCityFallback(location.city),
+                quick_guide: buildCityFallback(searchCity),
                 source: 'fallback',
                 cached: false,
               };
@@ -502,7 +547,7 @@ function App() {
           }
           return {
             ...quickGuideData,
-            quick_guide: buildCityFallback(location.city),
+            quick_guide: buildCityFallback(searchCity),
             source: 'fallback',
             cached: false,
           };
@@ -547,15 +592,42 @@ function App() {
       setWeatherError('Search failed. Please try again.');
     } finally {
       setLoading(false);
+      // Marco no longer auto-opens - user chooses when to chat
     }
-  }, [location.city, location.neighborhood, location.country, category, neighborhoodOptIn, fetchAPI, fetchQuickGuide, fetchNeighborhoods, fetchWeatherData]);
+  }, [location.city, location.neighborhood, location.country, category, categoryLabel, neighborhoodOptIn, fetchAPI, fetchQuickGuide, fetchNeighborhoods, fetchWeatherData]);
+
+  // Handle category selection from CitySuggestions
+  const handleCategorySelect = useCallback((intent, label) => {
+    setCategory(intent);
+    setCategoryLabel(label);
+    setParsedIntent(intent);
+    // Marco no longer auto-opens - user clicks button when ready
+    
+    // Auto-scroll to hero image after category selection
+    setTimeout(() => {
+      const heroElement = document.querySelector('.hero-image-container');
+      if (heroElement) {
+        heroElement.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }
+    }, 100);
+    
+    // Trigger search with the selected category label for better context
+    if (location.city) {
+      handleSearch(label, location.city);
+    }
+  }, [location.city, handleSearch, scheduleMarcoOpen]);
 
   // Memoized suggestion handler with toggle behavior
   const handleSuggestion = useCallback(async (id) => {
     // Toggle: deselect if already selected
     if (selectedSuggestion === id) {
       setCategory('');
+      setCategoryLabel('');
       setSelectedSuggestion('');
+      clearMarcoOpenTimer();
       // trigger a broad search with no specific category
       if (location.city) await handleSearch('');
       return;
@@ -563,12 +635,14 @@ function App() {
 
     const label = SUGGESTION_MAP[id] || id; // human label
     setCategory(id); // keep internal id
+    setCategoryLabel(label);
     setSelectedSuggestion(id);
+    // Marco no longer auto-opens - user clicks button when ready
     
     if (location.city) {
       await handleSearch(label); // pass label so backend gets "Hidden gems"
     }
-  }, [location.city, handleSearch, selectedSuggestion]);
+  }, [location.city, handleSearch, selectedSuggestion, clearMarcoOpenTimer]);
 
   // Memoized generate function
   const generateQuickGuide = useCallback(async () => {
@@ -605,21 +679,30 @@ function App() {
     <div>
       <Header city={location.city} neighborhood={location.neighborhood} />
       
-      <div style={{ minWidth: 220, margin: '0 auto', maxWidth: 600 }}>
-        <WeatherDisplay {...weatherDisplayProps} />
-        {weatherError && (
-          <div style={{ marginTop: 8, color: '#9b2c2c', fontSize: 13 }}>
-            {weatherError}
-          </div>
-        )}
-      </div>
+      {location.city && (
+        <div style={{ minWidth: 220, margin: '0 auto', maxWidth: 600 }}>
+          <WeatherDisplay {...weatherDisplayProps} />
+          {weatherError && (
+            <div style={{ marginTop: 8, color: '#9b2c2c', fontSize: 13 }}>
+              {weatherError}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="app-container">
-        <DreamInput 
-          onLocationChange={handleDreamLocationChange}
-          onCityGuide={() => handleSearch(category || '')}
-          canTriggerCityGuide={Boolean(location.city)}
+        <SimpleLocationSelector 
+          onLocationChange={handleSimpleLocationChange}
+          onCityGuide={(city) => handleSearch(categoryLabel || category || '', city)}
         />
+
+        {/* City Suggestions - Controlled Context */}
+        {showCitySuggestions && location.city && (
+          <CitySuggestions 
+            city={location.city}
+            onCategorySelect={handleCategorySelect}
+          />
+        )}
 
         {/* Hero Image - Visual Payoff */}
         {(location.city || cityGuideLoading) && (
@@ -650,8 +733,279 @@ function App() {
 
         <SuggestionChips onSelect={handleSuggestion} city={location.city} selected={selectedSuggestion} />
         
+        {/* Category Loading State */}
+        {loading && (category || selectedSuggestion) && (
+          <div style={{ 
+            marginTop: 32, 
+            padding: '40px 16px',
+            textAlign: 'center',
+            animation: 'fadeIn 0.3s ease-out'
+          }}>
+            <div style={{
+              width: 48,
+              height: 48,
+              border: '4px solid #f3f3f3',
+              borderTop: '4px solid #667eea',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 16px'
+            }} />
+            <p style={{ color: '#666', fontSize: 16, margin: 0 }}>
+              {loadingMessage || `Finding ${categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category} in ${location.city}...`}
+            </p>
+          </div>
+        )}
+        
+        {/* Empty state - category selected but no venues */}
+        {(category || selectedSuggestion) && !loading && venues.length === 0 && (
+          <div style={{ 
+            marginTop: 32, 
+            padding: '40px 16px',
+            textAlign: 'center',
+            background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
+            borderRadius: 16,
+            margin: '32px 16px 0'
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+            <h3 style={{ color: '#333', marginBottom: 8 }}>
+              Finding the best {categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category?.toLowerCase()} in {location.city}
+            </h3>
+            <p style={{ color: '#666', marginBottom: 16 }}>
+              We're searching for top-rated spots. This may take a moment for lesser-known cities.
+            </p>
+            <button
+              onClick={() => setMarcoOpen(true)}
+              style={{
+                padding: '12px 24px',
+                background: '#667eea',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: 'bold'
+              }}
+            >
+              💬 Ask Marco for personalized tips
+            </button>
+          </div>
+        )}
+        
+        {/* Category Results - Show venues when category selected */}
+        {(category || selectedSuggestion) && venues.length > 0 && !loading && (
+          <div className="category-results" style={{ 
+            marginTop: 32, 
+            padding: '0 16px',
+            animation: 'fadeInUp 0.5s ease-out'
+          }}>
+            {/* Dynamic city-specific blurb */}
+            <div style={{
+              background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+              borderRadius: 16,
+              padding: '24px',
+              marginBottom: 24,
+              color: 'white',
+              boxShadow: '0 8px 32px rgba(33, 150, 243, 0.3)'
+            }}>
+              <h3 style={{ 
+                fontSize: 24, 
+                marginBottom: 12, 
+                color: 'white',
+                fontWeight: 700
+              }}>
+                {categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category} in {location.city}
+              </h3>
+              <p style={{ 
+                color: 'rgba(255,255,255,0.9)', 
+                fontSize: 16, 
+                lineHeight: 1.6,
+                margin: 0
+              }}>
+                {(categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category)?.toLowerCase() === 'nightlife' 
+                  ? `${location.city} comes alive after dark. From hidden speakeasies to rooftop bars with skyline views, discover where locals actually spend their evenings. Whether you're after craft cocktails, live music, or dancing until dawn, these spots capture the city's true evening energy.`
+                  : (categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category)?.toLowerCase().includes('food') || (categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category)?.toLowerCase().includes('dining')
+                  ? `${location.city}'s food scene tells the story of its people. From neighborhood institutions to innovative newcomers, these are the places that make locals wait in line and visitors extend their trips.`
+                  : `Discover the best ${(categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category)?.toLowerCase()} spots ${location.neighborhood ? `in ${location.neighborhood}` : `across ${location.city}`}. Hand-picked venues that capture what makes this city special.`}
+              </p>
+            </div>
+            
+            <div className="venues-grid" style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+              gap: 20,
+              marginTop: 24
+            }}>
+              {venues.slice(0, 6).map((venue, index) => (
+                <div key={venue.id || index} className="venue-card" style={{
+                  background: 'white',
+                  borderRadius: 12,
+                  padding: 20,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                  border: '1px solid #e8e8e8',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12
+                }}>
+                  {venue.image_url && (
+                    <img 
+                      src={venue.image_url} 
+                      alt={venue.name}
+                      style={{
+                        width: '100%',
+                        height: 180,
+                        objectFit: 'cover',
+                        borderRadius: 8,
+                        marginBottom: 4
+                      }}
+                    />
+                  )}
+                  
+                  {/* Venue Name */}
+                  <h4 style={{ margin: 0, fontSize: 18, color: '#1a1a1a', fontWeight: 600 }}>
+                    {venue.name}
+                  </h4>
+                  
+                  {/* Address with Google Maps link */}
+                  {(venue.address || venue.latitude || venue.lat) && (
+                    <a 
+                      href={(() => {
+                        const lat = venue.latitude || venue.lat;
+                        const lon = venue.longitude || venue.lon;
+                        // Check if address is real or just coordinates placeholder
+                        const hasRealAddress = venue.address && 
+                          !venue.address.includes('Approximate location') && 
+                          !venue.address.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/);
+                        
+                        if (hasRealAddress) {
+                          // Use venue name + real address for search
+                          return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.name)}+${encodeURIComponent(venue.address)}`;
+                        } else if (lat && lon) {
+                          // Use coordinates directly - shows exact location
+                          return `https://www.google.com/maps/?q=${lat},${lon}`;
+                        } else {
+                          return '#';
+                        }
+                      })()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: '#667eea',
+                        fontSize: 14,
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
+                    >
+                      📍 {(() => {
+                        const hasRealAddress = venue.address && 
+                          !venue.address.includes('Approximate location') && 
+                          !venue.address.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/);
+                        if (hasRealAddress) {
+                          return venue.address;
+                        }
+                        const lat = venue.latitude || venue.lat;
+                        const lon = venue.longitude || venue.lon;
+                        if (lat && lon) {
+                          return `${parseFloat(lat).toFixed(4)}, ${parseFloat(lon).toFixed(4)}`;
+                        }
+                        return location.city;
+                      })()}
+                    </a>
+                  )}
+                  
+                  {/* Description */}
+                  {venue.description && (
+                    <p style={{ 
+                      margin: 0, 
+                      fontSize: 14, 
+                      color: '#555', 
+                      lineHeight: 1.5 
+                    }}>
+                      {venue.description}
+                    </p>
+                  )}
+                  
+                  {/* Opening Hours */}
+                  {(venue.opening_hours || venue.opening_hours_pretty) && (
+                    <div style={{ fontSize: 13, color: '#666' }}>
+                      🕒 {venue.opening_hours_pretty || venue.opening_hours}
+                    </div>
+                  )}
+                  
+                  {/* Tags */}
+                  {venue.tags && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {Object.entries(venue.tags).slice(0, 3).map(([key, value]) => (
+                        <span key={key} style={{
+                          fontSize: 11,
+                          padding: '4px 8px',
+                          background: '#f0f4f8',
+                          borderRadius: 12,
+                          color: '#667eea'
+                        }}>
+                          {typeof value === 'string' ? value.replace(/_/g, ' ') : key}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Action Buttons */}
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: 10, 
+                    marginTop: 'auto',
+                    paddingTop: 12,
+                    borderTop: '1px solid #eee'
+                  }}>
+                    {(venue.latitude || venue.lat) && (
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(venue.name)},${venue.latitude || venue.lat},${venue.longitude || venue.lon}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          flex: 1,
+                          padding: '10px 16px',
+                          background: '#667eea',
+                          color: 'white',
+                          borderRadius: 8,
+                          textDecoration: 'none',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          textAlign: 'center'
+                        }}
+                      >
+                        Get Directions
+                      </a>
+                    )}
+                    {venue.website && (
+                      <a
+                        href={venue.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          flex: 1,
+                          padding: '10px 16px',
+                          background: '#f0f4f8',
+                          color: '#667eea',
+                          borderRadius: 8,
+                          textDecoration: 'none',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          textAlign: 'center'
+                        }}
+                      >
+                        Website
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-        <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap', padding: '0 16px' }}>
           <button
             disabled={!location.city}
             onClick={() => setMarcoOpen(true)}
@@ -666,7 +1020,7 @@ function App() {
               fontWeight: 'bold'
             }}
           >
-            🗺️ Explore with Marco
+            � Ask Marco for personalized tips
           </button>
         </div>
 
@@ -674,9 +1028,9 @@ function App() {
           <MarcoChat
             city={location.city}
             neighborhood={location.neighborhood}
-            venues={[]}
-            category={SUGGESTION_MAP[selectedSuggestion] || (typeof category === 'string' ? category : '')}
-            initialInput={SUGGESTION_MAP[selectedSuggestion] || ''}
+            venues={venues}
+            category={categoryLabel || SUGGESTION_MAP[selectedSuggestion] || (typeof category === 'string' ? category : '')}
+            initialInput=""
             results={results}
             wikivoyage={results?.wikivoyage}
             onClose={() => setMarcoOpen(false)}

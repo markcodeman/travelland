@@ -1,0 +1,88 @@
+.pixabay-image-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f0f0f0;
+}
+
+.pixabay-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.pixabay-image:hover {
+  transform: scale(1.05);
+}
+
+.pixabay-attribution {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  padding: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.pixabay-image-container:hover .pixabay-attribution {
+  opacity: 1;
+}
+
+.attribution-link {
+  color: white;
+  font-size: 11px;
+  text-decoration: none;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+.attribution-link:hover {
+  text-decoration: underline;
+}
+
+/* Hero image variant */
+.pixabay-image-container.hero {
+  height: 300px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.pixabay-image-container.hero .pixabay-image {
+  height: 300px;
+}
+
+/* Thumbnail variant */
+.pixabay-image-container.thumbnail {
+  height: 60px;
+  width: 60px;
+  border-radius: 4px;
+}
+
+.pixabay-image-container.thumbnail .pixabay-image {
+  height: 60px;
+  width: 60px;
+}
+
+.pixabay-image-container.thumbnail .pixabay-attribution {
+  display: none;
+}
+
+/* Suggestion thumbnail variant */
+.pixabay-image-container.suggestion-thumbnail {
+  height: 40px;
+  width: 40px;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.pixabay-image-container.suggestion-thumbnail .pixabay-image {
+  height: 40px;
+  width: 40px;
+}
+
+.pixabay-image-container.suggestion-thumbnail .pixabay-attribution {
+  display: none;
+}

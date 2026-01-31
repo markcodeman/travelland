@@ -1,4 +1,4 @@
-# Gordon Ramsay Coding Excellence Principles
+# AKIM Artificial Kinetic Intelligence Magic ----- Excellence Principles
 
 ## Core Directives
 - **NO HARDCODING** - Dynamic systems over static mappings

@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './DreamInput.css';
+import PixabayImage from './PixabayImage';
 
 const DREAM_PROMPTS = [
-  "Enter a city name (Paris, Tokyo, Barcelona...)",
-  "Which city calls to you? (London, New York, Rome...)",
+  "Which city calls to you? (Paris, Tokyo, Barcelona...)",
   "Tell me your destination city...",
   "What city would you like to explore?",
-  "Which city beckons you?"
+  "Which city beckons you?",
+  "Enter your dream destination..."
 ];
 
 const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
@@ -17,6 +18,7 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [heroImage, setHeroImage] = useState(null);
   const inputRef = useRef(null);
 
   // Rotate prompts every 8 seconds
@@ -73,7 +75,27 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
     }, 1500);
   };
 
-  // Parse natural language input
+  // Fetch hero image for city
+  const fetchHeroImage = async (city) => {
+    try {
+      const response = await fetch('/api/pixabay/hero-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ city })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.image) {
+          setHeroImage(data.image);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch hero image:', error);
+    }
+  };
+
+  // Parse natural language input - now simplified to city extraction only
   const parseDreamInput = async (input) => {
     if (!input.trim()) return null;
 
@@ -95,12 +117,12 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
         city: input.trim(),
         country: '',
         state: '',
-        intent: ''
+        intent: '' // No intent parsing - just city
       };
     }
   };
 
-  // Handle dream submission
+  // Handle dream submission with immediate city guide display
   const handleDreamSubmit = async (e) => {
     e.preventDefault();
     
@@ -124,22 +146,22 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
     const parsed = await parseDreamInput(dreamInput);
     
     if (parsed) {
+      // Fetch hero image for the city
+      if (parsed.city) {
+        fetchHeroImage(parsed.city);
+      }
+      
       // Update parent with parsed location
       onLocationChange({
         country: parsed.country || '',
         state: parsed.state || '',
         city: parsed.city || '',
-        neighborhood: parsed.neighborhood || '',
-        countryName: parsed.countryName || '',
-        stateName: parsed.stateName || '',
-        cityName: parsed.cityName || parsed.city || '',
-        neighborhoodName: parsed.neighborhoodName || parsed.neighborhood || '',
         intent: parsed.intent || ''
       });
-
-      // Trigger city guide only if there's an intent (category), otherwise let user choose
-      if (parsed.city && canTriggerCityGuide && parsed.intent) {
-        setTimeout(() => onCityGuide(), 800);
+      
+      // Trigger city guide with the parsed city directly
+      if (parsed.city) {
+        setTimeout(() => onCityGuide(parsed.city), 1000);
       }
     }
   };
@@ -170,7 +192,33 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
 
       if (response.ok) {
         const data = await response.json();
-        setSuggestions(data.suggestions || []);
+        const suggestions = data.suggestions || [];
+        
+        // Fetch thumbnails for each suggestion
+        const suggestionsWithImages = await Promise.all(
+          suggestions.map(async (suggestion) => {
+            try {
+              const thumbnailResponse = await fetch('/api/pixabay/thumbnails', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ city: suggestion.display_name, count: 1 })
+              });
+              
+              if (thumbnailResponse.ok) {
+                const thumbnailData = await thumbnailResponse.json();
+                return {
+                  ...suggestion,
+                  thumbnail: thumbnailData.thumbnails[0] || null
+                };
+              }
+            } catch (error) {
+              console.error('Failed to fetch thumbnail:', error);
+            }
+            return suggestion;
+          })
+        );
+        
+        setSuggestions(suggestionsWithImages);
         setShowSuggestions(true);
       }
     } catch (error) {
@@ -201,6 +249,17 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
 
   return (
     <div className="dream-input-container">
+      {/* Hero Image */}
+      {heroImage && (
+        <div className="dream-hero-image">
+          <PixabayImage 
+            image={heroImage} 
+            className="hero"
+            showAttribution={true}
+          />
+        </div>
+      )}
+
       {/* Sparkle effects */}
       {sparkles.map(sparkle => (
         <div
@@ -237,7 +296,7 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
             value={dreamInput}
             onChange={handleInputChange}
             onFocus={handleInputFocus}
-            placeholder="City name (required): Paris, Tokyo, Barcelona..."
+            placeholder="City name: Paris, Tokyo, Barcelona..."
             className={`dream-input ${isAnimating ? 'wand-waving' : ''}`}
             disabled={isProcessing}
           />
@@ -251,8 +310,17 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
                   className="suggestion-item"
                   onClick={() => handleSuggestionClick(suggestion)}
                 >
-                  <span className="suggestion-name">{suggestion.display_name}</span>
-                  <span className="suggestion-detail">{suggestion.detail}</span>
+                  {suggestion.thumbnail && (
+                    <PixabayImage 
+                      image={suggestion.thumbnail}
+                      className="suggestion-thumbnail"
+                      showAttribution={false}
+                    />
+                  )}
+                  <div className="suggestion-content">
+                    <span className="suggestion-name">{suggestion.display_name}</span>
+                    <span className="suggestion-detail">{suggestion.detail}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -284,7 +352,7 @@ const DreamInput = ({ onLocationChange, onCityGuide, canTriggerCityGuide }) => {
 
       {/* Helper text */}
       <div className="dream-helper">
-        ✨ Describe your perfect destination in natural language
+        ✨ Enter a city name to explore its neighborhoods and attractions
       </div>
     </div>
   );

@@ -12,6 +12,347 @@ body {
   box-shadow: 0 2px 16px rgba(0,0,0,0.10);
   padding: 36px 32px 32px 32px;
 }
+
+.hero-inner {
+  max-width: 900px;
+  margin: 0 auto 18px auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.header-search {
+  width: 100%;
+  max-width: 300px;
+  padding: 8px 16px;
+  border: 2px solid rgba(52, 152, 219, 0.3);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.header-search:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.header-search::placeholder {
+  color: #7f8c8d;
+}
+
+.search-container {
+  position: relative;
+  width: 100%;
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e1e8ed;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: 4px;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+}
+
+.suggestion-item:hover {
+  background-color: #f8f9fa;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-emoji {
+  font-size: 16px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.suggestion-city {
+  font-weight: 500;
+  color: #2c3e50;
+  margin-right: 6px;
+}
+
+.suggestion-country {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.suggestion-neighborhood {
+  color: #95a5a6;
+  font-size: 12px;
+  font-style: italic;
+  margin-left: 4px;
+}
+
+.header-weather {
+  text-align: right;
+  font-size: 14px;
+  color: #2c3e50;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  min-width: 80px;
+}
+
+.weather-temp {
+  font-weight: 600;
+  font-size: 16px;
+  color: #3498db;
+}
+
+.weather-city {
+  font-size: 12px;
+  color: #7f8c8d;
+  margin-top: 2px;
+}
+
+.weather-details {
+  margin-top: 4px;
+  font-size: 10px;
+  color: #95a5a6;
+  line-height: 1.2;
+}
+
+.weather-time {
+  font-weight: 500;
+  color: var(--light-gray);
+}
+
+.weather-sun {
+  font-size: 9px;
+  color: #f39c12;
+  margin-top: 2px;
+}
+
+/* Mobile optimizations - Following Google Ads standards */
+@media (max-width: 768px) {
+  .app-container {
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 20px 16px;
+  }
+  
+  .desktop-only {
+    display: none !important;
+  }
+  
+  .hero {
+    padding: 12px 16px;
+    background: linear-gradient(180deg, var(--turquoise) 0%, var(--turquoise-dark) 100%);
+    text-align: center;
+  }
+  
+  .hero-inner {
+    margin: 0 auto 0 auto !important;
+    padding: 0 12px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+  
+  .mobile-banner {
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .brand-section {
+    gap: 4px;
+    align-items: center;
+  }
+  
+  .mobile-logo {
+    width: 200px;
+    height: 35px;
+    border-radius: 4px;
+    background: var(--white);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    object-fit: contain;
+  }
+
+  .mobile-logo-full {
+    width: 100%;
+    height: 40px;
+    border-radius: 4px;
+    background: var(--white);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    object-fit: contain;
+  }
+
+  .mobile-logo-horizontal {
+    width: auto !important;
+    max-width: 100%;
+    height: 60px !important;
+    border-radius: 8px;
+    background: var(--white);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    object-fit: contain;
+  }
+
+/* Desktop breakpoint - make logo much smaller */
+@media (min-width: 769px) {
+  .hero .mobile-banner .mobile-logo-horizontal {
+    height: 40px !important; /* Much smaller on desktop */
+  }
+}
+  
+  .mobile-brand {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .mobile-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--dark-gray);
+    line-height: 1.0;
+    margin: 0;
+  }
+  
+  .mobile-subtitle {
+    font-size: 7px;
+    color: var(--light-gray);
+    line-height: 1.0;
+    margin: 0;
+  }
+  
+  .header-left {
+    flex: 0 0 auto;
+  }
+  
+  .header-left img {
+    width: 45px !important;
+  }
+  
+  .header-center {
+    flex: 1;
+    padding: 0 6px;
+    min-width: 0;
+  }
+  
+  .header-search {
+    width: 100%;
+    max-width: none;
+    padding: 4px 8px;
+    font-size: 12px;
+    box-sizing: border-box;
+  }
+  
+  .header-right {
+    flex: 0 0 auto;
+  }
+  
+  .header-weather {
+    font-size: 9px;
+    padding: 4px 6px;
+    min-width: 70px;
+    max-width: 80px;
+    flex-shrink: 0;
+  }
+  
+  .weather-temp {
+    font-size: 11px;
+  }
+  
+  .weather-city {
+    font-size: 8px;
+  }
+  
+  .weather-details {
+    display: none; /* Hide details on mobile to save space */
+  }
+  
+  .suggestions-dropdown {
+    max-height: 200px;
+    font-size: 12px;
+  }
+  
+  .suggestion-item {
+    padding: 8px 12px;
+  }
+  
+  .suggestion-emoji {
+    font-size: 14px;
+    margin-right: 6px;
+  }
+  
+  .suggestion-city {
+    font-size: 13px;
+  }
+  
+  .suggestion-country {
+    font-size: 11px;
+  }
+  
+  .suggestion-neighborhood {
+    font-size: 10px;
+  }
+}
+
+/* Logo size control for all screen sizes */
+.hero .mobile-banner .mobile-logo-horizontal {
+  width: auto !important;
+  max-width: 100%;
+  height: 60px !important;
+  border-radius: 8px;
+  background: var(--white);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  object-fit: contain;
+}
+
+/* Desktop breakpoint - make logo much smaller */
+@media (min-width: 769px) {
+  .hero .mobile-banner .mobile-logo-horizontal {
+    height: 40px !important; /* Much smaller on desktop */
+  }
+}
+
 h1 {
   text-align: center;
   color: #2c3e50;
@@ -583,4 +924,28 @@ pre {
 .marco-input button:disabled {
   background: #9ca3af;
   cursor: not-allowed;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Fade in up animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

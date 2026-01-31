@@ -10,6 +10,19 @@
   min-height: 300px;
 }
 
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .hero-image-container {
+    min-height: 200px !important;
+    margin-bottom: 20px;
+    border-radius: 12px;
+  }
+  
+  .hero-loading {
+    height: 200px !important;
+  }
+}
+
 /* Loading skeleton */
 .hero-loading {
   height: 300px;

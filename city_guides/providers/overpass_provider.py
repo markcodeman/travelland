@@ -326,7 +326,12 @@ async def _geoapify_discover_pois_impl(bbox, requested_limit, per_request_max, p
                     name = prop.get("name") or prop.get("address_line1") or "Unnamed"
                     lat = prop.get("lat")
                     lon = prop.get("lon")
-                    address = prop.get("formatted") or prop.get("address_line1")
+                    # Use robust address normalization
+                    address = normalize_address(prop)
+                    # Skip venues without valid readable addresses
+                    if not is_valid_address(address):
+                        print(f"[DEBUG] Skipping venue '{name}' - no valid address (coords: {lat}, {lon})")
+                        continue
                     website = prop.get("website")
                     kinds_str = prop.get("categories", "")
                     osm_url = prop.get("datasource", {}).get("url")
@@ -358,84 +363,186 @@ async def _geoapify_discover_pois_impl(bbox, requested_limit, per_request_max, p
         print(f"[DEBUG] Exception in geoapify_discover_pois: {e}")
         return out
 
-        # --- OPENTRIPMAP POI SEARCH ---
-        OPENTRIPMAP_API_URL = "https://api.opentripmap.com/0.1/en/places/bbox"
+def normalize_address(prop: dict) -> Optional[str]:
+    """
+    Construct a human-readable address from Geoapify properties.
+    Falls back through multiple strategies to ensure we never return None/empty.
+    Returns None only if no address components are available.
+    """
+    if not isinstance(prop, dict):
+        return None
+    
+    # Strategy 1: Use pre-formatted address if available
+    formatted = prop.get("formatted")
+    if formatted and len(formatted.strip()) > 5:  # Ensure it's not just a number
+        return formatted.strip()
+    
+    # Strategy 2: Use address_line1
+    addr_line1 = prop.get("address_line1")
+    if addr_line1 and len(addr_line1.strip()) > 3:
+        return addr_line1.strip()
+    
+    # Strategy 3: Build from components
+    parts = []
+    
+    # Street + house number
+    street = prop.get("street")
+    housenumber = prop.get("housenumber")
+    if street and housenumber:
+        parts.append(f"{street} {housenumber}")
+    elif street:
+        parts.append(street)
+    elif housenumber:
+        parts.append(f"{housenumber}")
+    
+    # District/Suburb/Neighborhood
+    district = prop.get("district") or prop.get("suburb") or prop.get("neighbourhood")
+    if district and district not in parts:
+        parts.append(district)
+    
+    # City
+    city = prop.get("city")
+    if city and city not in parts:
+        parts.append(city)
+    
+    # Postcode
+    postcode = prop.get("postcode")
+    if postcode:
+        parts.append(postcode)
+    
+    # Country
+    country = prop.get("country")
+    if country and len(parts) > 0:
+        parts.append(country)
+    
+    if len(parts) >= 2:  # Need at least street-level + city-level
+        return ", ".join(parts)
+    
+    # Strategy 4: Last resort - use name + district/city
+    name = prop.get("name")
+    if name and district:
+        return f"{name}, {district}"
+    if name and city:
+        return f"{name}, {city}"
+    
+    return None
 
-        def get_opentripmap_key() -> Optional[str]:
-            return os.getenv("OPENTRIPMAP_KEY")
 
-        async def opentripmap_discover_pois(
-            bbox: Optional[Union[list[float], tuple[float, float, float, float]]],
-            kinds: Optional[str] = None,
-            limit: int = 200,
-            session: Optional[aiohttp.ClientSession] = None,
-        ) -> list[dict]:
-            """Discover POIs using Opentripmap API, normalized to Overpass-like output."""
-            api_key = get_opentripmap_key()
-            if not api_key:
-                print("[DEBUG] Opentripmap API key missing!")
-            if not bbox or len(bbox) != 4:
-                print(f"[DEBUG] Invalid bbox for opentripmap_discover_pois: {bbox}")
-            if not api_key or not bbox or len(bbox) != 4:
+def is_valid_address(address: Optional[str]) -> bool:
+    """
+    Validate that an address is readable and not just coordinates.
+    Rejects coordinate-only strings and very short addresses.
+    """
+    if not address:
+        return False
+    
+    addr = str(address).strip()
+    
+    # Reject if too short
+    if len(addr) < 5:
+        return False
+    
+    # Extract just the address part (remove emoji and prefixes)
+    # Remove common prefixes that might be added
+    cleaned = addr
+    for prefix in ['📍', '📍 ', 'Approximate location:', 'Location:', 'Address:']:
+        cleaned = cleaned.replace(prefix, '').strip()
+    
+    # Reject if it looks like coordinates (contains lat/lon pattern)
+    # Pattern: two numbers separated by comma, possibly with decimals
+    coord_pattern = r'^\s*-?\d+\.?\d*\s*,\s*-?\d+\.?\d*\s*$'
+    if _re.match(coord_pattern, cleaned):
+        return False
+    
+    # Must contain at least one letter (not just numbers/symbols)
+    if not _re.search(r'[a-zA-Z]', cleaned):
+        return False
+    
+    return True
+
+
+# Move re import to top level for performance
+import re as _re
+
+# --- OPENTRIPMAP POI SEARCH ---
+OPENTRIPMAP_API_URL = "https://api.opentripmap.com/0.1/en/places/bbox"
+
+def get_opentripmap_key() -> Optional[str]:
+    return os.getenv("OPENTRIPMAP_KEY")
+
+async def opentripmap_discover_pois(
+    bbox: Optional[Union[list[float], tuple[float, float, float, float]]],
+    kinds: Optional[str] = None,
+    limit: int = 200,
+    session: Optional[aiohttp.ClientSession] = None,
+) -> list[dict]:
+    """Discover POIs using Opentripmap API, normalized to Overpass-like output."""
+    api_key = get_opentripmap_key()
+    if not api_key:
+        print("[DEBUG] Opentripmap API key missing!")
+    if not bbox or len(bbox) != 4:
+        print(f"[DEBUG] Invalid bbox for opentripmap_discover_pois: {bbox}")
+    if not api_key or not bbox or len(bbox) != 4:
+        return []
+    # bbox format: (west, south, east, north)
+    west, south, east, north = bbox
+    params = {
+        "lon_min": west,
+        "lat_min": south,
+        "lon_max": east,
+        "lat_max": north,
+        "apikey": api_key,
+        "limit": str(limit),
+        "format": "json",
+    }
+    if kinds:
+        params["kinds"] = kinds
+    headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
+    if session is None:
+        async with get_session() as session:
+            return await _opentripmap_discover_pois_impl(params, headers, session)
+    else:
+        return await _opentripmap_discover_pois_impl(params, headers, session)
+
+
+async def _opentripmap_discover_pois_impl(params, headers, session):
+    try:
+        timeout = aiohttp.ClientTimeout(total=15)
+        async with session.get(OPENTRIPMAP_API_URL, params=params, headers=headers, timeout=timeout) as r:
+            if r.status != 200:
+                print(f"[DEBUG] Opentripmap HTTP error: status={r.status} url={r.url}")
                 return []
-            # bbox format: (west, south, east, north)
-            west, south, east, north = bbox
-            params = {
-                "lon_min": west,
-                "lat_min": south,
-                "lon_max": east,
-                "lat_max": north,
-                "apikey": api_key,
-                "limit": str(limit),
-                "format": "json",
-            }
-            if kinds:
-                params["kinds"] = kinds
-            headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
-            if session is None:
-                async with get_session() as session:
-                    return await _opentripmap_discover_pois_impl(params, headers, session)
-            else:
-                return await _opentripmap_discover_pois_impl(params, headers, session)
+            j = await r.json()
+            features = j.get("features", []) if isinstance(j, dict) else j
+            out = []
+            for feat in features:
+                prop = feat.get("properties", feat)  # sometimes flat
+                name = prop.get("name") or prop.get("address_line1") or "Unnamed"
+                lat = prop.get("lat") or prop.get("point", {}).get("lat") or prop.get("geometry", {}).get("coordinates", [None, None])[1]
+                lon = prop.get("lon") or prop.get("point", {}).get("lon") or prop.get("geometry", {}).get("coordinates", [None, None])[0]
+                address = prop.get("address") or prop.get("address_line1")
+                website = prop.get("url") or prop.get("website")
+                kinds_str = prop.get("kinds", "")
+                xid = prop.get("xid") or prop.get("id")
+                osm_url = f"https://opentripmap.com/en/card/{xid}" if xid else None
+                entry = {
+                    "osm_id": xid,
+                    "name": name,
+                    "website": website,
+                    "osm_url": osm_url,
+                    "amenity": kinds_str,
+                    "address": address,
+                    "lat": lat,
+                    "lon": lon,
+                    "tags": kinds_str,
+                    "source": "opentripmap",
+                }
+                out.append(entry)
+            return out
+    except Exception as e:
+        print(f"[DEBUG] Exception in opentripmap_discover_pois: {e}")
+        return []
 
-
-        async def _opentripmap_discover_pois_impl(params, headers, session):
-            try:
-                timeout = aiohttp.ClientTimeout(total=15)
-                async with session.get(OPENTRIPMAP_API_URL, params=params, headers=headers, timeout=timeout) as r:
-                    if r.status != 200:
-                        print(f"[DEBUG] Opentripmap HTTP error: status={r.status} url={r.url}")
-                        return []
-                    j = await r.json()
-                    features = j.get("features", []) if isinstance(j, dict) else j
-                    out = []
-                    for feat in features:
-                        prop = feat.get("properties", feat)  # sometimes flat
-                        name = prop.get("name") or prop.get("address_line1") or "Unnamed"
-                        lat = prop.get("lat") or prop.get("point", {}).get("lat") or prop.get("geometry", {}).get("coordinates", [None, None])[1]
-                        lon = prop.get("lon") or prop.get("point", {}).get("lon") or prop.get("geometry", {}).get("coordinates", [None, None])[0]
-                        address = prop.get("address") or prop.get("address_line1")
-                        website = prop.get("url") or prop.get("website")
-                        kinds_str = prop.get("kinds", "")
-                        xid = prop.get("xid") or prop.get("id")
-                        osm_url = f"https://opentripmap.com/en/card/{xid}" if xid else None
-                        entry = {
-                            "osm_id": xid,
-                            "name": name,
-                            "website": website,
-                            "osm_url": osm_url,
-                            "amenity": kinds_str,
-                            "address": address,
-                            "lat": lat,
-                            "lon": lon,
-                            "tags": kinds_str,
-                            "source": "opentripmap",
-                        }
-                        out.append(entry)
-                    return out
-            except Exception as e:
-                print(f"[DEBUG] Exception in opentripmap_discover_pois: {e}")
-                return []
 
 # Expanded list of public Overpass API endpoints for global, robust failover
 OVERPASS_URLS = [
@@ -1806,11 +1913,13 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
         # Map poi_type to category filters
         category_filters = {
             "restaurant": '["amenity"~"restaurant|fast_food|cafe|bar|pub|food_court"]',
+            "bar": '["amenity"~"bar|pub|nightclub|biergarten"]',
             "coffee": '["amenity"~"cafe|coffee_shop"]',
             "historic": '["historic"]',
             "museum": '["tourism"~"museum|gallery"]["amenity"~"museum"]',
             "park": '["leisure"~"park|garden"]',
             "market": '["amenity"~"marketplace"]',
+            "shopping": '["shop"]["amenity"~"marketplace|shopping_center"]',
             "transport": '["amenity"~"bus_station|ferry_terminal"]["railway"~"station"]',
         }
 
@@ -1870,6 +1979,8 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
 
         poi_queries = {
             "restaurant": '["amenity"~"restaurant|fast_food|cafe|bar|pub|food_court"]',
+            "bar": '["amenity"~"bar|pub|nightclub|biergarten|wine_bar|cocktail_bar"]',
+            "shopping": '["shop"]["amenity"~"marketplace|shopping_center"]',
             "historic": '["tourism"="attraction"]',
             "museum": '["tourism"="museum"]',
             "park": '["leisure"="park"]',

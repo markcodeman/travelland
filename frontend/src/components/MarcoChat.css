@@ -125,21 +125,82 @@
   margin-bottom: 16px;
 }
 
+.loading-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border-left: 4px solid #4A90E2;
+}
+
+.thinking-emoji {
+  font-size: 24px;
+  animation: thinking 2s ease-in-out infinite;
+}
+
+.thinking-text {
+  color: #495057;
+  font-style: italic;
+  font-size: 14px;
+  flex: 1;
+}
+
 .loading-dots {
-  display: inline-block;
-  width: 20px;
-  text-align: center;
+  display: flex;
+  gap: 4px;
+  align-items: center;
 }
 
-.loading-dots::after {
-  content: '...';
-  animation: dots 1.5s steps(4, end) infinite;
+.loading-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #4A90E2;
+  animation: bounce 1.4s ease-in-out infinite both;
 }
 
-@keyframes dots {
-  0%, 20% { content: '.'; }
-  40% { content: '..'; }
-  60%, 100% { content: '...'; }
+.loading-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes thinking {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.1) rotate(-5deg); }
+  75% { transform: scale(1.1) rotate(5deg); }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.quick-response {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
+  border-left: 4px solid #f39c12 !important;
+  position: relative;
+}
+
+.quick-response::before {
+  content: "⚡ Quick tip";
+  position: absolute;
+  top: -8px;
+  left: 16px;
+  background: #f39c12;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .marco-input {
