@@ -393,6 +393,13 @@ def enrich_venue_data(venue: Dict, city: str = "") -> Dict:
             if feature_label not in features:
                 features.append(feature_label)
     
+    # === OPENING HOURS EXTRACTION ===
+    opening_hours = None
+    for tag in tag_list:
+        if tag.startswith("opening_hours="):
+            opening_hours = tag.split("=", 1)[1]
+            break
+    
     # === GENERATE DESCRIPTION ===
     description_parts = []
     
@@ -446,7 +453,8 @@ def enrich_venue_data(venue: Dict, city: str = "") -> Dict:
         "price_level": price_level,
         "price_indicator": price_indicator,
         "features": features,
-        "description": description
+        "description": description,
+        "opening_hours": opening_hours
     }
 
 
@@ -1464,6 +1472,7 @@ def _search_impl(payload):
                         "price_level": enriched_data.get("price_level", ""),
                         "price_indicator": enriched_data.get("price_indicator", ""),
                         "features": enriched_data.get("features", []),
+                        "opening_hours": enriched_data.get("opening_hours"),
                         "lat": venue.get("lat"),
                         "lon": venue.get("lon"),
                         "provider": venue.get("provider", ""),
