@@ -425,7 +425,12 @@ def enrich_venue_data(venue: Dict, city: str = "") -> Dict:
         # Provide contextual fallback based on venue name patterns
         venue_name_lower = venue.get("name", "").lower()
         
-        # Try to infer style/type from name
+        # Try to infer style/type from name - BUT avoid "wine bar" for non-bar venues
+        venue_name_lower = venue.get("name", "").lower()
+        
+        # Check if venue type is actually a bar/pub before inferring "wine bar"
+        is_actual_bar = any(bt in venue_type.lower() for bt in ['bar', 'pub', 'biergarten', 'lounge'])
+        
         if any(word in venue_name_lower for word in ['table', 'lancaster', 'lutétia', 'lutetia']):
             description_parts.append(f"Classic French {type_clean.lower()}")
         elif any(word in venue_name_lower for word in ['menuiserie', 'atelier', 'workshop']):
@@ -434,10 +439,19 @@ def enrich_venue_data(venue: Dict, city: str = "") -> Dict:
             description_parts.append(f"Traditional bistro")
         elif any(word in venue_name_lower for word in ['brasserie']):
             description_parts.append(f"Classic brasserie")
-        elif any(word in venue_name_lower for word in ['wine', 'vin', 'bar']):
+        elif is_actual_bar and any(word in venue_name_lower for word in ['wine', 'vin']):
             description_parts.append(f"Wine bar")
-        elif any(word in venue_name_lower for word in ['belushi', 'sportsbar', 'sports bar']):
+        elif is_actual_bar and any(word in venue_name_lower for word in ['belushi', 'sportsbar', 'sports bar']):
             description_parts.append(f"Sports bar with American atmosphere")
+        elif 'juice bar' in venue_name_lower or 'juice' in venue_name_lower:
+            description_parts.append(f"Juice bar")
+        elif 'sushi bar' in venue_name_lower:
+            description_parts.append(f"Sushi bar")
+        elif 'raw bar' in venue_name_lower:
+            description_parts.append(f"Raw bar")
+        elif is_actual_bar and 'bar' in venue_name_lower:
+            # Generic bar without wine/sports specifier
+            description_parts.append(type_clean)
         else:
             # Generic but with location
             description_parts.append(type_clean)
@@ -1555,14 +1569,15 @@ def _search_impl(payload):
                     for venue in formatted_venues:
                         tags = venue.get("tags", {})
                         tags_str = str(tags).lower()
-                        # Broader check for nightlife-related tags
-                        if any(keyword in tags_str for keyword in ["bar", "pub", "nightclub", "club", "biergarten", "lounge", "cocktail", "wine", "beer"]):
-                            nightlife_venues.append(venue)
-                    # If we filtered too aggressively, return all results
-                    if len(nightlife_venues) < 3:
-                        nightlife_venues = formatted_venues
+                        # Strict check for actual nightlife venues - must have proper tags
+                        # Exclude libraries, bookcases, and other non-nightlife venues
+                        if any(keyword in tags_str for keyword in ["bar", "pub", "nightclub", "club", "biergarten", "lounge", "cocktail"]):
+                            # Exclude false positives like "bar" in library names
+                            if not any(bad in tags_str for bad in ["library", "bookcase", "education.library", "public_bookcase"]):
+                                nightlife_venues.append(venue)
+                    # DO NOT fallback to all results - better to return empty than garbage
                     result["venues"] = nightlife_venues
-                    print(f"[SEARCH DEBUG] Filtered to {len(nightlife_venues)} nightlife venues")
+                    print(f"[SEARCH DEBUG] Filtered to {len(nightlife_venues)} nightlife venues (no fallback)")
                 else:
                     result["venues"] = formatted_venues
                 
