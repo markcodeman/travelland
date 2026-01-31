@@ -140,149 +140,302 @@ def generate_description(poi: Dict) -> str:
 def enrich_venue_data(venue: Dict, city: str = "") -> Dict:
     """
     Enrich venue with human-readable context extracted from tags.
-    Returns dict with venue_type, cuisine, price_level, price_indicator, features, description.
+    Handles both dot-notation tags (catering.restaurant.french) and key=value tags (amenity=restaurant).
     """
-    tags = venue.get("tags", {})
-    if isinstance(tags, str):
-        # Parse dot-notation tags like "catering.restaurant,catering.cafe"
-        tag_list = [t.strip() for t in tags.split(",") if t.strip()]
-    else:
-        tag_list = list(tags.keys()) if isinstance(tags, dict) else []
+    raw_tags = venue.get("tags", {})
     
-    # Tag mappings for venue types
-    venue_type_map = {
-        "catering.restaurant": "🍽️ Restaurant",
-        "catering.cafe": "☕ Cafe",
-        "catering.coffee_shop": "☕ Coffee Shop",
-        "catering.bar": "🍺 Bar",
-        "catering.pub": "🍻 Pub",
-        "catering.fast_food": "🍔 Fast Food",
-        "catering.ice_cream": "🍦 Ice Cream",
-        "catering.biergarten": "🍺 Beer Garden",
-        "accommodation.hotel": "🏨 Hotel",
-        "accommodation.hostel": "🏠 Hostel",
-        "tourism.attraction": "🎯 Attraction",
-        "tourism.museum": "🏛️ Museum",
-        "tourism.viewpoint": "📸 Viewpoint",
-        "entertainment.cinema": "🎬 Cinema",
-        "entertainment.theatre": "🎭 Theatre",
-        "commercial.shopping_mall": "🛍️ Shopping Mall",
-        "commercial.supermarket": "🛒 Supermarket",
-        "leisure.park": "🌳 Park",
-        "public_transport.subway": "🚇 Subway Station",
-        "public_transport.bus": "🚌 Bus Stop",
-    }
+    # Normalize tags into a list format
+    tag_list = []
+    if isinstance(raw_tags, str):
+        tag_list = [t.strip() for t in raw_tags.split(",") if t.strip()]
+    elif isinstance(raw_tags, dict):
+        # Convert dict to key=value strings
+        for k, v in raw_tags.items():
+            if v is True or v == "yes":
+                tag_list.append(k)
+            elif v:
+                tag_list.append(f"{k}={v}")
+    elif isinstance(raw_tags, list):
+        tag_list = raw_tags
     
-    # Extract venue type (prioritize specific types)
+    # Build a searchable string of all tags
+    tag_str = ",".join(tag_list).lower()
+    
+    # === VENUE TYPE DETECTION ===
     venue_type = None
-    for tag in tag_list:
-        if tag in venue_type_map:
-            venue_type = venue_type_map[tag]
+    venue_emoji = "📍"
+    
+    # Check dot-notation patterns first (more specific)
+    dot_patterns = [
+        ("catering.restaurant", "🍽️", "Restaurant"),
+        ("catering.restaurant.french", "🍽️", "French Restaurant"),
+        ("catering.restaurant.italian", "🍝", "Italian Restaurant"),
+        ("catering.restaurant.japanese", "🍜", "Japanese Restaurant"),
+        ("catering.restaurant.chinese", "🥡", "Chinese Restaurant"),
+        ("catering.restaurant.indian", "🍛", "Indian Restaurant"),
+        ("catering.cafe", "☕", "Cafe"),
+        ("catering.coffee_shop", "☕", "Coffee Shop"),
+        ("catering.bar", "🍺", "Bar"),
+        ("catering.pub", "🍻", "Pub"),
+        ("catering.fast_food", "🍔", "Fast Food"),
+        ("catering.ice_cream", "🍦", "Ice Cream"),
+        ("catering.biergarten", "🍺", "Beer Garden"),
+        ("accommodation.hotel", "🏨", "Hotel"),
+        ("accommodation.hostel", "🏠", "Hostel"),
+        ("tourism.museum", "🏛️", "Museum"),
+        ("tourism.attraction", "🎯", "Attraction"),
+        ("tourism.viewpoint", "📸", "Viewpoint"),
+        ("tourism.hotel", "🏨", "Hotel"),
+        ("entertainment.cinema", "🎬", "Cinema"),
+        ("entertainment.theatre", "🎭", "Theatre"),
+        ("commercial.shopping_mall", "🛍️", "Shopping Mall"),
+        ("commercial.supermarket", "🛒", "Supermarket"),
+        ("commercial.books", "📚", "Bookstore"),
+        ("commercial.convenience", "🏪", "Convenience Store"),
+        ("commercial.bakery", "🥐", "Bakery"),
+        ("leisure.park", "🌳", "Park"),
+        ("public_transport.subway", "🚇", "Subway Station"),
+        ("public_transport.bus", "🚌", "Bus Stop"),
+        ("building.catering", "🍽️", "Restaurant"),
+    ]
+    
+    for pattern, emoji, label in dot_patterns:
+        if pattern in tag_str:
+            venue_type = f"{emoji} {label}"
+            venue_emoji = emoji
             break
     
-    # If no specific match, check for general categories
+    # Check key=value amenity tags
     if not venue_type:
-        tag_str = ",".join(tag_list).lower()
-        if "restaurant" in tag_str:
-            venue_type = "🍽️ Restaurant"
-        elif "cafe" in tag_str or "coffee" in tag_str:
-            venue_type = "☕ Cafe"
-        elif "bar" in tag_str:
-            venue_type = "🍺 Bar"
-        elif "pub" in tag_str:
-            venue_type = "🍻 Pub"
-        elif "hotel" in tag_str:
-            venue_type = "🏨 Hotel"
-        elif "museum" in tag_str:
-            venue_type = "🏛️ Museum"
-        elif "shop" in tag_str or "retail" in tag_str:
-            venue_type = "🛍️ Shop"
-        elif "park" in tag_str:
-            venue_type = "🌳 Park"
-        else:
-            venue_type = "📍 Venue"
+        amenity_match = None
+        for tag in tag_list:
+            if tag.startswith("amenity="):
+                amenity_match = tag.split("=", 1)[1].lower()
+                break
+        
+        if amenity_match:
+            amenity_map = {
+                "restaurant": ("🍽️", "Restaurant"),
+                "cafe": ("☕", "Cafe"),
+                "coffee_shop": ("☕", "Coffee Shop"),
+                "bar": ("🍺", "Bar"),
+                "pub": ("�", "Pub"),
+                "fast_food": ("🍔", "Fast Food"),
+                "ice_cream": ("�", "Ice Cream"),
+                "biergarten": ("🍺", "Beer Garden"),
+                "hotel": ("🏨", "Hotel"),
+                "hostel": ("🏠", "Hostel"),
+                "museum": ("🏛️", "Museum"),
+                "cinema": ("🎬", "Cinema"),
+                "theatre": ("🎭", "Theatre"),
+                "library": ("📚", "Library"),
+                "shop": ("🛍️", "Shop"),
+                "supermarket": ("🛒", "Supermarket"),
+                "convenience": ("🏪", "Convenience Store"),
+                "bakery": ("🥐", "Bakery"),
+                "park": ("🌳", "Park"),
+                "wine_bar": ("🍷", "Wine Bar"),
+            }
+            if amenity_match in amenity_map:
+                emoji, label = amenity_map[amenity_match]
+                venue_type = f"{emoji} {label}"
+                venue_emoji = emoji
     
-    # Extract cuisine from tags
+    if not venue_type:
+        venue_type = "📍 Venue"
+    
+    # === CUISINE DETECTION ===
     cuisine = None
+    
+    # Look for explicit cuisine tag
     for tag in tag_list:
-        if "=" in tag:
-            key, value = tag.split("=", 1)
-            if key.strip() == "cuisine" and value.strip():
-                cuisine = value.strip().replace("_", " ").replace(";", ", ")
-                cuisine = " ".join(word.title() for word in cuisine.split())
+        if tag.startswith("cuisine="):
+            cuisine_val = tag.split("=", 1)[1]
+            # Clean up: replace underscores, semicolons with commas
+            cuisine = cuisine_val.replace("_", " ").replace(";", ", ")
+            cuisine = ", ".join(word.title() for word in cuisine.split(", "))
+            break
+    
+    # Infer cuisine from dot-notation (e.g., catering.restaurant.french)
+    if not cuisine:
+        cuisine_patterns = [
+            (".french", "French"),
+            (".italian", "Italian"),
+            (".japanese", "Japanese"),
+            (".chinese", "Chinese"),
+            (".indian", "Indian"),
+            (".mexican", "Mexican"),
+            (".thai", "Thai"),
+            (".vietnamese", "Vietnamese"),
+            (".korean", "Korean"),
+            (".spanish", "Spanish"),
+            (".greek", "Greek"),
+            (".turkish", "Turkish"),
+            (".lebanese", "Lebanese"),
+            (".moroccan", "Moroccan"),
+            (".ethiopian", "Ethiopian"),
+            (".brazilian", "Brazilian"),
+            (".american", "American"),
+            (".burger", "Burgers"),
+            (".pizza", "Pizza"),
+            (".sushi", "Sushi"),
+            (".seafood", "Seafood"),
+            (".fish", "Seafood"),
+            (".steak", "Steakhouse"),
+            (".regional", "Regional"),
+            (".local", "Local"),
+            (".european", "European"),
+            (".asian", "Asian"),
+            (".mediterranean", "Mediterranean"),
+        ]
+        for pattern, cuisine_name in cuisine_patterns:
+            if pattern in tag_str:
+                cuisine = cuisine_name
                 break
     
-    # Determine price level from tags
-    price_level = "mid"
+    # Infer cuisine from venue name when no explicit tag
+    if not cuisine:
+        venue_name_lower = venue.get("name", "").lower()
+        name_cuisine_map = [
+            ("couscous", "Moroccan"),
+            ("sushi", "Japanese"),
+            ("ramen", "Japanese"),
+            ("pizza", "Italian"),
+            ("pasta", "Italian"),
+            ("trattoria", "Italian"),
+            ("tapas", "Spanish"),
+            ("burrito", "Mexican"),
+            ("taco", "Mexican"),
+            ("curry", "Indian"),
+            ("tandoori", "Indian"),
+            ("thai", "Thai"),
+            ("phở", "Vietnamese"),
+            ("pho", "Vietnamese"),
+            ("banh mi", "Vietnamese"),
+            ("burger", "American"),
+            ("angus", "Steakhouse"),
+            ("steakhouse", "Steakhouse"),
+            ("bbq", "BBQ"),
+            ("barbecue", "BBQ"),
+            ("kebab", "Turkish"),
+            ("shawarma", "Middle Eastern"),
+            ("falafel", "Middle Eastern"),
+            ("gyros", "Greek"),
+            ("souvlaki", "Greek"),
+            ("korean", "Korean"),
+            ("kimchi", "Korean"),
+            ("chinese", "Chinese"),
+            ("dim sum", "Chinese"),
+            ("noodle", "Asian"),
+            ("seafood", "Seafood"),
+            ("fish", "Seafood"),
+            ("lobster", "Seafood"),
+            ("brasserie", "French"),
+            ("bistro", "French"),
+            ("crêperie", "French"),
+            ("creperie", "French"),
+            ("bagel", "American"),
+            ("café", "Cafe"),
+            ("cafe", "Cafe"),
+            ("coffee", "Coffee"),
+            ("ice cream", "Ice Cream"),
+            ("gelato", "Italian"),
+        ]
+        for keyword, cuisine_type in name_cuisine_map:
+            if keyword in venue_name_lower:
+                cuisine = cuisine_type
+                break
+    
+    # === PRICE LEVEL DETECTION ===
+    price_level = "moderate"
     price_indicator = "€€"
+    
     for tag in tag_list:
-        if "=" in tag:
-            key, value = tag.split("=", 1)
-            if key.strip() == "price" or key.strip() == "price_range":
-                val = value.strip().lower()
-                if val in ["cheap", "$", "1", "€"]:
-                    price_level = "cheap"
-                    price_indicator = "€"
-                elif val in ["expensive", "$$$", "3", "€€€"]:
-                    price_level = "expensive"
-                    price_indicator = "€€€"
-                elif val in ["very_expensive", "$$$$", "4", "€€€€"]:
-                    price_level = "luxury"
-                    price_indicator = "€€€€"
-                else:
-                    price_level = "moderate"
-                    price_indicator = "€€"
-                break
+        if tag.startswith("price=") or tag.startswith("price_range="):
+            val = tag.split("=", 1)[1].lower()
+            if val in ["cheap", "$", "1", "€"]:
+                price_level = "cheap"
+                price_indicator = "€"
+            elif val in ["expensive", "$$$", "3", "€€€"]:
+                price_level = "expensive"
+                price_indicator = "€€€"
+            elif val in ["very_expensive", "$$$$", "4", "€€€€", "luxury"]:
+                price_level = "luxury"
+                price_indicator = "€€€€"
+            break
     
-    # Extract features
+    # === FEATURES EXTRACTION ===
     features = []
-    tag_str = ",".join(tag_list).lower()
-    if "wheelchair.yes" in tag_str or "wheelchair=yes" in tag_str:
-        features.append("♿ Accessible")
-    if "outdoor_seating=yes" in tag_str or "terrace" in tag_str:
-        features.append("🌿 Outdoor seating")
-    if "wifi=yes" in tag_str or "internet" in tag_str:
-        features.append("📶 WiFi")
-    if "delivery=yes" in tag_str:
-        features.append("🛵 Delivery")
-    if "takeaway=yes" in tag_str:
-        features.append("🥡 Takeaway")
-    if "vegetarian" in tag_str or "vegan" in tag_str:
-        features.append("🥗 Vegetarian/Vegan")
-    if "halal" in tag_str:
-        features.append("☪️ Halal")
-    if "kosher" in tag_str:
-        features.append("✡️ Kosher")
-    if "live_music" in tag_str or "music" in tag_str:
-        features.append("🎵 Live music")
-    if "reservation=yes" in tag_str:
-        features.append("📅 Reservations")
     
-    # Generate contextual description
+    feature_checks = [
+        ("wheelchair=yes", "♿ Accessible"),
+        ("wheelchair.yes", "♿ Accessible"),
+        ("outdoor_seating=yes", "🌿 Outdoor seating"),
+        ("terrace", "🌿 Outdoor seating"),
+        ("wifi=yes", "📶 WiFi"),
+        ("internet_access=yes", "📶 WiFi"),
+        ("delivery=yes", "🛵 Delivery"),
+        ("takeaway=yes", "🥡 Takeaway"),
+        ("vegetarian=yes", "🥗 Vegetarian"),
+        ("vegan=yes", "🌱 Vegan"),
+        ("halal=yes", "☪️ Halal"),
+        ("kosher=yes", "✡️ Kosher"),
+        ("live_music=yes", "🎵 Live music"),
+        ("music", "🎵 Live music"),
+        ("reservation=yes", "📅 Reservations"),
+        ("smoking=no", "🚭 No smoking"),
+        ("payment:cards=yes", "💳 Cards accepted"),
+        ("payment:cash_only=yes", "💵 Cash only"),
+    ]
+    
+    for pattern, feature_label in feature_checks:
+        if pattern in tag_str:
+            if feature_label not in features:
+                features.append(feature_label)
+    
+    # === GENERATE DESCRIPTION ===
     description_parts = []
     
-    # Build description based on venue type and cuisine
-    if cuisine:
-        description_parts.append(f"{cuisine} restaurant")
-    elif venue_type and "Restaurant" in venue_type:
-        description_parts.append("Restaurant")
-    elif venue_type:
-        description_parts.append(venue_type.split()[1] if " " in venue_type else venue_type)
+    # Start with venue type (without emoji for cleaner description)
+    type_clean = venue_type.split(" ", 1)[1] if " " in venue_type else venue_type
     
-    # Add location context
+    if cuisine:
+        description_parts.append(f"{cuisine} {type_clean.lower()}")
+    else:
+        # Provide contextual fallback based on venue name patterns
+        venue_name_lower = venue.get("name", "").lower()
+        
+        # Try to infer style/type from name
+        if any(word in venue_name_lower for word in ['table', 'lancaster', 'lutétia', 'lutetia']):
+            description_parts.append(f"Classic French {type_clean.lower()}")
+        elif any(word in venue_name_lower for word in ['menuiserie', 'atelier', 'workshop']):
+            description_parts.append(f"Converted workshop {type_clean.lower()}")
+        elif any(word in venue_name_lower for word in ['bistrot', 'bistro']):
+            description_parts.append(f"Traditional bistro")
+        elif any(word in venue_name_lower for word in ['brasserie']):
+            description_parts.append(f"Classic brasserie")
+        elif any(word in venue_name_lower for word in ['wine', 'vin', 'bar']):
+            description_parts.append(f"Wine bar")
+        elif any(word in venue_name_lower for word in ['belushi', 'sportsbar', 'sports bar']):
+            description_parts.append(f"Sports bar with American atmosphere")
+        else:
+            # Generic but with location
+            description_parts.append(type_clean)
+    
+    # Add city context
     if city:
         description_parts.append(f"in {city}")
     
-    # Add notable features to description
+    # Add key features to description (first 2)
     if features:
-        feature_text = " • ".join(features[:3])  # Max 3 features
-        if description_parts:
-            description_parts[0] += f" ({feature_text})"
+        key_features = [f for f in features if not f.startswith("♿")][:2]
+        if key_features:
+            description_parts.append(f"({', '.join(key_features)})")
     
-    description = " ".join(description_parts) if description_parts else "Local venue"
+    description = " ".join(description_parts) if description_parts else f"{type_clean} in {city}" if city else type_clean
     
     return {
-        "venue_type": venue_type or "📍 Venue",
+        "venue_type": venue_type,
         "cuisine": cuisine or "",
         "price_level": price_level,
         "price_indicator": price_indicator,
