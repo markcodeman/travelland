@@ -268,6 +268,13 @@ const VenueCard = ({ venue, onAddToItinerary, onDirections, onMap, onSave }) => 
           </div>
         )}
         
+        {/* Opening Hours */}
+        {venue.opening_hours && (
+          <div className="mb-2 text-sm text-gray-600">
+            🕒 {venue.opening_hours}
+          </div>
+        )}
+        
         {/* Address */}
         {venue.address && (
           <div className="mb-3 text-sm text-gray-600">
