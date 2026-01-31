@@ -400,6 +400,13 @@ def enrich_venue_data(venue: Dict, city: str = "") -> Dict:
             opening_hours = tag.split("=", 1)[1]
             break
     
+    # === PHONE NUMBER EXTRACTION ===
+    phone = None
+    for tag in tag_list:
+        if tag.startswith("phone=") or tag.startswith("contact:phone="):
+            phone = tag.split("=", 1)[1]
+            break
+    
     # === GENERATE DESCRIPTION ===
     description_parts = []
     
@@ -454,7 +461,8 @@ def enrich_venue_data(venue: Dict, city: str = "") -> Dict:
         "price_indicator": price_indicator,
         "features": features,
         "description": description,
-        "opening_hours": opening_hours
+        "opening_hours": opening_hours,
+        "phone": phone
     }
 
 
@@ -1473,6 +1481,7 @@ def _search_impl(payload):
                         "price_indicator": enriched_data.get("price_indicator", ""),
                         "features": enriched_data.get("features", []),
                         "opening_hours": enriched_data.get("opening_hours"),
+                        "phone": enriched_data.get("phone"),
                         "lat": venue.get("lat"),
                         "lon": venue.get("lon"),
                         "provider": venue.get("provider", ""),

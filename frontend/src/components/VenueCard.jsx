@@ -275,6 +275,13 @@ const VenueCard = ({ venue, onAddToItinerary, onDirections, onMap, onSave }) => 
           </div>
         )}
         
+        {/* Phone */}
+        {venue.phone && (
+          <div className="mb-2 text-sm text-gray-600">
+            📞 {venue.phone}
+          </div>
+        )}
+        
         {/* Address */}
         {venue.address && (
           <div className="mb-3 text-sm text-gray-600">
