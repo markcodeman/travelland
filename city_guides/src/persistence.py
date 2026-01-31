@@ -400,7 +400,13 @@ def enrich_venue_data(venue: Dict, city: str = "") -> Dict:
     type_clean = venue_type.split(" ", 1)[1] if " " in venue_type else venue_type
     
     if cuisine:
-        description_parts.append(f"{cuisine} {type_clean.lower()}")
+        # Avoid redundant descriptions like "Cafe cafe" or "Coffee coffee shop"
+        cuisine_lower = cuisine.lower()
+        type_lower = type_clean.lower()
+        if cuisine_lower == type_lower or (cuisine_lower in type_lower and len(cuisine_lower) > 3):
+            description_parts.append(type_clean)
+        else:
+            description_parts.append(f"{cuisine} {type_lower}")
     else:
         # Provide contextual fallback based on venue name patterns
         venue_name_lower = venue.get("name", "").lower()
