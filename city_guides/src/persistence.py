@@ -1414,6 +1414,8 @@ def _search_impl(payload):
                 "attractions": "tourism",
                 "attraction": "tourism",
                 "sights": "tourism",
+                "historic": "tourism",  # Historic sites map to tourism
+                "historic sites": "tourism",
                 "shopping": "shop",
                 "shops": "shop",
                 "nightlife": "bar",  # Search for bars specifically
@@ -1569,15 +1571,77 @@ def _search_impl(payload):
                     for venue in formatted_venues:
                         tags = venue.get("tags", {})
                         tags_str = str(tags).lower()
-                        # Strict check for actual nightlife venues - must have proper tags
-                        # Exclude libraries, bookcases, and other non-nightlife venues
-                        if any(keyword in tags_str for keyword in ["bar", "pub", "nightclub", "club", "biergarten", "lounge", "cocktail"]):
-                            # Exclude false positives like "bar" in library names
-                            if not any(bad in tags_str for bad in ["library", "bookcase", "education.library", "public_bookcase"]):
+                        name = venue.get("name", "").lower()
+                        
+                        # STRICT filtering - exclude obvious non-nightlife
+                        excluded_types = [
+                            "library", "bookcase", "education.library", "public_bookcase",
+                            "employment", "government", "office", "administration",
+                            "social_facility", "community_centre", "townhall",
+                            "embassy", "consulate", "courthouse", "police",
+                            "post_office", "bank", "atm", "clinic", "hospital"
+                        ]
+                        if any(bad in tags_str for bad in excluded_types):
+                            continue
+                        
+                        # Must have explicit nightlife amenity tags
+                        nightlife_amenities = [
+                            "amenity=bar", "amenity=pub", "amenity=nightclub",
+                            "amenity=biergarten", "amenity=stripclub",
+                            "bar=yes", "pub=yes"
+                        ]
+                        has_nightlife_amenity = any(tag in tags_str for tag in nightlife_amenities)
+                        
+                        # OR have strong name indicators + beverage keywords
+                        strong_name_indicators = [
+                            "bar", "pub", "tavern", "biergarten", "brewery",
+                            "cocktail", "lounge", "club"
+                        ]
+                        has_strong_name = any(ind in name for ind in strong_name_indicators)
+                        
+                        # Require amenity tag OR (strong name + not excluded)
+                        if has_nightlife_amenity or (has_strong_name and not any(bad in name for bad in ["library", "office", "employment", "government"])):
+                            # Additional check: must have beverage/entertainment related tags
+                            beverage_keywords = ["bar", "pub", "biergarten", "cocktail", "beer", "wine", "drinks", "nightclub", "club", "lounge"]
+                            if any(kw in tags_str for kw in beverage_keywords):
                                 nightlife_venues.append(venue)
-                    # DO NOT fallback to all results - better to return empty than garbage
+                    
                     result["venues"] = nightlife_venues
-                    print(f"[SEARCH DEBUG] Filtered to {len(nightlife_venues)} nightlife venues (no fallback)")
+                    print(f"[SEARCH DEBUG] Filtered to {len(nightlife_venues)} nightlife venues (strict mode)")
+                elif q in ["historic", "historic sites"]:
+                    # Filter for actual historic sites - monuments, museums, castles, etc.
+                    historic_venues = []
+                    for venue in formatted_venues:
+                        tags = venue.get("tags", {})
+                        tags_str = str(tags).lower()
+                        name = venue.get("name", "").lower()
+                        
+                        # STRICT filtering - must have actual historic/tourism tags
+                        historic_indicators = [
+                            "historic", "monument", "memorial", "castle", "palace",
+                            "museum", "gallery", "cathedral", "church", "temple",
+                            "ruins", "archaeological", "heritage", "landmark",
+                            "tourism=attraction", "tourism=museum", "tourism=gallery",
+                            "building=cathedral", "building=church", "building=castle",
+                            "historic=monument", "historic=castle", "historic=ruins"
+                        ]
+                        
+                        # Must have at least one historic indicator
+                        has_historic = any(ind in tags_str for ind in historic_indicators)
+                        
+                        # Exclude garbage like traffic signs, construction, random shops
+                        garbage_indicators = [
+                            "traffic", "sign", "construction", "speed limit",
+                            "kebab", "burger", "fast food", "driveway", "parking",
+                            "regulatory", "maxspeed", "construction--"
+                        ]
+                        is_garbage = any(garb in name or garb in tags_str for garb in garbage_indicators)
+                        
+                        if has_historic and not is_garbage:
+                            historic_venues.append(venue)
+                    
+                    result["venues"] = historic_venues
+                    print(f"[SEARCH DEBUG] Filtered to {len(historic_venues)} historic venues (strict mode)")
                 else:
                     result["venues"] = formatted_venues
                 

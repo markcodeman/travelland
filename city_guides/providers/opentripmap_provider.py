@@ -14,14 +14,15 @@ BASE = "https://api.opentripmap.com/0.1/en/places"
 OPENTRIPMAP_API_URL = f"{BASE}/bbox"
 
 # London-targeted category expansions (OTM works better with broader kinds for large cities)
+# Valid OpenTripMap kinds: https://opentripmap.io/catalog
 LONDON_OTM_CATEGORIES = {
-    "restaurant": "restaurants,cafes,bars,pubs",
-    "historic": "historic,archaeological,memorials",
-    "museum": "museums,galleries,theatres",
-    "park": "parks,gardens,squares",
+    "restaurant": "restaurants",
+    "historic": "historic",
+    "museum": "museums",
+    "park": "parks",
     "transport": "transport",
-    "shopping": "shops,marketplaces",
-    "entertainment": "amusements,cinemas,theatres",
+    "shopping": "shops",
+    "entertainment": "amusements",
 }
 
 
@@ -190,6 +191,7 @@ async def discover_restaurants(city: str, limit: int = 50, cuisine: str = None, 
                 else ""
             ),
             "rating": detail.get("rate") if detail.get("rate") else None,
+            "provider": "opentripmap",
         }
         # optional simple cuisine match
         if cuisine:
@@ -312,6 +314,7 @@ async def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, 
                 else ""
             ),
             "rating": detail.get("rate") if detail.get("rate") else None,
+            "provider": "opentripmap",
         }
         out.append(entry)
 
@@ -458,6 +461,7 @@ async def async_discover_pois(city: str, kinds: str = "restaurants", limit: int 
                 else ""
             ),
             "rating": detail.get("rate") if detail.get("rate") else None,
+            "provider": "opentripmap",
         }
         out.append(entry)
 

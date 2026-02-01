@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import asyncio
 import math
 import re
+import unicodedata
 from typing import List, Dict, Optional
 import os
 
@@ -29,9 +30,72 @@ except Exception as e:
     geonames_provider = None
 
 try:
-    import opentripmap_provider
+    from city_guides.providers import opentripmap_provider
 except Exception:
     opentripmap_provider = None
+
+
+# Curated neighborhood hints for major tourist cities
+# These supplement OSM data with tourist-relevant areas and hidden gems
+CURATED_NEIGHBORHOODS = {
+    "Bangkok": [
+        {"name": "Sukhumvit", "vibe": "expat nightlife, malls, and street food", "hidden_gems": ["Soi 38 street food", "Japanese Town at Sukhumvit 26"], "type": "district"},
+        {"name": "Silom", "vibe": "business district by day, street food and nightlife after dark", "hidden_gems": ["Soi 20 curry stalls", "Lumphini Park dawn tai chi"], "type": "district"},
+        {"name": "Khao San Road", "vibe": "backpacker hub with budget eats and nightlife", "hidden_gems": ["Soi Rambuttri for quieter dining", "Santichaiprakarn Park riverside"], "type": "area"},
+        {"name": "Thonglor", "vibe": "hipster cafes, boutiques, and craft cocktail bars", "hidden_gems": ["The Commons community mall", "Soi 55 local eats"], "type": "district"},
+        {"name": "Ekkamai", "vibe": "local hipster scene, less touristy than Thonglor", "hidden_gems": ["Ekkamai Soi 10 beer bars", "Gateway mall Japanese food"], "type": "district"},
+        {"name": "Chinatown (Yaowarat)", "vibe": "street food paradise and gold shops", "hidden_gems": ["Soi Texas late-night seafood", "Trok Hua Met temple"], "type": "district"},
+        {"name": "Talad Noi", "vibe": "200-year-old Chinese mechanic quarter, gritty authentic", "hidden_gems": ["River-view warehouses", "Hoy Kraeng Pa Jeen seafood"], "type": "neighborhood"},
+        {"name": "Rattanakosin", "vibe": "historic old city with temples and palaces", "hidden_gems": ["Wat Saket at sunset", "Krua Apsorn royal kitchen"], "type": "area"},
+        {"name": "Dusit", "vibe": "royal precinct with palaces and mansion cafes", "hidden_gems": ["Suan Pakkad Palace", "Vimanmek Mansion"], "type": "district"},
+        {"name": "Ari", "vibe": "young creative scene with cafes and bars", "hidden_gems": ["Ari Soi 1 hidden bars", "Nana Coffee Roasters"], "type": "neighborhood"},
+        {"name": "Bang Rak", "vibe": "where chefs eat after service, serious food", "hidden_gems": ["Soi 38 duck rice", "Le Du restaurant row"], "type": "district"},
+        {"name": "Phra Athit", "vibe": "riverside locals area near Khao San but quieter", "hidden_gems": ["Phra Sumen Fort park", "Rambling House jazz bar"], "type": "area"},
+    ],
+    "Tokyo": [
+        {"name": "Shibuya", "vibe": "youth culture, fashion, and nightlife", "hidden_gems": ["Nonbei Yokocho alley bars", "Shibuya Stream rooftop"], "type": "district"},
+        {"name": "Harajuku", "vibe": "street fashion and quirky culture", "hidden_gems": ["Cat Street vintage shops", "Takeshita Street crepe stalls"], "type": "district"},
+        {"name": "Shinjuku", "vibe": "neon nightlife and business", "hidden_gems": ["Omoide Yokocho yakitori alley", "Shinjuku Gyoen garden"], "type": "district"},
+        {"name": "Shimokitazawa", "vibe": "indie music and vintage shopping", "hidden_gems": ["Live music bars", "Vintage clothing maze"], "type": "neighborhood"},
+        {"name": "Koenji", "vibe": "alternative culture and punk rock", "hidden_gems": ["Antique shops", "Live houses"], "type": "neighborhood"},
+        {"name": "Nakameguro", "vibe": "chic canal-side cafes and boutiques", "hidden_gems": ["Cherry blossom canal walks", "Meguro River coffee"], "type": "neighborhood"},
+        {"name": "Yanaka", "vibe": "old Tokyo shitamachi atmosphere", "hidden_gems": ["Yanaka Ginza shopping street", "Nezu Shrine azaleas"], "type": "district"},
+        {"name": "Golden Gai", "vibe": "micro bars and intimate nightlife", "hidden_gems": ["Albatross bar", "Champion bar"], "type": "area"},
+    ],
+    "Paris": [
+        {"name": "Le Marais", "vibe": "historic Jewish quarter, LGBTQ+ friendly", "hidden_gems": ["Place des Vosges arcades", "Rue des Rosiers falafel"], "type": "district"},
+        {"name": "Montmartre", "vibe": "artist hill with village atmosphere", "hidden_gems": ["Vineyards of Clos Montmartre", "Place du Tertre artists"], "type": "district"},
+        {"name": "Canal Saint-Martin", "vibe": "hipster cafes and evening picnics", "hidden_gems": ["Hotel du Nord bistro", "Lock bridges at sunset"], "type": "area"},
+        {"name": "Belleville", "vibe": "multicultural and artistic, authentic Paris", "hidden_gems": ["Parc de Belleville view", "Chinese quarter dim sum"], "type": "district"},
+        {"name": "Saint-Germain-des-Prés", "vibe": "literary history and chic boutiques", "hidden_gems": ["Deux Magots cafe", "Luxembourg Gardens"], "type": "district"},
+    ],
+    "London": [
+        {"name": "Shoreditch", "vibe": "street art and hipster nightlife", "hidden_gems": ["Brick Lane curry", "Columbia Road flower market"], "type": "neighborhood"},
+        {"name": "Notting Hill", "vibe": "colorful houses and Portobello market", "hidden_gems": ["Golborne Road market", "Electric Cinema"], "type": "neighborhood"},
+        {"name": "Brixton", "vibe": "Afro-Caribbean culture and music", "hidden_gems": ["Brixton Village food hall", "Pop Brixton"], "type": "neighborhood"},
+        {"name": "Peckham", "vibe": "up-and-coming arts scene, diverse", "hidden_gems": ["Frank's Cafe rooftop", "Bussey Building"], "type": "neighborhood"},
+        {"name": "Camden", "vibe": "alternative culture and markets", "hidden_gems": ["Camden Lock market", "Jazz Cafe"], "type": "neighborhood"},
+    ],
+    "New York City": [
+        {"name": "Greenwich Village", "vibe": "bohemian history and jazz clubs", "hidden_gems": ["Washington Square arch", "Blue Note jazz"], "type": "neighborhood"},
+        {"name": "Williamsburg", "vibe": "hipster central with craft everything", "hidden_gems": ["Smorgasburg food market", "Domino Park sunset"], "type": "neighborhood"},
+        {"name": "Lower East Side", "vibe": "immigrant history meets trendy bars", "hidden_gems": ["Tenement Museum", "Essex Market"], "type": "neighborhood"},
+        {"name": "Chelsea", "vibe": "art galleries and High Line park", "hidden_gems": ["Chelsea Market", "The High Line at sunset"], "type": "neighborhood"},
+        {"name": "Astoria", "vibe": "Greek food and beer gardens, local feel", "hidden_gems": ["Bohemian Hall beer garden", "Museum of the Moving Image"], "type": "neighborhood"},
+    ],
+    "Rome": [
+        {"name": "Trastevere", "vibe": "bohemian riverside with trattorias", "hidden_gems": ["Santa Maria Basilica mosaics", "Tiber Island"], "type": "neighborhood"},
+        {"name": "Monti", "vibe": "vintage shopping and aperitivo culture", "hidden_gems": ["Mercato Monti", "Suburra 13"], "type": "neighborhood"},
+        {"name": "Testaccio", "vibe": "working-class food traditions", "hidden_gems": ["Testaccio Market", "Piramide Cestia"], "type": "neighborhood"},
+        {"name": "Pigneto", "vibe": "artsy neighborhood, Roman Brooklyn", "hidden_gems": ["Pigneto street art", "Necci dal 1924"], "type": "neighborhood"},
+    ],
+    "Barcelona": [
+        {"name": "El Born", "vibe": "trendy medieval quarter", "hidden_gems": ["Santa Maria del Mar", "Passeig del Born bars"], "type": "neighborhood"},
+        {"name": "Gràcia", "vibe": "village atmosphere with plazas", "hidden_gems": ["Festa Major street festivals", "Carrer de Verdi cinemas"], "type": "neighborhood"},
+        {"name": "Poble-sec", "vibe": "authentic tapas and local life", "hidden_gems": ["Carrer Blai pinxtos", "Montjuïc Magic Fountain"], "type": "neighborhood"},
+        {"name": "Sant Antoni", "vibe": "emerging food scene", "hidden_gems": ["Sant Antoni Market", "Tapas bars on Carrer del Parlament"], "type": "neighborhood"},
+    ],
+}
 
 
 def _norm_name(name: str) -> str:
@@ -41,6 +105,40 @@ def _norm_name(name: str) -> str:
     s = re.sub(r"[^a-z0-9 ]+", " ", s)
     s = re.sub(r"\s+", " ", s).strip()
     return s
+
+
+def _transliterate_name(name: str) -> str:
+    """Convert non-Latin scripts to Latin approximations for English speakers."""
+    if not name:
+        return name
+    
+    # Check if name contains non-Latin scripts
+    has_non_latin = False
+    for char in name:
+        try:
+            # Check if character is outside basic Latin range
+            if ord(char) > 0x007F:
+                has_non_latin = True
+                break
+        except:
+            pass
+    
+    if not has_non_latin:
+        return name
+    
+    # Try unidecode first for better transliteration
+    try:
+        from unidecode import unidecode
+        result = unidecode(name)
+        if result and result != name:
+            return result
+    except ImportError:
+        pass
+    
+    # Fallback: NFKD normalization + ASCII filtering
+    normalized = unicodedata.normalize('NFKD', name)
+    ascii_only = ''.join(c for c in normalized if ord(c) < 128)
+    return ascii_only.strip() or name
 
 
 def _haversine_meters(lat1, lon1, lat2, lon2):
@@ -291,10 +389,10 @@ async def async_discover_pois(
         try:
             otm_kinds = {
                 "restaurant": "restaurants",
-                "historic": "historic,museums",
+                "historic": "historic",
                 "museum": "museums",
                 "park": "parks",
-                "market": "markets",
+                "market": "marketplaces",
                 "transport": "transport",
                 "family": "amusements",
                 "event": "cultural",
@@ -309,23 +407,38 @@ async def async_discover_pois(
         except Exception:
             pass
 
-    # Geoapify (via overpass_provider) - only if function exists. It prefers bbox input.
+    # Geoapify (via overpass_provider) - only if function exists. It requires bbox input.
+    # Geocode city if bbox not provided
     geo_func = getattr(overpass_provider, "geoapify_discover_pois", None)
     if geo_func:
-        # pass bbox and poi_type to let geoapify pick mapped categories when available
-        provider_coros.append(_call_provider(geo_func, "geoapify", bbox, None, poi_type, limit, session=session))
+        geoapify_bbox = bbox
+        if geoapify_bbox is None and city:
+            try:
+                geoapify_bbox = await overpass_provider.async_geocode_city(city, session=session)
+            except Exception:
+                pass
+        if geoapify_bbox:
+            provider_coros.append(_call_provider(geo_func, "geoapify", geoapify_bbox, None, poi_type, limit, session=session))
 
     # Mapillary Places (optional) - use if token present
     try:
         import importlib
-        mapillary_mod = importlib.import_module("city_guides.mapillary_provider")
+        mapillary_mod = importlib.import_module("providers.mapillary_provider")
     except Exception:
         mapillary_mod = None
 
     if mapillary_mod and os.getenv("MAPILLARY_TOKEN"):
         func = getattr(mapillary_mod, "async_discover_places", None)
         if func:
-            provider_coros.append(_call_provider(func, "mapillary", bbox, poi_type, limit, session=session))
+            # Geocode city if bbox not provided for Mapillary too
+            mapillary_bbox = bbox
+            if mapillary_bbox is None and city:
+                try:
+                    mapillary_bbox = await overpass_provider.async_geocode_city(city, session=session)
+                except Exception:
+                    pass
+            if mapillary_bbox:
+                provider_coros.append(_call_provider(func, "mapillary", mapillary_bbox, poi_type, limit, session=session))
 
     # Run all provider coroutines concurrently. Use return_exceptions=True so one failing
     # provider does not cancel others.
@@ -383,10 +496,9 @@ async def async_discover_pois(
 
     # Optionally enrich async results with Mapillary thumbnails if configured and session provided.
     try:
-        import os
         if session and os.getenv("MAPILLARY_TOKEN"):
             try:
-                import city_guides.mapillary_provider as mapillary_provider  # type: ignore
+                import providers.mapillary_provider as mapillary_provider
                 try:
                     await mapillary_provider.async_enrich_venues(normalized, session=session, radius_m=50, limit=3)
                 except Exception:
@@ -446,10 +558,51 @@ async def async_discover_restaurants(
 
 
 async def async_get_neighborhoods(city: str | None = None, lat: float | None = None, lon: float | None = None, lang: str = "en", session=None):
-    """Wrapper that combines results from multiple providers."""
-    results = []
+    """Wrapper that combines results from multiple providers and ranks by tourist relevance.
     
-    # Get from Overpass (OSM)
+    Prioritizes curated neighborhoods for major tourist cities, then supplements with OSM data.
+    """
+    results = []
+    city_normalized = _norm_name(city or "")
+    
+    # Add curated neighborhoods for major tourist cities (with highest priority)
+    curated_added = False
+    for curated_city, neighborhoods in CURATED_NEIGHBORHOODS.items():
+        if _norm_name(curated_city) == city_normalized:
+            for nb in neighborhoods:
+                results.append({
+                    'id': f"curated/{nb['name']}",
+                    'name': nb['name'],
+                    'slug': _norm_name(nb['name']),
+                    'center': None,  # Will be filled by geocoding if needed
+                    'bbox': None,
+                    'source': 'curated',
+                    'vibe': nb.get('vibe', ''),
+                    'hidden_gems': nb.get('hidden_gems', []),
+                    'type': nb.get('type', 'neighborhood'),
+                    'curated_priority': 1000  # High priority bonus
+                })
+            curated_added = True
+            logging.info(f"Added {len(neighborhoods)} curated neighborhoods for {city}")
+            break
+    
+    # Get city center for ranking
+    city_center = None
+    if lat is not None and lon is not None:
+        city_center = (lat, lon)
+    elif city and overpass_provider is not None:
+        try:
+            geocode_func = getattr(overpass_provider, "async_geocode_city", None)
+            if geocode_func:
+                bbox = await geocode_func(city, session=session)
+                if bbox and len(bbox) == 4:
+                    # Calculate center from bbox (west, south, east, north)
+                    west, south, east, north = bbox
+                    city_center = ((south + north) / 2, (west + east) / 2)
+        except Exception:
+            pass
+    
+    # Get from Overpass (OSM) - supplement curated data
     if overpass_provider is not None:
         try:
             func = getattr(overpass_provider, "async_get_neighborhoods", None)
@@ -491,13 +644,120 @@ async def async_get_neighborhoods(city: str | None = None, lat: float | None = N
         except Exception as e:
             logging.warning(f"GeoNames neighborhoods provider error: {e}")
     
-    # Remove duplicates based on normalized name
+    # Remove duplicates based on normalized name (prefer curated over OSM)
     seen = set()
     unique_results = []
-    for r in results:
+    # Sort by source priority: curated first, then OSM, then others
+    results_sorted = sorted(results, key=lambda x: 0 if x.get('source') == 'curated' else 1)
+    for r in results_sorted:
         norm = _norm_name(r.get('name', ''))
         if norm and norm not in seen:
             seen.add(norm)
             unique_results.append(r)
     
-    return unique_results
+    # Rank neighborhoods by tourist relevance
+    ranked_results = _rank_neighborhoods_by_relevance(unique_results, city_center)
+    
+    # Apply transliteration to non-Latin names for English speakers
+    for r in ranked_results:
+        original_name = r.get('name', '')
+        if original_name:
+            r['name_original'] = original_name
+            r['name'] = _transliterate_name(original_name)
+    
+    # Return top 25 most relevant neighborhoods
+    return ranked_results[:25]
+
+
+def _rank_neighborhoods_by_relevance(neighborhoods: list[dict], city_center: tuple[float, float] | None) -> list[dict]:
+    """Sort neighborhoods by tourist relevance based on centrality, English names, and exclusions.
+    
+    Curated neighborhoods get highest priority, followed by OSM results based on scores.
+    """
+    
+    def calculate_score(n: dict) -> float:
+        score = 100.0  # Base score
+        
+        # Guard against None values
+        if not n or not isinstance(n, dict):
+            return -9999  # Lowest possible score to filter out
+        
+        name = n.get('name', '')
+        
+        # 0. Curated neighborhoods get massive priority bonus
+        if n.get('source') == 'curated':
+            score += n.get('curated_priority', 1000)
+        
+        # 1. Centrality - closer to city center = higher score
+        if city_center:
+            center_lat, center_lon = city_center
+            center_data = n.get('center')
+            if center_data:
+                lat = center_data.get('lat')
+                lon = center_data.get('lon')
+                if lat is not None and lon is not None:
+                    try:
+                        distance = _haversine_meters(center_lat, center_lon, float(lat), float(lon))
+                        # Closer = more points (max 500 bonus for being within 1km)
+                        centrality_bonus = max(0, 500 - distance / 1000)
+                        score += centrality_bonus
+                    except (ValueError, TypeError):
+                        pass
+        
+        # 2. Has English name bonus
+        tags = n.get('tags', {})
+        if isinstance(tags, dict) and 'name:en' in tags:
+            score += 100
+        
+        # 3. Source quality bonus
+        source = n.get('source', '')
+        if source == 'osm':
+            score += 20  # Prefer OSM over GeoNames
+        
+        # 4. Penalize non-touristy patterns (housing estates, industrial zones, etc.)
+        # Aggressive penalization for residential/factory patterns
+        name_lower = name.lower()
+        
+        # Residential/housing patterns (high penalty)
+        residential_patterns = ['village', 'community', 'housing', 'estate', 'residential']
+        for pattern in residential_patterns:
+            if pattern in name_lower:
+                score -= 500
+                break
+        
+        # Thai patterns (ชุมชน = community, หมู่บ้าน = village)
+        thai_residential = ['ชุมชน', 'หมู่บ้าน', 'โซน', 'แดน', 'แปลง', 'zone']
+        for pattern in thai_residential:
+            if pattern in name:
+                score -= 400
+                break
+        
+        # Other bad patterns (medium penalty)
+        bad_patterns = [
+            'industrial', 'factory', 'estate', 'corner', 'cross', 'heights', 
+            'accommodation', 'staff', 'outsource', 'villas', 'apartments',
+            'private', 'pattanakarn'  # Bangkok specific suburbs
+        ]
+        for pattern in bad_patterns:
+            if pattern in name_lower:
+                score -= 200
+                break
+        
+        # Numbers often indicate housing estates (e.g., "Phetkasem 40")
+        if re.search(r'\d+', name):
+            score -= 100  # Small penalty for numbered areas
+        
+        # 5. Bonus for tourist-friendly keywords
+        good_patterns = [
+            'downtown', 'old town', 'historic', 'city centre', 'city center',
+            'district', 'quarter', 'square', 'market', 'harbor', 'harbour'
+        ]
+        for pattern in good_patterns:
+            if pattern in name_lower:
+                score += 80
+                break  # Only bonus once
+        
+        return score
+    
+    # Sort by score (highest first)
+    return sorted(neighborhoods, key=calculate_score, reverse=True)

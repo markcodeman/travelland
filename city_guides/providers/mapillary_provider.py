@@ -197,7 +197,7 @@ async def async_search_places(
                     c = geom.get("coordinates")
                     if isinstance(c, (list, tuple)) and len(c) >= 2:
                         lon_i, lat_i = float(c[0]), float(c[1])
-                out.append({"id": it.get("id"), "name": name, "type": place_type, "lat": lat_i, "lon": lon_i})
+                out.append({"id": it.get("id"), "name": name, "type": place_type, "lat": lat_i, "lon": lon_i, "provider": "mapillary"})
             if own_session:
                 await session.close()
                 print("[DEBUG mapillary] Closed internal aiohttp session after success")
@@ -288,6 +288,7 @@ async def async_discover_map_features(
                     "address": "",
                     "tags": it.get("object_value", ""),
                     "source": "mapillary-map_feature",
+                    "provider": "mapillary",
                     "raw": it,
                 })
             return out
@@ -360,6 +361,7 @@ async def async_discover_images_in_bbox(
                     "tags": "image",
                     "thumbnail": thumb,
                     "source": "mapillary-image",
+                    "provider": "mapillary",
                     "raw": it,
                 })
             return out

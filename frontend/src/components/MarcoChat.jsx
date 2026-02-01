@@ -74,6 +74,19 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     if (initialInput !== undefined) setInput(initialInput || '');
   }, [initialInput]);
 
+  // Check for initial question from localStorage when component mounts
+  useEffect(() => {
+    const initialQuestion = localStorage.getItem('marco_initial_question');
+    if (initialQuestion) {
+      // Clear it so it doesn't trigger again
+      localStorage.removeItem('marco_initial_question');
+      // Send the message
+      setTimeout(() => {
+        sendMessage(initialQuestion);
+      }, 500); // Small delay to let the UI settle
+    }
+  }, []); // Run once on mount
+
   // Fetch fun fact when city changes
   useEffect(() => {
     if (city && !funFact) {
@@ -366,6 +379,12 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                           onDirections={(v) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.address || v.name + ' ' + (v.city || ''))}`,'_blank')}
                           onMap={(v) => window.open(v.mapsUrl, '_blank')}
                           onSave={null}
+                          onAskMarco={(v) => {
+                            const question = `Tell me more about ${v.name}${v.description ? ' - ' + v.description : ''}. What makes it special?`;
+                            setInput(question);
+                            setMessages(m => [...m, { role: 'user', text: question }]);
+                            handleSubmit(question);
+                          }}
                         />
                       ))}
                     </div>

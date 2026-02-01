@@ -18,42 +18,61 @@ const getMapsUrl = (venue) => {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.name)}`;
 };
 
-// 🌟🌟🌟 MICHELIN 3 STAR: Dynamic Wikipedia image fetcher
+// Robust Wikipedia image search using search API instead of assuming page exists
 const fetchWikipediaImages = async (venueName, city) => {
   try {
-    // Search for Wikipedia page
-    const searchUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(venueName)}`;
-    const response = await fetch(searchUrl);
+    // Build search query with venue name and city for better results
+    const searchQuery = city ? `${venueName} ${city}` : venueName;
     
-    if (!response.ok) {
-      console.warn(`No Wikipedia page found for: ${venueName}`);
+    // Use Wikipedia search API to find relevant pages
+    const searchApiUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&origin=*`;
+    
+    const searchResponse = await fetch(searchApiUrl);
+    if (!searchResponse.ok) {
       return null;
     }
     
-    const data = await response.json();
+    const searchData = await searchResponse.json();
+    const searchResults = searchData.query?.search || [];
     
-    // Get the Wikipedia page content to extract images
-    const pageUrl = data.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encodeURIComponent(venueName.replace(/ /g, '_'))}`;
+    if (searchResults.length === 0) {
+      return null;
+    }
     
-    // Fetch the page HTML to find images
-    const pageResponse = await fetch(pageUrl);
-    const pageHtml = await pageResponse.text();
+    // Get images from the top search result
+    const topResult = searchResults[0];
+    const pageTitle = topResult.title;
     
-    // Extract image URLs from the page
-    const imageRegex = /<img[^>]+src="([^"]+)"[^>]*>/g;
-    const images = [];
-    let match;
+    // Fetch images for this page
+    const imagesUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(pageTitle)}&prop=images&format=json&origin=*`;
+    const imagesResponse = await fetch(imagesUrl);
     
-    while ((match = imageRegex.exec(pageHtml)) !== null) {
-      const imgSrc = match[1];
-      // Only include Wikipedia Commons images
-      if (imgSrc.includes('upload.wikimedia.org') && imgSrc.includes('thumb')) {
-        // Just use the original thumb URL for now
-        images.push(imgSrc);
+    if (!imagesResponse.ok) {
+      return null;
+    }
+    
+    const imagesData = await imagesResponse.json();
+    const pages = imagesData.query?.pages || {};
+    const page = Object.values(pages)[0];
+    const images = page?.images || [];
+    
+    if (images.length === 0) {
+      return null;
+    }
+    
+    // Get actual image URLs from the first few images
+    const imageUrls = [];
+    for (const img of images.slice(0, 5)) {
+      const filename = img.title;
+      if (filename.includes('.jpg') || filename.includes('.png')) {
+        // Convert filename to direct Wikimedia URL
+        const encodedFilename = encodeURIComponent(filename.replace('File:', ''));
+        const directUrl = `https://upload.wikimedia.org/wikipedia/commons/thumb/${encodedFilename.charAt(0)}/${encodedFilename.slice(0, 2)}/${encodedFilename}/400px-${encodedFilename}`;
+        imageUrls.push(directUrl);
       }
     }
     
-    return images.length > 0 ? images : null;
+    return imageUrls.length > 0 ? imageUrls : null;
   } catch (error) {
     console.warn(`Failed to fetch Wikipedia images for ${venueName}:`, error);
     return null;
@@ -109,7 +128,7 @@ const getVenueSpecificFallback = (venue) => {
   return `https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Museu_Picasso_Barcelona.jpg/400x200px-Museu_Picasso_Barcelona.jpg`;
 };
 
-const VenueCard = ({ venue, onAddToItinerary, onDirections, onMap, onSave }) => {
+const VenueCard = ({ venue, onAddToItinerary, onDirections, onMap, onSave, onAskMarco }) => {
   // 🌟 MICHELIN STAR: Dynamic venue photo loading
   const [venueImage, setVenueImage] = React.useState('https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Museu_Picasso_Barcelona.jpg/400x200px-Museu_Picasso_Barcelona.jpg');
   const [imageLoading, setImageLoading] = React.useState(true);
@@ -299,6 +318,14 @@ const VenueCard = ({ venue, onAddToItinerary, onDirections, onMap, onSave }) => 
           >
             🗺️ Maps
           </a>
+          {onAskMarco && (
+            <button 
+              onClick={() => onAskMarco(venue)}
+              className="flex-1 inline-flex items-center justify-center bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 text-sm font-medium transition-colors duration-200"
+            >
+              🤖 Ask Marco
+            </button>
+          )}
           {venue.website && (
             <a 
               href={venue.website}

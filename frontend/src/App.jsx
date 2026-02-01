@@ -7,6 +7,7 @@ import SuggestionChips from './components/SuggestionChips';
 import MarcoChat from './components/MarcoChat';
 import SimpleLocationSelector from './components/SimpleLocationSelector';
 import CitySuggestions from './components/CitySuggestions';
+import NeighborhoodPicker from './components/NeighborhoodPicker';
 import HeroImage from './components/HeroImage';
 import { getHeroImage, getHeroImageMeta } from './services/imageService';
 
@@ -134,6 +135,9 @@ function App() {
   const [heroImage, setHeroImage] = useState('');
   const [heroImageMeta, setHeroImageMeta] = useState({});
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [showNeighborhoodPicker, setShowNeighborhoodPicker] = useState(false);
+  const [smartNeighborhoods, setSmartNeighborhoods] = useState([]);
+  const [pendingCategory, setPendingCategory] = useState(null);
   const marcoOpenTimerRef = useRef(null);
 
   const clearMarcoOpenTimer = useCallback(() => {
@@ -315,6 +319,20 @@ function App() {
     }
     return useFallback ? NEIGHBORHOOD_FALLBACKS[cityName] || [] : [];
   }, [fetchAPI]);
+
+  // Fetch smart neighborhood suggestions for large cities
+  const fetchSmartNeighborhoods = useCallback(async (city, category = '') => {
+    if (!city) return { is_large_city: false, neighborhoods: [] };
+    
+    try {
+      const response = await fetch(`${API_BASE}/api/smart-neighborhoods?city=${encodeURIComponent(city)}&category=${encodeURIComponent(category)}`);
+      if (!response.ok) return { is_large_city: false, neighborhoods: [] };
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to fetch smart neighborhoods:', error);
+      return { is_large_city: false, neighborhoods: [] };
+    }
+  }, []);
 
   // Fetch neighborhoods effect
   useEffect(() => {
@@ -596,12 +614,50 @@ function App() {
     }
   }, [location.city, location.neighborhood, location.country, category, categoryLabel, neighborhoodOptIn, fetchAPI, fetchQuickGuide, fetchNeighborhoods, fetchWeatherData]);
 
+  // Handle neighborhood selection from picker
+  const handleNeighborhoodSelect = useCallback((neighborhood) => {
+    setLocation(prev => ({ ...prev, neighborhood }));
+    setShowNeighborhoodPicker(false);
+    
+    // Continue with the pending search
+    if (pendingCategory) {
+      handleSearch(pendingCategory.label, location.city);
+      setPendingCategory(null);
+    }
+  }, [pendingCategory, location.city, handleSearch]);
+
+  // Handle skip neighborhood selection
+  const handleSkipNeighborhood = useCallback(() => {
+    setShowNeighborhoodPicker(false);
+    
+    // Continue with the pending search without neighborhood
+    if (pendingCategory) {
+      handleSearch(pendingCategory.label, location.city);
+      setPendingCategory(null);
+    }
+  }, [pendingCategory, location.city, handleSearch]);
+
   // Handle category selection from CitySuggestions
-  const handleCategorySelect = useCallback((intent, label) => {
+  const handleCategorySelect = useCallback(async (intent, label) => {
     setCategory(intent);
     setCategoryLabel(label);
     setParsedIntent(intent);
-    // Marco no longer auto-opens - user clicks button when ready
+    
+    // Check if this is a large city that needs neighborhood narrowing
+    if (location.city) {
+      const smartData = await fetchSmartNeighborhoods(location.city, label);
+      
+      if (smartData.is_large_city && smartData.neighborhoods.length > 0) {
+        // Show neighborhood picker for large cities
+        setSmartNeighborhoods(smartData.neighborhoods);
+        setPendingCategory({ intent, label });
+        setShowNeighborhoodPicker(true);
+        return;
+      }
+      
+      // Small city - search directly
+      handleSearch(label, location.city);
+    }
     
     // Auto-scroll to hero image after category selection
     setTimeout(() => {
@@ -613,12 +669,7 @@ function App() {
         });
       }
     }, 100);
-    
-    // Trigger search with the selected category label for better context
-    if (location.city) {
-      handleSearch(label, location.city);
-    }
-  }, [location.city, handleSearch, scheduleMarcoOpen]);
+  }, [location.city, handleSearch, fetchSmartNeighborhoods]);
 
   // Memoized suggestion handler with toggle behavior
   const handleSuggestion = useCallback(async (id) => {
@@ -637,12 +688,23 @@ function App() {
     setCategory(id); // keep internal id
     setCategoryLabel(label);
     setSelectedSuggestion(id);
-    // Marco no longer auto-opens - user clicks button when ready
     
+    // Check if this is a large city that needs neighborhood narrowing
     if (location.city) {
-      await handleSearch(label); // pass label so backend gets "Hidden gems"
+      const smartData = await fetchSmartNeighborhoods(location.city, label);
+      
+      if (smartData.is_large_city && smartData.neighborhoods.length > 0) {
+        // Show neighborhood picker for large cities
+        setSmartNeighborhoods(smartData.neighborhoods);
+        setPendingCategory({ intent: id, label });
+        setShowNeighborhoodPicker(true);
+        return;
+      }
+      
+      // Small city - search directly
+      await handleSearch(label);
     }
-  }, [location.city, handleSearch, selectedSuggestion, clearMarcoOpenTimer]);
+  }, [location.city, handleSearch, selectedSuggestion, clearMarcoOpenTimer, fetchSmartNeighborhoods]);
 
   // Memoized generate function
   const generateQuickGuide = useCallback(async () => {
@@ -701,6 +763,17 @@ function App() {
           <CitySuggestions 
             city={location.city}
             onCategorySelect={handleCategorySelect}
+          />
+        )}
+
+        {/* Smart Neighborhood Picker for Large Cities */}
+        {showNeighborhoodPicker && (
+          <NeighborhoodPicker
+            city={location.city}
+            category={pendingCategory?.label || categoryLabel}
+            neighborhoods={smartNeighborhoods}
+            onSelect={handleNeighborhoodSelect}
+            onSkip={handleSkipNeighborhood}
           />
         )}
 
@@ -934,7 +1007,7 @@ function App() {
                   )}
                   
                   {/* Tags */}
-                  {venue.tags && (
+                  {venue.tags && typeof venue.tags === 'object' && !Array.isArray(venue.tags) && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {Object.entries(venue.tags).slice(0, 3).map(([key, value]) => (
                         <span key={key} style={{
@@ -978,6 +1051,27 @@ function App() {
                         Get Directions
                       </a>
                     )}
+                    <button
+                      onClick={() => {
+                        setMarcoOpen(true);
+                        // Store the venue question to be used when Marco opens
+                        localStorage.setItem('marco_initial_question', `Tell me more about ${venue.name}${venue.description ? ' - ' + venue.description : ''}. What makes it special?`);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '10px 16px',
+                        background: '#9c27b0',
+                        color: 'white',
+                        borderRadius: 8,
+                        border: 'none',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        textAlign: 'center',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🤖 Ask Marco
+                    </button>
                     {venue.website && (
                       <a
                         href={venue.website}

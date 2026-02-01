@@ -246,7 +246,7 @@ GEOAPIFY_CATEGORIES = {
     "event": "entertainment.theatre,entertainment.cinema,entertainment.arts_centre",
     "hotel": "accommodation.hotel,accommodation.hostel",
     "shopping": "commercial.shopping_mall,commercial.retail",
-    "nightlife": "catering.bar,entertainment.night_club",
+    "nightlife": "catering.bar,catering.pub",
     "local": "tourism.attraction",
     "hidden": "tourism.attraction",
 }
@@ -299,6 +299,7 @@ async def geoapify_discover_pois(
 
 async def _geoapify_discover_pois_impl(bbox, requested_limit, per_request_max, params_base, headers, session):
     out = []
+    own = False
     try:
         timeout = aiohttp.ClientTimeout(total=15)
         offset = 0
@@ -346,6 +347,7 @@ async def _geoapify_discover_pois_impl(bbox, requested_limit, per_request_max, p
                         "lon": lon,
                         "tags": kinds_str,
                         "source": "geoapify",
+                        "provider": "geoapify",
                     }
                     out.append(entry)
 
@@ -536,6 +538,7 @@ async def _opentripmap_discover_pois_impl(params, headers, session):
                     "lon": lon,
                     "tags": kinds_str,
                     "source": "opentripmap",
+                    "provider": "opentripmap",
                 }
                 out.append(entry)
             return out
@@ -865,6 +868,7 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
 
         # build query
         if area_id:
+            # For major cities, also search for admin_level=8 (boroughs/districts) in addition to place tags
             q = f"""
                 [out:json][timeout:25];
                 area({area_id})->.cityArea;
@@ -872,6 +876,7 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
                   relation["place"~"neighbourhood|suburb|quarter|city_district|district|locality"](area.cityArea);
                   way["place"~"neighbourhood|suburb|quarter|city_district|district|locality"](area.cityArea);
                   node["place"~"neighbourhood|suburb|quarter|city_district|district|locality"](area.cityArea);
+                  relation["admin_level"="8"]["boundary"="administrative"](area.cityArea);
                 );
                 out center tags;
             """
@@ -2172,6 +2177,7 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
             "lat": lat,
             "lon": lon,
             "tags": tags_str,
+            "provider": "overpass",
         }
         out.append(entry)
 

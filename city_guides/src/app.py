@@ -806,6 +806,48 @@ async def api_neighborhoods():
         app.logger.exception('Failed to fetch neighborhoods')
         return jsonify([])
 
+@app.route('/api/smart-neighborhoods', methods=['GET'])
+async def api_smart_neighborhoods():
+    """
+    Get smart neighborhood suggestions for large cities.
+    Returns curated neighborhoods for major cities to avoid garbage results from city-wide searches.
+    Query params: city, category (optional)
+    Returns: { is_large_city: bool, neighborhoods: [] }
+    """
+    city = request.args.get('city', '').strip()
+    category = request.args.get('category', '').strip()
+    
+    if not city:
+        return jsonify({'is_large_city': False, 'neighborhoods': []}), 400
+    
+    try:
+        # Import the neighborhood suggestions module
+        from city_guides.providers.neighborhood_suggestions import (
+            get_neighborhood_suggestions, 
+            is_large_city
+        )
+        
+        # Check if this is a large city
+        large_city = is_large_city(city)
+        
+        # Get neighborhood suggestions (run sync function in thread)
+        neighborhoods = await asyncio.to_thread(get_neighborhood_suggestions, city, category)
+        
+        return jsonify({
+            'is_large_city': large_city,
+            'neighborhoods': neighborhoods,
+            'city': city,
+            'category': category
+        })
+        
+    except Exception as e:
+        app.logger.exception('Smart neighborhoods fetch failed')
+        return jsonify({
+            'is_large_city': False, 
+            'neighborhoods': [],
+            'error': str(e)
+        }), 500
+
 @app.route('/geocode', methods=['POST'])
 async def geocode():
     """Geocode a city/neighborhood to get coordinates"""
