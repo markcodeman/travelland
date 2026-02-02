@@ -825,7 +825,8 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
         own = True
     try:
         area_id = None
-        if city:
+        # Only use Nominatim if we don't have coordinates
+        if city and not (lat and lon):
             # Try to find an administrative relation for the named city/municipality.
             params = {"q": city, "format": "json", "limit": 10, "addressdetails": 1}
             headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": lang}
@@ -881,52 +882,24 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
                 out center tags;
             """
         else:
-            # Try to get city center coordinates for around() query
-            center_lat, center_lon = None, None
+            # Use provided coordinates or fallback to bbox
             if lat and lon:
-                center_lat, center_lon = lat, lon
-            elif city:
-                # Try to get coordinates from Nominatim result
-                try:
-                    # If we have lat/lon, use reverse geocoding to verify city
-                    if lat and lon:
-                        params = {"lat": lat, "lon": lon, "format": "json", "limit": 1}
-                    else:
-                        params = {"q": city, "format": "json", "limit": 1}
-                    headers = {"User-Agent": "CityGuides/1.0"}
-                    timeout = aiohttp.ClientTimeout(total=10)
-                    async with session.get(NOMINATIM_URL, params=params, headers=headers, timeout=timeout) as r:
-                        if r.status == 200:
-                            j = await r.json()
-                            if j:
-                                res = j[0]
-                                if res.get("lat") and res.get("lon"):
-                                    center_lat = float(res["lat"])
-                                    center_lon = float(res["lon"])
-                except Exception:
-                    pass
-            
-            if center_lat and center_lon:
-                # Use around() query for node-based cities like Athens
+                # Use around() query with provided coordinates
                 radius = float(os.getenv("NEIGHBORHOOD_DEFAULT_BUFFER_KM", 5.0))
                 q = f"""
                     [out:json][timeout:25];
                     (
-                      relation["place"~"neighbourhood|suburb|quarter|city_district|district|locality"](around:{radius*1000},{center_lat},{center_lon});
-                      way["place"~"neighbourhood|suburb|quarter|city_district|district|locality"](around:{radius*1000},{center_lat},{center_lon});
-                      node["place"~"neighbourhood|suburb|quarter|city_district|district|locality"](around:{radius*1000},{center_lat},{center_lon});
+                      relation["place"~"neighbourhood|suburb|quarter|city_district|district|locality"](around:{radius*1000},{lat},{lon});
+                      way["place"~"neighbourhood|suburb|quarter|city_district|district|locality"](around:{radius*1000},{lat},{lon});
+                      node["place"~"neighbourhood|suburb|quarter|city_district|district|locality"](around:{radius*1000},{lat},{lon});
                     );
                     out center tags;
                 """
             else:
-                # Fallback to bbox query
+                # Fallback to bbox query (only when no lat/lon provided)
                 bbox_str = None
-                if lat and lon:
-                    buf = float(os.getenv("NEIGHBORHOOD_DEFAULT_BUFFER_KM", 5.0)) / 111.0
-                    minlat, minlon, maxlat, maxlon = lat - buf, lon - buf, lat + buf, lon + buf
-                    bbox_str = f"{minlat},{minlon},{maxlat},{maxlon}"
-                else:
-                    bb = await async_geocode_city(city or "", session=session)
+                if city:
+                    bb = await async_geocode_city(city, session=session)
                     if bb:
                         # async_geocode_city returns (west, south, east, north)
                         west, south, east, north = bb

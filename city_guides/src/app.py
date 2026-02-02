@@ -400,10 +400,20 @@ async def get_neighborhoods():
     lon = request.args.get("lon")
     lang = request.args.get("lang", "en")
 
+    # If city-only query, resolve to coordinates first to avoid ambiguous city names (e.g. Athens, GA)
+    geocoded = False
+    if city and not (lat and lon):
+        try:
+            geo = await geocode_city(city)
+            if geo and geo.get("lat") is not None and geo.get("lon") is not None:
+                lat = str(geo["lat"])
+                lon = str(geo["lon"])
+                geocoded = True
+        except Exception:
+            app.logger.exception("geocode_city failed for neighborhoods: %s", city)
+
     # Create slug for caching
-    if city:
-        slug = re.sub(r"[^a-z0-9]+", "_", city.lower()).strip("_")[:64]
-    elif lat and lon:
+    if lat and lon:
         slug = f"{lat}_{lon}"
     else:
         return jsonify({"error": "city or lat/lon required"}), 400
@@ -432,13 +442,19 @@ async def get_neighborhoods():
 
     # fetch from provider
     try:
-        data = await multi_provider.async_get_neighborhoods(city=city or None, lat=float(lat) if lat else None, lon=float(lon) if lon else None, lang=lang, session=aiohttp_session)
+        data = await multi_provider.async_get_neighborhoods(
+            city=city or None,
+            lat=float(lat) if lat else None,
+            lon=float(lon) if lon else None,
+            lang=lang,
+            session=aiohttp_session,
+        )
     except Exception:
         app.logger.exception("neighborhoods fetch failed")
         data = []
 
-    # If provider returned nothing for a city-only query, try geocoding the city
-    if (not data) and city and not (lat and lon):
+    # If provider returned nothing for a city-only query and we still don't have coords, try geocoding
+    if (not data) and city and not (lat and lon) and not geocoded:
         try:
             app.logger.debug("No neighborhoods for '%s', attempting geocode fallback", city)
             result = await geocode_city(city)
