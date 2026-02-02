@@ -357,8 +357,7 @@ async def searx_search(query, max_results=10, city=None):
                 address = r.get("address", "")
                 cost = r.get("cost", "")
                 maps_link = (
-                    f"https://maps.google.com/maps?q={
-                        quote(r['name'] + ' ' + city)}"
+                    f"https://maps.google.com/maps?q={quote(r['name'] + ' ' + city)}"
                     f"&ll={r['lat']},{r['lon']}"
                 )
                 # Return plain URL instead of markdown to avoid double-processing

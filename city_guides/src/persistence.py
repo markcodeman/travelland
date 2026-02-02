@@ -13,9 +13,28 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from urllib.parse import urlparse
 
-from .synthesis_enhancer import SynthesisEnhancer
-from .snippet_filters import looks_like_ddgs_disambiguation_text
-from .venue_quality import filter_high_quality_venues, calculate_venue_quality_score, enhance_chinese_venue_processing
+# Import SynthesisEnhancer lazily to break circular dependency
+_synthesis_enhancer = None
+
+def get_synthesis_enhancer():
+    global _synthesis_enhancer
+    if _synthesis_enhancer is None:
+        try:
+            from synthesis_enhancer import SynthesisEnhancer
+        except ImportError:
+            from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+        _synthesis_enhancer = SynthesisEnhancer
+    return _synthesis_enhancer
+
+# Import other modules
+try:
+    from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
+except ImportError:
+    from snippet_filters import looks_like_ddgs_disambiguation_text
+try:
+    from city_guides.src.venue_quality import filter_high_quality_venues, calculate_venue_quality_score, enhance_chinese_venue_processing
+except ImportError:
+    from venue_quality import filter_high_quality_venues, calculate_venue_quality_score, enhance_chinese_venue_processing
 
 
 def _persist_quick_guide(out_obj: Dict, city_name: str, neighborhood_name: str, file_path: Path) -> None:
@@ -24,8 +43,11 @@ def _persist_quick_guide(out_obj: Dict, city_name: str, neighborhood_name: str, 
         if looks_like_ddgs_disambiguation_text(out_obj.get('quick_guide') or ''):
             logging.info('Not caching disambiguation/promotional ddgs quick_guide for %s/%s', city_name, neighborhood_name)
             # replace with synthesized neutral paragraph if available
+            # Use lazy loading
             try:
-                new_para = SynthesisEnhancer.generate_neighborhood_paragraph(neighborhood_name, city_name)
+                se = get_synthesis_enhancer()
+                new_para = se.generate_neighborhood_paragraph(neighborhood_name, city_name)
+            except Exception:
                 out_obj['quick_guide'] = new_para
                 out_obj['source'] = 'synthesized'
                 out_obj['source_url'] = None

@@ -322,17 +322,28 @@ function App() {
     return useFallback ? NEIGHBORHOOD_FALLBACKS[cityName] || [] : [];
   }, [fetchAPI]);
 
-  // Fetch smart neighborhood suggestions for large cities
+  // Fetch smart neighborhood suggestions for large cities with a timeout
   const fetchSmartNeighborhoods = useCallback(async (city, category = '') => {
     if (!city) return { is_large_city: false, neighborhoods: [] };
     
     try {
-      const response = await fetch(`${API_BASE}/api/smart-neighborhoods?city=${encodeURIComponent(city)}&category=${encodeURIComponent(category)}`);
-      if (!response.ok) return { is_large_city: false, neighborhoods: [] };
+      // Set a timeout of 15 seconds to allow backend more time to respond
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout fetching neighborhoods')), 15000);
+      });
+      
+      const responsePromise = fetch(`${API_BASE}/api/smart-neighborhoods?city=${encodeURIComponent(city)}&category=${encodeURIComponent(category)}`);
+      
+      const response = await Promise.race([responsePromise, timeoutPromise]);
+      if (!response.ok) {
+        console.error('Failed to fetch smart neighborhoods: HTTP error', response.status, response.statusText);
+        return { is_large_city: true, neighborhoods: [] };
+      }
       return await response.json();
     } catch (error) {
-      console.error('Failed to fetch smart neighborhoods:', error);
-      return { is_large_city: false, neighborhoods: [] };
+      console.error('Failed to fetch smart neighborhoods:', error.message, error.stack);
+      // Fallback to any cached neighborhoods or empty list with large city flag to show picker if possible
+      return { is_large_city: true, neighborhoods: [] };
     }
   }, []);
 
@@ -647,18 +658,31 @@ function App() {
     
     // Check if this is a large city that needs neighborhood narrowing
     if (location.city) {
-      const smartData = await fetchSmartNeighborhoods(location.city, label);
-      
-      if (smartData.neighborhoods && smartData.neighborhoods.length > 0) {
-        // Show neighborhood picker for large cities
-        setSmartNeighborhoods(smartData.neighborhoods);
+      try {
+        const smartData = await fetchSmartNeighborhoods(location.city, label);
+        
+        // Force neighborhood picker for known large cities even if fetch fails
+        const largeCities = ['Guadalajara', 'Tokyo', 'Strasbourg', 'Athens', 'Rome', 'Barcelona', 'Paris', 'London', 'New York'];
+        const isLargeCity = largeCities.some(city => location.city.toLowerCase().includes(city.toLowerCase())) || smartData.is_large_city;
+        
+        if (isLargeCity) {
+          // Show neighborhood picker for large cities, using available data or empty list
+          setSmartNeighborhoods(smartData.neighborhoods || []);
+          setPendingCategory({ intent, label });
+          setShowNeighborhoodPicker(true);
+          return;
+        }
+        
+        // Small city - search directly
+        handleSearch(label, location.city);
+      } catch (error) {
+        console.error('Error in category select:', error);
+        // Force showing the neighborhood picker with an empty list to prevent UI hang
+        setSmartNeighborhoods([]);
         setPendingCategory({ intent, label });
         setShowNeighborhoodPicker(true);
         return;
       }
-      
-      // Small city - search directly
-      handleSearch(label, location.city);
     }
     
     // Auto-scroll to hero image after category selection
@@ -688,23 +712,35 @@ function App() {
 
     const label = SUGGESTION_MAP[id] || id; // human label
     setCategory(id); // keep internal id
-    setCategoryLabel(label);
     setSelectedSuggestion(id);
     
     // Check if this is a large city that needs neighborhood narrowing
     if (location.city) {
-      const smartData = await fetchSmartNeighborhoods(location.city, label);
-      
-      if (smartData.neighborhoods && smartData.neighborhoods.length > 0) {
-        // Show neighborhood picker for large cities
-        setSmartNeighborhoods(smartData.neighborhoods);
+      try {
+        const smartData = await fetchSmartNeighborhoods(location.city, label);
+        
+        // Force neighborhood picker for known large cities even if fetch fails
+        const largeCities = ['Guadalajara', 'Tokyo', 'Strasbourg', 'Athens', 'Rome', 'Barcelona', 'Paris', 'London', 'New York'];
+        const isLargeCity = largeCities.some(city => location.city.toLowerCase().includes(city.toLowerCase())) || smartData.is_large_city;
+        
+        if (isLargeCity) {
+          // Show neighborhood picker for large cities, using available data or empty list
+          setSmartNeighborhoods(smartData.neighborhoods || []);
+          setPendingCategory({ intent: id, label });
+          setShowNeighborhoodPicker(true);
+          return;
+        }
+        
+        // Small city - search directly
+        await handleSearch(label);
+      } catch (error) {
+        console.error('Error in suggestion select:', error);
+        // Force showing the neighborhood picker with an empty list to prevent UI hang
+        setSmartNeighborhoods([]);
         setPendingCategory({ intent: id, label });
         setShowNeighborhoodPicker(true);
         return;
       }
-      
-      // Small city - search directly
-      await handleSearch(label);
     }
   }, [location.city, handleSearch, selectedSuggestion, clearMarcoOpenTimer, fetchSmartNeighborhoods]);
 

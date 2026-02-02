@@ -2270,10 +2270,11 @@ async def _get_nearby_venues_single_query(lat, lon, venue_type, radius, limit):
             query_parts.append(f'node["{tag_type}"="{value}"](around:{radius},{lat},{lon});')
             query_parts.append(f'way["{tag_type}"="{value}"](around:{radius},{lat},{lon});')
 
+    joined_parts = "\n        ".join(query_parts)
     query = f"""
     [out:json][timeout:25];
     (
-        {"\n        ".join(query_parts)}
+        {joined_parts}
     );
     out;
     """

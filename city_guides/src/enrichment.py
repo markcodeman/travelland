@@ -8,8 +8,16 @@ from typing import Dict, List, Optional, Any
 from quart import request, jsonify
 from city_guides.providers import multi_provider
 from city_guides.providers.utils import get_session
-from .geo_enrichment import enrich_neighborhood as geo_enrich_neighborhood
-from .synthesis_enhancer import SynthesisEnhancer
+try:
+    from city_guides.src.geo_enrichment import enrich_neighborhood as geo_enrich_neighborhood
+except ImportError:
+    try:
+        from geo_enrichment import enrich_neighborhood as geo_enrich_neighborhood
+    except ImportError:
+        # Fallback to direct imports if in same directory or PYTHONPATH is set
+        import geo_enrichment
+        geo_enrich_neighborhood = geo_enrichment.enrich_neighborhood
+from city_guides.src.synthesis_enhancer import SynthesisEnhancer
 
 
 async def enrich_neighborhood(city: str, neighborhood: str, session=None) -> Optional[Dict]:

@@ -44,7 +44,7 @@ import logging
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import modules
-from .persistence import (
+from city_guides.src.persistence import (
     build_search_cache_key,
     ensure_bbox,
     format_venue,
@@ -68,17 +68,17 @@ from .persistence import (
     _is_relevant_wikimedia_image,
     _persist_quick_guide
 )
-from .validation import validate_neighborhood
-from .enrichment import get_neighborhood_enrichment
+from city_guides.src.validation import validate_neighborhood
+from city_guides.src.enrichment import get_neighborhood_enrichment
 from city_guides.providers import multi_provider
 from city_guides.providers.geocoding import geocode_city, reverse_geocode
 from city_guides.providers.overpass_provider import async_geocode_city
 from city_guides.providers.utils import get_session
-from . import semantic
-from .geo_enrichment import enrich_neighborhood
-from .synthesis_enhancer import SynthesisEnhancer
-from .snippet_filters import looks_like_ddgs_disambiguation_text
-from .neighborhood_disambiguator import NeighborhoodDisambiguator
+from city_guides.src.semantic import semantic
+from city_guides.src.geo_enrichment import enrich_neighborhood
+from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
+from city_guides.src.neighborhood_disambiguator import NeighborhoodDisambiguator
 
 # Create Quart app instance at the very top so it is always defined before any route decorators
 app = Quart(__name__, static_folder="/home/markm/TravelLand/city_guides/static", static_url_path='', template_folder="/home/markm/TravelLand/city_guides/templates")
@@ -1015,6 +1015,14 @@ async def api_smart_neighborhoods():
         return jsonify({'is_large_city': False, 'neighborhoods': []}), 400
     
     try:
+        # Check cache first to avoid repeated slow requests
+        cache_key = f"smart_neighborhoods:{city.lower()}"
+        if redis_client:
+            cached_data = await redis_client.get(cache_key)
+            if cached_data:
+                app.logger.info(f"Cache hit for smart neighborhoods: {city}")
+                return jsonify(json.loads(cached_data))
+
         # Coordinate-first neighborhoods to avoid ambiguous city names and seed fallbacks.
         # This uses our geocode_city strategy (local data / Geoapify / etc.) and then Overpass via multi_provider.
         geo = await geocode_city(city)
@@ -1023,7 +1031,15 @@ async def api_smart_neighborhoods():
         if lat is None or lon is None:
             return jsonify({'is_large_city': False, 'neighborhoods': [], 'city': city, 'category': category}), 200
 
-        raw = await multi_provider.async_get_neighborhoods(city=city, lat=float(lat), lon=float(lon), lang='en', session=aiohttp_session)
+        # Add a timeout to prevent long delays from external API calls
+        try:
+            raw = await asyncio.wait_for(
+                multi_provider.async_get_neighborhoods(city=city, lat=float(lat), lon=float(lon), lang='en', session=aiohttp_session),
+                timeout=5.0
+            )
+        except asyncio.TimeoutError:
+            app.logger.warning(f"Timeout fetching neighborhoods for {city}")
+            raw = []
         raw = raw or []
 
         # Return a set for the UI (allow >9 so key neighborhoods don't get clipped)
@@ -1042,13 +1058,19 @@ async def api_smart_neighborhoods():
             if len(neighborhoods) >= 20:
                 break
 
-        return jsonify({
+        response = {
             'is_large_city': len(neighborhoods) >= 4,
             'neighborhoods': neighborhoods,
             'city': city,
             'category': category
-        })
-        
+        }
+
+        # Cache the response for future requests
+        if redis_client:
+            await redis_client.setex(cache_key, 3600, json.dumps(response))  # Cache for 1 hour
+            app.logger.info(f"Cached smart neighborhoods for {city}")
+
+        return jsonify(response)
     except Exception as e:
         app.logger.exception('Smart neighborhoods fetch failed')
         return jsonify({
@@ -1119,7 +1141,7 @@ async def search():
                         result['source_url'] = url
                 except Exception:
                     app.logger.exception('Wikipedia city fallback failed for %s', city)
-        
+
         if should_cache and redis_client:
             cache_key = build_search_cache_key(city, q, neighborhood)
             try:
@@ -2615,7 +2637,7 @@ async def geonames_search():
                 "style": "FULL"
             }
             
-            async with session.get("http://api.geonames.org/searchJSON", params=params, timeout=aiohttp.ClientTimeout(total=10)) as response:
+            async with session.get("http://api.geonames.org/searchJSON", params=params, timeout=10) as response:
                 if response.status != 200:
                     app.logger.error(f"GeoNames API error: {response.status}")
                     return jsonify({'suggestions': []})
@@ -2668,7 +2690,7 @@ async def unsplash_search():
         per_page = min(int(payload.get('per_page', 3)), 10)
         
         if not query:
-            return jsonify({'error': 'query_required'}), 400
+            return jsonify({'photos': []})
         
         # Get Unsplash key from environment (never exposed to frontend)
         unsplash_key = os.getenv("UNSPLASH_KEY")

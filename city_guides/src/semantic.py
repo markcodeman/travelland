@@ -2369,3 +2369,33 @@ def create_venue_recommendation(query, city, venues, limit=3):
         recommendations.append(f"• ...and {len(venues) - limit} more great spots!")
     
     return f"Here are my top picks in {city}:\n\n" + "\n".join(recommendations)
+
+
+# Export semantic module interface
+semantic = {
+    'analyze_any_query': analyze_any_query,
+    'build_response_for_any_query': build_response_for_any_query,
+    'handle_followup_conversation': handle_followup_conversation,
+    'build_neighborhood_response': build_neighborhood_response,
+    'handle_general_question': handle_general_question,
+    'build_conversation_continuation': build_conversation_continuation,
+    'handle_venue_request': handle_venue_request,
+    'build_venue_suggestions': build_venue_suggestions,
+    'engage_and_explore': engage_and_explore,
+    'create_venue_context_string': create_venue_context_string,
+    'ConversationMemory': ConversationMemory,
+    'ConversationAnalyzer': ConversationAnalyzer,
+    'create_rich_venue_context': create_rich_venue_context,
+    'build_marco_prompt': build_marco_prompt,
+    'build_focused_marco_prompt': build_focused_marco_prompt,
+    'build_mandatory_venues_prompt': build_mandatory_venues_prompt,
+    'enhance_marco_response': enhance_marco_response,
+    'enhance_with_osm_data': enhance_with_osm_data,
+    'get_poi_type_from_query': get_poi_type_from_query,
+    'summarize_results': summarize_results,
+    'apply_response_safeguards': apply_response_safeguards,
+    'produce_concrete_response': produce_concrete_response,
+    'create_conversation_prompt': create_conversation_prompt,
+    'create_venue_recommendation': create_venue_recommendation,
+    'InMemoryIndex': InMemoryIndex,
+}
