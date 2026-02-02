@@ -15,6 +15,7 @@ from urllib.parse import urlparse
 
 from .synthesis_enhancer import SynthesisEnhancer
 from .snippet_filters import looks_like_ddgs_disambiguation_text
+from .venue_quality import filter_high_quality_venues, calculate_venue_quality_score, enhance_chinese_venue_processing
 
 
 def _persist_quick_guide(out_obj: Dict, city_name: str, neighborhood_name: str, file_path: Path) -> None:
@@ -1406,7 +1407,7 @@ def _search_impl(payload):
             poi_type = "restaurant"  # default
             category_mapping = {
                 "food": "restaurant",
-                "restaurants": "restaurant", 
+                "restaurants": "restaurant",
                 "dining": "restaurant",
                 "hotel": "hotel",
                 "hotels": "hotel",
@@ -1414,11 +1415,21 @@ def _search_impl(payload):
                 "attractions": "tourism",
                 "attraction": "tourism",
                 "sights": "tourism",
-                "historic": "tourism",  # Historic sites map to tourism
+                "historic": "tourism",
                 "historic sites": "tourism",
+                "historical": "historic",
+                "culture": "museum",
+                "art": "museum",
+                "museum": "museum",
+                "museums": "museum",
+                "nature": "park",
+                "park": "park",
+                "parks": "park",
+                "garden": "park",
+                "gardens": "park",
                 "shopping": "shop",
                 "shops": "shop",
-                "nightlife": "bar",  # Search for bars specifically
+                "nightlife": "bar",
                 "entertainment": "amenity",
                 "public transport": "amenity",
                 "transport": "amenity",
@@ -1443,6 +1454,8 @@ def _search_impl(payload):
                 # Format venues for response and add images
                 formatted_venues = []
                 for venue in venues[:limit]:
+                    # Apply Chinese venue processing first
+                    venue = enhance_chinese_venue_processing(venue)
                     # First try venue's native address
                     address = venue.get("address", "")
                     lat = venue.get("lat")
@@ -1560,9 +1573,6 @@ def _search_impl(payload):
                         is_food = any(keyword in tags_str for keyword in ["restaurant", "cafe", "food", "cuisine", "couscous", "kitchen"])
                         if is_shop and not is_food:
                             shopping_venues.append(venue)
-                    # If we filtered too aggressively, return all results
-                    if len(shopping_venues) < 3:
-                        shopping_venues = formatted_venues
                     result["venues"] = shopping_venues
                     print(f"[SEARCH DEBUG] Filtered to {len(shopping_venues)} shopping venues")
                 elif q == "nightlife":
@@ -1644,6 +1654,11 @@ def _search_impl(payload):
                     print(f"[SEARCH DEBUG] Filtered to {len(historic_venues)} historic venues (strict mode)")
                 else:
                     result["venues"] = formatted_venues
+                
+                # Apply venue quality filtering
+                high_quality_venues = filter_high_quality_venues(result["venues"])
+                result["debug_info"]["quality_filtered"] = len(result["venues"]) - len(high_quality_venues)
+                result["venues"] = high_quality_venues
                 
                 result["debug_info"]["venues_found"] = len(result["venues"])
                 
