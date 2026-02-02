@@ -1,5 +1,6 @@
 import re
-import requests
+import asyncio
+from city_guides.providers.utils import http_post
 
 NEIGHBOR_TESTS = [
     {'city': 'Guadalajara, Mexico', 'neighborhood': 'Las Conchas'},
@@ -19,11 +20,15 @@ def is_disambig_text(s: str) -> bool:
 
 def test_neighborhood_quick_guides_are_sane():
     url = 'http://localhost:5010/generate_quick_guide'
-    for t in NEIGHBOR_TESTS:
-        resp = requests.post(url, json={'city': t['city'], 'neighborhood': t['neighborhood']}, timeout=15)
-        assert resp.status_code == 200
-        j = resp.json()
-        q = (j.get('quick_guide') or '').lower()
-        assert t['neighborhood'].split(',')[0].lower() in q or re.sub(r'[^a-z0-9]+','',t['neighborhood'].lower()) in re.sub(r'[^a-z0-9]+','',q)
-        assert not is_disambig_text(q)
-        assert len(q) > 40
+    
+    async def test_all():
+        for t in NEIGHBOR_TESTS:
+            resp_data, error = await http_post(url, json_data={'city': t['city'], 'neighborhood': t['neighborhood']}, timeout=15)
+            assert error is None, f"Request failed for {t['neighborhood']}: {error}"
+            assert resp_data is not None, f"No response data for {t['neighborhood']}"
+            q = (resp_data.get('quick_guide') or '').lower()
+            assert t['neighborhood'].split(',')[0].lower() in q or re.sub(r'[^a-z0-9]+','',t['neighborhood'].lower()) in re.sub(r'[^a-z0-9]+','',q)
+            assert not is_disambig_text(q)
+            assert len(q) > 40
+    
+    asyncio.run(test_all())

@@ -1,5 +1,6 @@
 import pytest
-import requests
+import asyncio
+from city_guides.providers.utils import http_post
 
 BASE = 'http://localhost:5010'
 
@@ -9,33 +10,33 @@ BASE = 'http://localhost:5010'
     ('Guadalajara, Mexico', 'Santa Tere'),
 ])
 def test_low_confidence_neighborhoods_return_minimal(city, neighborhood):
-    try:
-        r = requests.post(BASE + '/generate_quick_guide', json={'city': city, 'neighborhood': neighborhood}, timeout=10)
-        r.raise_for_status()
-        j = r.json()
-    except requests.RequestException:
-        pytest.skip('Backend not available')
-    assert j.get('confidence') == 'low'
-    assert j.get('quick_guide') == f"{neighborhood} is a neighborhood in {city}."
+    async def make_request():
+        resp_data, error = await http_post(BASE + '/generate_quick_guide', json_data={'city': city, 'neighborhood': neighborhood}, timeout=10)
+        if error:
+            pytest.skip('Backend not available')
+        assert resp_data.get('confidence') == 'low'
+        assert resp_data.get('quick_guide') == f"{neighborhood} is a neighborhood in {city}."
+    
+    asyncio.run(make_request())
 
 
 def test_analco_is_medium_confidence():
-    try:
-        r = requests.post(BASE + '/generate_quick_guide', json={'city': 'Guadalajara, Mexico', 'neighborhood': 'Analco'}, timeout=10)
-        r.raise_for_status()
-        j = r.json()
-    except requests.RequestException:
-        pytest.skip('Backend not available')
-    assert j.get('confidence') in ('medium','high')
-    assert len(j.get('quick_guide','')) > 40
+    async def make_request():
+        resp_data, error = await http_post(BASE + '/generate_quick_guide', json_data={'city': 'Guadalajara, Mexico', 'neighborhood': 'Analco'}, timeout=10)
+        if error:
+            pytest.skip('Backend not available')
+        assert resp_data.get('confidence') in ('medium','high')
+        assert len(resp_data.get('quick_guide','')) > 40
+    
+    asyncio.run(make_request())
 
 
 def test_copacabana_is_high_confidence():
-    try:
-        r = requests.post(BASE + '/generate_quick_guide', json={'city': 'Rio de Janeiro', 'neighborhood': 'Copacabana'}, timeout=10)
-        r.raise_for_status()
-        j = r.json()
-    except requests.RequestException:
-        pytest.skip('Backend not available')
-    assert j.get('confidence') == 'high'
-    assert 'beach' in j.get('quick_guide','').lower()
+    async def make_request():
+        resp_data, error = await http_post(BASE + '/generate_quick_guide', json_data={'city': 'Rio de Janeiro', 'neighborhood': 'Copacabana'}, timeout=10)
+        if error:
+            pytest.skip('Backend not available')
+        assert resp_data.get('confidence') == 'high'
+        assert 'beach' in resp_data.get('quick_guide','').lower()
+    
+    asyncio.run(make_request())
