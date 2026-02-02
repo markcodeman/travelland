@@ -101,7 +101,9 @@ CURATED_NEIGHBORHOODS = {
 def _norm_name(name: str) -> str:
     if not name:
         return ""
-    s = name.lower()
+    # Transliterate non-Latin scripts first
+    s = _transliterate_name(name)
+    s = s.lower()
     s = re.sub(r"[^a-z0-9 ]+", " ", s)
     s = re.sub(r"\s+", " ", s).strip()
     return s
@@ -139,6 +141,16 @@ def _transliterate_name(name: str) -> str:
     normalized = unicodedata.normalize('NFKD', name)
     ascii_only = ''.join(c for c in normalized if ord(c) < 128)
     return ascii_only.strip() or name
+
+
+def _normalize_display_name(name: str) -> str:
+    if not name:
+        return name
+    n = name.strip()
+    # Normalize common transliteration variants for user-facing display
+    if n.lower() == "theseio":
+        return "Thissio"
+    return n
 
 
 def _haversine_meters(lat1, lon1, lat2, lon2):
@@ -659,14 +671,66 @@ async def async_get_neighborhoods(city: str | None = None, lat: float | None = N
     ranked_results = _rank_neighborhoods_by_relevance(unique_results, city_center)
     
     # Apply transliteration to non-Latin names for English speakers
+    # and add dynamic descriptions for known neighborhoods
     for r in ranked_results:
         original_name = r.get('name', '')
         if original_name:
             r['name_original'] = original_name
-            r['name'] = _transliterate_name(original_name)
+            r['name'] = _normalize_display_name(_transliterate_name(original_name))
+            # Add description for known tourist neighborhoods
+            name_lower = r['name'].lower().strip()
+            r['description'] = _get_neighborhood_description(name_lower)
     
     # Return top 25 most relevant neighborhoods
     return ranked_results[:25]
+
+
+def _get_neighborhood_description(name_lower: str) -> str:
+    """Get dynamic description for known tourist neighborhoods."""
+    NEIGHBORHOOD_DESCRIPTIONS = {
+        # Athens
+        'plaka': "The 'neighborhood of the gods,' known for its historical, picturesque streets under the Acropolis",
+        'monastiraki': "A bustling, eclectic area famous for its flea market, ruins, and rooftop bars",
+        'kolonaki': "An upscale, fashionable neighborhood with high-end boutiques and cafes",
+        'psyrri': "Known for its vibrant, edgy nightlife, trendy cafes, and artistic scene",
+        'psiri': "Known for its vibrant, edgy nightlife, trendy cafes, and artistic scene",
+        'koukaki': "A popular, walkable area near the Acropolis Museum with a local vibe",
+        'thissio': "A charming, quieter area with cafes offering great views of the Acropolis",
+        'thisio': "A charming, quieter area with cafes offering great views of the Acropolis",
+        'theseio': "A charming, quieter area with cafes offering great views of the Acropolis",
+        'exarchia': "An edgy, artistic district known for its student population, street art, and bookstores",
+        'exarcheia': "An edgy, artistic district known for its student population, street art, and bookstores",
+        'pangrati': "A charming, local neighborhood near the Panathenaic Stadium with tree-lined streets",
+        'gazi': "The city's main nightlife hub, featuring restaurants and clubs",
+        'gkazi': "The city's main nightlife hub, featuring restaurants and clubs",
+        'keramikos': "Historic area with ancient cemetery and vibrant nightlife scene",
+        'kerameikos': "Historic area with ancient cemetery and vibrant nightlife scene",
+        # Rome
+        'trastevere': "Bohemian riverside neighborhood with trattorias and cobblestone streets",
+        'monti': "Vintage shopping and aperitivo culture in Rome's oldest neighborhood",
+        'testaccio': "Working-class food traditions and authentic Roman cuisine",
+        # Barcelona
+        'el born': "Trendy medieval quarter with boutiques and tapas bars",
+        'gracia': "Village atmosphere with plazas and local character",
+        # London
+        'shoreditch': "Street art and hipster nightlife hub",
+        'camden': "Alternative culture and famous markets",
+        # Paris
+        'le marais': "Historic Jewish quarter, LGBTQ+ friendly with boutiques",
+        'montmartre': "Artist hill with village atmosphere and Sacré-Cœur",
+        # Tokyo
+        'shibuya': "Youth culture, fashion, and nightlife",
+        'shinjuku': "Neon nightlife and business district",
+        # Bangkok
+        'sukhumvit': "Expat nightlife, malls, and street food",
+        'silom': "Business district by day, street food and nightlife after dark",
+        # NYC
+        'greenwich village': "Bohemian history and jazz clubs",
+        'williamsburg': "Hipster central with craft everything",
+        'soho': "Cast-iron architecture and upscale shopping",
+        'chelsea': "Art galleries and High Line park",
+    }
+    return NEIGHBORHOOD_DESCRIPTIONS.get(name_lower, "")
 
 
 def _rank_neighborhoods_by_relevance(neighborhoods: list[dict], city_center: tuple[float, float] | None) -> list[dict]:
@@ -674,6 +738,61 @@ def _rank_neighborhoods_by_relevance(neighborhoods: list[dict], city_center: tup
     
     Curated neighborhoods get highest priority, followed by OSM results based on scores.
     """
+    
+    # Known tourist neighborhoods get a boost (normalized names)
+    TOURIST_NEIGHBORHOODS = {
+        # Athens
+        'plaka', 'monastiraki', 'kolonaki', 'psyrri', 'psiri', 'koukaki', 'thissio', 'thisio', 'theseio',
+        'exarchia', 'exarcheia', 'pangrati', 'gazi', 'gkazi', 'keramikos', 'kerameikos',
+        # Other major cities
+        'trastevere', 'monti', 'testaccio', 'el born', 'gracia', 'shoreditch', 'camden',
+        'le marais', 'montmartre', 'shibuya', 'shinjuku', 'sukhumvit', 'silom',
+        'greenwich village', 'williamsburg', 'soho', 'chelsea',
+    }
+    
+    # Dynamic descriptions for known neighborhoods
+    NEIGHBORHOOD_DESCRIPTIONS = {
+        # Athens
+        'plaka': "The 'neighborhood of the gods,' known for its historical, picturesque streets under the Acropolis",
+        'monastiraki': "A bustling, eclectic area famous for its flea market, ruins, and rooftop bars",
+        'kolonaki': "An upscale, fashionable neighborhood with high-end boutiques and cafes",
+        'psyrri': "Known for its vibrant, edgy nightlife, trendy cafes, and artistic scene",
+        'psiri': "Known for its vibrant, edgy nightlife, trendy cafes, and artistic scene",
+        'koukaki': "A popular, walkable area near the Acropolis Museum with a local vibe",
+        'thissio': "A charming, quieter area with cafes offering great views of the Acropolis",
+        'thisio': "A charming, quieter area with cafes offering great views of the Acropolis",
+        'exarchia': "An edgy, artistic district known for its student population, street art, and bookstores",
+        'exarcheia': "An edgy, artistic district known for its student population, street art, and bookstores",
+        'pangrati': "A charming, local neighborhood near the Panathenaic Stadium with tree-lined streets",
+        'gazi': "The city's main nightlife hub, featuring restaurants and clubs",
+        'gkazi': "The city's main nightlife hub, featuring restaurants and clubs",
+        'keramikos': "Historic area with ancient cemetery and vibrant nightlife scene",
+        'kerameikos': "Historic area with ancient cemetery and vibrant nightlife scene",
+        # Rome
+        'trastevere': "Bohemian riverside neighborhood with trattorias and cobblestone streets",
+        'monti': "Vintage shopping and aperitivo culture in Rome's oldest neighborhood",
+        'testaccio': "Working-class food traditions and authentic Roman cuisine",
+        # Barcelona
+        'el born': "Trendy medieval quarter with boutiques and tapas bars",
+        'gracia': "Village atmosphere with plazas and local character",
+        # London
+        'shoreditch': "Street art and hipster nightlife hub",
+        'camden': "Alternative culture and famous markets",
+        # Paris
+        'le marais': "Historic Jewish quarter, LGBTQ+ friendly with boutiques",
+        'montmartre': "Artist hill with village atmosphere and Sacré-Cœur",
+        # Tokyo
+        'shibuya': "Youth culture, fashion, and nightlife",
+        'shinjuku': "Neon nightlife and business district",
+        # Bangkok
+        'sukhumvit': "Expat nightlife, malls, and street food",
+        'silom': "Business district by day, street food and nightlife after dark",
+        # NYC
+        'greenwich village': "Bohemian history and jazz clubs",
+        'williamsburg': "Hipster central with craft everything",
+        'soho': "Cast-iron architecture and upscale shopping",
+        'chelsea': "Art galleries and High Line park",
+    }
     
     def calculate_score(n: dict) -> float:
         score = 100.0  # Base score
@@ -683,10 +802,19 @@ def _rank_neighborhoods_by_relevance(neighborhoods: list[dict], city_center: tup
             return -9999  # Lowest possible score to filter out
         
         name = n.get('name', '')
+        # Transliterate for matching against known neighborhoods
+        name_transliterated = _transliterate_name(name).lower().strip()
+        name_lower = name.lower().strip()
         
         # 0. Curated neighborhoods get massive priority bonus
         if n.get('source') == 'curated':
             score += n.get('curated_priority', 1000)
+        
+        # 0.5 Known tourist neighborhoods get a big boost (check both original and transliterated)
+        if name_transliterated in TOURIST_NEIGHBORHOODS or any(t in name_transliterated for t in TOURIST_NEIGHBORHOODS):
+            score += 800
+        elif name_lower in TOURIST_NEIGHBORHOODS or any(t in name_lower for t in TOURIST_NEIGHBORHOODS):
+            score += 800
         
         # 1. Centrality - closer to city center = higher score
         if city_center:
@@ -716,7 +844,6 @@ def _rank_neighborhoods_by_relevance(neighborhoods: list[dict], city_center: tup
         
         # 4. Penalize non-touristy patterns (housing estates, industrial zones, etc.)
         # Aggressive penalization for residential/factory patterns
-        name_lower = name.lower()
         
         # Residential/housing patterns (high penalty)
         residential_patterns = ['village', 'community', 'housing', 'estate', 'residential']
@@ -730,6 +857,13 @@ def _rank_neighborhoods_by_relevance(neighborhoods: list[dict], city_center: tup
         for pattern in thai_residential:
             if pattern in name:
                 score -= 400
+                break
+        
+        # Greek admin district patterns (Demotike Koinoteta = municipal community)
+        greek_admin = ['demotike', 'koinoteta', 'dimotiki', 'δημοτική', 'κοινότητα']
+        for pattern in greek_admin:
+            if pattern in name_lower:
+                score -= 600
                 break
         
         # Other bad patterns (medium penalty)

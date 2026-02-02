@@ -649,7 +649,7 @@ function App() {
     if (location.city) {
       const smartData = await fetchSmartNeighborhoods(location.city, label);
       
-      if (smartData.is_large_city && smartData.neighborhoods.length > 0) {
+      if (smartData.neighborhoods && smartData.neighborhoods.length > 0) {
         // Show neighborhood picker for large cities
         setSmartNeighborhoods(smartData.neighborhoods);
         setPendingCategory({ intent, label });
@@ -695,7 +695,7 @@ function App() {
     if (location.city) {
       const smartData = await fetchSmartNeighborhoods(location.city, label);
       
-      if (smartData.is_large_city && smartData.neighborhoods.length > 0) {
+      if (smartData.neighborhoods && smartData.neighborhoods.length > 0) {
         // Show neighborhood picker for large cities
         setSmartNeighborhoods(smartData.neighborhoods);
         setPendingCategory({ intent: id, label });

@@ -1015,20 +1015,35 @@ async def api_smart_neighborhoods():
         return jsonify({'is_large_city': False, 'neighborhoods': []}), 400
     
     try:
-        # Import the neighborhood suggestions module
-        from city_guides.providers.neighborhood_suggestions import (
-            get_neighborhood_suggestions, 
-            is_large_city
-        )
-        
-        # Check if this is a large city
-        large_city = is_large_city(city)
-        
-        # Get neighborhood suggestions (run sync function in thread)
-        neighborhoods = await asyncio.to_thread(get_neighborhood_suggestions, city, category)
-        
+        # Coordinate-first neighborhoods to avoid ambiguous city names and seed fallbacks.
+        # This uses our geocode_city strategy (local data / Geoapify / etc.) and then Overpass via multi_provider.
+        geo = await geocode_city(city)
+        lat = geo.get('lat') if geo else None
+        lon = geo.get('lon') if geo else None
+        if lat is None or lon is None:
+            return jsonify({'is_large_city': False, 'neighborhoods': [], 'city': city, 'category': category}), 200
+
+        raw = await multi_provider.async_get_neighborhoods(city=city, lat=float(lat), lon=float(lon), lang='en', session=aiohttp_session)
+        raw = raw or []
+
+        # Return a set for the UI (allow >9 so key neighborhoods don't get clipped)
+        neighborhoods = []
+        for n in raw:
+            name = n.get('name')
+            if not name:
+                continue
+            # Use description from multi_provider (which includes dynamic descriptions for known neighborhoods)
+            desc = n.get('description') or n.get('vibe') or f"Neighborhood in {city}"
+            neighborhoods.append({
+                'name': name,
+                'description': desc,
+                'type': n.get('type') or 'culture'
+            })
+            if len(neighborhoods) >= 20:
+                break
+
         return jsonify({
-            'is_large_city': large_city,
+            'is_large_city': len(neighborhoods) >= 4,
             'neighborhoods': neighborhoods,
             'city': city,
             'category': category

@@ -885,7 +885,7 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
             # Use provided coordinates or fallback to bbox
             if lat and lon:
                 # Use around() query with provided coordinates
-                radius = float(os.getenv("NEIGHBORHOOD_DEFAULT_BUFFER_KM", 5.0))
+                radius = float(os.getenv("NEIGHBORHOOD_DEFAULT_BUFFER_KM", 8.0))
                 q = f"""
                     [out:json][timeout:25];
                     (
@@ -933,11 +933,13 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
                         results.extend([
                             {
                                 "id": f"{el.get('type')}/{el.get('id')}",
-                                "name": el.get("tags", {}).get("name"),
-                                "slug": re.sub(r"[^a-z0-9]+", "_", (el.get("tags", {}).get("name") or "").lower()).strip("_"),
+                                "name": el.get("tags", {}).get("name:en") or el.get("tags", {}).get("name"),
+                                "name_local": el.get("tags", {}).get("name"),
+                                "slug": re.sub(r"[^a-z0-9]+", "_", (el.get("tags", {}).get("name:en") or el.get("tags", {}).get("name") or "").lower()).strip("_"),
                                 "center": ({"lat": el["center"]["lat"], "lon": el["center"]["lon"]} if "center" in el else ({"lat": el.get("lat"), "lon": el.get("lon")} if ("lat" in el and "lon" in el) else None)),
                                 "bbox": (el.get("bounds") or el.get("bbox") if el.get("type") == "relation" else None) or ( [ (el["center"]["lon"] - 0.01), (el["center"]["lat"] - 0.01), (el["center"]["lon"] + 0.01), (el["center"]["lat"] + 0.01) ] if "center" in el else None),
                                 "source": "osm",
+                                "tags": el.get("tags", {}),
                             }
                             for el in elements if el.get("tags", {}).get("name")
                         ])
