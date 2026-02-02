@@ -69,7 +69,10 @@ def ensure_bbox(neighborhood: Dict) -> Dict:
     if neighborhood.get('bbox'):
         return neighborhood
     
-    center = neighborhood.get('center', {})
+    center = neighborhood.get('center')
+    if center is None:
+        center = {}
+    
     lat = center.get('lat')
     lon = center.get('lon')
     

@@ -1431,6 +1431,18 @@ async def _recommend_neighborhoods_impl(prompt, key, neighborhoods, city, cache_
 
 from typing import Optional
 
+# Import Marco response enhancer
+try:
+    from .marco_response_enhancer import enhance_marco_response, is_generic_marco_response
+    MARCO_ENHANCER_AVAILABLE = True
+except Exception:
+    MARCO_ENHANCER_AVAILABLE = False
+    def enhance_marco_response(response, query, city, venues, neighborhoods):
+        return response
+    def is_generic_marco_response(response):
+        return False
+
+
 async def search_and_reason(
     query, city=None, mode="explorer", context_venues=None, weather=None, neighborhoods=None, session: Optional[aiohttp.ClientSession] = None, wikivoyage=None, history: str = None
 ):

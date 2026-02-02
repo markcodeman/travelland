@@ -23,7 +23,7 @@ export default function SearchResults({ results, cityImage, cityImageMeta }) {
 
   return (
     <div className="search-results">
-      {quick && <QuickGuide guide={quick} images={images} source={results.source} source_url={results.source_url} cityImage={cityImage} cityImageMeta={cityImageMeta} />}
+      {quick && <QuickGuide guide={quick} images={images} source={results.source} source_url={results.source_url} />}
 
       {venues.length > 0 && (
         <section>
@@ -34,34 +34,12 @@ export default function SearchResults({ results, cityImage, cityImageMeta }) {
             </button>
           </div>
           {showVenues && (
-            <div className="venues-grid">
+            <div>
               {venues.map((v, i) => (
                 <article key={i} className="venue-card">
-                  {v.images && v.images.length > 0 && (
-                    <div className="venue-image">
-                      <img src={v.images[0].url} alt={v.name} onError={(e) => e.target.style.display='none'} />
-                    </div>
-                  )}
-                  <div className="venue-card-head">
-                    <div className="venue-title">
-                      {v.name ? (
-                        <a href={getMapsUrl(v)} target="_blank" rel="noopener noreferrer">{v.name}</a>
-                      ) : (
-                        <span>{v.name}</span>
-                      )}
-                      {v.provider === 'wikivoyage' && <span className="badge-wikivoyage">WIKIVOYAGE</span>}
-                    </div>
-                    <div className="venue-price">{v.price_range || ''}</div>
-                  </div>
-                  <div className="venue-body">
-                    <p className="venue-text">{v.description && v.description.length > 240 ? v.description.slice(0,240) + '…' : (v.description || '')}</p>
-                    {v.address && !v.address.includes(',') && <p className="venue-address"> {v.address}</p>}
-                    {v.address && v.address.includes(',') && <p className="venue-address"> Tokyo, Japan</p>}
-                  </div>
-                  <div className="venue-actions">
-                    {v.website && <a className="btn-link" href={v.website} target="_blank" rel="noopener noreferrer">Website</a>}
-                    <a className="btn-link" href={getMapsUrl(v)} target="_blank" rel="noopener noreferrer">Directions</a>
-                  </div>
+                  <h3>{v.name}</h3>
+                  <p>{v.description}</p>
+                  <a className="btn-link" href={getMapsUrl(v)} target="_blank" rel="noopener noreferrer">Directions</a>
                 </article>
               ))}
             </div>

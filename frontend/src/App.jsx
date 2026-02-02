@@ -9,6 +9,8 @@ import SimpleLocationSelector from './components/SimpleLocationSelector';
 import CitySuggestions from './components/CitySuggestions';
 import NeighborhoodPicker from './components/NeighborhoodPicker';
 import HeroImage from './components/HeroImage';
+import SearchResults from './components/SearchResults';
+import FunFact from './components/FunFact';
 import { getHeroImage, getHeroImageMeta } from './services/imageService';
 
 // Constants moved outside component to avoid recreation
@@ -785,6 +787,18 @@ function App() {
             loading={cityGuideLoading}
             heroImage={heroImage}
             heroImageMeta={heroImageMeta}
+          />
+        )}
+
+        {/* Fun Fact - Display below hero image */}
+        {location.city && !category && !selectedSuggestion && (
+          <FunFact city={location.city} />
+        )}
+
+        {/* City Guide with Fun Facts - Display below hero image */}
+        {location.city && results && !category && !selectedSuggestion && (
+          <SearchResults 
+            results={results} 
           />
         )}
 

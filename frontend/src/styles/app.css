@@ -217,7 +217,7 @@ body {
 
   .mobile-logo-full {
     width: 100%;
-    height: 40px;
+    height: 30px;
     border-radius: 4px;
     background: var(--white);
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -226,7 +226,7 @@ body {
 
   .mobile-logo-horizontal {
     width: auto !important;
-    max-width: 100%;
+    max-width: 110%;
     height: 60px !important;
     border-radius: 8px;
     background: var(--white);
@@ -238,6 +238,7 @@ body {
 @media (min-width: 769px) {
   .hero .mobile-banner .mobile-logo-horizontal {
     height: 40px !important; /* Much smaller on desktop */
+    width: 300px !important;
   }
 }
   
@@ -339,7 +340,7 @@ body {
 .hero .mobile-banner .mobile-logo-horizontal {
   width: auto !important;
   max-width: 100%;
-  height: 60px !important;
+  height: 300px !important;
   border-radius: 8px;
   background: var(--white);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -348,9 +349,9 @@ body {
 
 /* Desktop breakpoint - make logo much smaller */
 @media (min-width: 769px) {
-  .hero .mobile-banner .mobile-logo-horizontal {
-    height: 40px !important; /* Much smaller on desktop */
-  }
+.hero .mobile-banner .mobile-logo-horizontal {
+  height: 200px !important; /* Much larger on desktop */
+}
 }
 
 h1 {

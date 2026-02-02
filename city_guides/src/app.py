@@ -806,6 +806,184 @@ async def api_neighborhoods():
         app.logger.exception('Failed to fetch neighborhoods')
         return jsonify([])
 
+@app.route('/api/fun-fact', methods=['POST'])
+async def get_fun_fact():
+    """Get a fun fact about a city"""
+    try:
+        payload = await request.get_json(silent=True) or {}
+        city = payload.get('city', '').strip()
+        
+        if not city:
+            return jsonify({'error': 'city required'}), 400
+        
+        # Fun facts database for major cities
+        fun_facts = {
+            'paris': [
+                "The Eiffel Tower was originally intended to be a temporary structure for the 1889 World's Fair and was almost torn down in 1909!",
+                "Paris has the highest density of bakeries in the world - there are over 1,200 bakeries in the city!",
+                "The Louvre is the world's largest art museum and a former royal palace that took 800 years to complete.",
+                "Parisians consume around 16 million baguettes every day - that's about half a baguette per person!",
+                "The Paris Métro is one of the densest subway systems in the world, with 245 stations within 86.9 km²."
+            ],
+            'london': [
+                "The Tower of London houses ravens, and there's a legend that if the ravens leave, the kingdom will fall!",
+                "London has over 170 museums, including the British Museum which is free to visit.",
+                "The London Underground is the world's oldest underground railway system, opening in 1863.",
+                "Big Ben is actually the name of the bell, not the clock tower - the tower is called Elizabeth Tower.",
+                "London has more than 8 million trees, making it one of the greenest major cities in the world."
+            ],
+            'new york': [
+                "New York City has over 800 languages spoken, making it the most linguistically diverse city in the world!",
+                "The Statue of Liberty was a gift from France and was shipped in 214 crates across the Atlantic Ocean.",
+                "NYC has over 1,000 parks, with Central Park being the most famous at 843 acres.",
+                "The New York City subway system has 472 stations, more than any other metro system in the world.",
+                "Times Square was originally called Longacre Square and was renamed in 1904 after the New York Times moved there."
+            ],
+            'tokyo': [
+                "Tokyo's Shibuya Crossing is the busiest pedestrian crossing in the world, with up to 3,000 people crossing at once!",
+                "Tokyo has more Michelin-starred restaurants than any other city in the world.",
+                "The Tokyo Skytree is the second tallest structure in the world at 634 meters tall.",
+                "Tokyo's train system is the busiest in the world, with over 40 million passengers daily.",
+                "Tokyo was originally called Edo until 1868 when it was renamed Tokyo, meaning 'Eastern Capital'."
+            ],
+            'shanghai': [
+                "Shanghai has the world's longest metro system at 803 km, longer than London's Underground!",
+                "The Shanghai Tower is the second tallest building in the world at 632 meters tall.",
+                "Shanghai has more skyscrapers than any other city in the world - over 1,300 buildings taller than 150 meters!",
+                "The Bund waterfront area features 52 buildings of various architectural styles, earning it the nickname 'museum of international architecture'.",
+                "Shanghai's Maglev train is the fastest commercial train in the world, reaching speeds of 431 km/h."
+            ],
+            'barcelona': [
+                "Barcelona's Sagrada Familia has been under construction since 1882 and is still not completed!",
+                "Barcelona has 9 UNESCO World Heritage Sites, the most of any city in Spain.",
+                "The city has 4.5 km of beaches within its city limits, making it the only major European city with beaches.",
+                "Barcelona's Park Güell was originally a failed housing development project that Gaudí turned into a public park.",
+                "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!"
+            ],
+            'rome': [
+                "Rome has more fountains than any other city in the world - over 2,000 fountains!",
+                "The Colosseum could hold 50,000-80,000 spectators and had a retractable awning for shade.",
+                "Rome's Trevi Fountain collects about €3,000 in coins every day, which are donated to charity.",
+                "The Vatican City is the smallest country in the world, only 0.44 km² with a population of about 800.",
+                "Rome's Pantheon has the largest unreinforced concrete dome in the world, still the world's largest after 2,000 years!"
+            ],
+            'berlin': [
+                "Berlin has more bridges than Venice - around 1,700 bridges compared to Venice's 400!",
+                "The Berlin Wall fell on November 9, 1989, and people started chipping away at it with hammers.",
+                "Berlin's Museum Island has 5 museums and is a UNESCO World Heritage Site.",
+                "The city has more than 2,500 parks and green spaces, making it one of Europe's greenest capitals.",
+                "Berlin's TV Tower is 368 meters tall and has a revolving restaurant that makes one full rotation every hour."
+            ],
+            'amsterdam': [
+                "Amsterdam has more canals than Venice and more bridges than any other city in the world!",
+                "The city has over 1 million bicycles, which is more than the number of residents.",
+                "Amsterdam's canal houses are leaning because they were built on wooden poles that sank unevenly.",
+                "The Anne Frank House receives over 1.2 million visitors per year but can only accommodate 512 at a time.",
+                "Amsterdam has more museums per square meter than any other city in the world."
+            ],
+            'sydney': [
+                "The Sydney Harbour Bridge is the widest long-span steel-arch bridge in the world at 48.8 meters wide.",
+                "Sydney Opera House took 14 years to build and was designed by Danish architect Jørn Utzon.",
+                "Sydney has over 100 beaches, including the famous Bondi Beach which is 1 km long.",
+                "The city's Royal Botanic Gardens are the oldest scientific institution in Australia, established in 1816.",
+                "Sydney hosted the 2000 Olympics and is the only city to have hosted the Olympics twice (1932 and 2000)."
+            ],
+            'dubai': [
+                "Dubai has the world's tallest building, the Burj Khalifa at 828 meters tall.",
+                "The city has no income tax and no personal income tax, making it attractive to expatriates.",
+                "Dubai's police force uses supercars like Lamborghinis and Ferraris as patrol cars!",
+                "The city has the world's largest shopping mall by total area, the Dubai Mall.",
+                "Dubai has man-made islands including the Palm Jumeirah, which can be seen from space."
+            ],
+            'singapore': [
+                "Singapore is the only country that is also a city-state!",
+                "The city has the world's first night safari, opened in 1971.",
+                "Singapore's Changi Airport has been voted the world's best airport for over 20 consecutive years.",
+                "The city has over 5.6 million trees, earning it the nickname 'Garden City'.",
+                "Singapore's famous 'Gardens by the Bay' has supertrees that are 50 meters tall and act as vertical gardens."
+            ],
+            'bangkok': [
+                "Bangkok's full ceremonial name is the longest city name in the world at 169 characters!",
+                "The city has over 400 temples, more than any other city in the world.",
+                "Bangkok's traffic is so bad that the city has helicopter taxis for the wealthy!",
+                "The city's Chatuchak Weekend Market is the world's largest weekend market with over 15,000 stalls.",
+                "Bangkok's Skytrain is the only metro system in Thailand and carries over 700,000 passengers daily."
+            ],
+            'mumbai': [
+                "Mumbai has the most expensive real estate in the world - a single square foot can cost over $10,000!",
+                "The city's local trains carry over 7.5 million passengers daily, more than the entire population of Switzerland.",
+                "Mumbai's Dharavi slum is the largest in Asia and has an estimated annual turnover of $1 billion.",
+                "The city has the world's largest open-air laundry, the Dhobi Ghat, where thousands of clothes are washed daily.",
+                "Mumbai's 'Victoria Terminus' is a UNESCO World Heritage Site and the headquarters of India's railway network."
+            ],
+            'los angeles': [
+                "LA has more cars than people - there are about 8.5 million vehicles for 4 million residents!",
+                "Hollywood was originally called Hollywoodland and the sign was built in 1923 to advertise a housing development.",
+                "LA has the largest number of museums per capita in the US, with over 841 museums.",
+                "The city has more than 300 days of sunshine per year, earning it the nickname 'City of Angels'.",
+                "LA's freeway system is the most extensive in the world, with over 850 miles of freeways."
+            ],
+            'toronto': [
+                "Toronto has more high-rise buildings than any other city in North America except New York.",
+                "The city has over 800 restaurants on just one street - Yonge Street!",
+                "Toronto's PATH system is the largest underground shopping complex in the world with 29 km of tunnels.",
+                "The city has more than 1,500 parks and is one of the greenest cities in North America.",
+                "Toronto's CN Tower was the world's tallest free-standing structure until 2007 and still has the world's longest metal staircase."
+            ],
+            'mexico city': [
+                "Mexico City is built on a lake bed and sinks about 10 inches each year!",
+                "The city has more museums than any other city in the world - over 170 museums.",
+                "Mexico City's metro system has 195 stations and is the second largest in North America.",
+                "The city's Zócalo square is the largest city square in Latin America.",
+                "Mexico City was built on top of the Aztec capital Tenochtitlan, which was built on an island in a lake."
+            ],
+            'rio de janeiro': [
+                "Rio's Christ the Redeemer statue is struck by lightning 3-5 times per year!",
+                "The city has over 50 km of beaches, including the famous Copacabana and Ipanema.",
+                "Rio's Carnival is the world's largest carnival, attracting over 2 million people daily.",
+                "The city has more than 500 fountains, earning it the nickname 'City of Fountains'.",
+                "Rio's Sugarloaf Mountain got its name because it looked like concentrated sugar loaves to Portuguese settlers."
+            ],
+            'cairo': [
+                "Cairo is the only city in the world that has ancient monuments still standing in the middle of a modern city!",
+                "The city has more than 500 registered mosques, some dating back over 1,000 years.",
+                "Cairo's Khan el-Khalili market has been operating continuously since the 14th century.",
+                "The city's traffic lights are often just suggestions - drivers follow their own rules!",
+                "Cairo has the world's oldest university, Al-Azhar University, founded in 970 AD."
+            ],
+            'istanbul': [
+                "Istanbul is the only city in the world located on two continents - Europe and Asia!",
+                "The city's Grand Bazaar has been operating continuously since 1461 and has over 4,000 shops.",
+                "Istanbul has more than 3,000 mosques, including the famous Blue Mosque with over 20,000 blue tiles.",
+                "The city was the capital of three different empires: Roman, Byzantine, and Ottoman.",
+                "Istanbul's Hagia Sophia was the world's largest cathedral for nearly 1,000 years and is now a museum."
+            ]
+        }
+        
+        # Normalize city name
+        city_lower = city.lower().strip()
+        
+        # Get fun facts for the city
+        city_facts = fun_facts.get(city_lower, [
+            f"{city.title()} is a fascinating city with rich history and culture. Every corner tells a story waiting to be discovered!",
+            f"Welcome to {city.title()}! This city has countless interesting facts and hidden gems to explore.",
+            f"{city.title()} offers unique experiences and memorable moments for every visitor."
+        ])
+        
+        # Select a random fun fact
+        import random
+        selected_fact = random.choice(city_facts)
+        
+        return jsonify({
+            'city': city,
+            'funFact': selected_fact
+        })
+        
+    except Exception as e:
+        app.logger.exception('Fun fact fetch failed')
+        return jsonify({'error': 'Failed to fetch fun fact', 'details': str(e)}), 500
+
+
 @app.route('/api/smart-neighborhoods', methods=['GET'])
 async def api_smart_neighborhoods():
     """

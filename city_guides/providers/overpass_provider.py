@@ -881,30 +881,69 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
                 out center tags;
             """
         else:
-            bbox_str = None
+            # Try to get city center coordinates for around() query
+            center_lat, center_lon = None, None
             if lat and lon:
-                buf = float(os.getenv("NEIGHBORHOOD_DEFAULT_BUFFER_KM", 5.0)) / 111.0
-                minlat, minlon, maxlat, maxlon = lat - buf, lon - buf, lat + buf, lon + buf
-                bbox_str = f"{minlat},{minlon},{maxlat},{maxlon}"
+                center_lat, center_lon = lat, lon
+            elif city:
+                # Try to get coordinates from Nominatim result
+                try:
+                    # If we have lat/lon, use reverse geocoding to verify city
+                    if lat and lon:
+                        params = {"lat": lat, "lon": lon, "format": "json", "limit": 1}
+                    else:
+                        params = {"q": city, "format": "json", "limit": 1}
+                    headers = {"User-Agent": "CityGuides/1.0"}
+                    timeout = aiohttp.ClientTimeout(total=10)
+                    async with session.get(NOMINATIM_URL, params=params, headers=headers, timeout=timeout) as r:
+                        if r.status == 200:
+                            j = await r.json()
+                            if j:
+                                res = j[0]
+                                if res.get("lat") and res.get("lon"):
+                                    center_lat = float(res["lat"])
+                                    center_lon = float(res["lon"])
+                except Exception:
+                    pass
+            
+            if center_lat and center_lon:
+                # Use around() query for node-based cities like Athens
+                radius = float(os.getenv("NEIGHBORHOOD_DEFAULT_BUFFER_KM", 5.0))
+                q = f"""
+                    [out:json][timeout:25];
+                    (
+                      relation["place"~"neighbourhood|suburb|quarter|city_district|district|locality"](around:{radius*1000},{center_lat},{center_lon});
+                      way["place"~"neighbourhood|suburb|quarter|city_district|district|locality"](around:{radius*1000},{center_lat},{center_lon});
+                      node["place"~"neighbourhood|suburb|quarter|city_district|district|locality"](around:{radius*1000},{center_lat},{center_lon});
+                    );
+                    out center tags;
+                """
             else:
-                bb = await async_geocode_city(city or "", session=session)
-                if bb:
-                    # async_geocode_city returns (west, south, east, north)
-                    west, south, east, north = bb
-                    bbox_str = f"{south},{west},{north},{east}"
+                # Fallback to bbox query
+                bbox_str = None
+                if lat and lon:
+                    buf = float(os.getenv("NEIGHBORHOOD_DEFAULT_BUFFER_KM", 5.0)) / 111.0
+                    minlat, minlon, maxlat, maxlon = lat - buf, lon - buf, lat + buf, lon + buf
+                    bbox_str = f"{minlat},{minlon},{maxlat},{maxlon}"
+                else:
+                    bb = await async_geocode_city(city or "", session=session)
+                    if bb:
+                        # async_geocode_city returns (west, south, east, north)
+                        west, south, east, north = bb
+                        bbox_str = f"{south},{west},{north},{east}"
 
-            if not bbox_str:
-                return []
+                if not bbox_str:
+                    return []
 
-            q = f"""
-                [out:json][timeout:25];
-                (
-                  relation["place"~"neighbourhood|suburb|quarter|city_district|district|locality"]({bbox_str});
-                  way["place"~"neighbourhood|suburb|quarter|city_district|district|locality"]({bbox_str});
-                  node["place"~"neighbourhood|suburb|quarter|city_district|district|locality"]({bbox_str});
-                );
-                out center tags;
-            """
+                q = f"""
+                    [out:json][timeout:25];
+                    (
+                      relation["place"~"neighbourhood|suburb|quarter|city_district|district|locality"]({bbox_str});
+                      way["place"~"neighbourhood|suburb|quarter|city_district|district|locality"]({bbox_str});
+                      node["place"~"neighbourhood|suburb|quarter|city_district|district|locality"]({bbox_str});
+                    );
+                    out center tags;
+                """
 
         # call overpass endpoints
         results = []

@@ -39,7 +39,29 @@ city_mappings = {
     'reykjavik': {'city': 'Reykjavik', 'country': 'IS', 'countryName': 'Iceland'},
     'zurich': {'city': 'Zurich', 'country': 'CH', 'countryName': 'Switzerland'},
     'tysons': {'city': 'Tysons', 'country': 'US', 'countryName': 'United States', 'state': 'VA', 'stateName': 'Virginia'},
-    'virginia': {'city': 'Richmond', 'country': 'US', 'countryName': 'United States', 'state': 'VA', 'stateName': 'Virginia'}
+    'virginia': {'city': 'Richmond', 'country': 'US', 'countryName': 'United States', 'state': 'VA', 'stateName': 'Virginia'},
+    
+    # Additional major cities
+    'shanghai': {'city': 'Shanghai', 'country': 'CN', 'countryName': 'China'},
+    'beijing': {'city': 'Beijing', 'country': 'CN', 'countryName': 'China'},
+    'hong kong': {'city': 'Hong Kong', 'country': 'HK', 'countryName': 'Hong Kong'},
+    'seoul': {'city': 'Seoul', 'country': 'KR', 'countryName': 'South Korea'},
+    'jakarta': {'city': 'Jakarta', 'country': 'ID', 'countryName': 'Indonesia'},
+    'manila': {'city': 'Manila', 'country': 'PH', 'countryName': 'Philippines'},
+    'kuala lumpur': {'city': 'Kuala Lumpur', 'country': 'MY', 'countryName': 'Malaysia'},
+    'delhi': {'city': 'Delhi', 'country': 'IN', 'countryName': 'India'},
+    'osaka': {'city': 'Osaka', 'country': 'JP', 'countryName': 'Japan'},
+    'los angeles': {'city': 'Los Angeles', 'country': 'US', 'countryName': 'United States', 'state': 'CA', 'stateName': 'California'},
+    'chicago': {'city': 'Chicago', 'country': 'US', 'countryName': 'United States', 'state': 'IL', 'stateName': 'Illinois'},
+    'miami': {'city': 'Miami', 'country': 'US', 'countryName': 'United States', 'state': 'FL', 'stateName': 'Florida'},
+    'montreal': {'city': 'Montreal', 'country': 'CA', 'countryName': 'Canada', 'state': 'QC', 'stateName': 'Quebec'},
+    'são paulo': {'city': 'São Paulo', 'country': 'BR', 'countryName': 'Brazil', 'state': 'SP', 'stateName': 'São Paulo'},
+    'melbourne': {'city': 'Melbourne', 'country': 'AU', 'countryName': 'Australia', 'state': 'VIC', 'stateName': 'Victoria'},
+    'auckland': {'city': 'Auckland', 'country': 'NZ', 'countryName': 'New Zealand'},
+    'tel aviv': {'city': 'Tel Aviv', 'country': 'IL', 'countryName': 'Israel'},
+    'johannesburg': {'city': 'Johannesburg', 'country': 'ZA', 'countryName': 'South Africa'},
+    'nairobi': {'city': 'Nairobi', 'country': 'KE', 'countryName': 'Kenya'},
+    'marrakech': {'city': 'Marrakech', 'country': 'MA', 'countryName': 'Morocco'},
 }
 
 # Region mappings for areas that aren't specific cities

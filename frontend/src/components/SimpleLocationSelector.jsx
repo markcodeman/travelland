@@ -152,13 +152,15 @@ const ALL_DESTINATIONS = [
   // Middle East & Africa
   { city: 'Dubai', country: 'United Arab Emirates', emoji: '🇦🇪' },
   { city: 'Abu Dhabi', country: 'United Arab Emirates', emoji: '🇦🇪' },
+  { city: 'Istanbul', country: 'Turkey', emoji: '🇹🇷' },
+  { city: 'Ankara', country: 'Turkey', emoji: '🇹🇷' },
   { city: 'Tel Aviv', country: 'Israel', emoji: '🇮🇱' },
   { city: 'Jerusalem', country: 'Israel', emoji: '🇮🇱' },
   { city: 'Cairo', country: 'Egypt', emoji: '🇪🇬' },
   { city: 'Cape Town', country: 'South Africa', emoji: '🇿🇦' },
   { city: 'Johannesburg', country: 'South Africa', emoji: '🇿🇦' },
   { city: 'Marrakech', country: 'Morocco', emoji: '🇲🇦' },
-  { city: 'Casablanca', country: 'Morocco', emoji: '���' },
+  { city: 'Casablanca', country: 'Morocco', emoji: '🇲🇦' },
 
   // Oceania
   { city: 'Sydney', country: 'Australia', emoji: '🇦🇺' },

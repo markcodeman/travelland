@@ -89,6 +89,17 @@ CURATED_NEIGHBORHOODS = {
         {"name": "Testaccio", "vibe": "working-class food traditions", "hidden_gems": ["Testaccio Market", "Piramide Cestia"], "type": "neighborhood"},
         {"name": "Pigneto", "vibe": "artsy neighborhood, Roman Brooklyn", "hidden_gems": ["Pigneto street art", "Necci dal 1924"], "type": "neighborhood"},
     ],
+    "Athens": [
+        {"name": "Plaka", "vibe": "historic district at the foot of the Acropolis with narrow streets and neoclassical architecture", "hidden_gems": ["Anafiotika", "Museum of Greek Folk Art"], "type": "neighborhood"},
+        {"name": "Monastiraki", "vibe": "bustling flea market and vibrant nightlife area", "hidden_gems": ["Monastiraki Flea Market", "Taverna Psaras"], "type": "neighborhood"},
+        {"name": "Kolonaki", "vibe": "upscale shopping and chic cafes", "hidden_gems": ["Benaki Museum", "National Gallery"], "type": "neighborhood"},
+        {"name": "Psiri", "vibe": "edgy artistic district with street art and trendy bars", "hidden_gems": ["Street art tours", "Little Kook"], "type": "neighborhood"},
+        {"name": "Exarchia", "vibe": "student quarter with alternative culture and bookstores", "hidden_gems": ["National Technical University", "Stoa tou Vivliou"], "type": "neighborhood"},
+        {"name": "Koukaki", "vibe": "popular, walkable area near the Acropolis Museum with a local vibe", "hidden_gems": ["Acropolis Museum", "Dimitris Pikionis Park"], "type": "neighborhood"},
+        {"name": "Thissio", "vibe": "charming, quieter area with cafes offering great views of the Acropolis", "hidden_gems": ["Thissio viewpoint", "Filopappou Hill"], "type": "neighborhood"},
+        {"name": "Pangrati", "vibe": "charming, local neighborhood near the Panathenaic Stadium with tree-lined streets", "hidden_gems": ["Panathenaic Stadium", "National Garden"], "type": "neighborhood"},
+        {"name": "Gazi/Keramikos", "vibe": "city's main nightlife hub, featuring restaurants and clubs", "hidden_gems": ["Technopolis", "Keramikos Archaeological Site"], "type": "neighborhood"},
+    ],
     "Barcelona": [
         {"name": "El Born", "vibe": "trendy medieval quarter", "hidden_gems": ["Santa Maria del Mar", "Passeig del Born bars"], "type": "neighborhood"},
         {"name": "Gràcia", "vibe": "village atmosphere with plazas", "hidden_gems": ["Festa Major street festivals", "Carrer de Verdi cinemas"], "type": "neighborhood"},
