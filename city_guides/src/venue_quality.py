@@ -19,7 +19,52 @@ QUALITY_WEIGHTS = {
     'coordinates': 0.10
 }
 
-MINIMUM_QUALITY_SCORE = 0.6  # Minimum score to be considered "good"
+MINIMUM_QUALITY_SCORE = 0.7  # Minimum score to be considered "good"
+
+
+def is_venue_closed_or_disused(venue: Dict[str, Any]) -> bool:
+    """
+    Check if a venue is closed, disused, or demolished based on OSM tags.
+    
+    Returns True if venue appears to be permanently closed.
+    """
+    tags = venue.get('tags', {})
+    if isinstance(tags, str):
+        # Parse string tags to dict if needed
+        tags_dict = {}
+        for tag in tags.split(','):
+            if '=' in tag:
+                k, v = tag.split('=', 1)
+                tags_dict[k.strip()] = v.strip()
+        tags = tags_dict
+    
+    # Check for explicit closed/disused/demolished tags
+    closed_indicators = [
+        'disused:amenity', 'disused:shop', 'disused:tourism',
+        'demolished:building', 'demolished:amenity',
+        'was:amenity', 'was:shop', 'was:tourism',
+        'abandoned:amenity', 'abandoned:building',
+        'removed:amenity', 'removed:building'
+    ]
+    
+    for indicator in closed_indicators:
+        if indicator in tags:
+            return True
+    
+    # Check for status tags indicating closure
+    status_tags = ['status', 'condition', 'operational_status']
+    for tag in status_tags:
+        if tag in tags:
+            value = tags[tag].lower()
+            if any(word in value for word in ['closed', 'disused', 'demolished', 'abandoned', 'removed', 'inactive']):
+                return True
+    
+    # Check for opening hours indicating permanent closure
+    hours = tags.get('opening_hours', '').lower()
+    if hours and any(indicator in hours for indicator in ['closed', 'demolished', 'removed']):
+        return True
+    
+    return False
 
 
 def calculate_venue_quality_score(venue: Dict[str, Any]) -> float:
@@ -30,8 +75,13 @@ def calculate_venue_quality_score(venue: Dict[str, Any]) -> float:
         venue: Venue dictionary with tags, address, etc.
     
     Returns:
-        Quality score between 0.0 and 1.0
+        Quality score between 0.0 and 1.0 (0.0 if venue is closed)
     """
+    # First check if venue is closed/disused - automatic 0.0 score
+    if is_venue_closed_or_disused(venue):
+        logging.debug(f"Venue '{venue.get('name', 'Unknown')}' appears to be closed/disused")
+        return 0.0
+    
     score = 0.0
     weights = QUALITY_WEIGHTS
     
