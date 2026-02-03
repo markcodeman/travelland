@@ -3,7 +3,6 @@ import './styles/app.css';
 import AutocompleteInput from './components/AutocompleteInput';
 import WeatherDisplay from './components/WeatherDisplay';
 import Header from './components/Header';
-import SuggestionChips from './components/SuggestionChips';
 import MarcoChat from './components/MarcoChat';
 import SimpleLocationSelector from './components/SimpleLocationSelector';
 import CitySuggestions from './components/CitySuggestions';
@@ -854,8 +853,6 @@ function App() {
           </div>
         )}
 
-        <SuggestionChips onSelect={handleSuggestion} city={location.city} selected={selectedSuggestion} />
-        
         {/* Category Loading State */}
         {loading && (category || selectedSuggestion) && (
           <div style={{ 
@@ -880,7 +877,7 @@ function App() {
         )}
         
         {/* Empty state - category selected but no venues */}
-        {(category || selectedSuggestion) && !loading && venues.length === 0 && (
+        {(category || selectedSuggestion) && !loading && venues.length === 0 && location.city && (
           <div style={{ 
             marginTop: 32, 
             padding: '40px 16px',
@@ -1149,9 +1146,9 @@ function App() {
           </div>
         )}
 
+        {location.city && (
         <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap', padding: '0 16px' }}>
           <button
-            disabled={!location.city}
             onClick={() => setMarcoOpen(true)}
             style={{
               padding: '12px 24px',
@@ -1164,9 +1161,10 @@ function App() {
               fontWeight: 'bold'
             }}
           >
-            � Ask Marco for personalized tips
+            💬 Ask Marco for personalized tips
           </button>
         </div>
+      )}
 
         {marcoOpen && (
           <MarcoChat

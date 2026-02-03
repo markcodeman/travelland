@@ -39,13 +39,17 @@ const CitySuggestions = ({ city, onCategorySelect }) => {
         
         const data = await response.json();
         
+        console.log('CitySuggestions API response:', data);
+        
         if (data.categories && data.categories.length > 0) {
           setSuggestions(data.categories);
         } else {
+          console.log('No categories in response, using defaults');
           setSuggestions(defaultCategories);
         }
       } catch (err) {
         console.error('Failed to fetch city categories:', err);
+        console.log('Error details:', err.message);
         setError(err.message);
         setSuggestions(defaultCategories);
       } finally {

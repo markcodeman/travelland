@@ -201,12 +201,13 @@ def register_routes(app):
     
     def _extract_country_enhanced(display_name: str) -> str:
         """Enhanced country extraction with more patterns"""
-        # Country patterns from display names
+        # Enhanced country detection with more patterns
         country_patterns = {
             'france': ['france', 'french', 'français'],
             'italy': ['italy', 'italian', 'italia', 'italiano'],
             'spain': ['spain', 'spanish', 'españa', 'español'],
             'portugal': ['portugal', 'portuguese', 'portugal', 'português'],
+            'ireland': ['ireland', 'irish', 'dublin', 'cork', 'galway'],
             'uk': ['united kingdom', 'uk', 'britain', 'british', 'england', 'scotland', 'wales'],
             'usa': ['usa', 'united states', 'america', 'american', 'us'],
             'japan': ['japan', 'japanese', 'japón', '日本'],
@@ -221,7 +222,7 @@ def register_routes(app):
             'greece': ['greece', 'greek', 'ελλάδα'],
             'turkey': ['turkey', 'turkish', 'türkiye'],
             'russia': ['russia', 'russian', 'россия'],
-            'brazil': ['brazil', 'brazilian', 'brasil'],
+            'brazil': ['brazil', 'brazilian', 'brasil', 'rio', 'são paulo', 'brasília'],
             'argentina': ['argentina', 'argentinian', 'argentina'],
             'canada': ['canada', 'canadian'],
             'australia': ['australia', 'australian'],
@@ -230,6 +231,7 @@ def register_routes(app):
             'egypt': ['egypt', 'egyptian', 'مصر'],
             'south africa': ['south africa', 'south african'],
             'morocco': ['morocco', 'moroccan', 'المغرب'],
+            'israel': ['israel', 'israeli', 'tel aviv', 'jerusalem', 'haifa'],
             'uae': ['uae', 'emirates', 'dubai', 'abu dhabi']
         }
         
@@ -280,6 +282,15 @@ def register_routes(app):
                 {'icon': '🏘️', 'label': 'Pueblos Blancos', 'intent': 'historical'},
                 {'icon': '🥘', 'label': 'Paella & Arroz', 'intent': 'food'},
                 {'icon': '🏛️', 'label': 'Alhambra & Moorish', 'intent': 'historical'}
+            ])
+        elif country == 'ireland':
+            categories.extend([
+                {'icon': '🍺', 'label': 'Irish Pubs & Guinness', 'intent': 'nightlife'},
+                {'icon': '🎵', 'label': 'Traditional Music', 'intent': 'culture'},
+                {'icon': '🌿', 'label': 'Celtic Heritage', 'intent': 'historical'},
+                {'icon': '🌊', 'label': 'Cliffs & Coast', 'intent': 'nature'},
+                {'icon': '📚', 'label': 'Literary Pubs', 'intent': 'culture'},
+                {'icon': '🏛️', 'label': 'Georgian Architecture', 'intent': 'architecture'}
             ])
         elif country == 'uk':
             categories.extend([
@@ -354,6 +365,46 @@ def register_routes(app):
                 {'icon': '⚪', 'label': 'White & Blue Villages', 'intent': 'architecture'},
                 {'icon': '🌊', 'label': 'Sailing & Watersports', 'intent': 'water'}
             ])
+        elif country == 'brazil':
+            # Rio-specific categories
+            if 'rio' in display_name:
+                categories.extend([
+                    {'icon': '🏖️', 'label': 'Copacabana & Beaches', 'intent': 'beaches'},
+                    {'icon': '🗿', 'label': 'Christ Redeemer', 'intent': 'landmarks'},
+                    {'icon': '🎉', 'label': 'Carnival & Samba', 'intent': 'culture'},
+                    {'icon': '🚡', 'label': 'Sugarloaf Cable Car', 'intent': 'transport'},
+                    {'icon': '⚽', 'label': 'Football & Maracanã', 'intent': 'sports'},
+                    {'icon': '🌊', 'label': 'Beach Volleyball', 'intent': 'sports'}
+                ])
+            else:
+                categories.extend([
+                    {'icon': '🏖️', 'label': 'Pristine Beaches', 'intent': 'beaches'},
+                    {'icon': '🌳', 'label': 'Amazon Rainforest', 'intent': 'nature'},
+                    {'icon': '⚽', 'label': 'Football Culture', 'intent': 'sports'},
+                    {'icon': '🎉', 'label': 'Carnival & Festivals', 'intent': 'culture'},
+                    {'icon': '🥘', 'label': 'Churrasco & BBQ', 'intent': 'food'},
+                    {'icon': '💃', 'label': 'Samba & Dancing', 'intent': 'culture'}
+                ])
+        elif country == 'israel':
+            # Tel Aviv-specific categories
+            if 'tel aviv' in display_name or 'tel-aviv' in display_name:
+                categories.extend([
+                    {'icon': '🏖️', 'label': 'Beach Parties & Clubs', 'intent': 'nightlife'},
+                    {'icon': '🏙️', 'label': 'White City Architecture', 'intent': 'architecture'},
+                    {'icon': '🥗', 'label': 'Hummus & Falafel', 'intent': 'food'},
+                    {'icon': '🎨', 'label': 'Art Galleries & Street Art', 'intent': 'culture'},
+                    {'icon': '🌊', 'label': 'Mediterranean Coast', 'intent': 'beaches'},
+                    {'icon': '🚲', 'label': 'Bike Paths & Boardwalks', 'intent': 'transport'}
+                ])
+            else:
+                categories.extend([
+                    {'icon': '🕍', 'label': 'Historic Jerusalem', 'intent': 'historical'},
+                    {'icon': '🏛️', 'label': 'Ancient Sites', 'intent': 'historical'},
+                    {'icon': '🥗', 'label': 'Middle Eastern Cuisine', 'intent': 'food'},
+                    {'icon': '🌊', 'label': 'Dead Sea & Beaches', 'intent': 'beaches'},
+                    {'icon': '🕎', 'label': 'Jewish Heritage', 'intent': 'culture'},
+                    {'icon': '🌴', 'label': 'Desert & Nature', 'intent': 'nature'}
+                ])
         elif country == 'uae':
             categories.extend([
                 {'icon': '🏗️', 'label': 'Burj Khalifa & Towers', 'intent': 'architecture'},
