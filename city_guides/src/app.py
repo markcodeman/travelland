@@ -343,6 +343,13 @@ async def startup():
                 asyncio.create_task(prewarm_neighborhoods())
         except Exception:
             app.logger.exception('starting prewarm_neighborhoods failed')
+        
+        # Set redis client for simple_categories
+        try:
+            from city_guides.src.simple_categories import redis_client as simple_redis_client
+            simple_redis_client = redis_client
+        except ImportError:
+            pass
     except Exception:
         redis_client = None
         app.logger.warning("Redis not available; running without cache")
@@ -1041,6 +1048,30 @@ async def api_smart_neighborhoods():
             app.logger.warning(f"Timeout fetching neighborhoods for {city}")
             raw = []
         raw = raw or []
+
+        # Fallback: If no neighborhoods found, check for known large cities
+        if not raw:
+            city_lower = city.lower()
+            known_neighborhoods = {
+                'barcelona': ['Gothic Quarter', 'Eixample', 'Gràcia', 'El Born', 'Barceloneta', 'Poble Sec', 'Sant Antoni', 'Sarrià', 'Les Corts', 'Nou Barris'],
+                'new york': ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island', 'Harlem', 'SoHo', 'Greenwich Village', 'Times Square', 'Upper East Side'],
+                'london': ['Westminster', 'Camden', 'Shoreditch', 'Southwark', 'Kensington', 'Chelsea', 'Notting Hill', 'Covent Garden', 'Soho', 'Mayfair'],
+                'paris': ['Le Marais', 'Montmartre', 'Saint-Germain', 'Latin Quarter', 'Champs-Élysées', 'Eiffel Tower Area', 'Louvre Area', 'Belleville', 'Canal Saint-Martin', 'Bastille'],
+                'tokyo': ['Shibuya', 'Shinjuku', 'Harajuku', 'Ginza', 'Akihabara', 'Roppongi', 'Asakusa', 'Ueno', 'Ikebukuro', 'Ebisu'],
+                'rome': ['Trastevere', 'Campo de Fiori', 'Pantheon', 'Spanish Steps', 'Vatican', 'Colosseum Area', 'Monti', 'Testaccio', 'Prati', 'EUR'],
+                'madrid': ['Puerta del Sol', 'Gran Via', 'Malasaña', 'Chueca', 'La Latina', 'Salamanca', 'Chamartin', 'Retiro', 'Moncloa', 'Arganzuela'],
+                'lisbon': ['Alfama', 'Baixa', 'Chiado', 'Bairro Alto', 'Belém', 'Alcântara', 'Saldanha', 'Campo de Ourique', 'Príncipe Real', 'Parque das Nações'],
+                'seville': ['Santa Cruz', 'Triana', 'Alameda', 'Macarena', 'Nervión', 'Los Remedios', 'San Julián', 'La Cartuja', 'El Porvenir', 'San Bernardo'],
+                'amsterdam': ['Jordaan', 'De Pijp', 'Canal Ring', 'Red Light District', 'Museum Quarter', 'Oud-West', 'De Baarsjes', 'Oost', 'Noord'],
+                'berlin': ['Mitte', 'Kreuzberg', 'Neukölln', 'Prenzlauer Berg', 'Friedrichshain', 'Charlottenburg', 'Schöneberg', 'Tempelhof', 'Wedding', 'Moabit'],
+                'istanbul': ['Sultanahmet', 'Taksim', 'Karaköy', 'Galata', 'Beyoğlu', 'Kadıköy', 'Üsküdar', 'Fatih', 'Beşiktaş', 'Şişli']
+            }
+            
+            for known_city, neighborhoods in known_neighborhoods.items():
+                if known_city in city_lower or city_lower in known_city:
+                    raw = [{'name': n, 'type': 'culture'} for n in neighborhoods]
+                    app.logger.info(f"Using hardcoded neighborhoods for {city}")
+                    break
 
         # Return a set for the UI (allow >9 so key neighborhoods don't get clipped)
         neighborhoods = []

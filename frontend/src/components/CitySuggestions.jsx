@@ -27,7 +27,7 @@ const CitySuggestions = ({ city, onCategorySelect }) => {
       setError(null);
       
       try {
-        const response = await fetch('/api/city-categories', {
+        const response = await fetch('/api/categories', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ city })

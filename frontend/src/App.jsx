@@ -1146,7 +1146,8 @@ function App() {
           </div>
         )}
 
-        {location.city && (
+        {/* Only show Ask Marco button after category is selected */}
+        {location.city && (category || selectedSuggestion) && (
         <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap', padding: '0 16px' }}>
           <button
             onClick={() => setMarcoOpen(true)}

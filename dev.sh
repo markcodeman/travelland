@@ -45,7 +45,7 @@ kill_existing_services() {
 # Function to start backend service
 start_backend() {
     echo "📡 Starting City Guides backend on port 5010..."
-    cd /home/mint/Projects/travelland
+    cd /home/markcodeman/CascadeProjects/travelland
     
     # Export environment variables from .env
     if [ -f .env ]; then
@@ -53,10 +53,10 @@ start_backend() {
     fi
     
     # Use venv hypercorn if available, else fallback
-    if [ -x "./venv/bin/hypercorn" ]; then
-        ./venv/bin/hypercorn city_guides.src.app:app --bind 0.0.0.0:5010 &
-    elif [ -x "./venv/bin/python" ]; then
-        ./venv/bin/python -m hypercorn city_guides.src.app:app --bind 0.0.0.0:5010 &
+    if [ -x "./.venv/bin/hypercorn" ]; then
+        ./.venv/bin/hypercorn city_guides.src.app:app --bind 0.0.0.0:5010 &
+    elif [ -x "./.venv/bin/python" ]; then
+        ./.venv/bin/python -m hypercorn city_guides.src.app:app --bind 0.0.0.0:5010 &
     else
         hypercorn city_guides.src.app:app --bind 0.0.0.0:5010 &
     fi
@@ -68,7 +68,7 @@ start_backend() {
 # Function to start frontend service
 start_frontend() {
     echo "🎨 Starting React frontend on port 5174..."
-    cd /home/mint/Projects/travelland/frontend
+    cd /home/markcodeman/CascadeProjects/travelland/frontend
     npm run dev -- --port 5174 &
     FRONTEND_PID=$!
     echo $FRONTEND_PID > ../frontend.pid
@@ -78,7 +78,7 @@ start_frontend() {
 # Function to start Next.js service
 start_nextjs() {
     echo "⚡ Starting Next.js app on port 3000..."
-    cd /home/mint/Projects/travelland/next-app
+    cd /home/markcodeman/CascadeProjects/travelland/next-app
     npm run dev -- --port 3000 &
     NEXT_PID=$!
     echo $NEXT_PID > ../next.pid
