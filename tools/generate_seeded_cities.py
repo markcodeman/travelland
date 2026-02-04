@@ -23,7 +23,7 @@ import sys
 import json
 import argparse
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -183,7 +183,8 @@ def canonicalize_geoname(geoname):
 def write_seed_file(items, version='1.0'):
     payload = {
         'version': version,
-        'last_updated': datetime.utcnow().isoformat() + 'Z',
+        # Use timezone-aware UTC timestamp to avoid deprecation warnings and ambiguity
+        'last_updated': datetime.now(timezone.utc).isoformat(),
         'count': len(items),
         'cities': items
     }
@@ -228,13 +229,13 @@ def main():
 
     if username and aiohttp and asyncio:
         print('GeoNames username present; enriching cities via GeoNames...')
-        loop = asyncio.get_event_loop()
-        geoname_items = loop.run_until_complete(gather_with_geonames(local_names, desired, username))
+        # Use asyncio.run to avoid "no current event loop" warnings and ensure
+        # proper event loop lifecycle management.
+        geoname_items = asyncio.run(gather_with_geonames(local_names, desired, username))
         items = [canonicalize_geoname(g) for g in geoname_items]
-        # if still short, broaden search by fetching top cities
+        # if still short, broaden search by fetching top cities (already attempted inside gather_with_geonames)
         if len(items) < desired:
             print(f'Only found {len(items)} via lookup; attempting broader fetch (this may take a while)')
-            # Try again using the list of countries via gather_with_geonames already does
             items = items[:desired]
     else:
         print('No GeoNames username or aiohttp; will produce partial seed from local candidates')
