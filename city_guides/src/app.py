@@ -1232,6 +1232,13 @@ async def get_fun_fact():
                 "Antofagasta is home to La Portada, a 43-meter high natural arch that's Chile's most iconic coastal landmark.",
                 "The city grew rich from the 1866 nitrate boom and now exports more copper than any other Chilean port!",
                 "Antofagasta sits in the Atacama Desert - the driest place on Earth with some areas never recording rain!"
+            ],
+            'strasbourg': [
+                "Strasbourg is called the 'European Capital' - it hosts the European Parliament, Council of Europe, and European Court of Human Rights!",
+                "The city's Notre-Dame Cathedral was the world's tallest building from 1647 to 1874 - it's 142 meters high!",
+                "Strasbourg's Christmas market is the oldest in Europe, dating back to 1570 and attracting 2 million visitors annually.",
+                "The city is bilingual - both French and Alsatian (a German dialect) are commonly spoken on the streets.",
+                "Strasbourg's Grande Île (historic center) was the first entire city center to become a UNESCO World Heritage site in 1988!"
             ]
         }
         
