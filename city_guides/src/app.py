@@ -1134,6 +1134,13 @@ async def get_fun_fact():
                 "Gravensteen Castle sits in the middle of the city - students once conquered it (not an army)!",
                 "Ghent was once the second largest city in Europe after Paris, bigger than London or Cologne.",
                 "The city's dragon statue on the bell tower actually spits fire on special occasions."
+            ],
+            'matera': [
+                "Matera's cave dwellings (Sassi) have been inhabited for 9,000 years - the oldest in Europe!",
+                "The city was called the 'Shame of Italy' in the 1950s and 15,000 cave residents were evacuated.",
+                "Mel Gibson filmed 'The Passion of the Christ' in Matera, using it as a stand-in for ancient Jerusalem.",
+                "Matera became a UNESCO World Heritage site in 1993 and European Capital of Culture in 2019.",
+                "Families once lived in single-room caves with their livestock - heating came from manure!"
             ]
         }
         
