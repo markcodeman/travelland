@@ -917,26 +917,52 @@ def enhance_marco_response(response_text, venues):
     response_lower = response_text.lower()
     
     # Check if response mentions venue types but not specific names
+    # Detect whether any known venue name is referenced (case-insensitive, tokenized)
+    def mentions_any_venue(text_lower):
+        for venue in venues:
+            nm = venue.get('name')
+            if not nm:
+                continue
+            nm_lower = nm.lower()
+            if nm_lower in text_lower:
+                return True
+            # tokenized partial match: check multi-word overlap
+            tokens = [t for t in nm_lower.split() if len(t) > 3]
+            if tokens and any(tok in text_lower for tok in tokens):
+                return True
+        return False
+
     venue_types = ['restaurant', 'cafe', 'bar', 'pub', 'coffee', 'bakery']
     mentioned_types = [vt for vt in venue_types if vt in response_lower]
-    
-    if mentioned_types and not any(venue['name'].lower() in response_lower for venue in venues if venue.get('name')):
+
+    if mentioned_types and not mentions_any_venue(response_lower):
         # Response mentions types but not specific venues - enhance it
         relevant_venues = []
-        for venue in venues[:3]:
+        for venue in venues[:6]:
             name = venue.get('name', '')
-            venue_type = venue.get('type', '').lower()
-            if name and any(mt in venue_type for mt in mentioned_types):
+            venue_type = (venue.get('type') or '').lower()
+            tags = venue.get('tags') or {}
+            cuisine = (tags.get('cuisine') or '').lower()
+            match = False
+            for mt in mentioned_types:
+                if mt in venue_type or mt in cuisine or mt in name.lower():
+                    match = True
+                    break
+            if match:
                 relevant_venues.append(venue)
-        
+
+        # If none matched by type, fall back to top venues
+        if not relevant_venues:
+            relevant_venues = venues[:2]
+
         if relevant_venues:
             enhancement = "\n\nBased on local data, I'd recommend:\n"
-            for i, venue in enumerate(relevant_venues[:2]):
+            for i, venue in enumerate(relevant_venues[:3]):
                 name = venue.get('name')
-                desc = venue.get('description', 'local spot')
-                enhancement += f"• **{name}** - {desc}\n"
-            
-            response_text += enhancement
+                desc = venue.get('description') or venue.get('tags', {}).get('cuisine') or venue.get('type', '')
+                maps = _create_google_maps_link(name, '')
+                enhancement += f"• **{name}** - {desc} — {maps}\n"
+            response_text = response_text.strip() + "\n\n" + enhancement
     
     return response_text
 
@@ -2071,8 +2097,26 @@ def apply_response_safeguards(response, query, history, venues, analyzer, city=N
 
     if is_generic and venues and len(venues) > 0:
         return produce_concrete_response(query, city, venues, analyzer)
+    # Clean banned/generic phrases from responses even when not forcing concrete reply
+    cleaned = response
+    for phrase in generic_phrases:
+        cleaned = cleaned.replace(phrase, "").replace(phrase.capitalize(), "")
 
-    return response
+    # If cleaned becomes empty or only punctuation, fall back to original
+    if not cleaned.strip():
+        return response
+
+    # If analyzer suggests escalation but response still ends with a question or generic prompt,
+    # and we have venues, force concrete recommendations
+    try:
+        if analyzer and analyzer.should_escalate():
+            low_clean = cleaned.strip().lower()
+            if low_clean.endswith('?') and venues:
+                return produce_concrete_response(query, city, venues, analyzer)
+    except Exception:
+        pass
+
+    return cleaned
 
 
 def _create_google_maps_link(name, city):
@@ -2137,14 +2181,19 @@ def produce_concrete_response(query, city, venues, analyzer):
     if not venues or len(venues) == 0:
         return f"I'd love to help you explore {city}! Try searching for specific venues first to get detailed recommendations."
 
-    # Always use available venue data instead of generic responses
-    venue_names = [v.get('name', 'Local spot') for v in venues[:3] if v.get('name')]
+    # Build a rich list: emoji, name (maps link), short description
+    lines = []
+    for v in venues[:4]:
+        name = v.get('name') or 'Local spot'
+        desc = v.get('description') or v.get('tags', {}).get('cuisine') or v.get('type') or ''
+        emoji = _get_venue_emoji(v)
+        maps = _create_google_maps_link(name, city or '')
+        address = v.get('display_address') or v.get('address') or ''
+        addr_str = f" — {address}" if address else ""
+        lines.append(f"{emoji} **{name}** ({desc}) — <{maps}>{addr_str}")
 
-    if venue_names:
-        names_str = "**, **".join(venue_names)
-        return f"Based on your interest in '{query}', here are some great spots in **{city}**:\n\n• **{names_str}**\n\nWould you like details about any of these, or should I find more options? - Marco 🧭"
-
-    return f"I found some great options for '{query}' in {city}! Click search to see detailed recommendations. - Marco"
+    body = "\n".join(lines)
+    return f"Based on your interest in '{query}', here are some great spots in **{city}**:\n\n{body}\n\nWould you like details about any of these, or should I find more options? - Marco 🧭"
 
 
 async def _search_and_reason_impl(prompt, key, cache_key, context_venues, query, session=None):
