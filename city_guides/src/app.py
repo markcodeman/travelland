@@ -1225,6 +1225,13 @@ async def get_fun_fact():
                 "Stuttgart has Europe's second-largest collection of mineral springs, producing 250 million liters of therapeutic water daily.",
                 "Unlike most German cities, Stuttgart is famous for wine, not beer - vineyards exist within the city limits!",
                 "The Cannstatter Volksfest is Germany's second-largest beer festival, rivaling Munich's Oktoberfest."
+            ],
+            'antofagasta': [
+                "Antofagasta was once part of Bolivia until 1879 when Chile captured it during the War of the Pacific!",
+                "The city's name means 'great view' in the Quechua language - referring to its coastal desert location.",
+                "Antofagasta is home to La Portada, a 43-meter high natural arch that's Chile's most iconic coastal landmark.",
+                "The city grew rich from the 1866 nitrate boom and now exports more copper than any other Chilean port!",
+                "Antofagasta sits in the Atacama Desert - the driest place on Earth with some areas never recording rain!"
             ]
         }
         
