@@ -2,6 +2,12 @@
 
 ## I. Core Operational Mandates
 - **ELIMINATE STATIC MAPPINGS:** Hardcoding is a failure state. All systems must be dynamic, algorithmic, and adaptable.
+  - **Exception - Controlled Seed Data:** Allow documented static seeds for bootstrapping, tests, and safe fallbacks when:
+    - **Governance:** Centralize all hardcoded data in versioned files (e.g., `city_guides/data/seeded_cities.json`), never scatter in code.
+    - **Schema:** Seed data matches full canonical provider schema; clearly labeled as `source: "seed"` with `version` and `last_updated` fields.
+    - **Fallback Strategy:** Seeds only used when dynamic provider is missing, rate-limited, or disabled by env flag; log every fallback for audit.
+    - **Refresh Path:** Provide script to regenerate seeds from GeoNames/OpenTripMap periodically; seeds are not permanent.
+    - **Testing:** Add tests asserting seed schema matches provider output and endpoint contracts remain consistent.
 - **VERACITY OVER CONVENIENCE:** Never provide placeholders, "lorem ipsum," or mock data. If the data isn't fetched, the response is broken.
 - **QUALITY THRESHOLD:** "Working" is the floor, not the ceiling. If the solution isn't elegant and optimized, it is rejected.
 - **UX AGGRESSION:** Anticipate and eliminate friction. If a user has to ask a follow-up for clarity, you have failed.

@@ -987,29 +987,113 @@ async def get_fun_fact():
                 "Istanbul has more than 3,000 mosques, including the famous Blue Mosque with over 20,000 blue tiles.",
                 "The city was the capital of three different empires: Roman, Byzantine, and Ottoman.",
                 "Istanbul's Hagia Sophia was the world's largest cathedral for nearly 1,000 years and is now a museum."
+            ],
+            'lyon': [
+                "Lyon is known as the gastronomic capital of France with over 4,000 restaurants!",
+                "The city has more than 400 hidden passages called 'traboules' dating back to the 4th century.",
+                "Lyon's Festival of Lights attracts over 2 million visitors every December.",
+                "The city is home to the oldest opera house in France, built in 1756.",
+                "Lyon was the birthplace of cinema, invented by the Lumière brothers in 1895."
+            ],
+            'marseille': [
+                "Marseille is the oldest city in France, founded by Greek sailors around 600 BC!",
+                "The city has over 40 km of coastline with more than 20 beaches.",
+                "Marseille's port is the largest in France and one of the busiest in the Mediterranean.",
+                "The city's famous basilica, Notre-Dame de la Garde, stands 154 meters above sea level.",
+                "Marseille is the only French city to have won the UEFA Champions League trophy."
+            ],
+            'nice': [
+                "Nice has over 300 days of sunshine per year, making it one of the sunniest cities in France!",
+                "The famous Promenade des Anglais is 7 km long and took over 100 years to complete.",
+                "Nice's Carnival is one of the largest in the world, attracting over 1 million visitors.",
+                "The city was founded by the Greeks around 350 BC and named after Nike, the goddess of victory.",
+                "Nice has the largest Russian Orthodox cathedral outside Russia, built in 1912."
+            ],
+            'bordeaux': [
+                "Bordeaux is home to over 7,000 wine producers in the surrounding region!",
+                "The city's Place de la Bourse features the largest reflecting pool in the world, covering 3,450 square meters.",
+                "Bordeaux has the longest shopping street in Europe, Rue Sainte-Catherine, at 1.2 km.",
+                "The city has more than 350 registered historic monuments.",
+                "Bordeaux's wine has been produced since the 8th century, spanning over 1,200 years."
+            ],
+            'lille': [
+                "Lille's Christmas market is one of the largest in France with over 80 chalets!",
+                "The city was European Capital of Culture in 2004.",
+                "Lille's famous waffles called 'gaufres' have been made since the 18th century.",
+                "The city is home to the largest university in France with over 100,000 students.",
+                "Lille's Belfry is 104 meters tall and offers views of Belgium on clear days."
+            ],
+            'toulouse': [
+                "Toulouse is known as 'La Ville Rose' (The Pink City) due to its distinctive terracotta bricks!",
+                "The city is the European capital of the aerospace industry and home to Airbus headquarters.",
+                "Toulouse has over 250,000 students, making it one of the youngest cities in Europe.",
+                "The city's Capitole building has been the seat of local government for over 800 years.",
+                "Toulouse's Canal du Midi, built in 1681, is a UNESCO World Heritage site."
+            ],
+            'nantes': [
+                "Nantes was the birthplace of Jules Verne, author of 'Around the World in 80 Days'!",
+                "The city's famous mechanical elephant stands 12 meters tall and can carry 50 passengers.",
+                "Nantes was named the most livable city in Europe by Time magazine in 2004.",
+                "The city has over 100 km of cycling paths throughout the urban area.",
+                "Nantes' Château des Ducs de Bretagne was the residence of the Dukes of Brittany for 300 years."
+            ],
+            'montpellier': [
+                "Montpellier is the fastest-growing city in France with over 40% population increase since 1990!",
+                "The city is home to the oldest medical school in the world still in operation, founded in 1220.",
+                "Montpellier has over 300 days of sunshine per year.",
+                "The city's historic center is one of the largest pedestrian zones in Europe.",
+                "Montpellier's Place de la Comédie is called 'l'Oeuf' (the Egg) because of its oval shape."
+            ],
+            'lisbon': [
+                "Lisbon is built on seven steep hills, creating spectacular viewpoints throughout the city!",
+                "The city's iconic yellow trams have been operating since 1873.",
+                "Lisbon's Vasco da Gama Bridge is the longest in Europe at 17.2 km.",
+                "The city survived one of the most powerful earthquakes in European history in 1755.",
+                "Lisbon's Oceanarium is the largest indoor aquarium in Europe."
+            ],
+            'prague': [
+                "Prague's astronomical clock, built in 1410, is the oldest working medieval clock in the world!",
+                "The city has over 500 spires and towers, earning it the nickname 'City of a Hundred Spires'.",
+                "Prague Castle is the largest ancient castle complex in the world, covering 70,000 square meters.",
+                "The Charles Bridge has 30 baroque statues and has stood since 1357.",
+                "Prague's Jewish Cemetery has over 12,000 tombstones stacked in 12 layers due to lack of space."
             ]
         }
         
         # Normalize city name
         city_lower = city.lower().strip()
         
-        # If city not in hardcoded list, fetch from Wikipedia
+        # If city not in hardcoded list, fetch interesting facts
         if city_lower not in fun_facts:
             try:
-                from city_guides.providers.wikipedia_provider import fetch_wikipedia_summary
-                wiki_text = await fetch_wikipedia_summary(city, lang="en")
-                if wiki_text:
-                    # Extract an interesting sentence from Wikipedia
-                    sentences = wiki_text.split('. ')
-                    interesting = [s for s in sentences if len(s) > 40 and len(s) < 200 and any(x in s.lower() for x in ['largest', 'oldest', 'first', 'only', 'famous', 'known', 'home', 'capital', 'built', 'founded', 'seat', 'european', 'parliament', 'council'])]
-                    if interesting:
-                        city_facts = [interesting[0] + '.']
-                        app.logger.info(f"Fetched dynamic fun fact for {city} from Wikipedia")
+                # Try DDGS for fun facts first
+                try:
+                    from city_guides.providers.ddgs_provider import ddgs_search
+                    ddgs_results = await ddgs_search(f"interesting facts about {city}", max_results=5)
+                    fun_facts_from_ddgs = []
+                    for r in ddgs_results:
+                        body = r.get('body', '')
+                        # Look for sentences with numbers or superlatives
+                        import re
+                        sentences = re.split(r'(?<=[.!?])\s+', body)
+                        for s in sentences:
+                            if 50 < len(s) < 180 and re.search(r'\d|largest|oldest|first|only|famous|world', s.lower()):
+                                if not re.match(r'^\w+ is a (city|town)', s.lower()):
+                                    fun_facts_from_ddgs.append(s)
+                    if fun_facts_from_ddgs:
+                        city_facts = [fun_facts_from_ddgs[0]]
                     else:
-                        # Fallback to first substantial sentence
-                        city_facts = [sentences[0] + '.'] if sentences else [f"Explore {city.title()} and discover what makes it special!"]
-                else:
-                    city_facts = [f"Explore {city.title()} and discover what makes it special!"]
+                        raise Exception("No fun facts from DDGS")
+                except:
+                    # Fallback to Wikipedia
+                    from city_guides.providers.wikipedia_provider import fetch_wikipedia_summary
+                    wiki_text = await fetch_wikipedia_summary(city, lang="en")
+                    if wiki_text:
+                        import re
+                        sentences = [s.strip() for s in wiki_text.split('.') if 40 < len(s.strip()) < 200]
+                        # Skip boring definitions
+                        filtered = [s for s in sentences if not re.match(r'^\w+ is a (city|town|commune)', s.lower())]
+                        city_facts = [filtered[0] + '.' if filtered else sentences[1] + '.']
             except Exception as e:
                 app.logger.warning(f"Failed to fetch Wikipedia fun fact for {city}: {e}")
                 city_facts = [f"Explore {city.title()} and discover what makes it special!"]
