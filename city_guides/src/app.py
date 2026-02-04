@@ -997,18 +997,17 @@ async def get_fun_fact():
         if city_lower not in fun_facts:
             try:
                 from city_guides.providers.wikipedia_provider import fetch_wikipedia_summary
-                wiki_data = await fetch_wikipedia_summary(city)
-                if wiki_data:
-                    wiki_text, wiki_url = wiki_data
+                wiki_text = await fetch_wikipedia_summary(city, lang="en")
+                if wiki_text:
                     # Extract an interesting sentence from Wikipedia
                     sentences = wiki_text.split('. ')
-                    interesting = [s for s in sentences if len(s) > 40 and len(s) < 200 and any(x in s.lower() for x in ['largest', 'oldest', 'first', 'only', 'famous', 'known', 'home', 'capital', 'built', 'founded'])]
+                    interesting = [s for s in sentences if len(s) > 40 and len(s) < 200 and any(x in s.lower() for x in ['largest', 'oldest', 'first', 'only', 'famous', 'known', 'home', 'capital', 'built', 'founded', 'seat', 'european', 'parliament', 'council'])]
                     if interesting:
                         city_facts = [interesting[0] + '.']
                         app.logger.info(f"Fetched dynamic fun fact for {city} from Wikipedia")
                     else:
                         # Fallback to first substantial sentence
-                        city_facts = [sentences[1] + '.' if len(sentences) > 1 else sentences[0] + '.']
+                        city_facts = [sentences[0] + '.'] if sentences else [f"Explore {city.title()} and discover what makes it special!"]
                 else:
                     city_facts = [f"Explore {city.title()} and discover what makes it special!"]
             except Exception as e:
