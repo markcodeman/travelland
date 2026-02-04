@@ -118,6 +118,7 @@ DEFAULT_PREWARM_CITIES = os.getenv("SEARCH_PREWARM_CITIES", "London,Paris")
 PREWARM_QUERIES = [q.strip() for q in os.getenv("SEARCH_PREWARM_QUERIES", "Top food").split(",") if q.strip()]
 PREWARM_TTL = int(os.getenv("SEARCH_PREWARM_TTL", "3600"))
 NEIGHBORHOOD_CACHE_TTL = int(os.getenv("NEIGHBORHOOD_CACHE_TTL", 60 * 60 * 24 * 7))  # 7 days
+PREWARM_RAG_TOP_N = int(os.getenv('PREWARM_RAG_TOP_N', '50'))
 POPULAR_CITIES = [c.strip() for c in os.getenv("POPULAR_CITIES", "London,Paris,New York,Tokyo,Rome,Barcelona,Bruges,Hallstatt,Chefchaouen,Ravello,Colmar,Sintra,Ghent,Annecy,Kotor,Cesky Krumlov,Rothenburg,Positano").split(",") if c.strip()]
 DISABLE_PREWARM = True  # os.getenv("DISABLE_PREWARM", "false").lower() == "true"
 
@@ -386,6 +387,12 @@ async def startup():
                 asyncio.create_task(prewarm_neighborhoods())
         except Exception:
             app.logger.exception('starting prewarm_neighborhoods failed')
+        # start background prewarm of RAG responses for top seeded cities
+        try:
+            if redis_client and not DISABLE_PREWARM:
+                asyncio.create_task(prewarm_rag_responses())
+        except Exception:
+            app.logger.exception('starting prewarm_rag_responses failed')
         
         # Set redis client for simple_categories
         try:
@@ -1310,6 +1317,146 @@ async def get_fun_fact():
                 "Davao is called the 'Durian Capital' of the Philippines - the pungent 'king of fruits' grows abundantly here!",
                 "The city hosts the Kadayawan Festival, celebrating the harvest of 10 indigenous tribes with colorful street dances!",
                 "Davao is home to the Philippine Eagle Center, protecting one of the world's rarest eagles found only in the Philippines!"
+            ],
+            'san pedro': [
+                "San Pedro is Paraguay's cattle capital - the department produces half of the country's beef!",
+                "The city sits on the banks of the Paraguay River, which forms the border with Brazil!",
+                "San Pedro is known as the 'Granero del Paraguay' (Granary of Paraguay) due to its vast agricultural production!",
+                "The department is the largest in Paraguay's Oriental Region, dedicated mostly to agriculture and forestry!",
+                "San Pedro's economy relies on soybeans, wheat, and cattle - making it Paraguay's agricultural powerhouse!"
+            ],
+            'aba': [
+                "Aba is Nigeria's commercial hub, famous for the Ariaria International Market - one of Africa's largest markets!",
+                "The city is called 'Japan of Africa' for its thriving manufacturing and textile industries!",
+                "Aba is renowned for its skilled craftsmen who create everything from shoes to electronics!",
+                "The city played a crucial role in Nigeria's independence movement and was a center of anti-colonial resistance!",
+                "Aba's Ariaria Market attracts traders from across West and Central Africa - it's a true commercial melting pot!"
+            ],
+            'victoria': [
+                "Victoria is one of the world's smallest capitals - the entire city has only 2 traffic lights!",
+                "The capital of Seychelles was founded by British colonists in 1814 on Mahé Island!",
+                "Victoria is home to the Sir Selwyn Selwyn-Clarke Market, famous for its fresh fish and exotic fruits!",
+                "The city's clock tower is a miniature replica of London's Big Ben - a gift from the British Empire!",
+                "Victoria serves as the gateway to Seychelles' 115 paradise islands and stunning coral reefs!"
+            ],
+            'bharatpur': [
+                "Bharatpur is home to Keoladeo National Park - a UNESCO World Heritage Site with over 370 bird species!",
+                "The park was once a royal hunting ground for the Maharajas of Bharatpur who built dykes to attract waterfowl!",
+                "Bharatpur is called the 'Eastern Gateway to Rajasthan' and was founded by Maharaja Suraj Mal in 1733!",
+                "The city's Lohagarh Fort (Iron Fort) was considered one of the strongest in India and never conquered!",
+                "Bharatpur hosts thousands of migratory birds from Siberia and Central Asia every winter!"
+            ],
+            'balaka': [
+                "Balaka is home to one of Malawi's most impressive Catholic cathedrals - the St. Louis Montfort Catholic Parish!",
+                "The town serves as an important religious center with both Christian and Muslim communities!",
+                "Balaka is located in Malawi's Southern Region and is known for its missionary heritage!",
+                "The town is home to Montfort Media, which publishes books and magazines for all of Africa!",
+                "Balaka's Chapel of Reconciliation is a symbol of unity between different religious communities in Malawi!"
+            ],
+            'chiba': [
+                "Chiba is home to the Chiba Urban Monorail - the world's longest suspended monorail system!",
+                "The city hosts Makuhari Messe, one of Japan's largest convention centers and concert venues!",
+                "Chiba is just 40 minutes from Tokyo and serves as a major industrial and technological hub!",
+                "The city is famous for its anime and manga industry - many studios are located in Chiba Prefecture!",
+                "Chiba Port is one of Japan's busiest maritime cargo hubs, handling millions of containers annually!"
+            ],
+            'cartagena': [
+                "Cartagena's colonial walled city and fortress are a UNESCO World Heritage Site since 1984!",
+                "The city took almost 200 years to build its walls - completed in 1796 to defend against pirates!",
+                "Cartagena was one of the most important Caribbean ports during the Spanish colonial empire!",
+                "The city's colorful Getsemaní neighborhood is famous for its street art and vibrant nightlife!",
+                "Cartagena's Castillo San Felipe de Barajas is the largest Spanish fort in the Americas!"
+            ],
+            'modena': [
+                "Modena is the birthplace of traditional balsamic vinegar - aged for at least 12 years in wooden barrels!",
+                "The city is home to Ferrari, Maserati, and is the heart of Italy's 'Motor Valley'!",
+                "Modena is the culinary capital of Emilia-Romagna, producing Parmigiano-Reggiano and prosciutto!",
+                "Opera legend Luciano Pavarotti was born in Modena and called it his beloved hometown!",
+                "Modena's cathedral and Torre della Ghirlandina are UNESCO World Heritage Sites!"
+            ],
+            'bago': [
+                "Bago was the capital of the Hanthawaddy Kingdom from 1369 to 1635 in ancient Myanmar!",
+                "The city is home to the Shwemawdaw Pagoda - taller than Yangon's famous Shwedagon Pagoda!",
+                "Bago boasts the world's largest reclining Buddha at 55 meters long and 16 meters high!",
+                "The city was an important Buddhist center with over 1,000 monasteries during its golden age!",
+                "Bago's Kanbawzathadi Palace was rebuilt to showcase the glory of Myanmar's ancient kingdoms!"
+            ],
+            'encarnacion': [
+                "Encarnación is called the 'Pearl of the South' and is Paraguay's summer capital!",
+                "The city sits on the Paraná River, forming the border with Argentina across from Encarnación's twin city!",
+                "Encarnación is famous for its Carnaval celebrations - the largest in Paraguay with Brazilian-style samba!",
+                "The city was completely rebuilt in the 1980s after the Yacyretá Dam flooded the original town!",
+                "Encarnación is Paraguay's youngest and most modern city, with wide boulevards and beautiful beaches!"
+            ],
+            'manta': [
+                "Manta is Ecuador's tuna fishing capital - claiming to be the world's largest tuna processing hub!",
+                "The city was once famous for exporting Panama hats before becoming a major commercial port!",
+                "Manta ships processed tuna to Europe and the United States, making it Ecuador's most important Pacific port!",
+                "The city is a popular beach destination with beautiful Pacific coastline and vibrant seafood culture!",
+                "Manta is home to Universidad Laica Eloy Alfaro, one of Ecuador's largest and most traditional universities!"
+            ],
+            'salto': [
+                "Salto is Uruguay's second-largest city and was founded in 1756 as a military settlement!",
+                "The Salto Grande Hydroelectric Dam provides 70% of Uruguay's electricity and 10% of Argentina's!",
+                "The city sits on the eastern banks of the Uruguay River, 260 miles from Montevideo!",
+                "Salto is famous for its paper mills and hydroelectric power generation!",
+                "The city is one of Uruguay's oldest settlements and a major industrial center!"
+            ],
+            'varna': [
+                "Varna is Bulgaria's third-largest city and has been considered a health resort for over 100 years!",
+                "The city is home to Golden Sands - one of Bulgaria's most famous Black Sea beach resorts!",
+                "Varna's Sea Garden is a massive park along the Black Sea coast with beautiful beaches and cafes!",
+                "The city is Bulgaria's naval base and an important port on the Black Sea!",
+                "Varna has been inhabited for over 6,000 years, making it one of Europe's oldest continuously inhabited cities!"
+            ],
+            'kinabalu': [
+                "Kinabalu is home to Mount Kinabalu - Malaysia's highest peak at 4,095 meters and the third-highest island peak on Earth!",
+                "The mountain contains an estimated 5,000 plant species and is a UNESCO World Heritage Site!",
+                "Kinabalu Park is designated as a center of plant diversity for Southeast Asia!",
+                "The nearby town of Kundasang is often compared to Swiss Alpine villages for its spectacular mountain scenery!",
+                "Mount Kinabalu is sacred to the local Dusun people, who call it 'Aki Nabalu' (Revered Place of the Dead)!"
+            ],
+            'cuenca': [
+                "Cuenca is a UNESCO World Heritage Site famous for its well-preserved colonial Spanish architecture!",
+                "The city is called the 'Athens of Ecuador' for its rich cultural heritage and numerous universities!",
+                "Cuenca's historic center has cobblestone streets, domed churches, and traditional colonial buildings!",
+                "The city is famous for its Panama hat production - the finest quality hats come from the Cuenca region!",
+                "Cuenca sits at 2,560 meters in the Andes and is Ecuador's third-largest city!"
+            ],
+            'santa fe': [
+                "Santa Fe is one of Argentina's oldest cities, founded in 1573 and serving as a provincial capital!",
+                "The city sits at the confluence of the Salado and Paraná rivers, making it an important inland port!",
+                "Santa Fe is known as the 'Cradle of the Argentine Constitution' - the 1853 constitution was signed here!",
+                "The city has a rich colonial heritage with well-preserved Spanish architecture and historic churches!",
+                "Santa Fe is famous for its traditional Argentine cuisine, particularly its river fish dishes!"
+            ],
+            'saitama': [
+                "Saitama is home to the Omiya Bonsai Village - considered the 'Bonsai Capital' of the world!",
+                "The city was formed in 2001 by merging three cities: Omiya, Urawa, and Yono!",
+                "Saitama is a major railway hub with Omiya Station being one of Japan's busiest shinkansen transfer points!",
+                "The Japan Mint Museum moved from Tokyo to Saitama, showcasing the history of Japanese currency!",
+                "Saitama is just northwest of Tokyo and serves as a major commuter city for the capital!"
+            ],
+            'loja': [
+                "Loja is called the 'Music Capital of Ecuador' for its rich musical traditions and conservatories!",
+                "The city borders Podocarpus National Park - a massive cloud-forest reserve with incredible biodiversity!",
+                "Loja was founded in 1548 by Spanish captain Alonso de Mercadillo and rebuilt after being destroyed!",
+                "The city sits at the junction of the Zamora and Malacatos rivers in the southern Andes!",
+                "Loja is famous for its traditional Ecuadorian music, particularly the pasillo and sanjuanito genres!"
+            ],
+            'trujillo': [
+                "Trujillo is home to Chan Chan - the world's largest mud-brick city and capital of the ancient Chimú kingdom!",
+                "The city is called the 'City of Eternal Spring' for its pleasant year-round climate!",
+                "Trujillo was founded in 1534 by Spanish conquistador Francisco Pizarro, making it one of Peru's oldest colonial cities!",
+                "The nearby Huaca del Sol is the largest adobe pyramid in the Americas, built with 140 million mud bricks!",
+                "Trujillo is the birthplace of the Marinera dance - Peru's national dance representing coastal culture!"
+            ],
+            'tanga': [
+                "Tanga was Tanzania's chief port for sisal export - once called 'white gold' for its economic importance!",
+                "The city has many German colonial buildings from the 1890s when Germany modernized the port facilities!",
+                "Tanga-Moshi railway, built during German colonial rule, stimulated agricultural development in the region!",
+                "The city has a semi-colonial atmosphere with wide streets full of cyclists and motorbikes!",
+                "Tanga experienced great development under German rule, becoming one of East Africa's most modern ports!"
             ]
         }
         
@@ -2564,6 +2711,75 @@ async def prewarm_popular_searches():
     if tasks:
         app.logger.info("Starting prewarm for %d popular searches", len(tasks))
         await asyncio.gather(*tasks)
+
+
+async def prewarm_rag_responses(top_n: int = None):
+    """Prewarm RAG responses for top N seeded cities using configured PREWARM_QUERIES.
+    Stores responses in Redis with TTL `RAG_CACHE_TTL` (defaults to 6h via env).
+    Best-effort and rate-limited to avoid overloading the Groq API.
+    """
+    if not redis_client:
+        app.logger.info('Redis not available, skipping RAG prewarm')
+        return
+    try:
+        seed_path = Path(__file__).parent.parent / 'data' / 'seeded_cities.json'
+        if not seed_path.exists():
+            app.logger.info('No seeded_cities.json found; skipping RAG prewarm')
+            return
+        data = json.loads(seed_path.read_text())
+        cities = data.get('cities', [])
+        if not cities:
+            app.logger.info('No cities in seed; skipping RAG prewarm')
+            return
+        top_n = int(top_n or PREWARM_RAG_TOP_N)
+        # Choose top N by population (descending)
+        cities = sorted(cities, key=lambda c: int(c.get('population', 0) or 0), reverse=True)[:top_n]
+        queries = PREWARM_QUERIES or ["Top food"]
+        sem = asyncio.Semaphore(int(os.getenv('PREWARM_RAG_CONCURRENCY', '4')))
+
+        async def _warm_city(city_entry):
+            async with sem:
+                city_name = city_entry.get('name')
+                lat = city_entry.get('lat')
+                lon = city_entry.get('lon')
+                for q in queries:
+                    try:
+                        # Build cache key consistent with runtime
+                        ck_input = f"{q}|{city_name}|{''}|{city_entry.get('countryCode') or ''}|{lat or ''}|{lon or ''}"
+                        ck = "rag:" + hashlib.sha256(ck_input.encode('utf-8')).hexdigest()
+                        try:
+                            existing = await redis_client.get(ck)
+                            if existing:
+                                await redis_client.expire(ck, int(os.getenv('RAG_CACHE_TTL', 60 * 60 * 6)))
+                                continue
+                        except Exception:
+                            pass
+                        # Call our internal endpoint to generate answer
+                        payload = {"query": q, "engine": "google", "max_results": 3, "city": city_name}
+                        try:
+                            async with aiohttp_session.post(f"http://localhost:5010/api/chat/rag", json=payload, timeout=15) as resp:
+                                if resp.status != 200:
+                                    app.logger.debug('Prewarm RAG failed for %s/%s: status %s', city_name, q, resp.status)
+                                    continue
+                                data = await resp.json()
+                        except Exception as exc:
+                            app.logger.debug('Prewarm RAG http failed for %s/%s: %s', city_name, q, exc)
+                            continue
+
+                        if data and isinstance(data, dict):
+                            ttl = int(os.getenv('RAG_CACHE_TTL', 60 * 60 * 6))
+                            try:
+                                await redis_client.setex(ck, ttl, json.dumps(data))
+                                app.logger.info('Prewarmed RAG for %s / %s', city_name, q)
+                            except Exception as exc:
+                                app.logger.debug('Failed to set RAG cache for %s/%s: %s', city_name, q, exc)
+                    except Exception as exc:
+                        app.logger.debug('Prewarm RAG exception for %s/%s: %s', city_name, q, exc)
+
+        app.logger.info('Starting RAG prewarm for %d cities', len(cities))
+        await asyncio.gather(*[_warm_city(c) for c in cities])
+    except Exception:
+        app.logger.exception('RAG prewarm failed')
 
 async def prewarm_search_cache_entry(city: str, q: str):
     if not redis_client or not city or not q:
