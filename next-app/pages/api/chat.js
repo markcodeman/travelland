@@ -187,6 +187,10 @@ export default async function handler(req, res) {
     // Choose model using routing
     const model = route(messages, { forceModel });
 
+    // Increment request count for this session BEFORE making the API call
+    // This ensures the limit applies even if the API call fails
+    sessionRequestCounts.set(currentSessionId, requestCount + 1);
+
     // Call Groq API (with evergreen model selection)
     let answer = null, usedModel = null, usage = null;
     try {
@@ -217,9 +221,6 @@ export default async function handler(req, res) {
       answer = data.choices[0].message.content;
       usedModel = useModel;
       usage = data.usage;
-      
-      // Increment request count for this session after successful API call
-      sessionRequestCounts.set(currentSessionId, requestCount + 1);
     } catch (err) {
       console.error('Groq evergreen model error:', err);
       return res.status(502).json({ error: 'Groq evergreen model error', details: err.message });
