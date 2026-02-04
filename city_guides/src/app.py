@@ -1218,6 +1218,13 @@ async def get_fun_fact():
                 "George Town's hawker centers serve over 100 different dishes - you can eat something different every day for months!",
                 "The city has unique 'kopi tiam' (coffee shops) that have been social gathering places for over 100 years.",
                 "George Town's Clan Jetties are wooden houses on stilts over the water, built by Chinese immigrants in the 19th century."
+            ],
+            'stuttgart': [
+                "Stuttgart is the 'cradle of the automobile' - Karl Benz and Gottlieb Daimler invented the automobile here in 1887!",
+                "The city has unique 'Stäffele' (steep stairways) - over 400 flights of stairs built for vineyard workers on hilly terrain.",
+                "Stuttgart has Europe's second-largest collection of mineral springs, producing 250 million liters of therapeutic water daily.",
+                "Unlike most German cities, Stuttgart is famous for wine, not beer - vineyards exist within the city limits!",
+                "The Cannstatter Volksfest is Germany's second-largest beer festival, rivaling Munich's Oktoberfest."
             ]
         }
         
