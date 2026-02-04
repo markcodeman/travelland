@@ -993,12 +993,29 @@ async def get_fun_fact():
         # Normalize city name
         city_lower = city.lower().strip()
         
-        # Get fun facts for the city
-        city_facts = fun_facts.get(city_lower, [
-            f"{city.title()} is a fascinating city with rich history and culture. Every corner tells a story waiting to be discovered!",
-            f"Welcome to {city.title()}! This city has countless interesting facts and hidden gems to explore.",
-            f"{city.title()} offers unique experiences and memorable moments for every visitor."
-        ])
+        # If city not in hardcoded list, fetch from Wikipedia
+        if city_lower not in fun_facts:
+            try:
+                from city_guides.providers.wikipedia_provider import fetch_wikipedia_summary
+                wiki_data = await fetch_wikipedia_summary(city)
+                if wiki_data:
+                    wiki_text, wiki_url = wiki_data
+                    # Extract an interesting sentence from Wikipedia
+                    sentences = wiki_text.split('. ')
+                    interesting = [s for s in sentences if len(s) > 40 and len(s) < 200 and any(x in s.lower() for x in ['largest', 'oldest', 'first', 'only', 'famous', 'known', 'home', 'capital', 'built', 'founded'])]
+                    if interesting:
+                        city_facts = [interesting[0] + '.']
+                        app.logger.info(f"Fetched dynamic fun fact for {city} from Wikipedia")
+                    else:
+                        # Fallback to first substantial sentence
+                        city_facts = [sentences[1] + '.' if len(sentences) > 1 else sentences[0] + '.']
+                else:
+                    city_facts = [f"Explore {city.title()} and discover what makes it special!"]
+            except Exception as e:
+                app.logger.warning(f"Failed to fetch Wikipedia fun fact for {city}: {e}")
+                city_facts = [f"Explore {city.title()} and discover what makes it special!"]
+        else:
+            city_facts = fun_facts[city_lower]
         
         # Select a random fun fact
         import random
