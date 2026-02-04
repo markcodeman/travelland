@@ -445,7 +445,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={requestLimitReached ? "Session limit reached - close and reopen to start new session" : "Ask about restaurants, attractions, travel tips..."}
+            placeholder={requestLimitReached ? "Session limit reached - click New Session button to continue" : "Ask about restaurants, attractions, travel tips..."}
             disabled={loading || requestLimitReached}
           />
           <button
@@ -462,7 +462,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
           </button>
           {requestLimitReached && (
             <div style={{ marginTop: 8, color: '#e74c3c', fontSize: '0.9em', textAlign: 'center' }}>
-              💡 You've used your 1 AI request for this session. Close Marco and reopen to start fresh!
+              💡 You've used your 1 AI request for this session. Click the "New Session" button above to start fresh!
             </div>
           )}
         </div>

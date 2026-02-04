@@ -3,8 +3,26 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 // ==== Request tracking per session (1 request per session limit) ====
+// NOTE: In-memory storage - sessions reset on server restart.
+// For production, consider using Redis or similar persistent storage.
+// TODO: Implement TTL-based cleanup to prevent unbounded memory growth.
 const sessionRequestCounts = new Map();
 const MAX_REQUESTS_PER_SESSION = 1;
+
+// Simple cleanup: remove old sessions (older than 1 hour)
+const SESSION_TTL_MS = 60 * 60 * 1000;
+const sessionTimestamps = new Map();
+
+// Cleanup old sessions every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [sessionId, timestamp] of sessionTimestamps.entries()) {
+    if (now - timestamp > SESSION_TTL_MS) {
+      sessionRequestCounts.delete(sessionId);
+      sessionTimestamps.delete(sessionId);
+    }
+  }
+}, 10 * 60 * 1000);
 
 // Evergreen Groq model resolver (caches for 10m)
 let _cachedModel = null;
@@ -157,8 +175,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Messages array is required' });
     }
 
-    // Generate or use existing session_id
-    const currentSessionId = session_id || `sess_${Date.now()}`;
+    // Generate or use existing session_id (add random component to prevent collisions)
+    const currentSessionId = session_id || `sess_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     
     // Check request limit per session
     const requestCount = sessionRequestCounts.get(currentSessionId) || 0;
@@ -190,6 +208,7 @@ export default async function handler(req, res) {
     // Increment request count for this session BEFORE making the API call
     // This ensures the limit applies even if the API call fails
     sessionRequestCounts.set(currentSessionId, requestCount + 1);
+    sessionTimestamps.set(currentSessionId, Date.now());
 
     // Call Groq API (with evergreen model selection)
     let answer = null, usedModel = null, usage = null;
