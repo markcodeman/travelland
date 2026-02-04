@@ -1141,6 +1141,13 @@ async def get_fun_fact():
                 "Mel Gibson filmed 'The Passion of the Christ' in Matera, using it as a stand-in for ancient Jerusalem.",
                 "Matera became a UNESCO World Heritage site in 1993 and European Capital of Culture in 2019.",
                 "Families once lived in single-room caves with their livestock - heating came from manure!"
+            ],
+            'ljubljana': [
+                "Ljubljana is protected by dragons - the symbol appears everywhere including the famous Dragon Bridge!",
+                "It's one of the smallest capital cities in Europe with only 280,000 residents.",
+                "The Dragon Bridge was the first in Slovenia to be paved with asphalt in 1901.",
+                "Ljubljana was named European Green Capital in 2016 - its city center is car-free.",
+                "Legend says the city was founded by the Greek hero Jason who slew a dragon here."
             ]
         }
         
