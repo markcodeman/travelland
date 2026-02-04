@@ -927,6 +927,9 @@ async def get_fun_fact():
         if not city:
             return jsonify({'error': 'city required'}), 400
         
+        # Import tracker
+        from .fun_fact_tracker import track_fun_fact
+        
         # Fun facts database for major cities
         fun_facts = {
             'paris': [
@@ -1261,6 +1264,10 @@ async def get_fun_fact():
         # Select a random fun fact
         import random
         selected_fact = random.choice(city_facts)
+        
+        # Track the fact quality
+        source = "hardcoded" if city_lower in fun_facts else "dynamic"
+        track_fun_fact(city, selected_fact, source)
         
         return jsonify({
             'city': city,
