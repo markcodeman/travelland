@@ -1492,6 +1492,13 @@ async def get_fun_fact():
                 "Moshi was established by German colonists in the 1890s as a military encampment and coffee production center!",
                 "The city is surrounded by coffee plantations and is Tanzania's major coffee-growing region!",
                 "Moshi has a dry climate and lower altitude, making it the perfect base for Kilimanjaro climbers!"
+            ],
+            'albuquerque': [
+                "Albuquerque hosts the world's largest hot air balloon festival with over 500 balloons painting the sky!",
+                "The Sandia Peak Tramway is North America's longest aerial tramway, climbing 10,378 feet up the Sandia Mountains!",
+                "Albuquerque is nicknamed 'Duke City' and was founded in 1706 as La Villa de Alburquerque!",
+                "The city's Sandia Mountains glow brilliant pink at sunset - their name means 'watermelon' in Spanish!",
+                "Breaking Bad was filmed in Albuquerque - you can visit Walter White's car wash and Jesse's house!"
             ]
         }
         
