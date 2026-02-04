@@ -732,12 +732,12 @@ async def get_dynamic_categories(city: str, state: str = "", country: str = "US"
 def get_generic_categories() -> list:
     """Generic fallback categories when no venue data available"""
     return [
-        {'icon': '🍽️', 'label': 'Food & Dining', 'intent': 'dining'},
-        {'icon': '🏛️', 'label': 'Historic Sites', 'intent': 'historical'},
-        {'icon': '🎨', 'label': 'Art & Culture', 'intent': 'culture'},
-        {'icon': '🌳', 'label': 'Parks & Nature', 'intent': 'nature'},
-        {'icon': '🛍️', 'label': 'Shopping', 'intent': 'shopping'},
-        {'icon': '🌙', 'label': 'Nightlife', 'intent': 'nightlife'}
+        {'icon': '🍽️', 'label': 'Food & Dining 🍕🍷', 'intent': 'dining'},
+        {'icon': '🏛️', 'label': 'Historic Sites 🏰📜', 'intent': 'historical'},
+        {'icon': '🎨', 'label': 'Art & Culture 🎭🖼️', 'intent': 'culture'},
+        {'icon': '🌳', 'label': 'Parks & Nature 🌲🏔️', 'intent': 'nature'},
+        {'icon': '🛍️', 'label': 'Shopping 🛒💎', 'intent': 'shopping'},
+        {'icon': '🌙', 'label': 'Nightlife 🍸🎵', 'intent': 'nightlife'}
     ]
 
 
