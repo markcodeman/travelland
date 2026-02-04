@@ -759,7 +759,31 @@ async def api_cities():
     
     geonames_user = os.getenv("GEONAMES_USERNAME")
     if not geonames_user:
-        # Fallback to hardcoded data if no GeoNames username
+        # Fallback to centralized seed file if no GeoNames username
+        try:
+            seed_path = Path(__file__).parent.parent / 'data' / 'seeded_cities.json'
+            if seed_path.exists():
+                seed = json.loads(seed_path.read_text())
+                cities_data = seed.get('cities', [])
+                # Filter by country and state if provided
+                if country_code:
+                    cities_data = [c for c in cities_data if (c.get('countryCode') or '').upper() == country_code.upper()]
+                if state_code:
+                    cities_data = [c for c in cities_data if (c.get('stateCode') or '').upper() == state_code.upper()]
+                cities = []
+                for city in cities_data:
+                    cities.append({
+                        "name": city.get('name',''),
+                        "code": city.get('name',''),
+                        "geonameId": city.get('geonameId',''),
+                        "population": city.get('population', 0),
+                        "lat": city.get('lat') or '',
+                        "lng": city.get('lon') or city.get('lng') or ''
+                    })
+                app.logger.info('Serving %d cities from seeded_cities.json fallback', len(cities))
+                return jsonify(cities)
+        except Exception:
+            app.logger.exception('Failed to load seeded cities fallback')
         return jsonify([])
     
     try:
@@ -778,6 +802,25 @@ async def api_cities():
             
             async with session.get(cities_url, params=cities_params, timeout=10) as resp:
                 if resp.status != 200:
+                    app.logger.warning('GeoNames returned status %d for %s/%s; trying seeded fallback', resp.status, country_code, state_code)
+                    # try seeded fallback
+                    seed_path = Path(__file__).parent.parent / 'data' / 'seeded_cities.json'
+                    if seed_path.exists():
+                        seed = json.loads(seed_path.read_text())
+                        cities_data = seed.get('cities', [])
+                        if country_code:
+                            cities_data = [c for c in cities_data if (c.get('countryCode') or '').upper() == country_code.upper()]
+                        if state_code:
+                            cities_data = [c for c in cities_data if (c.get('stateCode') or '').upper() == state_code.upper()]
+                        cities = [{
+                            "name": c.get('name',''),
+                            "code": c.get('name',''),
+                            "geonameId": c.get('geonameId',''),
+                            "population": c.get('population', 0),
+                            "lat": c.get('lat') or '',
+                            "lng": c.get('lon') or c.get('lng') or ''
+                        } for c in cities_data]
+                        return jsonify(cities)
                     return jsonify([])
                 
                 cities_data = await resp.json()
@@ -792,6 +835,26 @@ async def api_cities():
                         "lat": city.get('lat', ''),
                         "lng": city.get('lng', '')
                     })
+                
+                # If GeoNames returned nothing, try seeded fallback
+                if not cities:
+                    app.logger.info('GeoNames returned no cities for %s/%s; falling back to seeded_cities.json', country_code, state_code)
+                    seed_path = Path(__file__).parent.parent / 'data' / 'seeded_cities.json'
+                    if seed_path.exists():
+                        seed = json.loads(seed_path.read_text())
+                        cities_data = seed.get('cities', [])
+                        if country_code:
+                            cities_data = [c for c in cities_data if (c.get('countryCode') or '').upper() == country_code.upper()]
+                        if state_code:
+                            cities_data = [c for c in cities_data if (c.get('stateCode') or '').upper() == state_code.upper()]
+                        cities = [{
+                            "name": c.get('name',''),
+                            "code": c.get('name',''),
+                            "geonameId": c.get('geonameId',''),
+                            "population": c.get('population', 0),
+                            "lat": c.get('lat') or '',
+                            "lng": c.get('lon') or c.get('lng') or ''
+                        } for c in cities_data]
                 
                 return jsonify(cities)
                 
@@ -1057,6 +1120,13 @@ async def get_fun_fact():
                 "Prague Castle is the largest ancient castle complex in the world, covering 70,000 square meters.",
                 "The Charles Bridge has 30 baroque statues and has stood since 1357.",
                 "Prague's Jewish Cemetery has over 12,000 tombstones stacked in 12 layers due to lack of space."
+            ],
+            'schiltigheim': [
+                "Schiltigheim is known as the 'City of Brewers' and was once home to Europe's largest beer producers!",
+                "The Fischer brewery moved to Schiltigheim in 1854 specifically because of the superior water quality.",
+                "Heineken closed all three major Schiltigheim breweries: Fischer (2009), Schutzenberger (2006), and Adelshoffen (2000).",
+                "The street leading to the Schutzenberger brewery was called 'Rue Perle' - Pearl Street.",
+                "First mentioned in 1265, Schiltigheim's brewing tradition dates back over 750 years."
             ]
         }
         
