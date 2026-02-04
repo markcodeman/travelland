@@ -4,20 +4,49 @@
 
 from duckduckgo_search import DDGS
 
-async def ddgs_search(query, engine="google", max_results=10):
+async def ddgs_search(query, engine="google", max_results=3, timeout=5):
     """
-    Search the web using DDGS (supports: google, brave, yahoo, yandex, duckduckgo)
+    Search the web using DDGS (supports: google, brave, yahoo, yandex, duckduckgo).
+    This function runs the blocking DDGS call in a thread and enforces an overall
+    async timeout. It caps `max_results` to a small number to reduce latency.
+
+    Params:
+    - query: search text
+    - engine: backend to use
+    - max_results: maximum results to return (will be capped to a safe value)
+    - timeout: maximum time in seconds to wait for the search
+
     Returns a list of dicts with 'title', 'href', 'body' keys.
     """
     results = []
-    # DDGS is not async, so run in thread
+    # Enforce a conservative cap to keep prompts small and searches fast
+    try:
+        max_results = int(max_results)
+    except Exception:
+        max_results = 3
+    MAX_ALLOWED = int(os.getenv('DDGS_MAX_RESULTS', '3'))
+    max_results = min(max_results, MAX_ALLOWED)
+
+    # DDGS is not async, so run it in a thread; use asyncio.run_in_executor and wait_for
     from concurrent.futures import ThreadPoolExecutor
     import asyncio
-    loop = asyncio.get_event_loop()
+
     def _search():
         with DDGS() as ddgs:
-            return list(ddgs.text(query, region="wt-wt", safesearch="off", timelimit=None, max_results=max_results, backend=engine))
-    results = await loop.run_in_executor(ThreadPoolExecutor(), _search)
+            # pass timelimit to DDGS as an extra guard; it expects seconds (int)
+            try:
+                return list(ddgs.text(query, region="wt-wt", safesearch="off", timelimit=int(timeout), max_results=max_results, backend=engine))
+            except Exception:
+                return []
+
+    loop = asyncio.get_running_loop()
+    try:
+        results = await asyncio.wait_for(loop.run_in_executor(ThreadPoolExecutor(), _search), timeout=timeout)
+    except asyncio.TimeoutError:
+        # Search timed out; return empty list to allow graceful fallback
+        return []
+    except Exception:
+        return []
     return results
 
 """

@@ -51,7 +51,8 @@ def call_groq_chat(messages: List[Dict], timeout=20) -> Dict:
     payload = {
         "model": GROQ_MODEL,
         "messages": messages,
-        "max_tokens": 512,
+        # Reduce max_tokens to speed up responses; if needed, raise in specific paths
+        "max_tokens": int(os.getenv('GROQ_MAX_TOKENS', '256')),
         "temperature": 0.2
     }
     r = requests.post(GROQ_CHAT_URL, json=payload, headers=headers, timeout=timeout)

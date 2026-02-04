@@ -217,7 +217,14 @@ async def api_chat_rag():
         data = await request.get_json(force=True)
         query = (data.get("query") or "").strip()
         engine = data.get("engine", "google")
-        max_results = int(data.get("max_results", 8))
+        # Default to a small number of web snippets to improve latency and prompt size
+        try:
+            requested_max = int(data.get("max_results", 3))
+        except Exception:
+            requested_max = 3
+        DEFAULT_DDGS_MAX = int(os.getenv('DDGS_MAX_RESULTS', '3'))
+        max_results = min(requested_max, DEFAULT_DDGS_MAX)
+        DEFAULT_DDGS_TIMEOUT = float(os.getenv('DDGS_TIMEOUT', '5'))
         city = data.get("city", "")
         state = data.get("state", "")
         country = data.get("country", "")
@@ -227,6 +234,23 @@ async def api_chat_rag():
             return jsonify({"error": "Missing query"}), 400
 
         full_query = query
+        # Compute a cache key for this query+city and try Redis cache to avoid repeating long work
+        try:
+            cache_key = None
+            if redis_client:
+                ck_input = f"{query}|{city}|{state}|{country}|{lat}|{lon}"
+                cache_key = "rag:" + hashlib.sha256(ck_input.encode('utf-8')).hexdigest()
+                cached = await redis_client.get(cache_key)
+                if cached:
+                    app.logger.info('RAG cache hit for key %s', cache_key)
+                    try:
+                        cached_parsed = json.loads(cached)
+                        return jsonify(cached_parsed)
+                    except Exception:
+                        app.logger.debug('Failed to parse cached RAG response for %s', cache_key)
+        except Exception:
+            app.logger.exception('Redis cache lookup failed')
+
         # If lat/lon provided, use them to fetch venues
         if lat and lon:
             # Reverse geocode to get city if not provided
@@ -256,7 +280,7 @@ async def api_chat_rag():
         # Run DDGS web search (async) with the full_query
         web_results = []
         try:
-            web_results = await ddgs_search(full_query, engine=engine, max_results=max_results)
+            web_results = await ddgs_search(full_query, engine=engine, max_results=max_results, timeout=DEFAULT_DDGS_TIMEOUT)
         except Exception:
             app.logger.exception('DDGS search failed for %s', full_query)
 
@@ -297,8 +321,9 @@ async def api_chat_rag():
             {"role": "user", "content": user_prompt},
         ]
 
-        # Call Groq via recommender (direct call_groq_chat)
-        groq_resp = recommender.call_groq_chat(messages)
+        # Call Groq via recommender (direct call_groq_chat) with a shorter timeout to keep UX snappy
+        GROQ_TIMEOUT = int(os.getenv('GROQ_CHAT_TIMEOUT', '10'))
+        groq_resp = recommender.call_groq_chat(messages, timeout=GROQ_TIMEOUT)
         if not groq_resp:
             return jsonify({"error": "Groq API call failed"}), 502
         try:
@@ -307,7 +332,18 @@ async def api_chat_rag():
             answer = None
         if not answer:
             return jsonify({"error": "No answer generated"}), 502
-        return jsonify({"answer": answer.strip()})
+
+        result_payload = {"answer": answer.strip()}
+        # Cache the result for repeated queries to improve latency on hot paths
+        try:
+            if redis_client and cache_key:
+                ttl = int(os.getenv('RAG_CACHE_TTL', 60 * 60 * 6))  # default 6 hours
+                await redis_client.setex(cache_key, ttl, json.dumps(result_payload))
+                app.logger.info('Cached RAG response %s (ttl=%s)', cache_key, ttl)
+        except Exception:
+            app.logger.exception('Failed to cache RAG response')
+
+        return jsonify(result_payload)
     except Exception as e:
         import traceback
         return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
@@ -1239,6 +1275,41 @@ async def get_fun_fact():
                 "Strasbourg's Christmas market is the oldest in Europe, dating back to 1570 and attracting 2 million visitors annually.",
                 "The city is bilingual - both French and Alsatian (a German dialect) are commonly spoken on the streets.",
                 "Strasbourg's Grande Île (historic center) was the first entire city center to become a UNESCO World Heritage site in 1988!"
+            ],
+            'ruse': [
+                "Ruse is Bulgaria's largest river port on the Danube, connecting Bulgaria to Romania via the Friendship Bridge!",
+                "The city is called 'Little Vienna' for its stunning Baroque and Neo-Renaissance architecture from the 19th century.",
+                "Ruse and the Romanian city Giurgiu across the Danube were once a single settlement in the Middle Ages!",
+                "The city became a major trade center in the 17th century, linking Central Europe with the Balkans.",
+                "Ruse was the first Bulgarian city with electric street lighting and the first with a Bulgarian-language theater!"
+            ],
+            'zamboanga': [
+                "Zamboanga is called the 'City of Flowers' and is known for its unique Spanish-style architecture in the Philippines!",
+                "The city speaks Chavacano - a Spanish-based creole language that's one of the world's few Spanish creoles!",
+                "Fort Pilar, built in 1635, is a 400-year-old Spanish fortress that still guards the city's harbor!",
+                "Zamboanga was once the capital of the short-lived Republic of Zamboanga in 1899!",
+                "The city is nicknamed 'Asia's Latin City' due to its Hispanic culture and Spanish-influenced heritage."
+            ],
+            'ibarra': [
+                "Ibarra is called the 'White City' because most buildings have colonial whitewashed architecture!",
+                "The city invented helados de paila - handmade ice cream made in bronze pans using ice from Imbabura Volcano!",
+                "Ibarra sits at 7,300 feet in the Andes Mountains and was founded in 1606 by Spanish conquistadors!",
+                "The famous 'Tren de la Libertad' train ride from Ibarra offers spectacular views of the Andean highlands!",
+                "Ibarra is the capital of Ecuador's Imbabura province, home to the famous Otavalo indigenous markets."
+            ],
+            'santa cruz': [
+                "Santa Cruz is Bolivia's largest city by population, surpassing the administrative capital La Paz!",
+                "The city sits at only 400 meters above sea level in the Amazon basin, making it much hotter than highland Bolivian cities!",
+                "Santa Cruz is Bolivia's economic powerhouse, producing soybean oil, refined sugar, and wood products!",
+                "The city was founded in 1561 by Spanish explorer Ñuflo de Chavez and is named after the Holy Cross!",
+                "Santa Cruz experiences a tropical climate with year-round warm temperatures, unlike the cold Andes cities!"
+            ],
+            'davao': [
+                "Davao is the Philippines' largest city by land area - bigger than the entire Metro Manila combined!",
+                "Mount Apo, the Philippines' highest mountain at 2,954 meters, is visible from most parts of Davao!",
+                "Davao is called the 'Durian Capital' of the Philippines - the pungent 'king of fruits' grows abundantly here!",
+                "The city hosts the Kadayawan Festival, celebrating the harvest of 10 indigenous tribes with colorful street dances!",
+                "Davao is home to the Philippine Eagle Center, protecting one of the world's rarest eagles found only in the Philippines!"
             ]
         }
         
@@ -1251,7 +1322,7 @@ async def get_fun_fact():
                 # Try DDGS for fun facts first
                 try:
                     from city_guides.providers.ddgs_provider import ddgs_search
-                    ddgs_results = await ddgs_search(f"interesting facts about {city}", max_results=5)
+                    ddgs_results = await ddgs_search(f"interesting facts about {city}", max_results=5, timeout=float(os.getenv('DDGS_TIMEOUT','5')))
                     fun_facts_from_ddgs = []
                     for r in ddgs_results:
                         body = r.get('body', '')
@@ -1782,40 +1853,42 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
                 city_name = city
                 
             # Build specific queries with geographic context - include real estate sources
+            # Keep DDGS queries small to control latency: pick a few high-value queries
             ddgs_queries = [
                 f"{neighborhood} {city_name}{geographic_context} travel guide",
-                f"{neighborhood} {city_name}{geographic_context} neighborhood information", 
+                f"{neighborhood} {city_name}{geographic_context} neighborhood information",
                 f"what is {neighborhood} {city_name}{geographic_context} like",
-                f"{neighborhood} district {city_name}{geographic_context}",
-                f"{neighborhood} Tijuana Municipality",  # Specific for areas near Tijuana
-                f"{neighborhood} Baja California Mexico",  # Broader geographic context
-                f"{neighborhood} beach area Playas de Tijuana",  # Specific beach reference
-                # Real estate focused queries - these always have good neighborhood data
-                f"{neighborhood} {city_name} real estate neighborhood guide",
-                f"{neighborhood} {city_name} homes for sale neighborhood information",
-                f"{neighborhood} {city_name} properties neighborhood overview",
-                f"{neighborhood} {city_name} realtor neighborhood profile",
-                f"{neighborhood} {city_name} Zillow neighborhood information",
-                # Wikipedia queries for factual data
+                # Wikipedia query for factual checks
                 f"{neighborhood} {city_name} Wikipedia",
-                f"{neighborhood} Tijuana Municipality Wikipedia",
-                f"{neighborhood} Baja California Wikipedia"
             ]
             ddgs_results = []
-            for q in ddgs_queries:
-                try:
+            # Run DDGS queries concurrently with a small concurrency limit to reduce overall wall time
+            sem = asyncio.Semaphore(int(os.getenv('DDGS_CONCURRENCY', '3')))
+            async def _run_query(q):
+                async with sem:
                     if not ddgs_search:
                         app.logger.debug('DDGS provider not available at runtime; skipping query %s', q)
-                        continue
-                    res = await ddgs_search(q, engine="google", max_results=6)
-                    app.logger.info('DDGS: query="%s" got %d results', q, len(res) if res else 0)
+                        return []
+                    try:
+                        res = await ddgs_search(q, engine="google", max_results=3, timeout=float(os.getenv('DDGS_TIMEOUT','5')))
+                        app.logger.info('DDGS: query="%s" got %d results', q, len(res) if res else 0)
+                        if res:
+                            for i, r in enumerate(res[:3]):  # Log first 3 results
+                                app.logger.info('DDGS result %d: title="%s" body="%s"', i, (r.get('title') or '')[:100], (r.get('body') or '')[:100])
+                        return res or []
+                    except Exception as e:
+                        app.logger.debug('DDGS query failed for %s: %s', q, e)
+                        return []
+
+            tasks = [_run_query(q) for q in ddgs_queries]
+            try:
+                ddgs_lists = await asyncio.gather(*tasks)
+                for res in ddgs_lists:
                     if res:
-                        for i, r in enumerate(res[:3]):  # Log first 3 results
-                            app.logger.info('DDGS result %d: title="%s" body="%s"', i, (r.get('title') or '')[:100], (r.get('body') or '')[:100])
                         ddgs_results.extend(res)
-                except Exception as e:
-                    app.logger.debug('DDGS query failed for %s: %s', q, e)
-                    continue
+            except Exception as e:
+                app.logger.debug('Concurrent DDGS queries failed: %s', e)
+                ddgs_results = []
             # Keep unique by href
             # Apply configurable DDGS domain blocklist (soft block) so we don't use noisy sites as final quick guides
             try:
@@ -2039,7 +2112,7 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
             else:
                 for q in ddgs_queries:
                     try:
-                        results = await ddgs_search(q, engine="google", max_results=5)
+                        results = await ddgs_search(q, engine="google", max_results=3, timeout=float(os.getenv('DDGS_TIMEOUT','5')))
                         for r in results:
                             body = (r.get('body') or '') or (r.get('title') or '')
                             text = re.sub(r'\s+', ' ', (body or '')).strip()
