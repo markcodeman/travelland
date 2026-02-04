@@ -770,8 +770,17 @@ async def api_cities():
                     cities_data = [c for c in cities_data if (c.get('countryCode') or '').upper() == country_code.upper()]
                 if state_code:
                     cities_data = [c for c in cities_data if (c.get('stateCode') or '').upper() == state_code.upper()]
+                # Deduplicate by (name, countryCode, stateCode)
+                seen = set()
+                deduped = []
+                for c in cities_data:
+                    key = ((c.get('name') or '').strip().lower(), (c.get('countryCode') or '').upper(), (c.get('stateCode') or '').upper())
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    deduped.append(c)
                 cities = []
-                for city in cities_data:
+                for city in deduped:
                     cities.append({
                         "name": city.get('name',''),
                         "code": city.get('name',''),
@@ -780,7 +789,7 @@ async def api_cities():
                         "lat": city.get('lat') or '',
                         "lng": city.get('lon') or city.get('lng') or ''
                     })
-                app.logger.info('Serving %d cities from seeded_cities.json fallback', len(cities))
+                app.logger.info('Serving %d unique cities from seeded_cities.json fallback', len(cities))
                 return jsonify(cities)
         except Exception:
             app.logger.exception('Failed to load seeded cities fallback')
@@ -812,6 +821,15 @@ async def api_cities():
                             cities_data = [c for c in cities_data if (c.get('countryCode') or '').upper() == country_code.upper()]
                         if state_code:
                             cities_data = [c for c in cities_data if (c.get('stateCode') or '').upper() == state_code.upper()]
+                        # Deduplicate seeded cities
+                        seen = set()
+                        deduped = []
+                        for c in cities_data:
+                            key = ((c.get('name') or '').strip().lower(), (c.get('countryCode') or '').upper(), (c.get('stateCode') or '').upper())
+                            if key in seen:
+                                continue
+                            seen.add(key)
+                            deduped.append(c)
                         cities = [{
                             "name": c.get('name',''),
                             "code": c.get('name',''),
@@ -819,7 +837,7 @@ async def api_cities():
                             "population": c.get('population', 0),
                             "lat": c.get('lat') or '',
                             "lng": c.get('lon') or c.get('lng') or ''
-                        } for c in cities_data]
+                        } for c in deduped]
                         return jsonify(cities)
                     return jsonify([])
                 
@@ -1148,6 +1166,55 @@ async def get_fun_fact():
                 "The Dragon Bridge was the first in Slovenia to be paved with asphalt in 1901.",
                 "Ljubljana was named European Green Capital in 2016 - its city center is car-free.",
                 "Legend says the city was founded by the Greek hero Jason who slew a dragon here."
+            ],
+            'bergamo': [
+                "Bergamo is two cities in one - Città Alta (Upper Town) and Città Bassa (Lower Town)!",
+                "The city's Venetian walls are 6km long and became a UNESCO World Heritage Site in 2017.",
+                "Bergamo was part of the Venetian Republic for over 250 years - they built the massive defensive walls.",
+                "The upper town sits on a hill and can only be reached by funicular or steep stairs!",
+                "Bergamo is called the 'City of a Thousand' due to its many medieval towers and buildings."
+            ],
+            'mostar': [
+                "Mostar's Stari Most (Old Bridge) stood for 427 years before being destroyed in 1993 and rebuilt in 2004.",
+                "Every summer, brave divers leap 24 meters from the bridge into the Neretva River - a tradition over 400 years old!",
+                "The bridge was built by Ottoman architect Mimar Hayruddin in just 9 years (1557-1566).",
+                "Mostar was named after the bridge keepers ('mostari') who guarded the crossing.",
+                "The bridge's unique design uses a single stone arch - it was the largest of its kind when built."
+            ],
+            'aveiro': [
+                "Aveiro is called the 'Venice of Portugal' with colorful canals and traditional Moliceiro boats!",
+                "The city's salt pans have been producing salt for over 1,000 years using ancient methods.",
+                "Aveiro is Portugal's Art Nouveau capital with over 200 decorated buildings from the early 1900s.",
+                "The colorful Moliceiro boats were originally used to transport salt from the salt pans.",
+                "Aveiro's famous 'ovos moles' (sweet eggs) are a local delicacy made from sugar and egg yolks."
+            ],
+            'valparaíso': [
+                "Valparaíso is built on 42 steep hills and has 15 historic funicular elevators dating back to the 1800s!",
+                "The city is Chile's street art capital - colorful murals cover nearly every wall in the historic center.",
+                "Pablo Neruda called Valparaíso 'the city that never finishes being built'.",
+                "The city's labyrinth of streets and staircases inspired the song 'Valparaíso' by Rodrigo 'Fresita' González.",
+                "Valparaíso was Chile's main port until the Panama Canal opened - now it's a UNESCO World Heritage site."
+            ],
+            'oaxaca': [
+                "Oaxaca is the birthplace of corn cultivation - maize was first domesticated here 9,000 years ago!",
+                "The state speaks 16 indigenous languages - the most linguistically diverse in Mexico.",
+                "Oaxaca is the mezcal capital of the world with over 600 brands of the agave spirit.",
+                "The city's Day of the Dead celebrations are considered the most authentic in all of Mexico.",
+                "Oaxaca's seven mole sauces are so complex they take days to prepare and contain 30+ ingredients each."
+            ],
+            'guanajuato': [
+                "Guanajuato has a network of underground tunnels that were once used to transport silver during the mining boom.",
+                "The city's Mummy Museum displays naturally mummified bodies - one of the strangest museums in the world!",
+                "Guanajuato's Callejón del Beso (Alley of the Kiss) is so narrow that couples on opposite balconies can kiss across it.",
+                "The city was built in a narrow canyon with houses climbing up the steep canyon walls.",
+                "Guanajuato has 3,200 'callejones' (narrow alleys) that can only be accessed on foot."
+            ],
+            'george town': [
+                "George Town is Malaysia's street food capital with UNESCO calling it a 'gastronomical paradise'!",
+                "The city is a UNESCO World Heritage Site with over 1,700 heritage buildings from the 18th-20th centuries.",
+                "George Town's hawker centers serve over 100 different dishes - you can eat something different every day for months!",
+                "The city has unique 'kopi tiam' (coffee shops) that have been social gathering places for over 100 years.",
+                "George Town's Clan Jetties are wooden houses on stilts over the water, built by Chinese immigrants in the 19th century."
             ]
         }
         

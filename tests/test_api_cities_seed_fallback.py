@@ -21,3 +21,6 @@ async def test_api_cities_uses_seed_when_geonames_missing(monkeypatch):
             # Check that Paris is present
             names = [c.get('name','').lower() for c in data]
             assert any('paris' in n for n in names) or any('marseille' in n for n in names)
+            # Ensure there are no duplicate names for the same country/state
+            keys = set((c.get('name','').strip().lower(), (c.get('geonameId') or ''),) for c in data)
+            assert len(keys) == len(data), 'Duplicate seeded cities returned'
