@@ -14,35 +14,20 @@ from urllib.parse import urlparse
 
 # Import existing providers
 try:
-    from providers.ddgs_provider import ddgs_search
+    from city_guides.providers.ddgs_provider import ddgs_search
     DDGS_AVAILABLE = True
-except ImportError as e:
+except ImportError:
     DDGS_AVAILABLE = False
 
 try:
-    from providers.wikipedia_provider import fetch_wikipedia_summary
+    from city_guides.providers.wikipedia_provider import fetch_wikipedia_summary
     WIKI_AVAILABLE = True
-except ImportError as e:
+except ImportError:
     WIKI_AVAILABLE = False
 
 # Redis for caching
 import redis
 redis_client = None  # Will be set from routes.py
-
-# Mock redis client for testing
-class MockRedis:
-    def __init__(self):
-        self.data = {}
-    
-    def get(self, key):
-        return self.data.get(key)
-    
-    def set(self, key, value, ex=None):
-        self.data[key] = value
-        return True
-
-if redis_client is None:
-    redis_client = MockRedis()
 
 CACHE_TTL = 3600  # 1 hour
 
@@ -82,21 +67,35 @@ def dedupe_categories(categories: List[str]) -> List[Dict[str, str]]:
 def get_category_icon(category: str) -> str:
     """Map normalized category to emoji icon."""
     icons = {
-        'food': '🍔', 'restaurant': '🍽️', 'dining': '🍽️', 'cuisine': '🍽️',
-        'street food': '🥘', 'night market': '🌃', 'floating market': '🛶',
-        'beach': '🏖️', 'sea': '🏖️', 'ocean': '🏖️', 'coast': '🏖️',
-        'history': '🏛️', 'historic': '🏛️', 'museum': '🖼️', 'art': '🎨', 'culture': '🎭',
-        'temple': '🏛️', 'wat': '🏛️', 'spirit house': '🏮',
-        'nightlife': '🌃', 'bar': '🍷', 'club': '🎶', 'music': '🎵', 'rooftop bar': '🌆',
-        'park': '🌳', 'nature': '🌳', 'garden': '🌸',
-        'shopping': '🛍️', 'market': '🛒', 'mall': '🏬', 'chinatown': '🏮',
-        'transport': '🚇', 'transportation': '🚇', 'river cruise': '🚢', 'airport': '✈️',
-        'religion': '⛪', 'church': '⛪', 'temple': '🕍',
-        'mountain': '🏔️', 'hiking': '🥾',
-        'wine': '🍷', 'vineyard': '🍇', 'winery': '🍷',
-        'sport': '⚽', 'recreation': '🏃', 'stadium': '🏟️',
+        # Distinctive category icons
+        'fashion': '👗', 'design': '✨',
+        'film': '�', 'entertainment': '�',
+        'tech': '💻', 'innovation': '🚀',
+        'finance': '💰', 'business': '💼',
+        'michelin': '⭐', 'dining': '�️',
+        'nightlife': '�', 
+        'architecture': '�️',
+        'ancient': '🏛️', 'history': '📜',
+        'religious': '⛪', 'spiritual': '�',
+        'markets': '🛒', 'shopping': '🛍️',
+        'bridges': '🌉', 'waterways': '⛵',
+        'skyscrapers': '�️',
+        'beach': '�️', 'coast': '�', 'sea': '🏖️', 'ocean': '�️',
+        'parks': '🌳', 'gardens': '�', 'nature': '�',
+        'museums': '🏛️', 'culture': '🎨',
+        'transport': '�', 'metro': '🚉',
+        'food': '🍔', 'cuisine': '🍜', 'specialties': '🥐',
+        'wine': '🍷', 'vineyards': '🍇',
+        'festivals': '🎉', 'events': '🎊',
+        # Original icons
+        'restaurant': '�️', 'dining': '🍽️',
+        'historic': '🏛️', 'museum': '�️', 'art': '🎨',
+        'bar': '🍷', 'club': '�', 'music': '�',
+        'sport': '⚽', 'stadium': '🏟️',
         'education': '🎓', 'university': '🏛️', 'school': '🏫',
-        'massage': '💆', 'spa': '💆', 'thai massage': '💆'
+        'mountain': '🏔️', 'hiking': '🥾',
+        'airport': '✈️', 'transportation': '🚇',
+        'recreation': '🏃',
     }
 
     for key, icon in icons.items():
@@ -133,8 +132,7 @@ async def fetch_wikipedia_categories(city: str, state: str = "", country: str = 
                 'format': 'json',
                 'origin': '*'
             }
-            headers = {'User-Agent': 'TravelLand/1.0 (Educational Project)'}
-            async with session.get('https://en.wikipedia.org/w/api.php', params=params, headers=headers) as resp:
+            async with session.get('https://en.wikipedia.org/w/api.php', params=params) as resp:
                 if resp.status == 200:
                     data = await resp.json()
                     pages = data.get('query', {}).get('pages', {})
@@ -188,251 +186,258 @@ async def fetch_ddgs_categories(city: str, state: str = "") -> List[str]:
     return categories
 
 
-<<<<<<< /home/markcodeman/CascadeProjects/travelland/city_guides/src/simple_categories.py
-<<<<<<< /home/markcodeman/CascadeProjects/travelland/city_guides/src/simple_categories.py
 def extract_from_fun_facts(city: str) -> List[Dict[str, Any]]:
-    """Extract semantic categories from fun facts with context."""
+    """Extract semantic categories from fun facts with distinctive city-specific keywords."""
     categories = []
     
     try:
-        # Import fun facts from the actual app.py function
-        # We need to access the fun_facts data that's defined in get_fun_fact
+        city_lower = city.lower().strip()
+        
+        # Import the fun_facts dictionary directly from app.py
         import sys
         import os
         sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+        import city_guides.src.app as app_module
         
-        # Get the fun facts by calling the actual function
-        from city_guides.src.app import get_fun_fact
+        # Access the fun_facts dictionary directly from the module
+        # It's defined inside get_fun_fact but we can access it by looking at the function's closure
+        # or by replicating the logic here
+        fun_facts_data = {
+            'paris': [
+                "Eiffel Tower", "bakeries", "baguettes", "Louvre", "art", "fashion", "Métro"
+            ],
+            'london': [
+                "British Museum", "museums", "Underground", "Big Ben", "ravens", "Tower"
+            ],
+            'new york': [
+                "Statue of Liberty", "Central Park", "parks", "subway", "Times Square", "languages"
+            ],
+            'tokyo': [
+                "Shibuya", "Michelin", "restaurants", "Skytree", "trains", "Edo"
+            ],
+            'barcelona': [
+                "Sagrada Familia", "Gaudí", "Park Güell", "beaches", "architecture", "orange trees"
+            ],
+            'rome': [
+                "Colosseum", "Vatican", "Pantheon", "fountains", " Trevi", "ancient"
+            ],
+            'los angeles': [
+                "Hollywood", "film", "movies", "studios", "Walk of Fame", "sunshine"
+            ],
+            'sydney': [
+                "Opera House", "Harbour Bridge", "beaches", "Bondi Beach", "Royal Botanic Gardens"
+            ],
+            'dubai': [
+                "Burj Khalifa", "skyscrapers", "shopping", "Palm Jumeirah", "supercars"
+            ],
+            'amsterdam': [
+                "canals", "bicycles", "museums", "Anne Frank House", "bridges"
+            ],
+            'istanbul': [
+                "Hagia Sophia", "Grand Bazaar", "mosques", "Blue Mosque", "two continents"
+            ],
+            'rio de janeiro': [
+                "Christ the Redeemer", "Copacabana", "beaches", "Carnival", "Sugarloaf"
+            ],
+        }
         
-        city_lower = city.lower().strip()
+        # Get keywords for this city
+        city_keywords = fun_facts_data.get(city_lower, [])
         
-        # Try to get a fun fact - if it exists, we know the city has fun facts data
-        try:
-            fact_result = get_fun_fact(city_lower, '', '')
-            if fact_result and fact_result.get('fun_fact'):
-                # City has fun facts, extract from the known categories
-                # This is more dynamic - we work with what actually exists
-                fact_text = fact_result['fun_fact'].lower()
-                
-                # Semantic extraction based on the actual fun fact content
-                if any(word in fact_text for word in ['museum', 'art', 'gallery', 'culture']):
-                    categories.append({'category': 'Art & Culture', 'confidence': 0.9, 'source': 'fun_facts'})
-                if any(word in fact_text for word in ['beach', 'sea', 'ocean', 'coast']):
-                    categories.append({'category': 'Beaches & Coast', 'confidence': 0.9, 'source': 'fun_facts'})
-                if any(word in fact_text for word in ['park', 'garden', 'nature', 'forest', 'trees']):
-                    categories.append({'category': 'Parks & Nature', 'confidence': 0.8, 'source': 'fun_facts'})
-                if any(word in fact_text for word in ['food', 'dining', 'restaurant', 'cuisine', 'wine', 'bakeries']):
-                    categories.append({'category': 'Food & Dining', 'confidence': 0.9, 'source': 'fun_facts'})
-                if any(word in fact_text for word in ['wine', 'vineyard', 'winery', 'château', 'cellar']):
-                    categories.append({'category': 'Wine & Vineyards', 'confidence': 0.95, 'source': 'fun_facts'})
-                if any(word in fact_text for word in ['shopping', 'market', 'street', 'store']):
-                    categories.append({'category': 'Shopping', 'confidence': 0.8, 'source': 'fun_facts'})
-                if any(word in fact_text for word in ['nightlife', 'bar', 'club', 'music']):
-                    categories.append({'category': 'Nightlife', 'confidence': 0.8, 'source': 'fun_facts'})
-                if any(word in fact_text for word in ['history', 'historic', 'monument', 'castle', 'heritage']):
-                    categories.append({'category': 'Historic Sites', 'confidence': 0.9, 'source': 'fun_facts'})
-                if any(word in fact_text for word in ['transport', 'metro', 'train', 'bus', 'bridge']):
-                    categories.append({'category': 'Transportation', 'confidence': 0.7, 'source': 'fun_facts'})
-                if any(word in fact_text for word in ['bridge', 'tower', 'architecture', 'building', 'square']):
-                    categories.append({'category': 'Architecture', 'confidence': 0.8, 'source': 'fun_facts'})
-                if any(word in fact_text for word in ['festival', 'event', 'celebration', 'heritage']):
-                    categories.append({'category': 'Festivals & Events', 'confidence': 0.8, 'source': 'fun_facts'})
-        except:
-            # City doesn't have fun facts, that's fine - other sources will handle it
-            pass
-                    
-    except Exception as e:
-        print(f"[FUN_FACTS] Error: {e}")
-=======
-def extract_from_city_data(city: str) -> List[Dict[str, Any]]:
-    """Extract categories from city-specific data using dynamic API calls."""
-    city_lower = city.lower().strip()
-    
-    # For major cities, use enhanced dynamic extraction with multiple API calls
-    if city_lower in ['paris', 'london']:
-        try:
-            # Check if we're in an async context
-            try:
-                loop = asyncio.get_running_loop()
-                # We're in an async context, create a task
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(asyncio.run, get_enhanced_city_categories(city))
-                    return future.result()
-            except RuntimeError:
-                # No running loop, safe to use asyncio.run
-                return asyncio.run(get_enhanced_city_categories(city))
-        except Exception as e:
-            print(f"[CITY_DATA] Error for {city}: {e}")
-            return []
-    
-    return []
-
-
-async def get_enhanced_city_categories(city: str) -> List[Dict[str, Any]]:
-    """Enhanced category extraction for major cities using multiple data sources."""
-    categories = []
-    
-    try:
-=======
-def extract_from_city_data(city: str) -> List[Dict[str, Any]]:
-    """Extract categories from city-specific data using dynamic API calls."""
-    city_lower = city.lower().strip()
-    
-    # For major cities, use enhanced dynamic extraction with multiple API calls
-    if city_lower in ['paris', 'london']:
-        try:
-            # Check if we're in an async context
-            try:
-                loop = asyncio.get_running_loop()
-                # We're in an async context, create a task
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(asyncio.run, get_enhanced_city_categories(city))
-                    return future.result()
-            except RuntimeError:
-                # No running loop, safe to use asyncio.run
-                return asyncio.run(get_enhanced_city_categories(city))
-        except Exception as e:
-            print(f"[CITY_DATA] Error for {city}: {e}")
-            return []
-    
-    return []
-
-
-async def get_enhanced_city_categories(city: str) -> List[Dict[str, Any]]:
-    """Enhanced category extraction for major cities using multiple data sources."""
-    categories = []
-    
-    try:
->>>>>>> /home/markcodeman/.windsurf/worktrees/travelland/travelland-55ed203d/city_guides/src/simple_categories.py
-        # Use Wikipedia with enhanced queries for city-specific content
-        if WIKI_AVAILABLE:
-            # Get comprehensive Wikipedia data
-            title = f"{city}"
-            async with aiohttp.ClientSession() as session:
-                params = {
-                    'action': 'query',
-                    'titles': title,
-                    'prop': 'categories|extracts',
-                    'explaintext': True,
-                    'format': 'json',
-                    'origin': '*',
-                    'cllimit': 50
-                }
-                headers = {'User-Agent': 'TravelLand/1.0 (Educational Project)'}
-                async with session.get('https://en.wikipedia.org/w/api.php', params=params, headers=headers) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        pages = data.get('query', {}).get('pages', {})
-                        
-                        for page in pages.values():
-                            # Extract from categories
-                            wiki_cats = page.get('categories', [])
-                            for cat in wiki_cats:
-                                cat_title = cat.get('title', '').lower()
-                                
-                                # Dynamic category mapping based on actual Wikipedia categories
-                                if any(word in cat_title for word in ['art', 'museum', 'culture', 'gallery']):
-                                    categories.append({'category': 'Art & Culture', 'confidence': 0.9, 'source': 'wikipedia_enhanced'})
-                                if any(word in cat_title for word in ['history', 'historic', 'heritage', 'monument']):
-                                    categories.append({'category': 'Historic Sites', 'confidence': 0.9, 'source': 'wikipedia_enhanced'})
-                                if any(word in cat_title for word in ['food', 'cuisine', 'restaurant']):
-                                    categories.append({'category': 'Food & Dining', 'confidence': 0.8, 'source': 'wikipedia_enhanced'})
-                                if any(word in cat_title for word in ['architecture', 'building', 'structure']):
-                                    categories.append({'category': 'Architecture', 'confidence': 0.8, 'source': 'wikipedia_enhanced'})
-                                if any(word in cat_title for word in ['park', 'garden', 'nature']):
-                                    categories.append({'category': 'Parks & Nature', 'confidence': 0.7, 'source': 'wikipedia_enhanced'})
-                                if any(word in cat_title for word in ['shopping', 'market', 'retail']):
-                                    categories.append({'category': 'Shopping', 'confidence': 0.7, 'source': 'wikipedia_enhanced'})
-                                if any(word in cat_title for word in ['nightlife', 'entertainment', 'bar']):
-                                    categories.append({'category': 'Nightlife', 'confidence': 0.7, 'source': 'wikipedia_enhanced'})
-                                if any(word in cat_title for word in ['transport', 'metro', 'railway']):
-                                    categories.append({'category': 'Transportation', 'confidence': 0.6, 'source': 'wikipedia_enhanced'})
-                            
-                            # Extract from page content
-                            extract = page.get('extract', '').lower()
-                            if 'louvre' in extract or 'british museum' in extract:
-                                categories.append({'category': 'Art & Culture', 'confidence': 0.95, 'source': 'wikipedia_enhanced'})
-                            if 'eiffel tower' in extract or 'big ben' in extract or 'tower of london' in extract:
-                                categories.append({'category': 'Historic Sites', 'confidence': 0.95, 'source': 'wikipedia_enhanced'})
-                            if 'seine' in extract or 'thames' in extract:
-                                categories.append({'category': 'Parks & Nature', 'confidence': 0.8, 'source': 'wikipedia_enhanced'})
-        
-        # Use DDGS for current trending topics
-        if DDGS_AVAILABLE:
-            queries = [
-                f"best attractions {city}",
-                f"famous landmarks {city}",
-                f"top museums {city}",
-                f"popular restaurants {city}",
-                f"nightlife areas {city}"
-            ]
+        # Map keywords to distinctive categories
+        keyword_to_category = {
+            # Fashion & Design
+            'fashion': ('Fashion & Design', 0.95),
+            'couture': ('Fashion & Design', 0.95),
+            'designer': ('Fashion & Design', 0.95),
             
-            for query in queries:
-                try:
-                    results = await ddgs_search(query, engine="google", max_results=3)
-                    for result in results:
-                        title = result.get('title', '').lower()
-                        body = result.get('body', '').lower()
-                        text = f"{title} {body}"
+            # Film & Entertainment  
+            'Hollywood': ('Film & Entertainment', 0.95),
+            'film': ('Film & Entertainment', 0.95),
+            'movies': ('Film & Entertainment', 0.95),
+            'studios': ('Film & Entertainment', 0.95),
+            'Walk of Fame': ('Film & Entertainment', 0.95),
+            
+            # Architecture & Design
+            'Gaudí': ('Architecture & Design', 0.95),
+            'Sagrada Familia': ('Architecture & Design', 0.95),
+            'architecture': ('Architecture & Design', 0.9),
+            'modernisme': ('Architecture & Design', 0.95),
+            'skyscrapers': ('Skyscrapers', 0.9),
+            'Burj Khalifa': ('Skyscrapers', 0.95),
+            
+            # Ancient History
+            'Colosseum': ('Ancient History', 0.95),
+            'Pantheon': ('Ancient History', 0.95),
+            'ancient': ('Ancient History', 0.9),
+            'Vatican': ('Religious Sites', 0.95),
+            'mosques': ('Religious Sites', 0.9),
+            
+            # Food & Dining special
+            'Michelin': ('Michelin Dining', 0.95),
+            'restaurants': ('Food & Dining', 0.85),
+            'bakeries': ('Local Food Specialties', 0.9),
+            'baguettes': ('Local Food Specialties', 0.9),
+            
+            # Beaches
+            'beaches': ('Beaches & Coast', 0.9),
+            'Bondi Beach': ('Beaches & Coast', 0.95),
+            'Copacabana': ('Beaches & Coast', 0.95),
+            
+            # Transport
+            'Métro': ('Metro & Transport', 0.9),
+            'Underground': ('Metro & Transport', 0.9),
+            'subway': ('Metro & Transport', 0.9),
+            'trains': ('Metro & Transport', 0.85),
+            
+            # Museums & Culture
+            'museums': ('Museums & Culture', 0.85),
+            'British Museum': ('Museums & Culture', 0.95),
+            'Louvre': ('Museums & Culture', 0.95),
+            'art': ('Art & Culture', 0.85),
+            
+            # Parks & Gardens
+            'parks': ('Parks & Gardens', 0.85),
+            'Central Park': ('Parks & Gardens', 0.95),
+            'Royal Botanic Gardens': ('Parks & Gardens', 0.95),
+            
+            # Markets & Shopping
+            'Grand Bazaar': ('Markets & Shopping', 0.95),
+            'shopping': ('Shopping', 0.8),
+            
+            # Landmarks
+            'Eiffel Tower': ('Iconic Landmarks', 0.95),
+            'Statue of Liberty': ('Iconic Landmarks', 0.95),
+            'Christ the Redeemer': ('Iconic Landmarks', 0.95),
+            'Opera House': ('Iconic Landmarks', 0.95),
+            'Skytree': ('Iconic Landmarks', 0.9),
+            
+            # Nightlife/Entertainment
+            'Times Square': ('Entertainment Districts', 0.95),
+            'Shibuya': ('Entertainment Districts', 0.95),
+            'Carnival': ('Festivals & Events', 0.95),
+            
+            # Waterways
+            'canals': ('Canals & Waterways', 0.95),
+            'bridges': ('Bridges & Waterways', 0.9),
+            'Harbour Bridge': ('Bridges & Waterways', 0.95),
+        }
+        
+        # Extract categories based on keywords
+        added_categories = set()
+        for keyword in city_keywords:
+            keyword_lower = keyword.lower()
+            for key, (category, confidence) in keyword_to_category.items():
+                if key.lower() in keyword_lower or keyword_lower in key.lower():
+                    if category not in added_categories:
+                        categories.append({
+                            'category': category,
+                            'confidence': confidence,
+                            'source': 'fun_facts_distinctive'
+                        })
+                        added_categories.add(category)
                         
-                        # Dynamic extraction based on real search results
-                        if any(word in text for word in ['museum', 'art', 'gallery', 'culture']):
-                            categories.append({'category': 'Art & Culture', 'confidence': 0.8, 'source': 'ddgs_enhanced'})
-                        if any(word in text for word in ['historic', 'monument', 'landmark', 'heritage']):
-                            categories.append({'category': 'Historic Sites', 'confidence': 0.8, 'source': 'ddgs_enhanced'})
-                        if any(word in text for word in ['restaurant', 'food', 'dining', 'cuisine']):
-                            categories.append({'category': 'Food & Dining', 'confidence': 0.7, 'source': 'ddgs_enhanced'})
-                        if any(word in text for word in ['nightlife', 'bar', 'club', 'entertainment']):
-                            categories.append({'category': 'Nightlife', 'confidence': 0.7, 'source': 'ddgs_enhanced'})
-                        if any(word in text for word in ['shopping', 'market', 'boutique']):
-                            categories.append({'category': 'Shopping', 'confidence': 0.6, 'source': 'ddgs_enhanced'})
-                        
-                except Exception as e:
-                    print(f"[DDGS_ENHANCED] Search error: {e}")
-                    continue
-                    
     except Exception as e:
-        print(f"[ENHANCED_CATEGORIES] Error for {city}: {e}")
-<<<<<<< /home/markcodeman/CascadeProjects/travelland/city_guides/src/simple_categories.py
->>>>>>> /home/markcodeman/.windsurf/worktrees/travelland/travelland-55ed203d/city_guides/src/simple_categories.py
-=======
->>>>>>> /home/markcodeman/.windsurf/worktrees/travelland/travelland-55ed203d/city_guides/src/simple_categories.py
+        print(f"[FUN_FACTS_DISTINCTIVE] Error: {e}")
     
     return categories
+
+
+# Enhanced Wikipedia fetch that gets full article content
+async def fetch_wikipedia_full_content(city: str) -> str:
+    """Fetch full Wikipedia article content for better category extraction"""
+    try:
+        import aiohttp
+        # Get full article content via Wikipedia API
+        url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&exlimit=1&titles={city}&format=json"
+        headers = {'User-Agent': 'TravelLand/1.0 (Educational)'}
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    pages = data.get('query', {}).get('pages', {})
+                    for page_id, page_data in pages.items():
+                        content = page_data.get('extract', '')
+                        if content and len(content) > 200:
+                            print(f"[WIKI] Got full content for {city}: {len(content)} chars")
+                            return content
+        
+        # Fallback to summary API if full content fails
+        return await simple_wikipedia_fetch(city)
+    except Exception as e:
+        print(f"[WIKI] Full content fetch error: {e}")
+        return await simple_wikipedia_fetch(city)
+
+
+# Simple Wikipedia fetch for testing
+async def simple_wikipedia_fetch(city: str) -> str:
+    """Simple Wikipedia summary fetch that actually works"""
+    try:
+        import aiohttp
+        url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{city}"
+        headers = {'User-Agent': 'TravelLand/1.0 (Educational)'}
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    return data.get('extract', '')
+                else:
+                    print(f"[WIKI] HTTP {resp.status} for {city}")
+    except Exception as e:
+        print(f"[WIKI] Simple fetch error: {e}")
+    return ""
 
 
 async def extract_from_city_guide(city: str) -> List[Dict[str, Any]]:
     """Extract categories from the Wikipedia city guide content."""
     categories = []
+    city_lower = city.lower().strip()
     
     try:
-        # For now, use Wikipedia summary as city guide content
-        if WIKI_AVAILABLE:
-            summary_result = await fetch_wikipedia_summary(city, lang="en")
-            if summary_result:
-                summary, _ = summary_result
-                guide_text = summary.lower()
-                
-                # Extract based on guide content
-                if any(word in guide_text for word in ['museum', 'art', 'gallery', 'culture']):
-                    categories.append({'category': 'Art & Culture', 'confidence': 0.8, 'source': 'city_guide'})
-                if any(word in guide_text for word in ['beach', 'sea', 'coastal', 'ocean']):
-                    categories.append({'category': 'Beaches & Coast', 'confidence': 0.8, 'source': 'city_guide'})
-                if any(word in guide_text for word in ['park', 'garden', 'nature', 'green']):
-                    categories.append({'category': 'Parks & Nature', 'confidence': 0.8, 'source': 'city_guide'})
-                if any(word in guide_text for word in ['food', 'dining', 'restaurant', 'cuisine']):
-                    categories.append({'category': 'Food & Dining', 'confidence': 0.8, 'source': 'city_guide'})
-                if any(word in guide_text for word in ['shopping', 'market', 'boutique']):
-                    categories.append({'category': 'Shopping', 'confidence': 0.7, 'source': 'city_guide'})
-                if any(word in guide_text for word in ['nightlife', 'bar', 'club', 'entertainment']):
-                    categories.append({'category': 'Nightlife', 'confidence': 0.7, 'source': 'city_guide'})
-                if any(word in guide_text for word in ['history', 'historic', 'heritage', 'ancient']):
-                    categories.append({'category': 'Historic Sites', 'confidence': 0.8, 'source': 'city_guide'})
-                if any(word in guide_text for word in ['architecture', 'building', 'structure']):
-                    categories.append({'category': 'Architecture', 'confidence': 0.7, 'source': 'city_guide'})
-                
+        # Use FULL Wikipedia content for better extraction
+        content = await fetch_wikipedia_full_content(city)
+        if content:
+            guide_text = content.lower()
+            print(f"[WIKI] Analyzing {len(content)} chars for {city}")
+            
+            # Extract based on full article content
+            if any(word in guide_text for word in ['museum', 'art', 'gallery', 'culture', 'exhibition']):
+                categories.append({'category': 'Art & Culture', 'confidence': 0.8, 'source': 'city_guide'})
+            
+            # Beaches validation - must have actual beach/coastal evidence, not just harbor/river
+            beach_keywords = ['beach', 'beaches', 'coastline', 'seaside', 'oceanfront', 'sandy beach']
+            harbor_mentions = guide_text.count('harbor') + guide_text.count('harbour') + guide_text.count('port')
+            beach_mentions = sum(guide_text.count(word) for word in beach_keywords)
+            
+            # Only add beaches if strong beach evidence AND not a lake city
+            lake_keywords = ['lake', 'inland', 'freshwater']
+            is_lake_city = any(word in guide_text[:3000] for word in lake_keywords) and 'ocean' not in guide_text[:5000]
+            
+            if not is_lake_city and (beach_mentions >= 3 or any(word in guide_text for word in ['coastal city', 'seaside resort', 'beach resort', 'popular beaches'])):
+                categories.append({'category': 'Beaches & Coast', 'confidence': 0.8, 'source': 'city_guide'})
+            
+            if any(word in guide_text for word in ['park', 'garden', 'nature', 'green', 'forest', 'mountain']):
+                categories.append({'category': 'Parks & Nature', 'confidence': 0.8, 'source': 'city_guide'})
+            if any(word in guide_text for word in ['food', 'dining', 'restaurant', 'cuisine', 'eat', 'gastronomy', 'pub', 'bar']):
+                categories.append({'category': 'Food & Dining', 'confidence': 0.8, 'source': 'city_guide'})
+            if any(word in guide_text for word in ['shopping', 'market', 'store', 'boutique', 'retail', 'mall']):
+                categories.append({'category': 'Shopping', 'confidence': 0.7, 'source': 'city_guide'})
+            if any(word in guide_text for word in ['nightlife', 'bar', 'pub', 'club', 'entertainment', 'music']):
+                categories.append({'category': 'Nightlife', 'confidence': 0.7, 'source': 'city_guide'})
+            if any(word in guide_text for word in ['historic', 'history', 'monument', 'castle', 'heritage', 'ancient']):
+                categories.append({'category': 'Historic Sites', 'confidence': 0.8, 'source': 'city_guide'})
+            if any(word in guide_text for word in ['university', 'education', 'college', 'school', 'academic']):
+                categories.append({'category': 'Education', 'confidence': 0.6, 'source': 'city_guide'})
+            if any(word in guide_text for word in ['theatre', 'theater', 'opera', 'concert', 'performance']):
+                categories.append({'category': 'Theatre & Shows', 'confidence': 0.75, 'source': 'city_guide'})
+            if any(word in guide_text for word in ['sports', 'stadium', 'football', 'soccer', 'rugby', 'gaa']):
+                categories.append({'category': 'Sports', 'confidence': 0.7, 'source': 'city_guide'})
+        else:
+            print(f"[WIKI] No content found for {city}")
+        
+        print(f"[WIKI] Extracted {len(categories)} categories for {city}: {[c['category'] for c in categories]}")
+            
     except Exception as e:
         print(f"[CITY_GUIDE] Error: {e}")
     
@@ -442,7 +447,6 @@ async def extract_from_city_guide(city: str) -> List[Dict[str, Any]]:
 async def extract_from_wikipedia_sections(city: str, state: str = "") -> List[Dict[str, Any]]:
     """Extract categories from Wikipedia page with comprehensive analysis."""
     categories = []
-    city_lower = city.lower().strip()
     
     try:
         if WIKI_AVAILABLE:
@@ -459,8 +463,7 @@ async def extract_from_wikipedia_sections(city: str, state: str = "") -> List[Di
                     'format': 'json',
                     'origin': '*'
                 }
-                headers = {'User-Agent': 'TravelLand/1.0 (Educational Project)'}
-                async with session.get('https://en.wikipedia.org/w/api.php', params=params, headers=headers) as resp:
+                async with session.get('https://en.wikipedia.org/w/api.php', params=params) as resp:
                     if resp.status == 200:
                         data = await resp.json()
                         
@@ -469,44 +472,32 @@ async def extract_from_wikipedia_sections(city: str, state: str = "") -> List[Di
                         for section in sections:
                             line = section.get('line', '').lower()
                             
-                            # Dynamic pattern extraction - no hardcoded city lists
-                            # Extract temple patterns (works for any city with temples)
-                            if any(word in line for word in ['temple', 'wat', 'pagoda', 'shrine', 'mosque', 'church']):
-                                categories.append({'category': 'Temples & Religious Sites', 'confidence': 0.8, 'source': 'wikipedia'})
-                            
-                            # Extract food/cuisine patterns
-                            if any(word in line for word in ['food', 'cuisine', 'restaurant', 'dining', 'culinary']):
-                                categories.append({'category': 'Food & Dining', 'confidence': 0.7, 'source': 'wikipedia'})
-                            
-                            # Extract shopping/market patterns  
-                            if any(word in line for word in ['shopping', 'market', 'mall', 'retail', 'commerce']):
-                                categories.append({'category': 'Shopping & Markets', 'confidence': 0.7, 'source': 'wikipedia'})
-                            
-                            # Extract nightlife patterns
-                            if any(word in line for word in ['nightlife', 'bars', 'clubs', 'entertainment']):
-                                categories.append({'category': 'Nightlife & Entertainment', 'confidence': 0.7, 'source': 'wikipedia'})
-                            
-                            # Extract transport patterns
-                            if any(word in line for word in ['transport', 'transportation', 'airport', 'railway', 'metro', 'river', 'boat']):
-                                categories.append({'category': 'Transportation', 'confidence': 0.7, 'source': 'wikipedia'})
-                            
-                            # Extract culture/arts patterns
-                            if any(word in line for word in ['culture', 'art', 'museum', 'theatre', 'gallery', 'music']):
-                                categories.append({'category': 'Arts & Culture', 'confidence': 0.8, 'source': 'wikipedia'})
-                            
-                            # Extract history patterns
-                            if any(word in line for word in ['history', 'historic', 'heritage', 'ancient', 'monument']):
+                            # Comprehensive category mapping
+                            if any(word in line for word in ['culture', 'art', 'museum', 'theatre', 'gallery']):
+                                categories.append({'category': 'Art & Culture', 'confidence': 0.8, 'source': 'wikipedia'})
+                            if any(word in line for word in ['history', 'historic', 'heritage', 'medieval']):
                                 categories.append({'category': 'Historic Sites', 'confidence': 0.8, 'source': 'wikipedia'})
-                            
-                            # Extract nature patterns
-                            if any(word in line for word in ['parks', 'nature', 'garden', 'green', 'outdoor']):
+                            if any(word in line for word in ['geography', 'climate', 'parks', 'nature', 'environment']):
                                 categories.append({'category': 'Parks & Nature', 'confidence': 0.7, 'source': 'wikipedia'})
-                            
-                            # Extract beach/coastal patterns
-                            if any(word in line for word in ['beach', 'coast', 'sea', 'ocean', 'waterfront']):
-                                categories.append({'category': 'Beaches & Coast', 'confidence': 0.8, 'source': 'wikipedia'})
+                            if any(word in line for word in ['economy', 'business', 'commerce', 'shopping', 'retail']):
+                                categories.append({'category': 'Shopping', 'confidence': 0.7, 'source': 'wikipedia'})
+                            if any(word in line for word in ['transport', 'transportation', 'airport', 'railway', 'metro']):
+                                categories.append({'category': 'Transportation', 'confidence': 0.7, 'source': 'wikipedia'})
+                            if any(word in line for word in ['architecture', 'buildings', 'structures', 'landmarks']):
+                                categories.append({'category': 'Architecture', 'confidence': 0.8, 'source': 'wikipedia'})
+                            if any(word in line for word in ['sports', 'stadium', 'recreation', 'leisure']):
+                                categories.append({'category': 'Sports & Recreation', 'confidence': 0.7, 'source': 'wikipedia'})
+                            if any(word in line for word in ['food', 'cuisine', 'restaurant', 'dining']):
+                                categories.append({'category': 'Food & Dining', 'confidence': 0.7, 'source': 'wikipedia'})
+                            if any(word in line for word in ['nightlife', 'entertainment', 'bars', 'clubs']):
+                                categories.append({'category': 'Nightlife', 'confidence': 0.7, 'source': 'wikipedia'})
+                            if any(word in line for word in ['education', 'university', 'schools', 'academic']):
+                                categories.append({'category': 'Education', 'confidence': 0.6, 'source': 'wikipedia'})
+                            # Note: Beaches & Coast is handled in content text extraction with stricter validation
+                            if any(word in line for word in ['wine', 'vineyard', 'winery', 'viticulture']):
+                                categories.append({'category': 'Wine & Vineyards', 'confidence': 0.9, 'source': 'wikipedia'})
                         
-                        # Extract from page content text with city-specific landmark detection
+                        # Extract from page content text
                         page_text = data.get('parse', {}).get('text', {}).get('*', '').lower()
                         
                         # Look for key phrases in content
@@ -517,78 +508,14 @@ async def extract_from_wikipedia_sections(city: str, state: str = "") -> List[Di
                         if any(phrase in page_text for phrase in ['wine region', 'vineyard', 'winery', 'wine production']):
                             categories.append({'category': 'Wine & Vineyards', 'confidence': 0.9, 'source': 'wikipedia'})
                         
-                        # Extract city-specific landmarks and features
-                        import re
-                        
-                        # Find actual landmark names in the text
-                        landmark_patterns = [
-                            r'\b(grand palace|eiffel tower|colosseum|statue of liberty|big ben|taj mahal|sydney opera house)\b',
-                            r'\b(wat [a-z]+|temple of [a-z]+|saint [a-z]+ cathedral|notre dame)\b',
-                            r'\b([a-z]+ museum|[a-z]+ gallery|[a-z]+ monument)\b',
-                            r'\b([a-z]+ market|[a-z]+ bazaar|[a-z]+ souk)\b',
-                            r'\b([a-z]+ park|[a-z]+ gardens|[a-z]+ square)\b'
-                        ]
-                        
-                        found_landmarks = []
-                        for pattern in landmark_patterns:
-                            matches = re.findall(pattern, page_text)
-                            found_landmarks.extend(matches)
-                        
-                        # Generate city-specific categories based on actual landmarks found
-                        if found_landmarks:
-                            # Group landmarks by type and create specific categories
-                            temples = [l for l in found_landmarks if any(word in l for word in ['wat', 'temple', 'cathedral', 'saint'])]
-                            museums = [l for l in found_landmarks if any(word in l for word in ['museum', 'gallery'])]
-                            markets = [l for l in found_landmarks if any(word in l for word in ['market', 'bazaar', 'souk'])]
-                            monuments = [l for l in found_landmarks if any(word in l for word in ['palace', 'tower', 'monument', 'colosseum'])]
-                            
-                            if temples and len(temples) >= 2:
-                                categories.append({'category': f'City Temples ({len(temples)} major sites)', 'confidence': 0.9, 'source': 'wikipedia'})
-                            elif temples:
-                                categories.append({'category': f'{temples[0].title()} & Religious Sites', 'confidence': 0.8, 'source': 'wikipedia'})
-                            
-                            if museums and len(museums) >= 2:
-                                categories.append({'category': f'Art Museums ({len(museums)} major)', 'confidence': 0.8, 'source': 'wikipedia'})
-                            elif museums:
-                                categories.append({'category': f'{museums[0].title()} & Culture', 'confidence': 0.7, 'source': 'wikipedia'})
-                            
-                            if markets and len(markets) >= 2:
-                                categories.append({'category': f'Local Markets ({len(markets)} areas)', 'confidence': 0.8, 'source': 'wikipedia'})
-                            elif markets:
-                                categories.append({'category': f'{markets[0].title()} & Shopping', 'confidence': 0.7, 'source': 'wikipedia'})
-                            
-                            if monuments and len(monuments) >= 2:
-                                categories.append({'category': f'Famous Monuments ({len(monuments)} sites)', 'confidence': 0.9, 'source': 'wikipedia'})
-                            elif monuments:
-                                categories.append({'category': f'{monuments[0].title()} & Landmarks', 'confidence': 0.8, 'source': 'wikipedia'})
-                        
-                        # Extract city-specific cultural features
-                        cultural_patterns = [
-                            r'\b(street food|night market|food stall|hawker)\b',
-                            r'\b(rooftop bar|sky bar|terrace bar)\b',
-                            r'\b(floating market|boat market|river market)\b',
-                            r'\b(thai massage|spa|wellness|massage)\b',
-                            r'\b(chinatown|little india|quartier)\b'
-                        ]
-                        
-                        found_cultural = []
-                        for pattern in cultural_patterns:
-                            matches = re.findall(pattern, page_text)
-                            found_cultural.extend(matches)
-                        
-                        # Create cultural categories based on actual features found
-                        if 'street food' in found_cultural or 'night market' in found_cultural:
-                            categories.append({'category': 'Street Food & Night Markets', 'confidence': 0.9, 'source': 'wikipedia'})
-                        if 'rooftop bar' in found_cultural or 'sky bar' in found_cultural:
-                            categories.append({'category': 'Rooftop Bars & Sky Dining', 'confidence': 0.8, 'source': 'wikipedia'})
-                        if 'floating market' in found_cultural or 'boat market' in found_cultural:
-                            categories.append({'category': 'Floating Markets & River Life', 'confidence': 0.9, 'source': 'wikipedia'})
-                        if 'thai massage' in found_cultural or 'spa' in found_cultural:
-                            categories.append({'category': 'Traditional Spas & Wellness', 'confidence': 0.8, 'source': 'wikipedia'})
-                        if 'chinatown' in found_cultural:
-                            categories.append({'category': 'Chinatown & Cultural Districts', 'confidence': 0.8, 'source': 'wikipedia'})
-                        if any(phrase in page_text for phrase in ['beach', 'coastline', 'sea', 'ocean']):
+                        # Beaches validation - stricter criteria
+                        beach_phrases = ['beaches', 'coastline', 'seaside', 'oceanfront', 'beach resort', 'popular beaches']
+                        beach_mentions = sum(page_text.count(phrase) for phrase in beach_phrases)
+                        # Exclude lake cities
+                        is_lake = any(word in page_text[:3000] for word in ['lake', 'inland', 'freshwater']) and 'ocean' not in page_text[:5000]
+                        if not is_lake and beach_mentions >= 2:
                             categories.append({'category': 'Beaches & Coast', 'confidence': 0.8, 'source': 'wikipedia'})
+                        
                         if any(phrase in page_text for phrase in ['park', 'garden', 'green space', 'nature reserve']):
                             categories.append({'category': 'Parks & Nature', 'confidence': 0.7, 'source': 'wikipedia'})
                         
@@ -615,16 +542,14 @@ async def extract_from_wikipedia_sections(city: str, state: str = "") -> List[Di
 async def extract_from_ddgs_trends(city: str, state: str = "") -> List[Dict[str, Any]]:
     """Extract current trending categories from DDGS search with comprehensive analysis."""
     categories = []
-    city_lower = city.lower().strip()
     
     if not DDGS_AVAILABLE:
         return categories
         
     try:
-        # City-specific search queries for different aspects - dynamic approach
-        # Use city name in queries to get city-specific results, not hardcoded lists
-        base_queries = [
-            f"best things to do in {city}",
+        # Comprehensive search queries for different aspects
+        queries = [
+            f"best things to do in {city} attractions",
             f"top tourist destinations {city}",
             f"{city} famous landmarks monuments",
             f"best restaurants food {city}",
@@ -632,26 +557,13 @@ async def extract_from_ddgs_trends(city: str, state: str = "") -> List[Dict[str,
             f"shopping districts {city}",
             f"parks nature outdoor activities {city}",
             f"museums art culture {city}",
+            f"{city} beaches coast",
+            f"wine tours vineyards {city}",
             f"historic sites {city}",
             f"architecture buildings {city}",
             f"sports recreation {city}",
             f"transportation getting around {city}"
         ]
-        
-        # Add coastal/beach queries only if city might be coastal
-        coastal_indicators = ['beach', 'coast', 'sea', 'ocean', 'island', 'port']
-        if any(indicator in city_lower for indicator in coastal_indicators):
-            base_queries.extend([
-                f"{city} beaches coast",
-                f"waterfront activities {city}"
-            ])
-        
-        # Add wine region queries only if city might be in wine region
-        wine_indicators = ['valley', 'region', 'country', 'estate', 'vineyard']
-        if any(indicator in city_lower for indicator in wine_indicators):
-            base_queries.append(f"wine tours vineyards {city}")
-            
-        queries = base_queries
         
         for query in queries:
             try:
@@ -665,7 +577,8 @@ async def extract_from_ddgs_trends(city: str, state: str = "") -> List[Dict[str,
                     # Comprehensive category extraction with context
                     if any(word in text for word in ['museum', 'art gallery', 'cultural center', 'theatre', 'opera']):
                         categories.append({'category': 'Art & Culture', 'confidence': 0.7, 'source': 'ddgs'})
-                    if any(word in text for word in ['beach', 'coast', 'sea', 'ocean', 'waterfront', 'beaches']):
+                    # Strict beach validation - must be actual beach destination
+                    if any(word in text for word in ['beaches', 'coastal city', 'seaside', 'oceanfront', 'beach resort', 'sandy beach']):
                         categories.append({'category': 'Beaches & Coast', 'confidence': 0.7, 'source': 'ddgs'})
                     if any(word in text for word in ['restaurant', 'food', 'dining', 'cuisine', 'eat', 'culinary']):
                         categories.append({'category': 'Food & Dining', 'confidence': 0.7, 'source': 'ddgs'})
@@ -753,79 +666,6 @@ def combine_and_score_categories(all_categories: List[Dict[str, Any]]) -> List[D
     return final_categories
 
 
-<<<<<<< /home/markcodeman/CascadeProjects/travelland/city_guides/src/simple_categories.py
-<<<<<<< /home/markcodeman/CascadeProjects/travelland/city_guides/src/simple_categories.py
-=======
-=======
->>>>>>> /home/markcodeman/.windsurf/worktrees/travelland/travelland-55ed203d/city_guides/src/simple_categories.py
-async def is_coastal_city(city: str, state: str = "") -> bool:
-    """Determine if city is coastal using actual geographic data."""
-    try:
-        # Use OpenStreetMap Nominatim API to get city coordinates and geography
-        headers = {'User-Agent': 'TravelLand/1.0 (Educational Project)'}
-        
-        # Build city query
-        query = f"{city}"
-        if state:
-            query += f", {state}"
-            
-        async with aiohttp.ClientSession() as session:
-            # Get city coordinates
-            params = {
-                'q': query,
-                'format': 'json',
-                'limit': 1,
-                'addressdetails': 1
-            }
-            async with session.get('https://nominatim.openstreetmap.org/search', params=params, headers=headers) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    if data and len(data) > 0:
-                        city_data = data[0]
-                        lat = float(city_data.get('lat', 0))
-                        lon = float(city_data.get('lon', 0))
-                        
-                        # Use Ocean API to check distance to coast
-                        # Ocean API provides distance to nearest coastline
-                        ocean_params = {
-                            'lat': lat,
-                            'lon': lon,
-                            'radius': 50000  # 50km radius
-                        }
-                        async with session.get('https://ocean-api.vercel.app/v1/coastline', params=ocean_params, headers=headers) as ocean_resp:
-                            if ocean_resp.status == 200:
-                                ocean_data = await ocean_resp.json()
-                                # If coastline found within 50km, consider it coastal
-                                return ocean_data.get('distance', float('inf')) < 50000
-                            
-                return False  # Default to inland if API calls fail
-    except Exception as e:
-        print(f"[GEO_API] Error checking coastal status for {city}: {e}")
-        return False  # Default to inland on error
-
-async def filter_geographic_impossibilities(city: str, categories: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Filter out categories that are geographically impossible for the given city using actual geographic APIs."""
-    filtered_categories = []
-    
-    for category in categories:
-        label = category.get('label', '').lower()
-        
-        # Remove beach/coast categories for inland cities using actual API
-        if any(term in label for term in ['beach', 'coast', 'ocean', 'sea']):
-            is_coastal = await is_coastal_city(city)
-            if not is_coastal:
-                print(f"[GEO_FILTER] Removed '{category['label']}' for inland city {city} (API verified)")
-                continue
-            else:
-                print(f"[GEO_FILTER] Kept '{category['label']}' for coastal city {city} (API verified)")
-        
-        # Keep everything else
-        filtered_categories.append(category)
-    
-    return filtered_categories
-
-
->>>>>>> /home/markcodeman/.windsurf/worktrees/travelland/travelland-55ed203d/city_guides/src/simple_categories.py
 async def get_dynamic_categories(city: str, state: str = "", country: str = "US") -> List[Dict[str, str]]:
     """
     Generate categories by leveraging ALL available data sources with semantic understanding:
@@ -849,8 +689,6 @@ async def get_dynamic_categories(city: str, state: str = "", country: str = "US"
 
         # Extract categories from ALL sources
         all_categories = []
-<<<<<<< /home/markcodeman/CascadeProjects/travelland/city_guides/src/simple_categories.py
-<<<<<<< /home/markcodeman/CascadeProjects/travelland/city_guides/src/simple_categories.py
         
         # 1. Fun facts (highest confidence for major cities)
         fun_fact_cats = extract_from_fun_facts(city)
@@ -867,69 +705,10 @@ async def get_dynamic_categories(city: str, state: str = "", country: str = "US"
         # 4. DDGS current trends
         ddgs_cats = await extract_from_ddgs_trends(city, state)
         all_categories.extend(ddgs_cats)
-=======
-=======
->>>>>>> /home/markcodeman/.windsurf/worktrees/travelland/travelland-55ed203d/city_guides/src/simple_categories.py
-
-        # 1. City profile data (most reliable)
-        city_cats = extract_from_city_data(city)
-        all_categories.extend(city_cats)
->>>>>>> /home/markcodeman/.windsurf/worktrees/travelland/travelland-55ed203d/city_guides/src/simple_categories.py
-
-        # 2. Wikipedia city guide extraction
-        guide_cats = await extract_from_city_guide(city)
-        all_categories.extend(guide_cats)
-
-        # 3. Wikipedia sections and categories
-        wiki_cats = await extract_from_wikipedia_sections(city, state)
-        all_categories.extend(wiki_cats)
-
-        # 4. DDGS current trends (only if we need more categories AND DDGS is working)
-        if len(all_categories) < 8 and DDGS_AVAILABLE:
-            try:
-                # Test DDGS with a simple query first
-                test_results = await ddgs_search(f"attractions {city}", max_results=1)
-                if test_results:  # Only proceed if DDGS is working
-                    ddgs_cats = await extract_from_ddgs_trends(city, state)
-                    all_categories.extend(ddgs_cats)
-                else:
-                    print(f"[DDGS] Rate limited, skipping for {city}")
-            except Exception as e:
-                print(f"[DDGS] Error checking availability: {e}")
-
-        # 2. Wikipedia city guide extraction
-        guide_cats = await extract_from_city_guide(city)
-        all_categories.extend(guide_cats)
-
-        # 3. Wikipedia sections and categories
-        wiki_cats = await extract_from_wikipedia_sections(city, state)
-        all_categories.extend(wiki_cats)
-
-        # 4. DDGS current trends (only if we need more categories AND DDGS is working)
-        if len(all_categories) < 8 and DDGS_AVAILABLE:
-            try:
-                # Test DDGS with a simple query first
-                test_results = await ddgs_search(f"attractions {city}", max_results=1)
-                if test_results:  # Only proceed if DDGS is working
-                    ddgs_cats = await extract_from_ddgs_trends(city, state)
-                    all_categories.extend(ddgs_cats)
-                else:
-                    print(f"[DDGS] Rate limited, skipping for {city}")
-            except Exception as e:
-                print(f"[DDGS] Error checking availability: {e}")
 
         # Combine with intelligent scoring
         final_categories = combine_and_score_categories(all_categories)
         
-<<<<<<< /home/markcodeman/CascadeProjects/travelland/city_guides/src/simple_categories.py
-<<<<<<< /home/markcodeman/CascadeProjects/travelland/city_guides/src/simple_categories.py
-=======
-=======
->>>>>>> /home/markcodeman/.windsurf/worktrees/travelland/travelland-55ed203d/city_guides/src/simple_categories.py
-        # Apply geographic common sense filtering using actual APIs
-        final_categories = await filter_geographic_impossibilities(city, final_categories)
-        
->>>>>>> /home/markcodeman/.windsurf/worktrees/travelland/travelland-55ed203d/city_guides/src/simple_categories.py
         # Debug: Show what was extracted
         print(f"[DEBUG] Extracted {len(all_categories)} raw categories: {[c['category'] for c in all_categories]}")
         print(f"[DEBUG] Final {len(final_categories)} categories: {[c['label'] for c in final_categories]}")
@@ -937,24 +716,11 @@ async def get_dynamic_categories(city: str, state: str = "", country: str = "US"
         # Cache result
         if redis_client and final_categories:
             try:
-                if hasattr(redis_client, 'set') and not callable(redis_client.set):
-                    # MockRedis case
-                    redis_client.set(cache_key, json.dumps(final_categories))
-                else:
-                    # Real Redis case
-                    await asyncio.to_thread(redis_client.set, cache_key, json.dumps(final_categories), ex=CACHE_TTL)
+                await asyncio.to_thread(redis_client.set, cache_key, json.dumps(final_categories), ex=CACHE_TTL)
             except Exception as e:
                 print(f"[DYNAMIC] Cache write error: {e}")
 
-<<<<<<< /home/markcodeman/CascadeProjects/travelland/city_guides/src/simple_categories.py
         # NO FALLBACKS - Return what we found, even if empty. System must be smart enough.
-=======
-        # If no categories found, fallback to generic categories
-        if not final_categories or len(final_categories) < 3:
-            print(f"[DYNAMIC] Only {len(final_categories) if final_categories else 0} categories found for {city}, using generic fallback")
-            return get_generic_categories()
-
->>>>>>> /home/markcodeman/.windsurf/worktrees/travelland/travelland-55ed203d/city_guides/src/simple_categories.py
         return final_categories
         
     except Exception as e:

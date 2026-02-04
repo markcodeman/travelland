@@ -29,7 +29,8 @@ const HERO_FALLBACKS = {
   bangkok: 'https://images.unsplash.com/photo-1618889128235-93807ca6b114?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
   barcelona: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1600&q=80',
   rome: 'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1600&q=80',
-  hallstatt: 'https://images.unsplash.com/photo-1500530852021-4673b1e67461?auto=format&fit=crop&w=1600&q=80'
+  hallstatt: 'https://images.unsplash.com/photo-1500530852021-4673b1e67461?auto=format&fit=crop&w=1600&q=80',
+  dublin: 'https://images.unsplash.com/photo-1580118869285-a2b4cfa563b5?auto=format&fit=crop&w=1600&q=80'  // Dublin cityscape
 };
 
 const VENUE_FALLBACKS = {
@@ -117,21 +118,14 @@ const fetchMapillaryImages = async (city, count = 4) => {
   }
 };
 
+// Legacy function - not used, backend proxy handles image fetching
 const buildPixabayUrl = (query, perPage = 6) => {
-  const key = import.meta.env.VITE_PIXABAY_KEY;
-  if (!key) return null;
-  const params = new URLSearchParams({
-    key,
-    q: query,
-    image_type: 'photo',
-    orientation: 'horizontal',
-    per_page: String(perPage),
-    safesearch: 'true'
-  });
-  return `https://pixabay.com/api/?${params.toString()}`;
+  // Keys are handled by backend proxy, not frontend
+  return null;
 };
 
-const UNSPLASH_BASE = 'https://api.unsplash.com';
+// Backend proxy handles all image API calls - no direct API access from frontend
+// UNSPLASH_BASE and direct API keys removed for security
 
 const fetchUnsplashPhotos = async (query, perPage = 3) => {
   console.log('Unsplash API check (secure proxy):', { query, perPage });

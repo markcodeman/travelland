@@ -19,7 +19,7 @@ from city_guides.src.services.learning import (
     detect_hemisphere_from_searches
 )
 from city_guides.src.services.pixabay import pixabay_service
-from city_guides.src.utils.seasonal import get_seasonal_destinations
+from city_guides.src.dynamic_neighborhoods import get_neighborhoods_for_city
 
 """
 Refactored TravelLand app.py with modular structure
@@ -39,6 +39,13 @@ import requests
 from pathlib import Path
 from redis import asyncio as aioredis
 import logging
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -1010,8 +1017,8 @@ async def get_fun_fact():
 @app.route('/api/smart-neighborhoods', methods=['GET'])
 async def api_smart_neighborhoods():
     """
-    Get smart neighborhood suggestions for large cities.
-    Returns curated neighborhoods for major cities to avoid garbage results from city-wide searches.
+    Get smart neighborhood suggestions for ANY city using dynamic API calls.
+    No hardcoded lists - works for all cities globally.
     Query params: city, category (optional)
     Returns: { is_large_city: bool, neighborhoods: [] }
     """
@@ -1022,7 +1029,7 @@ async def api_smart_neighborhoods():
         return jsonify({'is_large_city': False, 'neighborhoods': []}), 400
     
     try:
-        # Check cache first to avoid repeated slow requests
+        # Check cache first
         cache_key = f"smart_neighborhoods:{city.lower()}"
         if redis_client:
             cached_data = await redis_client.get(cache_key)
@@ -1030,112 +1037,44 @@ async def api_smart_neighborhoods():
                 app.logger.info(f"Cache hit for smart neighborhoods: {city}")
                 return jsonify(json.loads(cached_data))
 
-        # Coordinate-first neighborhoods to avoid ambiguous city names and seed fallbacks.
-        # This uses our geocode_city strategy (local data / Geoapify / etc.) and then Overpass via multi_provider.
-        geo = await geocode_city(city)
+        # Get coordinates for the city
+        try:
+            geo = await asyncio.wait_for(geocode_city(city), timeout=5.0)
+        except asyncio.TimeoutError:
+            app.logger.warning(f"Geocoding timeout for {city}")
+            geo = None
+        
         lat = geo.get('lat') if geo else None
         lon = geo.get('lon') if geo else None
+        
         if lat is None or lon is None:
+            app.logger.error(f"Could not geocode {city}")
             return jsonify({'is_large_city': False, 'neighborhoods': [], 'city': city, 'category': category}), 200
-
-<<<<<<< /home/markcodeman/CascadeProjects/travelland/city_guides/src/app.py
-        # Add a timeout to prevent long delays from external API calls
-        try:
-            raw = await asyncio.wait_for(
-                multi_provider.async_get_neighborhoods(city=city, lat=float(lat), lon=float(lon), lang='en', session=aiohttp_session),
-                timeout=5.0
-            )
-        except asyncio.TimeoutError:
-            app.logger.warning(f"Timeout fetching neighborhoods for {city}")
-            raw = []
-=======
-        # Immediate fallback for Dublin to prevent timeout issues
-        if city.lower() == 'dublin':
-            app.logger.info(f"Using immediate Dublin fallback neighborhoods")
-            raw = [
-                {'name': 'Temple Bar', 'description': 'Cultural quarter with pubs, galleries, and nightlife', 'type': 'culture'},
-                {'name': 'Grafton Street', 'description': 'Main shopping street with boutiques and entertainment', 'type': 'shopping'},
-                {'name': 'St. Stephen\'s Green', 'description': 'Victorian public park in city centre', 'type': 'nature'},
-                {'name': 'Docklands', 'description': 'Modern business district with tech companies', 'type': 'business'},
-                {'name': 'Rathmines', 'description': 'Residential area with cafes and local life', 'type': 'residential'},
-                {'name': 'Phibsborough', 'description': 'Trendy neighborhood with young professionals', 'type': 'trendy'},
-                {'name': 'Ranelagh', 'description': 'Upscale area with restaurants and bars', 'type': 'dining'},
-                {'name': 'Smithfield', 'description': 'Historic area with markets and whiskey distillery', 'type': 'historic'}
-            ]
-        else:
-            # Fetch neighborhoods with shorter timeout for other cities
-            try:
-                raw = await asyncio.wait_for(
-                    multi_provider.async_get_neighborhoods(city=city, lat=float(lat), lon=float(lon), lang='en', session=aiohttp_session),
-                    timeout=10.0
-                )
-            except asyncio.TimeoutError:
-                app.logger.warning(f"Timeout fetching neighborhoods for {city}, using empty list")
-                raw = []
-            except Exception as e:
-                app.logger.warning(f"Error fetching neighborhoods for {city}: {e}")
-                raw = []
->>>>>>> /home/markcodeman/.windsurf/worktrees/travelland/travelland-55ed203d/city_guides/src/app.py
-        raw = raw or []
-
-        # Fallback: If no neighborhoods found, check for known large cities
-        if not raw:
-            city_lower = city.lower()
-            known_neighborhoods = {
-                'barcelona': ['Gothic Quarter', 'Eixample', 'Gràcia', 'El Born', 'Barceloneta', 'Poble Sec', 'Sant Antoni', 'Sarrià', 'Les Corts', 'Nou Barris'],
-                'new york': ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island', 'Harlem', 'SoHo', 'Greenwich Village', 'Times Square', 'Upper East Side'],
-                'london': ['Westminster', 'Camden', 'Shoreditch', 'Southwark', 'Kensington', 'Chelsea', 'Notting Hill', 'Covent Garden', 'Soho', 'Mayfair'],
-                'paris': ['Le Marais', 'Montmartre', 'Saint-Germain', 'Latin Quarter', 'Champs-Élysées', 'Eiffel Tower Area', 'Louvre Area', 'Belleville', 'Canal Saint-Martin', 'Bastille'],
-                'tokyo': ['Shibuya', 'Shinjuku', 'Harajuku', 'Ginza', 'Akihabara', 'Roppongi', 'Asakusa', 'Ueno', 'Ikebukuro', 'Ebisu'],
-                'rome': ['Trastevere', 'Campo de Fiori', 'Pantheon', 'Spanish Steps', 'Vatican', 'Colosseum Area', 'Monti', 'Testaccio', 'Prati', 'EUR'],
-                'madrid': ['Puerta del Sol', 'Gran Via', 'Malasaña', 'Chueca', 'La Latina', 'Salamanca', 'Chamartin', 'Retiro', 'Moncloa', 'Arganzuela'],
-                'lisbon': ['Alfama', 'Baixa', 'Chiado', 'Bairro Alto', 'Belém', 'Alcântara', 'Saldanha', 'Campo de Ourique', 'Príncipe Real', 'Parque das Nações'],
-                'seville': ['Santa Cruz', 'Triana', 'Alameda', 'Macarena', 'Nervión', 'Los Remedios', 'San Julián', 'La Cartuja', 'El Porvenir', 'San Bernardo'],
-                'amsterdam': ['Jordaan', 'De Pijp', 'Canal Ring', 'Red Light District', 'Museum Quarter', 'Oud-West', 'De Baarsjes', 'Oost', 'Noord'],
-                'berlin': ['Mitte', 'Kreuzberg', 'Neukölln', 'Prenzlauer Berg', 'Friedrichshain', 'Charlottenburg', 'Schöneberg', 'Tempelhof', 'Wedding', 'Moabit'],
-                'istanbul': ['Sultanahmet', 'Taksim', 'Karaköy', 'Galata', 'Beyoğlu', 'Kadıköy', 'Üsküdar', 'Fatih', 'Beşiktaş', 'Şişli']
-            }
-            
-            for known_city, neighborhoods in known_neighborhoods.items():
-                if known_city in city_lower or city_lower in known_city:
-                    raw = [{'name': n, 'type': 'culture'} for n in neighborhoods]
-                    app.logger.info(f"Using hardcoded neighborhoods for {city}")
-                    break
-
-        # Return a set for the UI (allow >9 so key neighborhoods don't get clipped)
-        neighborhoods = []
-        for n in raw:
-            name = n.get('name')
-            if not name:
-                continue
-            # Use description from multi_provider (which includes dynamic descriptions for known neighborhoods)
-            desc = n.get('description') or n.get('vibe') or f"Neighborhood in {city}"
-            neighborhoods.append({
-                'name': name,
-                'description': desc,
-                'type': n.get('type') or 'culture'
-            })
-            if len(neighborhoods) >= 20:
-                break
-
+        
+        # Fetch neighborhoods dynamically using Overpass API
+        neighborhoods = await get_neighborhoods_for_city(city, lat, lon)
+        
         response = {
-            'is_large_city': len(neighborhoods) >= 4,
+            'is_large_city': len(neighborhoods) >= 3,
             'neighborhoods': neighborhoods,
             'city': city,
             'category': category
         }
 
-        # Cache the response for future requests
+        # Cache the response
         if redis_client:
-            await redis_client.setex(cache_key, 3600, json.dumps(response))  # Cache for 1 hour
-            app.logger.info(f"Cached smart neighborhoods for {city}")
+            await redis_client.setex(cache_key, 3600, json.dumps(response))
+            app.logger.info(f"Cached smart neighborhoods for {city}: {len(neighborhoods)} found")
 
         return jsonify(response)
+        
     except Exception as e:
-        app.logger.exception('Smart neighborhoods fetch failed')
+        app.logger.exception(f'Smart neighborhoods fetch failed for {city}')
         return jsonify({
             'is_large_city': False, 
             'neighborhoods': [],
+            'city': city,
+            'category': category,
             'error': str(e)
         }), 500
 
@@ -2035,6 +1974,36 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
 
     # Try to enrich quick guide with Mapillary thumbnails (if available)
     mapillary_images = []
+    
+    # Try Pixabay first for high-quality images
+    try:
+        pixabay_key = os.getenv("PIXABAY_KEY")
+        if pixabay_key:
+            search_query = f"{neighborhood} {city}" if neighborhood else city
+            async with aiohttp_session.get(
+                "https://pixabay.com/api/",
+                params={
+                    "key": pixabay_key,
+                    "q": search_query,
+                    "per_page": 3,
+                    "image_type": "photo",
+                    "orientation": "horizontal"
+                }
+            ) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    for hit in data.get("hits", []):
+                        mapillary_images.append({
+                            "id": hit["id"],
+                            "url": hit["webformatURL"],
+                            "provider": "pixabay",
+                            "attribution": f"Photo by {hit['user']} on Pixabay",
+                            "source_url": hit["pageURL"]
+                        })
+                        app.logger.info(f"Added Pixabay image: {hit['pageURL']}")
+    except Exception as e:
+        app.logger.debug(f"Pixabay fetch failed: {e}")
+    
     try:
         try:
             import city_guides.mapillary_provider as mapillary_provider  # type: ignore
@@ -2768,7 +2737,9 @@ async def unsplash_search():
         }
         
         headers = {
-            'Authorization': f'Client-ID {unsplash_key}'
+            'Authorization': f'Client-ID {unsplash_key}',
+            'Accept-Encoding': 'gzip, deflate',
+            'User-Agent': 'TravelLand/1.0'
         }
         
         async with get_session() as session:
@@ -2807,6 +2778,8 @@ async def unsplash_search():
         
     except Exception as e:
         app.logger.exception(f'Unsplash proxy failed: {e}')
+        app.logger.error(f'Query was: {query}')
+        app.logger.error(f'Unsplash key configured: {bool(os.getenv("UNSPLASH_KEY"))}')
         return jsonify({'error': 'unsplash_search_failed'}), 500
 
 @app.route('/api/pixabay-search', methods=['POST'])
@@ -2840,6 +2813,7 @@ async def pixabay_search():
             async with session.get(
                 "https://pixabay.com/api/",
                 params=params,
+                headers={'Accept-Encoding': 'gzip, deflate', 'User-Agent': 'TravelLand/1.0'},
                 timeout=aiohttp.ClientTimeout(total=10)
             ) as response:
                 if response.status != 200:
@@ -2897,7 +2871,7 @@ def increment_location_weight(location):
     _location_weights[key] = _location_weights.get(key, 1.0) + 0.1
 
 # Import and register routes from routes module
-from .routes import register_routes
+from city_guides.src.routes import register_routes
 register_routes(app)
 
 if __name__ == "__main__":

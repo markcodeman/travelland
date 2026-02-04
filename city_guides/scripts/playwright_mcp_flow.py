@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 from playwright.sync_api import sync_playwright, TimeoutError
 
-URL = "http://127.0.0.1:5000"
+URL = "http://127.0.0.1:5174"
 
 
 def run_flow(headful=True):

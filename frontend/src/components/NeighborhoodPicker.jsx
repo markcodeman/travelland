@@ -1,8 +1,77 @@
 import React from 'react';
 import './NeighborhoodPicker.css';
 
-const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip }) => {
-  if (!neighborhoods || neighborhoods.length === 0) return null;
+const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, loading = false }) => {
+  if (loading) {
+    return (
+      <div className="neighborhood-picker-overlay">
+        <div className="neighborhood-picker">
+          <div className="picker-header">
+            <h3>🎯 Finding Best Neighborhoods</h3>
+            <p className="picker-subtitle">
+              Discovering the perfect spots for {category} in {city}...
+            </p>
+          </div>
+          
+          <div className="neighborhoods-loading" style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            padding: '40px',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              border: '4px solid #f3f3f3',
+              borderTop: '4px solid #667eea',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+            <p style={{ color: '#666', fontSize: '16px', margin: 0 }}>
+              Scanning {city}'s neighborhoods...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!neighborhoods || neighborhoods.length === 0) {
+    return (
+      <div className="neighborhood-picker-overlay">
+        <div className="neighborhood-picker">
+          <div className="picker-header">
+            <h3>🎯 Choose Area</h3>
+            <p className="picker-subtitle">
+              Where in {city} would you like to explore {category}?
+            </p>
+          </div>
+          
+          <div style={{ padding: '20px', textAlign: 'center' }}>
+            <p style={{ color: '#666', marginBottom: '16px' }}>
+              No specific neighborhoods found for {category} in {city}.
+            </p>
+            <button 
+              onClick={() => onSkip && onSkip()}
+              style={{
+                padding: '12px 24px',
+                background: '#667eea',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '16px'
+              }}
+            >
+              Search all of {city} →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const getCategoryEmoji = (type) => {
     const emojiMap = {

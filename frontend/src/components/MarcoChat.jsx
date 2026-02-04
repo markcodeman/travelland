@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Fragment } from 'react';
+import React, { useState, useEffect, useRef, Fragment, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Popover, Transition } from '@headlessui/react';
 import VenueCard from './VenueCard';
@@ -13,7 +13,6 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
   const [input, setInput] = useState(initialInput || ''); // allow initial input
   const [sessionId, setSessionId] = useState(localStorage.getItem('marco_session_id') || null);
   const [loading, setLoading] = useState(false);
-  const [funFact, setFunFact] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [loadingMessage, setLoadingMessage] = useState('');
   const messagesEndRef = useRef(null);
@@ -69,47 +68,98 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     if (sessionId) localStorage.setItem('marco_session_id', sessionId);
   }, [sessionId]);
 
-  // Keep input in sync if initialInput prop changes
-  useEffect(() => {
-    if (initialInput !== undefined) setInput(initialInput || '');
-  }, [initialInput]);
+  const sendMessage = useCallback(async (text, query = null) => {
+    if (!text || !text.trim()) return;
+    const msg = { role: 'user', text };
+    setMessages(m => [...m, msg]);
+    setInput('');
+    setLoading(true);
 
-  // Check for initial question from localStorage when component mounts
-  useEffect(() => {
-    const initialQuestion = localStorage.getItem('marco_initial_question');
-    if (initialQuestion) {
-      // Clear it so it doesn't trigger again
-      localStorage.removeItem('marco_initial_question');
-      // Send the message
+    // Start with an engaging loading message
+    const initialMessage = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
+    setLoadingMessage(initialMessage);
+
+    // Add a quick response for common queries after a short delay
+    const lowerText = text.toLowerCase();
+    let quickResponse = null;
+    
+    if (lowerText.includes('cafe') || lowerText.includes('coffee')) {
+      quickResponse = quickResponses.cafes[Math.floor(Math.random() * quickResponses.cafes.length)];
+    } else if (lowerText.includes('restaurant') || lowerText.includes('food') || lowerText.includes('dining')) {
+      quickResponse = quickResponses.restaurants[Math.floor(Math.random() * quickResponses.restaurants.length)];
+    } else if (lowerText.includes('museum') || lowerText.includes('art') || lowerText.includes('gallery')) {
+      quickResponse = quickResponses.museums[Math.floor(Math.random() * quickResponses.museums.length)];
+    } else if (lowerText.includes('landmark') || lowerText.includes('eiffel') || lowerText.includes('monument')) {
+      quickResponse = quickResponse.landmarks[Math.floor(Math.random() * quickResponse.landmarks.length)];
+    } else if (lowerText.includes('shop') || lowerText.includes('store') || lowerText.includes('boutique')) {
+      quickResponse = quickResponses.shopping[Math.floor(Math.random() * quickResponses.shopping.length)];
+    } else if (lowerText.includes('nightlife') || lowerText.includes('bar') || lowerText.includes('club')) {
+      quickResponse = quickResponses.nightlife[Math.floor(Math.random() * quickResponses.nightlife.length)];
+    }
+
+    // Show quick response after 1.5 seconds if we have one
+    if (quickResponse) {
       setTimeout(() => {
-        sendMessage(initialQuestion);
-      }, 500); // Small delay to let the UI settle
+        setMessages(m => [...m, { role: 'assistant', text: quickResponse }]);
+        setLoading(false);
+      }, 1500);
+      return;
     }
-  }, []); // Run once on mount
 
-  // Fetch fun fact when city changes
-  useEffect(() => {
-    if (city && !funFact) {
-      fetchFunFact();
-    }
-  }, [city]);
-
-  const fetchFunFact = async () => {
     try {
-      const response = await fetch('/api/fun-fact', {
+      // Use the RAG chat endpoint
+      const payload = {
+        query: text,
+        city: city,
+        neighborhood: neighborhood,
+        category: category,
+        venues: [], // No venues needed for initial query
+        session_id: sessionId,
+        max_results: 8
+      };
+
+      const response = await fetch('/api/chat/rag', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ city })
+        body: JSON.stringify(payload)
       });
+
+      if (!response.ok) {
+        throw new Error('Chat request failed');
+      }
+
+      const data = await response.json();
+      const assistantMessage = data.answer || data.response || 'I apologize, but I encountered an issue processing your request.';
+
+      setMessages(m => [...m, { role: 'assistant', text: assistantMessage }]);
       
-      if (response.ok) {
-        const data = await response.json();
-        setFunFact(data.funFact);
+      // Update session ID if provided
+      if (data.session_id) {
+        setSessionId(data.session_id);
       }
     } catch (error) {
-      console.error('Failed to fetch fun fact:', error);
+      console.error('Chat error:', error);
+      setMessages(m => [...m, { 
+        role: 'assistant', 
+        text: 'I apologize, but I\'m having trouble connecting right now. Please try again in a moment.' 
+      }]);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [city, neighborhood, category, sessionId, thinkingMessages, quickResponses]);
+
+  // Auto-send initialInput if provided
+  useEffect(() => {
+    if (initialInput && initialInput.trim() && !hasSentInitial.current) {
+      hasSentInitial.current = true;
+      // Send the message automatically after a short delay
+      setTimeout(() => {
+        sendMessage(initialInput);
+      }, 800); // Let UI settle first
+    }
+  }, [initialInput, sendMessage]);
+
+  
 
   // Set initial messages when city is available
   useEffect(() => {
@@ -172,98 +222,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     }
   };
 
-  async function sendMessage(text, query = null) {
-    if (!text || !text.trim()) return;
-    const msg = { role: 'user', text };
-    setMessages(m => [...m, msg]);
-    setInput('');
-    setLoading(true);
-
-    // Start with an engaging loading message
-    const initialMessage = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
-    setLoadingMessage(initialMessage);
-
-    // Add a quick response for common queries after a short delay
-    const lowerText = text.toLowerCase();
-    let quickResponse = null;
-    
-    if (lowerText.includes('cafe') || lowerText.includes('coffee')) {
-      quickResponse = quickResponses.cafes[Math.floor(Math.random() * quickResponses.cafes.length)];
-    } else if (lowerText.includes('restaurant') || lowerText.includes('food') || lowerText.includes('dining')) {
-      quickResponse = quickResponses.restaurants[Math.floor(Math.random() * quickResponses.restaurants.length)];
-    } else if (lowerText.includes('museum') || lowerText.includes('art') || lowerText.includes('gallery')) {
-      quickResponse = quickResponses.museums[Math.floor(Math.random() * quickResponses.museums.length)];
-    } else if (lowerText.includes('landmark') || lowerText.includes('eiffel') || lowerText.includes('monument')) {
-      quickResponse = quickResponse.landmarks[Math.floor(Math.random() * quickResponses.landmarks.length)];
-    } else if (lowerText.includes('shop') || lowerText.includes('store') || lowerText.includes('boutique')) {
-      quickResponse = quickResponses.shopping[Math.floor(Math.random() * quickResponses.shopping.length)];
-    } else if (lowerText.includes('nightlife') || lowerText.includes('bar') || lowerText.includes('club')) {
-      quickResponse = quickResponses.nightlife[Math.floor(Math.random() * quickResponses.nightlife.length)];
-    }
-
-    // Show quick response after 1.5 seconds if we have one
-    if (quickResponse) {
-      setTimeout(() => {
-        if (loading) {
-          setMessages(m => [...m, { role: 'assistant', text: quickResponse, isQuick: true }]);
-          // Change loading message to indicate we're getting more details
-          setLoadingMessage("Getting more detailed information...");
-        }
-      }, 1500);
-    }
-
-    // Cycle through different loading messages
-    const messageInterval = setInterval(() => {
-      if (loading) {
-        const newMessage = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
-        setLoadingMessage(newMessage);
-      }
-    }, 3000);
-
-    try {
-      // Use the Groq-backed chat API on the same origin (Next.js or proxied)
-      const payload = {
-        query: text, // Send the current message as query
-        city: city,
-        neighborhood: neighborhood,
-        category: category,
-        venues: venues,
-        session_id: sessionId,
-        max_results: 8
-      };
-
-      if (userLocation) {
-        payload.lat = userLocation.lat;
-        payload.lon = userLocation.lon;
-      }
-
-      // Always use the backend's decision logic for endpoint selection
-      const response = await fetch('/api/chat/rag', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-
-      if (data && data.answer) {
-        setMessages(m => [...m, { role: 'assistant', text: data.answer }]);
-        if (data.session_id) {
-          setSessionId(data.session_id);
-        }
-      } else {
-        setMessages(m => [...m, { role: 'assistant', text: "I apologize, but I'm having trouble connecting. Please try again in a moment." }]);
-        console.error('Groq API failed', data?.error);
-      }
-    } catch (e) {
-      setMessages(m => [...m, { role: 'assistant', text: "I apologize, but I'm having trouble connecting. Please try again in a moment." }]);
-      console.error('Chat API failed', e);
-    } finally {
-      clearInterval(messageInterval);
-      setLoading(false);
-      setLoadingMessage('');
-    }
-  }
-
+  
 
   // Helpers for rendering assistant fallback text
   const isGoogleMapsFallback = (text) => /no venues found|see more on google maps|explore more options on google maps|no detailed venues found/i.test(text || '');
@@ -290,6 +249,25 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     }
   };
 
+  // Helper to convert text with place names to Google Maps links
+  const addGoogleMapsLinks = (text) => {
+    if (!text || !city) return text;
+    
+    // Match patterns like "**Place Name**" or "1. Place Name" or "- Place Name"
+    const placeRegex = /(\*\*[\w\s&.'-]+\*\*|\d+\.\s+[\w\s&.'-]+|-\s+[\w\s&.'-]+)/g;
+    
+    return text.replace(placeRegex, (match) => {
+      // Extract the place name (remove **, numbers, or -)
+      const placeName = match.replace(/^\*\*|\*\*$/g, '').replace(/^\d+\.\s*|^-\s*/, '').trim();
+      if (!placeName || placeName.length < 2) return match;
+      
+      const searchQuery = encodeURIComponent(`${placeName}, ${neighborhood ? neighborhood + ', ' : ''}${city}`);
+      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${searchQuery}`;
+      
+      return `[${match}](${mapsUrl})`;
+    });
+  };
+
   return (
     <div className="marco-modal-overlay">
       <div className="marco-modal">
@@ -303,21 +281,6 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
           <div className="marco-msg assistant">
             <div className="city-guide">
               <div style={{fontWeight:600, marginBottom:8}}>📍 {city} Travel Guide</div>
-              {funFact && (
-                  <div style={{
-                    fontSize:14, 
-                    lineHeight:1.5, 
-                    color: '#666', 
-                    fontStyle: 'italic', 
-                    marginBottom:12, 
-                    padding: '8px 12px', 
-                    background: 'rgba(25, 118, 210, 0.05)', 
-                    borderRadius: '6px', 
-                    borderLeft: '3px solid #1976d2'
-                  }}>
-                    💡 {funFact.replace(/Teleférico da Gaia/g, 'Teleférico de Gaia')}
-                  </div>
-                )}
               {results?.quick_guide ? (
                 <div style={{fontSize:14, lineHeight:1.5, color: '#333'}}>
                   <ReactMarkdown
@@ -454,7 +417,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                         disallowedElements={[]}
                         allowElement={() => true}
                       >
-                        {msg.text}
+                        {addGoogleMapsLinks(msg.text)}
                       </ReactMarkdown>
 
                       {/* If the assistant returned a summary/list (wikivoyage-style) and no venues were provided,

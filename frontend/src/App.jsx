@@ -139,6 +139,7 @@ function App() {
   const [showNeighborhoodPicker, setShowNeighborhoodPicker] = useState(false);
   const [smartNeighborhoods, setSmartNeighborhoods] = useState([]);
   const [pendingCategory, setPendingCategory] = useState(null);
+  const [neighborhoodsLoading, setNeighborhoodsLoading] = useState(false);
   const marcoOpenTimerRef = useRef(null);
 
   const clearMarcoOpenTimer = useCallback(() => {
@@ -325,6 +326,8 @@ function App() {
   const fetchSmartNeighborhoods = useCallback(async (city, category = '') => {
     if (!city) return { is_large_city: false, neighborhoods: [] };
     
+    setNeighborhoodsLoading(true);
+    
     try {
       // Set a timeout of 15 seconds to allow backend more time to respond
       const timeoutPromise = new Promise((_, reject) => {
@@ -338,11 +341,14 @@ function App() {
         console.error('Failed to fetch smart neighborhoods: HTTP error', response.status, response.statusText);
         return { is_large_city: true, neighborhoods: [] };
       }
-      return await response.json();
+      const data = await response.json();
+      return data;
     } catch (error) {
       console.error('Failed to fetch smart neighborhoods:', error.message, error.stack);
       // Fallback to any cached neighborhoods or empty list with large city flag to show picker if possible
       return { is_large_city: true, neighborhoods: [] };
+    } finally {
+      setNeighborhoodsLoading(false);
     }
   }, []);
 
@@ -631,23 +637,23 @@ function App() {
     setLocation(prev => ({ ...prev, neighborhood }));
     setShowNeighborhoodPicker(false);
     
-    // Continue with the pending search
+    // Open Marco chat after a short delay to allow neighborhood picker to close
     if (pendingCategory) {
-      handleSearch(pendingCategory.label, location.city);
       setPendingCategory(null);
+      setTimeout(() => setMarcoOpen(true), 300);
     }
-  }, [pendingCategory, location.city, handleSearch]);
+  }, [pendingCategory]);
 
   // Handle skip neighborhood selection
   const handleSkipNeighborhood = useCallback(() => {
     setShowNeighborhoodPicker(false);
     
-    // Continue with the pending search without neighborhood
+    // Open Marco chat after a short delay to allow neighborhood picker to close
     if (pendingCategory) {
-      handleSearch(pendingCategory.label, location.city);
       setPendingCategory(null);
+      setTimeout(() => setMarcoOpen(true), 300);
     }
-  }, [pendingCategory, location.city, handleSearch]);
+  }, [pendingCategory]);
 
   // Handle category selection from CitySuggestions
   const handleCategorySelect = useCallback(async (intent, label) => {
@@ -655,25 +661,18 @@ function App() {
     setCategoryLabel(label);
     setParsedIntent(intent);
     
-    // Check if this is a large city that needs neighborhood narrowing
+    // Show neighborhood picker for ALL cities
     if (location.city) {
+      // Show picker immediately with loading state
+      setPendingCategory({ intent, label });
+      setShowNeighborhoodPicker(true);
+      
       try {
         const smartData = await fetchSmartNeighborhoods(location.city, label);
         
-        // Force neighborhood picker for known large cities even if fetch fails
-        const largeCities = ['Guadalajara', 'Tokyo', 'Strasbourg', 'Athens', 'Rome', 'Barcelona', 'Paris', 'London', 'New York'];
-        const isLargeCity = largeCities.some(city => location.city.toLowerCase().includes(city.toLowerCase())) || smartData.is_large_city;
-        
-        if (isLargeCity) {
-          // Show neighborhood picker for large cities, using available data or empty list
-          setSmartNeighborhoods(smartData.neighborhoods || []);
-          setPendingCategory({ intent, label });
-          setShowNeighborhoodPicker(true);
-          return;
-        }
-        
-        // Small city - search directly
-        handleSearch(label, location.city);
+        // Update neighborhoods when fetch completes
+        setSmartNeighborhoods(smartData.neighborhoods || []);
+        return;
       } catch (error) {
         console.error('Error in category select:', error);
         // Force showing the neighborhood picker with an empty list to prevent UI hang
@@ -704,8 +703,8 @@ function App() {
       setCategoryLabel('');
       setSelectedSuggestion('');
       clearMarcoOpenTimer();
-      // trigger a broad search with no specific category
-      if (location.city) await handleSearch('');
+      // Close Marco when deselected
+      setMarcoOpen(false);
       return;
     }
 
@@ -713,25 +712,18 @@ function App() {
     setCategory(id); // keep internal id
     setSelectedSuggestion(id);
     
-    // Check if this is a large city that needs neighborhood narrowing
+    // Show neighborhood picker for ALL cities
     if (location.city) {
+      // Show picker immediately with loading state
+      setPendingCategory({ intent: id, label });
+      setShowNeighborhoodPicker(true);
+      
       try {
         const smartData = await fetchSmartNeighborhoods(location.city, label);
         
-        // Force neighborhood picker for known large cities even if fetch fails
-        const largeCities = ['Guadalajara', 'Tokyo', 'Strasbourg', 'Athens', 'Rome', 'Barcelona', 'Paris', 'London', 'New York'];
-        const isLargeCity = largeCities.some(city => location.city.toLowerCase().includes(city.toLowerCase())) || smartData.is_large_city;
-        
-        if (isLargeCity) {
-          // Show neighborhood picker for large cities, using available data or empty list
-          setSmartNeighborhoods(smartData.neighborhoods || []);
-          setPendingCategory({ intent: id, label });
-          setShowNeighborhoodPicker(true);
-          return;
-        }
-        
-        // Small city - search directly
-        await handleSearch(label);
+        // Update neighborhoods when fetch completes
+        setSmartNeighborhoods(smartData.neighborhoods || []);
+        return;
       } catch (error) {
         console.error('Error in suggestion select:', error);
         // Force showing the neighborhood picker with an empty list to prevent UI hang
@@ -741,7 +733,7 @@ function App() {
         return;
       }
     }
-  }, [location.city, handleSearch, selectedSuggestion, clearMarcoOpenTimer, fetchSmartNeighborhoods]);
+  }, [location.city, selectedSuggestion, clearMarcoOpenTimer, fetchSmartNeighborhoods]);
 
   // Memoized generate function
   const generateQuickGuide = useCallback(async () => {
@@ -811,6 +803,7 @@ function App() {
             neighborhoods={smartNeighborhoods}
             onSelect={handleNeighborhoodSelect}
             onSkip={handleSkipNeighborhood}
+            loading={neighborhoodsLoading}
           />
         )}
 
@@ -847,70 +840,14 @@ function App() {
           </div>
         )}
 
-        {location.city && location.neighborhood && generating && (
+        {/* {location.city && location.neighborhood && generating && (
           <div style={{ margin: '8px 0 12px 0', color: '#3b556f' }}>
             Generating quick guide…
           </div>
-        )}
+        )} */}
 
-        {/* Category Loading State */}
-        {loading && (category || selectedSuggestion) && (
-          <div style={{ 
-            marginTop: 32, 
-            padding: '40px 16px',
-            textAlign: 'center',
-            animation: 'fadeIn 0.3s ease-out'
-          }}>
-            <div style={{
-              width: 48,
-              height: 48,
-              border: '4px solid #f3f3f3',
-              borderTop: '4px solid #667eea',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto 16px'
-            }} />
-            <p style={{ color: '#666', fontSize: 16, margin: 0 }}>
-              {loadingMessage || `Finding ${categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category} in ${location.city}...`}
-            </p>
-          </div>
-        )}
         
-        {/* Empty state - category selected but no venues */}
-        {(category || selectedSuggestion) && !loading && venues.length === 0 && location.city && (
-          <div style={{ 
-            marginTop: 32, 
-            padding: '40px 16px',
-            textAlign: 'center',
-            background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
-            borderRadius: 16,
-            margin: '32px 16px 0'
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
-            <h3 style={{ color: '#333', marginBottom: 8 }}>
-              Finding the best {categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category?.toLowerCase()} in {location.city}
-            </h3>
-            <p style={{ color: '#666', marginBottom: 16 }}>
-              We're searching for top-rated spots. This may take a moment for lesser-known cities.
-            </p>
-            <button
-              onClick={() => setMarcoOpen(true)}
-              style={{
-                padding: '12px 24px',
-                background: '#667eea',
-                color: 'white',
-                border: 'none',
-                borderRadius: 8,
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: 'bold'
-              }}
-            >
-              💬 Ask Marco for personalized tips
-            </button>
-          </div>
-        )}
-        
+                
         {/* Category Results - Show venues when category selected */}
         {(category || selectedSuggestion) && venues.length > 0 && !loading && (
           <div className="category-results" style={{ 
@@ -1173,7 +1110,7 @@ function App() {
             neighborhood={location.neighborhood}
             venues={venues}
             category={categoryLabel || SUGGESTION_MAP[selectedSuggestion] || (typeof category === 'string' ? category : '')}
-            initialInput=""
+            initialInput={`Tell me about ${categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category} in ${location.neighborhood ? `${location.neighborhood}, ` : ''}${location.city}`}
             results={results}
             wikivoyage={results?.wikivoyage}
             onClose={() => setMarcoOpen(false)}
