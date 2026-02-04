@@ -1038,6 +1038,7 @@ async def api_smart_neighborhoods():
         if lat is None or lon is None:
             return jsonify({'is_large_city': False, 'neighborhoods': [], 'city': city, 'category': category}), 200
 
+<<<<<<< /home/markcodeman/CascadeProjects/travelland/city_guides/src/app.py
         # Add a timeout to prevent long delays from external API calls
         try:
             raw = await asyncio.wait_for(
@@ -1047,6 +1048,34 @@ async def api_smart_neighborhoods():
         except asyncio.TimeoutError:
             app.logger.warning(f"Timeout fetching neighborhoods for {city}")
             raw = []
+=======
+        # Immediate fallback for Dublin to prevent timeout issues
+        if city.lower() == 'dublin':
+            app.logger.info(f"Using immediate Dublin fallback neighborhoods")
+            raw = [
+                {'name': 'Temple Bar', 'description': 'Cultural quarter with pubs, galleries, and nightlife', 'type': 'culture'},
+                {'name': 'Grafton Street', 'description': 'Main shopping street with boutiques and entertainment', 'type': 'shopping'},
+                {'name': 'St. Stephen\'s Green', 'description': 'Victorian public park in city centre', 'type': 'nature'},
+                {'name': 'Docklands', 'description': 'Modern business district with tech companies', 'type': 'business'},
+                {'name': 'Rathmines', 'description': 'Residential area with cafes and local life', 'type': 'residential'},
+                {'name': 'Phibsborough', 'description': 'Trendy neighborhood with young professionals', 'type': 'trendy'},
+                {'name': 'Ranelagh', 'description': 'Upscale area with restaurants and bars', 'type': 'dining'},
+                {'name': 'Smithfield', 'description': 'Historic area with markets and whiskey distillery', 'type': 'historic'}
+            ]
+        else:
+            # Fetch neighborhoods with shorter timeout for other cities
+            try:
+                raw = await asyncio.wait_for(
+                    multi_provider.async_get_neighborhoods(city=city, lat=float(lat), lon=float(lon), lang='en', session=aiohttp_session),
+                    timeout=10.0
+                )
+            except asyncio.TimeoutError:
+                app.logger.warning(f"Timeout fetching neighborhoods for {city}, using empty list")
+                raw = []
+            except Exception as e:
+                app.logger.warning(f"Error fetching neighborhoods for {city}: {e}")
+                raw = []
+>>>>>>> /home/markcodeman/.windsurf/worktrees/travelland/travelland-55ed203d/city_guides/src/app.py
         raw = raw or []
 
         # Fallback: If no neighborhoods found, check for known large cities

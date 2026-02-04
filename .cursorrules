@@ -1,5 +1,27 @@
 # Cursor Rules
-## ContextStream Rules
+## AGENTS.md Enforcement (MANDATORY)
+
+### Pre-Edit Checks - NO HARDCODING
+
+Before ANY code change, verify:
+1. **Am I adding static data?** (dictionaries, lists, mappings, city profiles)
+2. **Can this be fetched from an API?** (Wikipedia, DDGS, OSM)
+3. **If YES to both → REJECT and use dynamic approach**
+
+### Banned Patterns (Auto-Reject)
+- `city_profiles = {'paris': ...}` 
+- `category_map = {'museum': 'Art & Culture'}`
+- `fallback_list = ['Food', 'Shopping', ...]`
+- Hardcoded city/landmark/cultural term dictionaries
+
+### Required Approach
+- Extract DIRECTLY from Wikipedia section headers
+- Return raw API results without mapping layers
+- Dynamic regex extraction from search results
+- Generic fallback ONLY when all APIs fail
+
+### Trigger Words (Pause & Verify)
+Say "dictionary", "mapping", "profile", "hardcoded", "fallback list" → MUST check AGENTS.md first
 
 <contextstream_rules>
 1. **SIMPLE UTILITY?** (list/show/version) → Just execute, skip context calls
@@ -124,3 +146,49 @@ This enables workspace-level memory and context without project-specific indexin
 Use for monorepos or folders with multiple independent projects.
 
 Full docs: https://contextstream.io/docs/mcp/tools
+
+---
+
+## Post-Edit Compliance Audit (MANDATORY)
+
+Before claiming "fixed", "working", "done", or "complete", you MUST:
+
+1. **Run compliance check on modified files:**
+   ```bash
+   python tools/compliance_check.py --agent [YOUR_AGENT_NAME] [files] --blocking
+   ```
+
+2. **Verify APPROVED status before continuing**
+
+3. **If BLOCKED:** Stop work, fix violations, re-run check
+
+### Auto-Trigger Words (Compliance Audit Required)
+
+Say these → MUST run compliance check:
+- "fixed", "working", "done", "complete", "ready"
+- "should work", "supposed to", "assumed"
+- "I think", "probably", "likely", "maybe"
+
+### Compliance Shortcut Commands
+
+```bash
+# Audit staged files before commit
+/compliance-check
+
+# Check your current status  
+/compliance-status
+
+# Full enforcement report
+/compliance-report
+```
+
+### Strike Consequences
+
+| Strikes | Status | Impact |
+|---------|--------|--------|
+| 1 | ⚠️ WARNING | Must acknowledge |
+| 2 | 🚩 FLAGGED | Supervised work only |
+| 3 | 🚫 BLOCKED | 24-hour suspension |
+| 4+ | 📚 RETRAIN | Requires reactivation |
+
+**MANTRA:** "No compliance check = No claiming success"

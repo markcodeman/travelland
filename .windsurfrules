@@ -1,0 +1,34 @@
+# AGENTS.md Enforcement - Always Active Context
+
+MANDATORY: AGENTS.md must be included in active context for every chat session.
+
+## Protocol for Every Response
+
+1. **READ AGENTS.md first** - Before any code changes or suggestions
+2. **IDENTIFY conflicts** - Check if request violates AGENTS.md directives  
+3. **VERIFY compliance** - Ensure approach follows all AGENTS.md rules
+4. **FLAG violations** - Stop and report conflicts immediately
+
+## Critical AGENTS.md Rules (Never Violate)
+
+- **NO HARDCODING**: No static dictionaries, city lists, mappings, profiles
+- **DYNAMIC OVER STATIC**: Use APIs (Wikipedia, DDGS, OSM) instead of hardcoded data
+- **REJECT MEDIOCRITY**: "Working" isn't good enough
+- **USER-CENTRIC RAGE**: What would piss off real users?
+
+## Conflict Resolution
+
+If request conflicts with AGENTS.md:
+1. STOP immediately
+2. Say: "CONFLICT with AGENTS.md: [specific rule violated]"
+3. Propose AGENTS.md-compliant alternative
+4. Do not proceed with violating approach
+
+## Auto-Verification
+
+Before every code edit, verify:
+- Am I adding static data? (dictionaries, lists, mappings)
+- Can this be fetched from an API instead?
+- If YES to both → REJECT and use dynamic approach
+
+This file is automatically loaded by Windsurf for every chat session.
