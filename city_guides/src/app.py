@@ -1457,6 +1457,41 @@ async def get_fun_fact():
                 "Tanga-Moshi railway, built during German colonial rule, stimulated agricultural development in the region!",
                 "The city has a semi-colonial atmosphere with wide streets full of cyclists and motorbikes!",
                 "Tanga experienced great development under German rule, becoming one of East Africa's most modern ports!"
+            ],
+            'ambato': [
+                "Ambato is called the 'City of Flowers and Fruits' for its vibrant gardens and fruit production!",
+                "The city is carved into the side of Cerro Casigana mountain with views of snow-capped volcanoes!",
+                "Ambato is known as the 'Cradle of the Three Juanes' for three famous Ecuadorian writers born here!",
+                "The city hosts the famous 'Fiesta de las Frutas y las Flores' (Fruits and Flowers Festival) annually!",
+                "Ambato was rebuilt after a 1949 earthquake and is now a major commercial center in the Andes!"
+            ],
+            'labasa': [
+                "Labasa is home to one of Fiji's four sugar mills - the Labasa Mill processes sugarcane from northern Vanua Levu!",
+                "The city is located on Vanua Levu, Fiji's second-largest island, and is the main commercial hub of the north!",
+                "Labasa's sugar mill was erected in 1890 from a dismantled mill brought from Queensland, Australia!",
+                "The city has a large Indo-Fijian population due to the historical sugar cane industry!",
+                "Labasa serves as the referral center for northern Fiji with its major hospital and medical facilities!"
+            ],
+            'zomba': [
+                "Zomba was Malawi's first capital city and remained so until 1974 when Lilongwe took over!",
+                "The city is home to Chancellor College - the oldest and most prestigious college of the University of Malawi!",
+                "Zomba is famous for its British colonial architecture and location at the base of the dramatic Zomba Plateau!",
+                "The Parliament remained in Zomba until 1994, making it the political center for 20 years after the capital moved!",
+                "Zomba is known as the 'University City' of Malawi due to its educational institutions and student population!"
+            ],
+            'klang': [
+                "Klang is one of Malaysia's oldest cities and was the capital of Selangor until 1974!",
+                "The city is a Royal city with the Sultan of Selangor's official palace located here!",
+                "Klang was the site of the famous Klang War in 1868, a significant conflict in Malaysian history!",
+                "The city is home to Port Klang - Malaysia's largest port by cargo volume and gateway to international trade!",
+                "Klang has a vibrant Little India district and the distinctive red-and-white colonial-era fire station!"
+            ],
+            'moshi': [
+                "Moshi is the gateway to Mount Kilimanjaro - Africa's highest peak at 5,895 meters!",
+                "The city's name means 'smoke' in Swahili, referring to the mist that circles Mount Kilimanjaro!",
+                "Moshi was established by German colonists in the 1890s as a military encampment and coffee production center!",
+                "The city is surrounded by coffee plantations and is Tanzania's major coffee-growing region!",
+                "Moshi has a dry climate and lower altitude, making it the perfect base for Kilimanjaro climbers!"
             ]
         }
         
