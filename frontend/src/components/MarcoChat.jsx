@@ -13,6 +13,8 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
   const [input, setInput] = useState(initialInput || ''); // allow initial input
   const [sessionId, setSessionId] = useState(localStorage.getItem('marco_session_id') || null);
   const [loading, setLoading] = useState(false);
+  const [requestLimitReached, setRequestLimitReached] = useState(false);
+  const [requestsRemaining, setRequestsRemaining] = useState(1);
   const messagesEndRef = useRef(null);
   const hasSentInitial = useRef(false);
 
@@ -101,10 +103,27 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       });
       const data = await response.json();
 
+      // Check if request limit was reached
+      if (response.status === 429 || data.limitReached) {
+        setRequestLimitReached(true);
+        setMessages(m => [...m, { 
+          role: 'assistant', 
+          text: data.message || "You've reached the limit of 1 AI request per session. To continue chatting, please close and reopen Marco to start a new session." 
+        }]);
+        return;
+      }
+
       if (data && data.answer) {
         setMessages(m => [...m, { role: 'assistant', text: data.answer }]);
         if (data.session_id) {
           setSessionId(data.session_id);
+        }
+        // Update remaining requests counter
+        if (data.requestsRemaining !== undefined) {
+          setRequestsRemaining(data.requestsRemaining);
+          if (data.requestsRemaining === 0) {
+            setRequestLimitReached(true);
+          }
         }
       } else {
         setMessages(m => [...m, { role: 'assistant', text: "I apologize, but I'm having trouble connecting. Please try again in a moment." }]);
@@ -148,11 +167,29 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     }
   };
 
+  const startNewSession = () => {
+    localStorage.removeItem('marco_session_id');
+    setSessionId(null);
+    setRequestLimitReached(false);
+    setRequestsRemaining(1);
+    setMessages([]);
+    hasSentInitial.current = false;
+  };
+
   return (
     <div className="marco-modal-overlay">
       <div className="marco-modal">
         <div className="marco-header">
           <span>Marco — Travel Assistant for {neighborhood ? `${neighborhood}, ` : ''}{city}</span>
+          {requestLimitReached && (
+            <button 
+              className="marco-new-session" 
+              onClick={startNewSession}
+              style={{ marginRight: 'auto', marginLeft: 12, padding: '4px 12px', fontSize: '0.85em', background: '#4CAF50', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+            >
+              ↻ New Session
+            </button>
+          )}
           <button className="marco-close" onClick={onClose}>×</button>
         </div>
 
@@ -408,8 +445,8 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about restaurants, attractions, travel tips..."
-            disabled={loading}
+            placeholder={requestLimitReached ? "Session limit reached - close and reopen to start new session" : "Ask about restaurants, attractions, travel tips..."}
+            disabled={loading || requestLimitReached}
           />
           <button
             onClick={() => {
@@ -419,10 +456,15 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                 handleSubmit();
               }
             }}
-            disabled={loading || (!input.trim() && !category)}
+            disabled={loading || (!input.trim() && !category) || requestLimitReached}
           >
-            {loading ? '...' : "Let's Go"}
+            {loading ? '...' : requestLimitReached ? "Limit Reached" : "Let's Go"}
           </button>
+          {requestLimitReached && (
+            <div style={{ marginTop: 8, color: '#e74c3c', fontSize: '0.9em', textAlign: 'center' }}>
+              💡 You've used your 1 AI request for this session. Close Marco and reopen to start fresh!
+            </div>
+          )}
         </div>
       </div>
     </div>

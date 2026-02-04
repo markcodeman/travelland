@@ -2,6 +2,10 @@
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
+// ==== Request tracking per session (1 request per session limit) ====
+const sessionRequestCounts = new Map();
+const MAX_REQUESTS_PER_SESSION = 1;
+
 // Evergreen Groq model resolver (caches for 10m)
 let _cachedModel = null;
 let _cachedModelTs = 0;
@@ -153,6 +157,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Messages array is required' });
     }
 
+    // Generate or use existing session_id
+    const currentSessionId = session_id || `sess_${Date.now()}`;
+    
+    // Check request limit per session
+    const requestCount = sessionRequestCounts.get(currentSessionId) || 0;
+    if (requestCount >= MAX_REQUESTS_PER_SESSION) {
+      return res.status(429).json({ 
+        error: 'Request limit reached',
+        message: 'You have reached the limit of 1 AI request per session. Please start a new session to continue.',
+        session_id: currentSessionId,
+        limitReached: true
+      });
+    }
+
     // Build the system prompt with travel context
     const systemPrompt = buildSystemPrompt(city, neighborhood, category, venues);
 
@@ -199,6 +217,9 @@ export default async function handler(req, res) {
       answer = data.choices[0].message.content;
       usedModel = useModel;
       usage = data.usage;
+      
+      // Increment request count for this session after successful API call
+      sessionRequestCounts.set(currentSessionId, requestCount + 1);
     } catch (err) {
       console.error('Groq evergreen model error:', err);
       return res.status(502).json({ error: 'Groq evergreen model error', details: err.message });
@@ -207,9 +228,10 @@ export default async function handler(req, res) {
     // Return success response
     return res.status(200).json({
       answer,
-      session_id: session_id || `sess_${Date.now()}`,
+      session_id: currentSessionId,
       model: usedModel,
-      usage
+      usage,
+      requestsRemaining: MAX_REQUESTS_PER_SESSION - (requestCount + 1)
     });
 
   } catch (error) {
