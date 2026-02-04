@@ -1127,6 +1127,13 @@ async def get_fun_fact():
                 "Heineken closed all three major Schiltigheim breweries: Fischer (2009), Schutzenberger (2006), and Adelshoffen (2000).",
                 "The street leading to the Schutzenberger brewery was called 'Rue Perle' - Pearl Street.",
                 "First mentioned in 1265, Schiltigheim's brewing tradition dates back over 750 years."
+            ],
+            'ghent': [
+                "Ghent has over 70,000 bikes for 260,000 residents - making it the bike capital of Belgium!",
+                "The famous Gentse Feesten festival attracts over 2 million visitors for 10 days of street parties.",
+                "Gravensteen Castle sits in the middle of the city - students once conquered it (not an army)!",
+                "Ghent was once the second largest city in Europe after Paris, bigger than London or Cologne.",
+                "The city's dragon statue on the bell tower actually spits fire on special occasions."
             ]
         }
         
