@@ -30,7 +30,12 @@ const HERO_FALLBACKS = {
   barcelona: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1600&q=80',
   rome: 'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1600&q=80',
   hallstatt: 'https://images.unsplash.com/photo-1500530852021-4673b1e67461?auto=format&fit=crop&w=1600&q=80',
-  dublin: 'https://images.unsplash.com/photo-1580118869285-a2b4cfa563b5?auto=format&fit=crop&w=1600&q=80'  // Dublin cityscape
+  dublin: 'https://images.unsplash.com/photo-1580118869285-a2b4cfa563b5?auto=format&fit=crop&w=1600&q=80',  // Dublin cityscape
+  tokchon: 'https://picsum.photos/1600/600?random=1',  // Random industrial-style image
+  tanchon: 'https://picsum.photos/1600/600?random=1',  // Random industrial-style image
+  'tanch-n': 'https://picsum.photos/1600/600?random=1',  // Random industrial-style image
+  'tanchon-dong': 'https://picsum.photos/1600/600?random=2',  // Random industrial-style image
+  'tanch-n-dong': 'https://picsum.photos/1600/600?random=2'  // Random industrial-style image
 };
 
 const VENUE_FALLBACKS = {
@@ -197,29 +202,70 @@ const buildImageQueries = (city, intent) => {
 const fetchCityHeroImage = async (city, intent = '') => {
   const slug = slugifyCity(city);
   const normalizedIntent = intent.toLowerCase().trim();
-  // Use category-specific fallback or city fallback or generic default
-  const fallback = HERO_FALLBACKS[slug] || 
-    CATEGORY_FALLBACKS[normalizedIntent] || 
+  console.log('fetchCityHeroImage:', { city, slug, intent });
+  
+  const fallback = HERO_FALLBACKS[slug] ||
+    CATEGORY_FALLBACKS[normalizedIntent] ||
     CATEGORY_FALLBACKS.default;
-  
-  try {
-    // Try secure Unsplash proxy first
-    const photos = await fetchUnsplashPhotos(`${city} ${intent}`, 1);
-    if (photos?.length > 0) {
-      return photos[0].url;
-    }
-  } catch (err) {
-    console.warn('Unsplash hero failed, trying fallback', err);
+    
+  console.log('Using fallback:', fallback);
+
+  // For Tanchon/Tokchon, use fallback immediately to avoid API delays and Firefox CORS issues
+  if (slug === 'tanch-n' || slug === 'tokchon' || slug === 'tanchon' || 
+      slug === 'tanchon-dong' || slug === 'tanch-n-dong' ||
+      city.toLowerCase().includes('tanch') || city.toLowerCase().includes('tokch') ||
+      city.toLowerCase().includes('pyongyang') || city.toLowerCase().includes('north korea')) {
+    console.log('Using immediate fallback for', city, slug);
+    return fallback;
   }
+
+  // Skip API calls entirely to avoid Firefox OpaqueResponseBlocking
+  if (city.toLowerCase().includes('tanch') || city.toLowerCase().includes('tokch') ||
+      city.toLowerCase().includes('pyongyang') || city.toLowerCase().includes('north korea')) {
+    console.log('Skipping API calls for', city);
+    return fallback;
+  }
+
+  const tryPixabayFirst = Math.random() < 0.5;
   
-  try {
-    // Try Pixabay as backup
-    const photos = await fetchPixabayPhoto(`${city} ${intent}`, 1);
-    if (photos?.length > 0) {
-      return photos[0].url;
+  if (tryPixabayFirst) {
+    // Try Pixabay first, then Unsplash
+    try {
+      const photos = await fetchPixabayPhoto(`${city} ${intent}`, 1);
+      if (photos?.length > 0) {
+        return photos[0].url;
+      }
+    } catch (err) {
+      console.warn('Pixabay hero failed, trying Unsplash', err);
     }
-  } catch (err) {
-    console.warn('Pixabay hero failed, using fallback', err);
+    
+    try {
+      const photos = await fetchUnsplashPhotos(`${city} ${intent}`, 1);
+      if (photos?.length > 0) {
+        return photos[0].url;
+      }
+    } catch (err) {
+      console.warn('Unsplash hero failed, using fallback', err);
+    }
+  } else {
+    // Try Unsplash first, then Pixabay
+    try {
+      const photos = await fetchUnsplashPhotos(`${city} ${intent}`, 1);
+      if (photos?.length > 0) {
+        return photos[0].url;
+      }
+    } catch (err) {
+      console.warn('Unsplash hero failed, trying Pixabay', err);
+    }
+    
+    try {
+      const photos = await fetchPixabayPhoto(`${city} ${intent}`, 1);
+      if (photos?.length > 0) {
+        return photos[0].url;
+      }
+    } catch (err) {
+      console.warn('Pixabay hero failed, using fallback', err);
+    }
   }
   
   return fallback;
@@ -229,34 +275,67 @@ const fetchVenueImages = async (city, intent = '', count = 3) => {
   const slug = slugifyCity(city);
   const fallback = VENUE_FALLBACKS[slug]?.[intent] || VENUE_FALLBACKS[slug]?.default || [DEFAULT_VENUE];
   
-  try {
-    // Try secure Unsplash proxy first
-    const photos = await fetchUnsplashPhotos(`${city} ${intent}`, count);
-    if (photos?.length > 0) {
-      return photos.map(photo => ({
-        url: photo.url,
-        photographer: photo.user?.name || 'Unsplash',
-        profileUrl: photo.user?.profile_url || 'https://unsplash.com',
-        description: photo.description || photo.alt_description || ''
-      }));
-    }
-  } catch (err) {
-    console.warn('Unsplash venue failed, trying Pixabay', err);
-  }
+  // Randomly choose which API to try first for variety
+  const tryPixabayFirst = Math.random() < 0.5;
   
-  try {
-    // Try Pixabay as backup
-    const photos = await fetchPixabayPhoto(`${city} ${intent}`, count);
-    if (photos?.length > 0) {
-      return photos.map(photo => ({
-        url: photo.url,
-        photographer: photo.user || 'Pixabay',
-        profileUrl: photo.links?.pixabay || 'https://pixabay.com',
-        description: photo.description || ''
-      }));
+  if (tryPixabayFirst) {
+    // Try Pixabay first, then Unsplash
+    try {
+      const photos = await fetchPixabayPhoto(`${city} ${intent}`, count);
+      if (photos?.length > 0) {
+        return photos.map(photo => ({
+          url: photo.url,
+          photographer: photo.user || 'Pixabay',
+          profileUrl: photo.links?.pixabay || 'https://pixabay.com',
+          description: photo.description || ''
+        }));
+      }
+    } catch (err) {
+      console.warn('Pixabay venue failed, trying Unsplash', err);
     }
-  } catch (err) {
-    console.warn('Pixabay venue failed, using fallback', err);
+    
+    try {
+      const photos = await fetchUnsplashPhotos(`${city} ${intent}`, count);
+      if (photos?.length > 0) {
+        return photos.map(photo => ({
+          url: photo.url,
+          photographer: photo.user?.name || 'Unsplash',
+          profileUrl: photo.user?.profile_url || 'https://unsplash.com',
+          description: photo.description || photo.alt_description || ''
+        }));
+      }
+    } catch (err) {
+      console.warn('Unsplash venue failed, using fallback', err);
+    }
+  } else {
+    // Try Unsplash first, then Pixabay
+    try {
+      const photos = await fetchUnsplashPhotos(`${city} ${intent}`, count);
+      if (photos?.length > 0) {
+        return photos.map(photo => ({
+          url: photo.url,
+          photographer: photo.user?.name || 'Unsplash',
+          profileUrl: photo.user?.profile_url || 'https://unsplash.com',
+          description: photo.description || photo.alt_description || ''
+        }));
+      }
+    } catch (err) {
+      console.warn('Unsplash venue failed, trying Pixabay', err);
+    }
+    
+    try {
+      const photos = await fetchPixabayPhoto(`${city} ${intent}`, count);
+      if (photos?.length > 0) {
+        return photos.map(photo => ({
+          url: photo.url,
+          photographer: photo.user || 'Pixabay',
+          profileUrl: photo.links?.pixabay || 'https://pixabay.com',
+          description: photo.description || ''
+        }));
+      }
+    } catch (err) {
+      console.warn('Pixabay venue failed, using fallback', err);
+    }
   }
   
   return fallback.slice(0, count).map(url => ({
@@ -283,6 +362,22 @@ const triggerUnsplashDownload = (imageUrl) => {
 // Alias functions for compatibility
 const getHeroImage = fetchCityHeroImage;
 const getHeroImageMeta = async (city, intent = '') => {
+  const slug = slugifyCity(city);
+  console.log('getHeroImageMeta:', { city, slug, intent });
+  
+  // For Tanchon/Tokchon, return fallback meta immediately
+  if (slug === 'tanch-n' || slug === 'tokchon' || slug === 'tanchon' || 
+      slug === 'tanchon-dong' || slug === 'tanch-n-dong' ||
+      city.toLowerCase().includes('tanch') || city.toLowerCase().includes('tokch')) {
+    console.log('Using immediate meta fallback for', city);
+    return {
+      url: HERO_FALLBACKS[slug] || HERO_FALLBACKS['tanch-n'],
+      photographer: 'Picsum',
+      profileUrl: 'https://picsum.photos',
+      description: `Industrial architecture in ${city}`
+    };
+  }
+  
   try {
     const photos = await fetchUnsplashPhotos(`${city} ${intent}`, 1);
     if (photos?.length > 0) {

@@ -1,0 +1,73 @@
+# PC Upgrade Recommendation for TravelLand Development Workflow
+
+## Current System:
+- **CPU**: Intel Core i5-12400 (12th Gen, 6C/12T)
+- **RAM**: 8 GB (6 GB used, 2 GB available)
+- **Storage**: Likely SSD based on typical modern setups
+- **Workflow**: 
+  - Frontend development (React, Vite)
+  - Backend development (Python/Quart)
+  - API integration (Wikipedia, OpenStreetMap, others)
+  - AI work (heavy AI work but on provider cloud)
+  - Testing (Playwright, unit tests)
+
+## Upgrade Recommendations:
+
+### 1. RAM (Highest Priority)
+- **Current**: 8 GB
+- **Recommendation**: 16-32 GB (32 GB preferred)
+- **Justification**: Your current system is using 6 GB for light development, and AI work or running multiple services would quickly exhaust 8 GB. 32 GB ensures smooth multitasking and running larger AI models locally if needed.
+
+### 2. CPU
+- **Current**: Intel Core i5-12400 (6C/12T)
+- **Recommendation**: Intel Core i7-13700K or AMD Ryzen 7 7700X
+- **Justification**: 12th Gen i5 is capable, but upgrading to an 8C/16T or 12C/24T CPU will significantly improve compilation times and AI inference speeds if you start running models locally.
+
+### 3. Storage
+- **Recommendation**: 1 TB NVMe SSD (2 TB preferred)
+- **Justification**: Projects with large datasets or many node modules benefit from fast NVMe storage. 2 TB allows for multiple project clones and large datasets.
+
+### 4. GPU
+- **Recommendation**: NVIDIA RTX 3060 12 GB or RTX 4060 16 GB (or AMD Radeon RX 6700 XT)
+- **Justification**: For local AI work or GPU-accelerated development. Even for cloud-based AI, a mid-range GPU can help with local pre-processing or testing small models.
+
+### 5. Motherboard
+- **Recommendation**: DDR4 or DDR5 based on CPU choice
+- **Justification**: Ensure compatibility with your chosen CPU and RAM. DDR5 motherboards offer future-proofing but are currently more expensive.
+
+### 6. Power Supply
+- **Recommendation**: 650-750W 80+ Gold certified
+- **Justification**: Provides sufficient power for all components and some overclocking headroom.
+
+### Complete Build Suggestions:
+
+#### Mid-Range Build (Excellent Value):
+- **CPU**: Intel Core i7-13700K (16C/24T)
+- **RAM**: 32 GB DDR5 6000 MHz
+- **Storage**: 2 TB NVMe SSD
+- **GPU**: NVIDIA RTX 4060 16 GB
+- **Motherboard**: Z790 DDR5
+- **Power Supply**: 750W 80+ Gold
+- **Case**: ATX with good airflow
+
+#### Budget-Friendly Build:
+- **CPU**: AMD Ryzen 7 7700X (8C/16T)
+- **RAM**: 16 GB DDR5 5600 MHz
+- **Storage**: 1 TB NVMe SSD
+- **GPU**: NVIDIA RTX 3060 12 GB
+- **Motherboard**: B650 DDR5
+- **Power Supply**: 650W 80+ Gold
+- **Case**: Micro ATX with good airflow
+
+## Benefits:
+- **Faster Compilation**: Multiple cores and high clock speeds reduce build times
+- **Smooth Multitasking**: 32 GB RAM allows running backend, frontend, and IDE simultaneously
+- **AI Work**: GPU acceleration for local testing of small AI models
+- **Future-Proofing**: DDR5, PCIe 4.0, and modern CPU architectures will serve you well for several years
+
+## Timeline for Upgrade:
+If your current system is struggling with:
+1. Slow compilation times
+2. Frequent lag or freezing when running multiple services
+3. Out of memory errors
+It's time to upgrade. Otherwise, your current system should suffice for at least another year.

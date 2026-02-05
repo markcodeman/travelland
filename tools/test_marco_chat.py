@@ -26,10 +26,12 @@ DEFAULT_QUERIES = [
 
 def pick_cities(count):
     data = json.loads(SEED.read_text())
-    cities = data.get('cities', [])
+    cities = data.get('cities', {})
     if not cities:
         raise RuntimeError('No seeded cities available')
-    return random.sample(cities, min(count, len(cities)))
+    # Convert dict to list of city objects
+    city_list = [{'name': name, 'countryCode': 'XX'} for name in cities.keys()]
+    return random.sample(city_list, min(count, len(city_list)))
 
 
 async def test_city(session, city, query):

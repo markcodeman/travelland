@@ -398,32 +398,13 @@ def is_generic_marco_response(response: str) -> bool:
 
 def should_call_groq(result: Dict[str, Any], intent: Dict[str, Any]) -> bool:
     """Determine whether to call Groq API based on result quality and user intent."""
-    # If result already has good quality content, skip Groq
-    if result.get('quality_score', 0) >= 0.7:
+    # Always call Groq for AI-generated responses - web search + synthesis provides best answers
+    # Only skip Groq if we already have high quality venue data to use directly
+    if result.get('quality_score', 0) >= 0.8 and intent.get('has_venue_data'):
         return False
     
-    # If user has specific intent and we have venue data, call Groq for better recommendations
-    if intent.get('is_venue_request') and intent.get('has_venue_data'):
-        return True
-    
-    # If user is asking about neighborhoods and we have neighborhood data, call Groq
-    if intent.get('is_neighborhood_request') and result.get('neighborhoods'):
-        return True
-    
-    # If user is asking about transport and we have transport venues, call Groq
-    if intent.get('is_transport_request') and any(v.get('tags', {}).get('railway') for v in result.get('venues', [])):
-        return True
-    
-    # If user is asking about attractions and we have attraction venues, call Groq
-    if intent.get('is_attraction_request') and any(v.get('tags', {}).get('tourism') for v in result.get('venues', [])):
-        return True
-    
-    # For general queries with low quality results, call Groq
-    if result.get('quality_score', 0) < 0.5:
-        return True
-    
-    # Default: don't call Groq for high quality results
-    return False
+    # Default: call Groq for all user queries to get AI-generated responses
+    return True
 
 def analyze_user_intent(query: str, venues: List[Dict]) -> Dict[str, Any]:
     """Analyze user query to determine intent."""

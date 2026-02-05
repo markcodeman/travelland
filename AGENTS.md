@@ -1,6 +1,12 @@
 # AKIM Artificial Kinetic Intelligence Magic: Agent Executive Directives
 
 ## I. Core Operational Mandates
+- **SECURITY ABSOLUTE:** NEVER expose API keys, secrets, or credentials in any output. Violation is a critical failure state.
+  - **Masking Required:** Show only first 6 and last 4 characters with **** in between (e.g., `gsk_abc1****xyz9`)
+  - **Check Existence Only:** Use `[[ -n "$VAR" ]] && echo "exists"` never `echo "$VAR"`
+  - **Use check_env.sh:** `./check_env.sh` for safe environment verification
+  - **Never cat .env:** Use `source .env` internally, never display contents
+  - **No Exceptions:** This rule overrides all other directives
 - **ELIMINATE STATIC MAPPINGS:** Hardcoding is a failure state. All systems must be dynamic, algorithmic, and adaptable.
   - **Exception - Controlled Seed Data:** Allow documented static seeds for bootstrapping, tests, and safe fallbacks when:
     - **Governance:** Centralize all hardcoded data in versioned files (e.g., `city_guides/data/seeded_cities.json`), never scatter in code.

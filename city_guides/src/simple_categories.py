@@ -29,7 +29,9 @@ except ImportError:
 import redis
 redis_client = None  # Will be set from routes.py
 
-CACHE_TTL = 3600  # 1 hour
+# Cache settings - REDUCED TTL for faster iteration
+CACHE_TTL = 30  # 30 seconds for rapid testing
+CACHE_VERSION = "v2"  # Increment when logic changes
 
 
 def normalize_category(cat: str) -> str:
@@ -70,39 +72,47 @@ def get_category_icon(category: str) -> str:
         # Distinctive category icons
         'fashion': '👗', 'design': '✨',
         'film': '🎬', 'entertainment': '🎭',
-        'tech': '💻', 'innovation': '🚀',
-        'finance': '💰', 'business': '💼',
-        'michelin': '⭐', 'dining': '🍽️',
-        'nightlife': '🌙', 
-        'architecture': '🏛️',
-        'ancient': '🏛️', 'history': '📜',
-        'religious': '⛪', 'spiritual': '🕊️',
-        'markets': '🛒', 'shopping': '🛍️',
-        'bridges': '🌉', 'waterways': '⛵',
-        'skyscrapers': '🏙️',
-        'beach': '🏖️', 'coast': '🌊', 'sea': '🏖️', 'ocean': '🌊',
-        'parks': '🌳', 'gardens': '🌸', 'nature': '🌿',
-        'museums': '🏛️', 'culture': '🎨',
-        'transport': '🚇', 'metro': '🚉',
-        'food': '🍔', 'cuisine': '🍜', 'specialties': '🥐',
+        'industrial': '🏭', 'factory': '🏭', 'plant': '🏭',
+        'agriculture': '🌾', 'farming': '🚜', 'farm': '🌾',
+        'springs': '💧', 'hot': '🔥', 'natural': '🌿',
+        'caves': '🏔️', 'cave': '🏔️', 'limestone': '🗿',
+        'regional': '🗺️', 'information': '📊',
+        'business': '💼', 'finance': '💰',
+        'geographical': '🌍', 'features': '🏞️',
+        'nightlife': '🌃', 'entertainment': '🎭',
+        'castle': '🏰', 'castles': '🏰', 'fortifications': '⚔️', 'knight': '⚔️',
+        'castles_&_fortifications': '⚔️',
+        
+        # Food & Drink
+        'food': '🍴', 'cuisine': '🍜', 'specialties': '🍰',
+        'restaurant': '🍴', 'dining': '🍴',
         'wine': '🍷', 'vineyards': '🍇',
-        'gold': '🥇', 'souk': '🏪', 'markets': '🛍️',
-        'festivals': '🎉', 'events': '🎊',
-        # Original icons
-        'restaurant': '🍽️', 'dining': '🍽️',
+        'coffee': '☕', 'cafe': '☕',
+        
+        # Culture & Arts
+        'museums': '🏛️', 'culture': '🎭',
         'historic': '🏛️', 'museum': '🏛️', 'art': '🎨',
         'bar': '🍷', 'club': '🎭', 'music': '🎵',
+        
+        # Nature & Outdoors
+        'beach': '🏖️', 'coast': '🌊', 'sea': '🌊', 'ocean': '🌊',
+        'parks': '🌳', 'gardens': '🌺', 'nature': '🌿',
+        'mountain': '⛰️', 'mountains': '🏔️', 'hiking': '🥾',
+        
+        # Urban & Transport
+        'skyscrapers': '🏙️',
+        'transport': '🚇', 'metro': '🚉',
+        
+        # Activities
         'sport': '⚽', 'stadium': '🏟️',
-        'education': '🎓', 'university': '🏛️', 'school': '🏫',
-        'mountain': '🏔️', 'hiking': '🥾',
-        'airport': '✈️', 'transportation': '🚇',
-        'recreation': '🏃',
-        # Abu Dhabi specific
-        'theme': '🎢', 'park': '🎢', 'entertainment': '🎭',
-        'luxury': '🏨', 'resort': '🏨',
-        'desert': '🏜️', 'adventure': '🚙',
-        'cultural': '🎭', 'activities': '🎪',
+        'education': '🎓', 'university': '🎓', 'school': '🏫',
+        'festivals': '🎉', 'events': '🎊',
+        
+        # Shopping
+        'shopping': '🛍️', 'market': '🏪', 'store': '🏪',
     }
+    
+    category_lower = category.lower()
 
     for key, icon in icons.items():
         if key in category:
@@ -332,6 +342,34 @@ def extract_from_fun_facts(city: str) -> List[Dict[str, Any]]:
                 'portland or': [
                     "Rose City", "Coffee culture", "Craft beer", "Powell's Books", "Bridges", "Forest Park"
                 ],
+                'marseille': [
+                    "Vieux-Port", "Calanques", "Château d'If", "Notre-Dame de la Garde", "bouillabaisse", 
+                    "Mediterranean port", "Le Panier", "MuCEM", "Count of Monte Cristo", "Canebière"
+                ],
+                'kampala': [
+                    "Seven Hills", "Lake Victoria", "Uganda Museum", "Owino Market", "Kabalagala", 
+                    "political heart", "economic hub", "equator", "spring-like climate", "nightlife"
+                ],
+                'tokchon': [
+                    "Sungri Motor Plant", "automobile factory", "fertile valley", "agricultural production", 
+                    "hot springs", "limestone caves", "South Pyongan Province", "rice and maize"
+                ],
+                'tanchon': [
+                    "Sungri Motor Plant", "automobile factory", "fertile valley", "agricultural production", 
+                    "hot springs", "limestone caves", "South Pyongan Province", "rice and maize"
+                ],
+                'faro': [
+                    "Ria Formosa", "natural park", "lagoons", "islands", "historic old town", 
+                    "cobblestone streets", "medieval architecture", "moorish times", "faro cathedral", 
+                    "bone chapel", "stunning beaches", "ilha deserta", "ilha da barreta", "algarve region", 
+                    "vibrant marina", "waterfront dining", "maritime history", "port city"
+                ],
+                'tegucigalpa': [
+                    "capital city", "honduras", "mountain valley", "3300 feet elevation", "basilica of suyapa",
+                    "catholic pilgrimage", "virgin of suyapa", "colonial spanish architecture", "historic center",
+                    "cloud forests", "mountainous landscapes", "honduran cuisine", "baleadas", "pastelitos",
+                    "financial center", "political center", "colonial architecture"
+                ],
                 'salt lake city': [
                     "Mormons", "Salt Lake Temple", "Ski resorts", "Great Salt Lake", "Temple Square", "Utah Jazz"
                 ],
@@ -380,6 +418,7 @@ def extract_from_fun_facts(city: str) -> List[Dict[str, Any]]:
             }  # <--- Added closing bracket
         
         # Check if city exists in fun facts
+        city_keywords = []
         if city_lower in fun_facts_data:
             city_keywords = fun_facts_data[city_lower]
         
@@ -461,7 +500,38 @@ def extract_from_fun_facts(city: str) -> List[Dict[str, Any]]:
             'bridges': ('Bridges & Waterways', 0.9),
             'Harbour Bridge': ('Bridges & Waterways', 0.95),
             
-            # Albuquerque specific
+            # Marseille specific - highly distinctive categories
+            'Vieux-Port': ('Old Port & Harbor', 0.95),
+            'Calanques': ('Calanques & Coast', 0.95),
+            'Château d\'If': ('Island Fortresses', 0.95),
+            'Notre-Dame de la Garde': ('Basilicas & Religious', 0.95),
+            'bouillabaisse': ('Bouillabaisse & Seafood', 0.95),
+            'Mediterranean port': ('Port & Maritime', 0.95),
+            'Le Panier': ('Historic Districts', 0.95),
+            'MuCEM': ('Museums & Culture', 0.95),
+            'Count of Monte Cristo': ('Literary History', 0.95),
+            'Canebière': ('Historic Streets', 0.9),
+            
+            # Kampala specific - highly distinctive categories
+            'Seven Hills': ('Hills & Viewpoints', 0.95),
+            'Lake Victoria': ('Lakes & Waterfront', 0.95),
+            'Uganda Museum': ('Museums & Culture', 0.95),
+            'Owino Market': ('Markets & Shopping', 0.95),
+            'Kabalagala': ('Nightlife & Entertainment', 0.95),
+            'political heart': ('Government & Politics', 0.95),
+            'economic hub': ('Business & Finance', 0.9),
+            'equator': ('Geographical Features', 0.95),
+            'nightlife': ('Nightlife & Entertainment', 0.9),
+            
+            # Tokchon specific - highly distinctive categories
+            'Sungri Motor Plant': ('Industrial Sites', 0.95),
+            'automobile factory': ('Industrial Sites', 0.95),
+            'fertile valley': ('Agriculture & Farming', 0.95),
+            'agricultural production': ('Agriculture & Farming', 0.9),
+            'hot springs': ('Natural Springs', 0.95),
+            'limestone caves': ('Natural Caves', 0.95),
+            'South Pyongan Province': ('Regional Information', 0.9),
+            'rice and maize': ('Agriculture & Farming', 0.85),
             'hot air balloon': ('Festivals & Events', 0.95),
             'Sandia Peak Tramway': ('Parks & Nature', 0.95),
             'Breaking Bad': ('Film & Entertainment', 0.95),
@@ -672,6 +742,59 @@ def extract_from_fun_facts(city: str) -> List[Dict[str, Any]]:
             'Historic Center': ('Historic Sites', 0.95),
             'Tlaquepaque': ('Art & Handicrafts', 0.95),
             'basilica': ('Religious Sites', 0.95),
+            
+            # Faro specific
+            'ria formosa': ('Natural Parks & Wetlands', 0.95),
+            'natural park': ('Nature Reserves', 0.95),
+            'lagoons': ('Coastal Lagoons', 0.95),
+            'islands': ('Island Hopping', 0.95),
+            'historic old town': ('Historic Districts', 0.95),
+            'cobblestone streets': ('Historic Streets', 0.95),
+            'medieval architecture': ('Medieval Heritage', 0.95),
+            'moorish times': ('Moorish Heritage', 0.95),
+            'faro cathedral': ('Religious Sites', 0.95),
+            'bone chapel': ('Unique Attractions', 0.95),
+            'stunning beaches': ('Beaches & Coast', 0.95),
+            'ilha deserta': ('Deserted Islands', 0.95),
+            'ilha da barreta': ('Barrier Islands', 0.95),
+            'algarve region': ('Regional Exploration', 0.95),
+            'vibrant marina': ('Marina & Waterfront', 0.95),
+            'waterfront dining': ('Seaside Dining', 0.95),
+            'maritime history': ('Maritime Heritage', 0.95),
+            'port city': ('Port Cities', 0.95),
+            
+            # Tegucigalpa specific
+            'basilica of suyapa': ('Religious Sites', 0.95),
+            'catholic pilgrimage': ('Pilgrimage Sites', 0.95),
+            'virgin of suyapa': ('Religious Icons', 0.95),
+            'colonial spanish architecture': ('Colonial Architecture', 0.95),
+            'historic center': ('Historic Districts', 0.95),
+            'cloud forests': ('Cloud Forests & Nature', 0.95),
+            'mountainous landscapes': ('Mountain Scenery', 0.9),
+            'honduran cuisine': ('Local Cuisine', 0.95),
+            'baleadas': ('Street Food', 0.9),
+            'pastelitos': ('Local Snacks', 0.9),
+            'financial center': ('Business Districts', 0.85),
+            'political center': ('Government Districts', 0.85),
+            'capital city': ('Capital Cities', 0.9),
+            
+            # Hong Kong specific
+            'star ferry': ('Harbour Cruises', 0.95),
+            'victoria harbour': ('Harbour Views', 0.95),
+            'mid-levels escalator': ('Unique Transport', 0.95),
+            'skyscrapers': ('Skyscraper Viewing', 0.95),
+            'vertical city': ('Urban Exploration', 0.9),
+            'peak tram': ('Scenic Transport', 0.95),
+            'victoria peak': ('Panoramic Views', 0.95),
+            'dim sum': ('Dim Sum & Cantonese', 0.95),
+            'dumplings': ('Dumpling Houses', 0.9),
+            'big buddha': ('Buddhist Sites', 0.95),
+            'lantau island': ('Island Excursions', 0.95),
+            'symphony of lights': ('Light Shows', 0.95),
+            'temple street night market': ('Night Markets', 0.95),
+            'night market': ('Street Shopping', 0.9),
+            'ferry': ('Ferry Rides', 0.9),
+            'harbour': ('Waterfront', 0.9),
         }
         
         # Extract categories based on keywords
@@ -695,38 +818,54 @@ def extract_from_fun_facts(city: str) -> List[Dict[str, Any]]:
 
 
 # Enhanced Wikipedia fetch that gets full article content
-async def fetch_wikipedia_full_content(city: str) -> str:
-    """Fetch full Wikipedia article content for better category extraction"""
+async def fetch_wikipedia_full_content(city: str, state: str = "", country: str = "") -> str:
+    """Fetch full Wikipedia article content for better category extraction.
+    Uses state/country for disambiguation of small towns."""
     try:
         import aiohttp
-        # Get full article content via Wikipedia API
-        url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&exlimit=1&titles={city}&format=json"
-        headers = {'User-Agent': 'TravelLand/1.0 (Educational)'}
         
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    pages = data.get('query', {}).get('pages', {})
-                    for page_id, page_data in pages.items():
-                        content = page_data.get('extract', '')
-                        if content and len(content) > 200:
-                            print(f"[WIKI] Got full content for {city}: {len(content)} chars")
-                            return content
+        # Try variations with state/country for disambiguation
+        search_variations = []
+        if state and country:
+            search_variations.append(f"{city}, {state}")
+        if country:
+            search_variations.append(f"{city}, {country}")
+        search_variations.append(city)
+        
+        for search_title in search_variations:
+            url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&exlimit=1&titles={search_title}&format=json"
+            headers = {'User-Agent': 'TravelLand/1.0 (Educational)'}
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        pages = data.get('query', {}).get('pages', {})
+                        for page_id, page_data in pages.items():
+                            content = page_data.get('extract', '')
+                            if content and len(content) > 200:
+                                print(f"[WIKI] Got full content for {search_title}: {len(content)} chars")
+                                return content
         
         # Fallback to summary API if full content fails
-        return await simple_wikipedia_fetch(city)
+        return await simple_wikipedia_fetch(city, state, country)
     except Exception as e:
         print(f"[WIKI] Full content fetch error: {e}")
-        return await simple_wikipedia_fetch(city)
+        return await simple_wikipedia_fetch(city, state, country)
 
 
 # Simple Wikipedia fetch for testing
-async def simple_wikipedia_fetch(city: str) -> str:
-    """Simple Wikipedia summary fetch that actually works"""
+async def simple_wikipedia_fetch(city: str, state: str = "", country: str = "") -> str:
+    """Simple Wikipedia summary fetch with state/country support."""
     try:
         import aiohttp
-        url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{city}"
+        
+        # Try with state first for better accuracy
+        if state:
+            url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{city}, {state}"
+        else:
+            url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{city}"
+            
         headers = {'User-Agent': 'TravelLand/1.0 (Educational)'}
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers) as resp:
@@ -740,14 +879,14 @@ async def simple_wikipedia_fetch(city: str) -> str:
     return ""
 
 
-async def extract_from_city_guide(city: str) -> List[Dict[str, Any]]:
+async def extract_from_city_guide(city: str, state: str = "", country: str = "") -> List[Dict[str, Any]]:
     """Extract categories from the Wikipedia city guide content."""
     categories = []
     city_lower = city.lower().strip()
     
     try:
         # Use FULL Wikipedia content for better extraction
-        content = await fetch_wikipedia_full_content(city)
+        content = await fetch_wikipedia_full_content(city, state, country)
         if content:
             guide_text = content.lower()
             print(f"[WIKI] Analyzing {len(content)} chars for {city}")
@@ -890,6 +1029,129 @@ async def extract_from_wikipedia_sections(city: str, state: str = "") -> List[Di
     return categories
 
 
+async def extract_distinctive_categories(city: str, state: str = "", country: str = "") -> List[Dict[str, Any]]:
+    """
+    Extract DISTINCTIVE categories by analyzing what makes this city UNIQUE.
+    Not generic categories - specific to this city's character.
+    """
+    categories = []
+    
+    try:
+        # Fetch Wikipedia content with state/country for small towns
+        content = await fetch_wikipedia_full_content(city, state, country)
+        if not content or len(content) < 200:
+            print(f"[DISTINCTIVE] No Wikipedia content for {city}")
+            return categories
+            
+        text_lower = content.lower()
+        
+        # Define distinctive feature mappings
+        distinctive_mappings = [
+            # Industrial heritage
+            {
+                'triggers': ['industrial revolution', 'manufacturing', 'factory', 'steel', 'ironworks', 
+                           'textile industry', 'mill town', 'industrial heritage', 'jewellery quarter'],
+                'category': 'Industrial Heritage',
+                'confidence': 0.95
+            },
+            # Canals & Waterways  
+            {
+                'triggers': ['canal', 'waterway', 'navigable', 'canal network', 'barge', 'locks'],
+                'category': 'Canals & Waterways',
+                'confidence': 0.90
+            },
+            # Music Heritage
+            {
+                'triggers': ['birthplace of', 'music scene', 'band formed', 'musical heritage', 
+                           'live music capital', 'jazz heritage'],
+                'category': 'Music Heritage',
+                'confidence': 0.90
+            },
+            # Literary Heritage
+            {
+                'triggers': ['author lived', 'writer born', 'literary heritage', 'poet', 
+                           'novel set in', 'famous author'],
+                'category': 'Literary Heritage',
+                'confidence': 0.90
+            },
+            # Religious Heritage
+            {
+                'triggers': ['pilgrimage', 'sacred site', 'religious significance', 'holy city',
+                           'cathedral city', 'monastic'],
+                'category': 'Religious Heritage',
+                'confidence': 0.90
+            },
+            # Maritime Heritage
+            {
+                'triggers': ['port city', 'shipbuilding', 'naval history', 'maritime museum',
+                           'historic harbor', 'fishing port'],
+                'category': 'Maritime Heritage',
+                'confidence': 0.90
+            },
+            # Railway Heritage
+            {
+                'triggers': ['railway junction', 'train station', 'steam railway', 'railway museum',
+                           'first railway', 'locomotive works'],
+                'category': 'Railway Heritage',
+                'confidence': 0.90
+            },
+            # Victorian Architecture
+            {
+                'triggers': ['victorian architecture', 'victorian era', 'victorian buildings',
+                           '19th century architecture'],
+                'category': 'Victorian Architecture',
+                'confidence': 0.85
+            },
+            # Street Art
+            {
+                'triggers': ['street art', 'graffiti art', 'mural', 'urban art district'],
+                'category': 'Street Art & Murals',
+                'confidence': 0.85
+            },
+            # Food Specialties
+            {
+                'triggers': ['famous for', 'local specialty', 'traditional dish', 'cuisine known',
+                           'signature food', 'invented here'],
+                'category': 'Local Food Specialties',
+                'confidence': 0.90
+            },
+            # University Town
+            {
+                'triggers': ['university town', 'college town', 'student population', 'academic center'],
+                'category': 'University & Academia',
+                'confidence': 0.85
+            },
+            # Castle & Fortifications
+            {
+                'triggers': ['castle', 'fortress', 'walled city', 'medieval fort', 'citadel'],
+                'category': 'Castles & Fortifications',
+                'confidence': 0.90
+            }
+        ]
+        
+        # Check each distinctive feature
+        for mapping in distinctive_mappings:
+            triggers = mapping['triggers']
+            # Count how many trigger phrases appear
+            matches = sum(1 for trigger in triggers if trigger in text_lower)
+            
+            if matches >= 1:  # At least one match
+                categories.append({
+                    'category': mapping['category'],
+                    'confidence': mapping['confidence'],
+                    'source': 'distinctive_features',
+                    'evidence': f"Found {matches} matching phrases"
+                })
+                print(f"[DISTINCTIVE] Found '{mapping['category']}' for {city}")
+        
+        print(f"[DISTINCTIVE] Extracted {len(categories)} distinctive categories for {city}")
+        
+    except Exception as e:
+        print(f"[DISTINCTIVE] Error: {e}")
+    
+    return categories
+
+
 async def extract_from_ddgs_trends(city: str, state: str = "") -> List[Dict[str, Any]]:
     """Extract current trending categories from DDGS search with comprehensive analysis."""
     categories = []
@@ -985,6 +1247,8 @@ def combine_and_score_categories(all_categories: List[Dict[str, Any]]) -> List[D
         weight = 1.0
         if source == 'fun_facts_distinctive':
             weight = 3.0  # VERY high confidence for distinctive fun fact categories
+        elif source == 'distinctive_features':
+            weight = 2.5  # HIGH confidence for Wikipedia distinctive features
         elif source == 'fun_facts':
             weight = 1.2  # High confidence for curated facts
         elif source == 'city_guide':
@@ -1029,7 +1293,7 @@ async def get_dynamic_categories(city: str, state: str = "", country: str = "US"
     """
     
     try:
-        cache_key = f"categories:{country}:{state}:{city}".lower()
+        cache_key = f"categories:{CACHE_VERSION}:{country}:{state}:{city}".lower()
 
         # Check Redis cache
         if redis_client:
@@ -1047,8 +1311,12 @@ async def get_dynamic_categories(city: str, state: str = "", country: str = "US"
         fun_fact_cats = extract_from_fun_facts(city)
         all_categories.extend(fun_fact_cats)
         
-        # 2. City guide content
-        guide_cats = await extract_from_city_guide(city)
+        # 2. Distinctive features (what makes this city UNIQUE)
+        distinctive_cats = await extract_distinctive_categories(city, state, country)
+        all_categories.extend(distinctive_cats)
+        
+        # 3. City guide content
+        guide_cats = await extract_from_city_guide(city, state, country)
         all_categories.extend(guide_cats)
         
         # 3. Wikipedia sections and categories
@@ -1077,7 +1345,9 @@ async def get_dynamic_categories(city: str, state: str = "", country: str = "US"
         return final_categories
         
     except Exception as e:
+        import traceback
         print(f"[SMART CATEGORIES] Error: {e}")
+        print(traceback.format_exc())
         # Still return empty, not generic fallbacks
         return []
 
@@ -1100,5 +1370,62 @@ def register_category_routes(app):
     async def get_categories(city):
         state = app.request.args.get('state', '')
         country = app.request.args.get('country', 'US')
-        categories = await get_dynamic_categories(city, state, country)
-        return {'categories': categories}
+        nocache = app.request.args.get('nocache', '').lower() == 'true'
+        
+        # Support nocache parameter for testing
+        if nocache:
+            print(f"[CACHE] NOCACHE requested for {city}")
+            # Temporarily disable cache for this request
+            global redis_client
+            original_client = redis_client
+            redis_client = None
+            try:
+                categories = await get_dynamic_categories(city, state, country)
+                return {'categories': categories, 'cached': False, 'note': 'nocache mode'}
+            finally:
+                redis_client = original_client
+        else:
+            categories = await get_dynamic_categories(city, state, country)
+            return {'categories': categories}
+    
+    @app.route('/api/admin/clear-cache', methods=['POST'])
+    async def clear_cache():
+        """Clear all category cache entries. Admin endpoint."""
+        if not redis_client:
+            return {'success': False, 'message': 'Redis not available'}, 500
+            
+        try:
+            # Find and delete all category cache keys
+            pattern = f"categories:{CACHE_VERSION}:*"
+            keys = await asyncio.to_thread(redis_client.keys, pattern)
+            if keys:
+                deleted = await asyncio.to_thread(redis_client.delete, *keys)
+                return {
+                    'success': True, 
+                    'deleted_keys': deleted,
+                    'pattern': pattern,
+                    'message': f'Cleared {deleted} cached entries'
+                }
+            else:
+                return {'success': True, 'message': 'No cache entries found'}
+        except Exception as e:
+            return {'success': False, 'message': str(e)}, 500
+    
+    @app.route('/api/admin/cache-stats', methods=['GET'])
+    async def cache_stats():
+        """Get cache statistics."""
+        if not redis_client:
+            return {'redis_available': False}
+            
+        try:
+            pattern = f"categories:{CACHE_VERSION}:*"
+            keys = await asyncio.to_thread(redis_client.keys, pattern)
+            return {
+                'redis_available': True,
+                'cache_version': CACHE_VERSION,
+                'ttl_seconds': CACHE_TTL,
+                'cached_cities': len(keys),
+                'sample_keys': keys[:10] if keys else []
+            }
+        except Exception as e:
+            return {'error': str(e)}, 500

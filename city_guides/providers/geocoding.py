@@ -78,46 +78,39 @@ async def geocode_city(city: str, country: str = ''):
     geoapify_key = os.getenv("GEOAPIFY_API_KEY")
     if geoapify_key:
         url = "https://api.geoapify.com/v1/geocode/search"
-        params = {"text": city, "apiKey": geoapify_key, "limit": 1}
+        # Use query which includes country if provided
+        params = {"text": query, "apiKey": geoapify_key, "limit": 5}
         lat, lon = await try_provider(url, params=params, extract_latlon=lambda d: (
             (d.get("features")[0].get("properties").get("lat"), d.get("features")[0].get("properties").get("lon"))
         ) if d.get("features") else (None, None))
         if lat and lon:
-            return {"lat": float(lat), "lon": float(lon), "display_name": city}
+            return {"lat": float(lat), "lon": float(lon), "display_name": query}
 
     # 3) OpenCage
     opencage_key = os.getenv("OPENCAGE_API_KEY")
     if opencage_key:
         url = "https://api.opencagedata.com/geocode/v1/json"
-        params = {"q": city, "key": opencage_key, "limit": 1}
+        params = {"q": query, "key": opencage_key, "limit": 1}
         lat, lon = await try_provider(url, params=params, extract_latlon=lambda d: (d["results"][0]["geometry"]["lat"], d["results"][0]["geometry"]["lng"]) if d.get("results") else (None, None))
         if lat and lon:
-            return {"lat": float(lat), "lon": float(lon), "display_name": city}
+            return {"lat": float(lat), "lon": float(lon), "display_name": query}
 
     # 4) LocationIQ
     locationiq_key = os.getenv("LOCATIONIQ_KEY") or os.getenv("LOCATIONIQ_TOKEN")
     if locationiq_key:
         url = "https://us1.locationiq.com/v1/search.php"
-        params = {"key": locationiq_key, "q": city, "format": "json", "limit": 1}
+        params = {"key": locationiq_key, "q": query, "format": "json", "limit": 5}
         lat, lon = await try_provider(url, params=params, extract_latlon=lambda d: (float(d[0]["lat"]), float(d[0]["lon"])) if isinstance(d, list) and d else (None, None))
         if lat and lon:
-            return {"lat": float(lat), "lon": float(lon), "display_name": city}
+            return {"lat": float(lat), "lon": float(lon), "display_name": query}
 
-    # 5) Last-resort: Nominatim (leave as fallback but deprioritised)
-    try:
-        url = "https://nominatim.openstreetmap.org/search"
-        params = {"q": city, "format": "json", "limit": 1}
-        headers = {"User-Agent": "city-guides-app", "Accept-Language": "en"}
-        async with get_session() as session:
-            async with session.get(url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as resp:
-                if resp.status != 200:
-                    print(f"geocode_city nominatim HTTP {resp.status}")
-                resp.raise_for_status()
-                data = await resp.json()
-                if data:
-                    return {"lat": float(data[0]["lat"]), "lon": float(data[0]["lon"]), "display_name": data[0]["display_name"]}
-    except Exception as e:
-        print(f"geocode_city fallback nominatim failed: {e}")
+    # 5) Nominatim fallback (with country context)
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {"q": query, "format": "json", "limit": 5}
+    headers = {"User-Agent": "city-guides-app", "Accept-Language": "en"}
+    lat, lon = await try_provider(url, params=params, headers=headers, extract_latlon=lambda d: (float(d[0]["lat"]), float(d[0]["lon"])) if isinstance(d, list) and d else (None, None))
+    if lat and lon:
+        return {"lat": float(lat), "lon": float(lon), "display_name": query}
 
     return None
 

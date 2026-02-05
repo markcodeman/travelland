@@ -2,6 +2,27 @@ import React from 'react';
 import './NeighborhoodPicker.css';
 
 const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, loading = false }) => {
+  const formatBilingualName = (name) => {
+    // Check if name contains Korean characters
+    const hasKorean = /[가-힣]/.test(name);
+    
+    if (hasKorean) {
+      // If it's Korean, try to extract English part if available, or just show Korean
+      const englishMatch = name.match(/\(([^)]+)\)/);
+      if (englishMatch) {
+        // Format: Korean (English)
+        const koreanPart = name.replace(/\s*\([^)]+\)/, '').trim();
+        return `${koreanPart} (${englishMatch[1]})`;
+      }
+      // Just Korean, no English part available
+      return name;
+    } else {
+      // If it's English, we could add Korean if we had a mapping
+      // For now, just return as-is
+      return name;
+    }
+  };
+
   if (loading) {
     return (
       <div className="neighborhood-picker-overlay">
@@ -73,7 +94,7 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
     );
   }
 
-  const getCategoryEmoji = (type) => {
+  const getCategoryEmoji = (type, name) => {
     const emojiMap = {
       'historic': '🏛️',
       'culture': '🎨',
@@ -82,8 +103,32 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
       'food': '🍽️',
       'bar': '🍸',
       'pub': '🍺',
+      'residential': '🏘️',
+      'nature': '🌳',
+      'beach': '🏖️',
+      'waterfront': '🌊',
+      'market': '🛒',
       'default': '📍'
     };
+    
+    // Check for specific neighborhood names
+    const lowerName = (name || '').toLowerCase();
+    if (lowerName.includes('beach') || lowerName.includes('coastal') || lowerName.includes('waterfront')) {
+      return '🏖️';
+    }
+    if (lowerName.includes('park') || lowerName.includes('garden') || lowerName.includes('nature')) {
+      return '🌳';
+    }
+    if (lowerName.includes('historic') || lowerName.includes('old town')) {
+      return '🏛️';
+    }
+    if (lowerName.includes('market') || lowerName.includes('shopping')) {
+      return '🛍️';
+    }
+    if (lowerName.includes('wine') || lowerName.includes('vineyard')) {
+      return '🍷';
+    }
+    
     return emojiMap[type] || emojiMap['default'];
   };
 
@@ -96,6 +141,11 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
       'food': '#FF9800',
       'bar': '#E91E63',
       'pub': '#795548',
+      'residential': '#4CAF50',
+      'nature': '#2E7D32',
+      'beach': '#FF9800',
+      'waterfront': '#03A9F4',
+      'market': '#8BC34A',
       'default': '#667eea'
     };
     return colorMap[type] || colorMap['default'];
@@ -120,10 +170,10 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
               style={{ '--card-color': getCategoryColor(hood.type) }}
             >
               <div className="neighborhood-emoji">
-                {getCategoryEmoji(hood.type)}
+                {getCategoryEmoji(hood.type, hood.name)}
               </div>
               <div className="neighborhood-info">
-                <h4>{hood.name}</h4>
+                <h4>{formatBilingualName(hood.name)}</h4>
                 <p>{hood.description}</p>
               </div>
               <div className="neighborhood-arrow">→</div>

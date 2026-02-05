@@ -620,12 +620,216 @@
 }
 
 /* Ensure emoji flags display properly in Chrome */
+/* Country Flag Styles - All Countries */
 .suggestion-item .flag[data-country] {
-  color: transparent;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
+  width: 24px;
+  height: 18px;
+  display: inline-block;
+  font-size: 16px;
+  line-height: 18px;
+  text-align: center;
 }
+
+.suggestion-item .flag[data-country="Afghanistan"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Albania"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Algeria"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Andorra"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Angola"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Antigua\\ and\\ Barbuda"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Argentina"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Armenia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Australia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Austria"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Azerbaijan"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Bahamas"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Bahrain"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Bangladesh"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Barbados"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Belarus"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Belgium"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Belize"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Benin"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Bhutan"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Bolivia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Bosnia\\ and\\ Herzegovina"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Botswana"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Brazil"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Brunei"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Bulgaria"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Burkina\\ Faso"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Burundi"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Cabo\\ Verde"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Cambodia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Cameroon"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Canada"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Central\\ African\\ Republic"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Chad"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Chile"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="China"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Colombia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Comoros"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Congo\\ \\(Congo-Brazzaville\\)"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Congo\\ \\(Congo-Kinshasa\\)"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Costa\\ Rica"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Croatia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Cuba"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Cyprus"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Czechia\\ \\(Czech\\ Republic\\)"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Denmark"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Djibouti"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Dominica"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Dominican\\ Republic"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Ecuador"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Egypt"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="El\\ Salvador"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Equatorial\\ Guinea"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Eritrea"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Estonia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Eswatini"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Ethiopia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Fiji"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Finland"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="France"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Gabon"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Gambia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Georgia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Germany"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Ghana"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Greece"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Grenada"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Guatemala"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Guinea"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Guinea-Bissau"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Guyana"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Haiti"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Honduras"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Hungary"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Iceland"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="India"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Indonesia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Iran"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Iraq"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Ireland"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Israel"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Italy"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Jamaica"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Japan"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Jordan"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Kazakhstan"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Kenya"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Kiribati"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Kuwait"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Kyrgyzstan"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Laos"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Latvia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Lebanon"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Lesotho"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Liberia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Libya"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Liechtenstein"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Lithuania"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Luxembourg"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Madagascar"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Malawi"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Malaysia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Maldives"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Mali"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Malta"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Marshall\\ Islands"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Mauritania"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Mauritius"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Mexico"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Micronesia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Moldova"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Monaco"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Mongolia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Montenegro"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Morocco"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Mozambique"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Myanmar"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Namibia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Nauru"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Nepal"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Netherlands"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="New\\ Zealand"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Nicaragua"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Niger"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Nigeria"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="North\\ Korea"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="North\\ Macedonia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Norway"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Oman"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Pakistan"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Palau"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Palestine"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Panama"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Papua\\ New\\ Guinea"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Paraguay"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Peru"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Philippines"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Poland"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Portugal"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Qatar"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Romania"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Russia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Rwanda"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Saint\\ Kitts\\ and\\ Nevis"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Saint\\ Lucia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Saint\\ Vincent\\ and\\ the\\ Grenadines"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Samoa"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="San\\ Marino"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Sao\\ Tome\\ and\\ Principe"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Saudi\\ Arabia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Senegal"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Serbia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Seychelles"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Sierra\\ Leone"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Singapore"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Slovakia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Slovenia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Solomon\\ Islands"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Somalia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="South\\ Africa"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="South\\ Korea"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="South\\ Sudan"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Spain"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Sri\\ Lanka"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Sudan"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Suriname"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Sweden"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Switzerland"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Syria"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Taiwan"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Tajikistan"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Tanzania"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Thailand"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Timor-Leste"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Togo"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Tonga"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Trinidad\\ and\\ Tobago"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Tunisia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Turkey"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Turkmenistan"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Tuvalu"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Uganda"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Ukraine"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="United\\ Arab\\ Emirates"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="United\\ Kingdom"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="United\\ States"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Uruguay"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Uzbekistan"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Vanuatu"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Vatican\\ City"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Venezuela"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Vietnam"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Yemen"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Zambia"] { font-size: 16px; line-height: 18px; }
+.suggestion-item .flag[data-country="Zimbabwe"] { font-size: 16px; line-height: 18px; }
+
+/* Existing SVG fallbacks for popular countries */
 
 /* Add SVG fallbacks for suggestion dropdown flags */
 .suggestion-item .flag[data-country="Greenland"] { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'%3E%3Crect fill='white' width='60' height='40'/%3E%3Cpath d='M0 0h60v20h-60z' fill='%23D12A2E'/%3E%3Ccircle cx='15' cy='10' r='4' fill='white'/%3E%3C/svg%3E") center/contain no-repeat; }
@@ -659,7 +863,7 @@
 .suggestion-item .flag[data-country="Japan"] { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'%3E%3Crect fill='white' width='60' height='40'/%3E%3Ccircle cx='30' cy='20' r='8' fill='%23BC002D'/%3E%3C/svg%3E") center/contain no-repeat; }
 .suggestion-item .flag[data-country="China"] { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'%3E%3Crect fill='%23DE2910' width='60' height='40'/%3E%3Cpath d='M30 8L35 18L46 20L37 28L39 38L30 32L21 38L23 28L14 20L25 18Z' fill='%23FFDE00'/%3E%3C/svg%3E") center/contain no-repeat; }
 .suggestion-item .flag[data-country="India"] { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'%3E%3Crect fill='%23FF9933' width='60' height='13.3'/%3E%3Crect fill='white' y='13.3' width='60' height='13.3'/%3E%3Crect fill='%23138808' y='26.6' width='60' height='13.4'/%3E%3Ccircle cx='30' cy='20' r='4' fill='%23000080'/%3E%3C/svg%3E") center/contain no-repeat; }
-.suggestion-item .flag[data-country="United States"] { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'%3E%3Crect fill='%23B22234' width='60' height='40'/%3E%3Crect fill='white' x='15' y='8' width='30' height='24'/%3E%3Crect fill='%23B22234' x='20' y='13' width='20' height='14'/%3E%3Crect fill='white' x='25' y='18' width='10' height='4'/%3E%3C/svg%3E") center/contain no-repeat; }
+.suggestion-item .flag[data-country="United States"] { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'%3E%3Crect fill='white' width='60' height='40'/%3E%3Crect fill='%23B22234' width='60' height='3.08'/%3E%3Crect fill='%23B22234' y='6.16' width='60' height='3.08'/%3E%3Crect fill='%23B22234' y='12.32' width='60' height='3.08'/%3E%3Crect fill='%23B22234' y='18.48' width='60' height='3.08'/%3E%3Crect fill='%23B22234' y='24.64' width='60' height='3.08'/%3E%3Crect fill='%23B22234' y='30.8' width='60' height='3.08'/%3E%3Crect fill='%233C3B2E' width='24' height='21.6'/%3E%3C/svg%3E") center/contain no-repeat; }
 .suggestion-item .flag[data-country="United Kingdom"] { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'%3E%3Crect fill='%23012169' width='60' height='40'/%3E%3Crect fill='%23C8102E' x='20' y='8' width='20' height='24'/%3E%3C/svg%3E") center/contain no-repeat; }
 .suggestion-item .flag[data-country="Germany"] { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'%3E%3Crect fill='black' width='60' height='13.3'/%3E%3Crect fill='%23DD0000' y='13.3' width='60' height='13.3'/%3E%3Crect fill='%23FFCE00' y='26.6' width='60' height='13.4'/%3E%3C/svg%3E") center/contain no-repeat; }
 .suggestion-item .flag[data-country="Spain"] { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'%3E%3Crect fill='%23AA151B' width='60' height='40'/%3E%3Crect fill='%23F1BF00' y='10' width='60' height='20'/%3E%3C/svg%3E") center/contain no-repeat; }

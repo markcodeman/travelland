@@ -105,14 +105,20 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     }
 
     try {
+      // Build conversation history from messages (exclude initial message and venue cards)
+      const history = messages
+        .filter(m => m.role && (m.role === 'user' || m.role === 'assistant') && m.text)
+        .slice(-6) // Last 6 messages for context
+        .map(m => ({ role: m.role, content: m.text }));
+      
       // Use the RAG chat endpoint
       const payload = {
         query: text,
         city: city,
         neighborhood: neighborhood,
         category: category,
-        venues: [], // No venues needed for initial query
-        session_id: sessionId,
+        venues: [],
+        history: history, // Send conversation history
         max_results: 8
       };
 
@@ -252,19 +258,42 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
   const addGoogleMapsLinks = (text) => {
     if (!text || !city) return text;
     
-    // Match patterns like "**Place Name**" or "1. Place Name" or "- Place Name"
-    const placeRegex = /(\*\*[\w\s&.'-]+\*\*|\d+\.\s+[\w\s&.'-]+|-\s+[\w\s&.'-]+)/g;
+    // First, match explicit bold/numbered patterns like "**Place Name**" or "1. Place Name" or "- Place Name"
+    const explicitRegex = /(\*\*[\w\s&.'ʼ,()éèêëàâäôöùûüçÉÈÊËÀÂÄÔÖÙÛÜÇ\-]{2,50}\*\*|\d+\.\s+[\w\s&.'ʼ,()éèêëàâäôöùûüçÉÈÊËÀÂÄÔÖÙÛÜÇ\-]{2,50}|-\s+[\w\s&.'ʼ,()éèêëàâäôöùûüçÉÈÊËÀÂÄÔÖÙÛÜÇ\-]{2,50})/g;
     
-    return text.replace(placeRegex, (match) => {
-      // Extract the place name (remove **, numbers, or -)
+    text = text.replace(explicitRegex, (match) => {
+      // Check if match is already a markdown link
+      if (match.includes('](')) return match;
+      
       const placeName = match.replace(/^\*\*|\*\*$/g, '').replace(/^\d+\.\s*|^-\s*/, '').trim();
-      if (!placeName || placeName.length < 2) return match;
+      if (!placeName || placeName.length < 2 || placeName.length > 50) return match;
       
       const searchQuery = encodeURIComponent(`${placeName}, ${neighborhood ? neighborhood + ', ' : ''}${city}`);
       const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${searchQuery}`;
       
       return `[${match}](${mapsUrl})`;
     });
+    
+    // Second, match capitalized proper nouns that look like place names
+    // Match patterns like "The Place Name" or "École de Something" followed by comma, period, or end of line
+    const properNounRegex = /\b(The\s+[A-Z][\w\s&.'ʼ-]+?(?:Building|Campus|School|Institute|Center|Centre|Park|Garden|Tower|Bridge|Square|Street|Avenue|Boulevard|Cathedral|Basilica|Museum|Gallery|Theatre|Palace|Castle|Market|Harbor|Port|Beach|Café|Restaurant|Hotel|Hotel|Luminy|Marseille)|[A-ZÁÉÍÓÚÑ][\w\s&.'ʼ-]*(?:École|Université|Institut|Campus|Hexagon|Vieux-Port|Calanques|Notre-Dame))\b/g;
+    
+    text = text.replace(properNounRegex, (match) => {
+      // Avoid double-linking if already linked
+      if (match.includes('](')) return match;
+      const placeName = match.trim();
+      if (!placeName || placeName.length < 3 || placeName.length > 60) return match;
+      
+      // REJECT matches that contain ' or ' or ' and ' - these are clarifying questions, not place names
+      if (/\s+or\s+|\s+and\s+/i.test(placeName)) return match;
+      
+      const searchQuery = encodeURIComponent(`${placeName}, ${city}`);
+      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${searchQuery}`;
+      
+      return `[${placeName}](${mapsUrl})`;
+    });
+    
+    return text;
   };
 
   return (
@@ -481,12 +510,21 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                           while ((match = paraRegex.exec(text)) !== null) {
                             const name = match[1].trim();
                             const description = match[2].trim();
-                            if (name) items.push(`${name}. ${description}`);
+                            // Reject articles and short words as venue names
+                            const articles = ['the', 'a', 'an', 'this', 'that', 'these', 'those', 'my', 'your', 'his', 'her'];
+                            // Also reject names containing ' or ' or ' and ' - these are clarifying questions
+                            if (name && !articles.includes(name.toLowerCase()) && name.length > 3 && !/\s+or\s+|\s+and\s+/i.test(name)) {
+                              items.push(`${name}. ${description}`);
+                            }
                           }
                         }
-                        // If still no items, fallback to Google Maps
+                        // If still no items, just return the original text without adding Google Maps fallback
                         if (items.length === 0) {
-                          items.push(`See more on Google Maps`);
+                          return (
+                            <div style={{marginTop: 12, color: '#666'}}>
+                              Tip: try toggling <strong>Local Gems Only</strong> or selecting a nearby neighborhood for better local results.
+                            </div>
+                          );
                         }
                         // Try to parse name/description pairs for richer cards
                         return (

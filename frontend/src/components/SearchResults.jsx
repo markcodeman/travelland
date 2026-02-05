@@ -10,6 +10,7 @@ export default function SearchResults({ results, cityImage, cityImageMeta }) {
   const quick = results.quick_guide || results.quickGuide || results.summary || null;
   const images = results.mapillary_images || results.images || null;
   const venues = results.venues || [];
+  const categories = results.categories || [];
   const wikivoyage = results.wikivoyage || [];
   const costs = results.costs || [];
   const transport = results.transport || [];

@@ -329,9 +329,9 @@ function App() {
     setNeighborhoodsLoading(true);
     
     try {
-      // Set a timeout of 15 seconds to allow backend more time to respond
+      // Set a timeout of 5 seconds for better UX - fallback if too slow
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout fetching neighborhoods')), 15000);
+        setTimeout(() => reject(new Error('Timeout fetching neighborhoods')), 5000);
       });
       
       const responsePromise = fetch(`${API_BASE}/api/smart-neighborhoods?city=${encodeURIComponent(city)}&category=${encodeURIComponent(category)}`);
@@ -428,13 +428,14 @@ function App() {
         });
         
         if (mounted && data?.quick_guide && !category) {
-          setResults({
+          setResults(prev => ({
+            ...prev,
             quick_guide: data.quick_guide,
             source: data.source,
             cached: data.cached,
             source_url: data.source_url,
             ...(data.mapillary_images && { mapillary_images: data.mapillary_images })
-          });
+          }));
         }
       } catch (err) {
         console.error('Generate quick guide failed', err);
@@ -792,6 +793,7 @@ function App() {
           <CitySuggestions 
             city={location.city}
             onCategorySelect={handleCategorySelect}
+            searchResults={results}
           />
         )}
 

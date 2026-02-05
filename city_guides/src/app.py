@@ -1,3 +1,35 @@
+#!/usr/bin/env python3
+"""
+Refactored TravelLand app.py with modular structure
+"""
+
+import sys
+from pathlib import Path
+
+# Add parent directory to path for imports (must be first)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from quart import Quart, request, jsonify, render_template
+from quart_cors import cors
+import os
+import asyncio
+import aiohttp
+import json
+import hashlib
+import re
+import time
+import requests
+from redis import asyncio as aioredis
+import logging
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+# Now safe to import city_guides modules
 try:
     from city_guides.providers.wikipedia_provider import fetch_wikipedia_summary
     WIKI_CITY_AVAILABLE = True
@@ -20,38 +52,6 @@ from city_guides.src.services.learning import (
 )
 from city_guides.src.services.pixabay import pixabay_service
 from city_guides.src.dynamic_neighborhoods import get_neighborhoods_for_city
-
-"""
-Refactored TravelLand app.py with modular structure
-"""
-
-from quart import Quart, request, jsonify, render_template
-from quart_cors import cors
-import os
-import sys
-import asyncio
-import aiohttp
-import json
-import hashlib
-import re
-import time
-import requests
-from pathlib import Path
-from redis import asyncio as aioredis
-import logging
-
-# Import fun facts from data module
-from .data.fun_facts import FUN_FACTS
-
-# Load environment variables from .env file
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import modules
 from city_guides.src.persistence import (
@@ -92,6 +92,7 @@ from city_guides.src.synthesis_enhancer import SynthesisEnhancer
 from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
 from city_guides.src.marco_response_enhancer import should_call_groq, analyze_user_intent
 from city_guides.src.neighborhood_disambiguator import NeighborhoodDisambiguator
+from city_guides.src.data.seeded_facts import get_city_fun_facts
 
 # Create Quart app instance at the very top so it is always defined before any route decorators
 app = Quart(__name__, static_folder="/home/markm/TravelLand/city_guides/static", static_url_path='', template_folder="/home/markm/TravelLand/city_guides/templates")
@@ -175,9 +176,9 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
                     seen.add(normalized.lower())
                     yield normalized
 
-    async def _fetch_for_title(title: str):
+    async def _fetch_for_title(title: str, country: str | None = None):
         slug = title.replace(' ', '_')
-        summary = await fetch_wikipedia_summary(title, lang="en", city=city)
+        summary = await fetch_wikipedia_summary(title, lang="en", city=city, country=country)
         if summary:
             return summary.strip(), f"https://en.wikipedia.org/wiki/{slug}"
         return None
@@ -185,7 +186,8 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
     # Try direct titles first
     for title in _candidates():
         try:
-            result = await _fetch_for_title(title)
+            # Pass country for better disambiguation handling
+            result = await _fetch_for_title(title, country)
             if result:
                 return result
         except Exception:
@@ -209,7 +211,7 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
                     if isinstance(data, list) and len(data) >= 2 and data[1]:
                         best_title = data[1][0]
                         try:
-                            result = await _fetch_for_title(best_title)
+                            result = await _fetch_for_title(best_title, country)
                             if result:
                                 return result
                         except Exception:
@@ -235,7 +237,7 @@ except Exception as ddgs_import_err:
 
     app.logger.debug('DDGS provider not available at module import time; falling back to empty search results')
 
-from city_guides.groq.traveland_rag import recommender
+from city_guides.groq.traveland_rag import recommender, TravelLandRecommender
 
 # --- /recommend route for RAG recommender ---
 
@@ -273,6 +275,33 @@ async def api_chat_rag():
         start_time = time.time()
 
         full_query = query
+        
+        # Check if user is asking for a fun fact - use seeded data first
+        # Must have BOTH: (1) fact-seeking intent AND (2) specific fact keywords
+        fact_intent_keywords = ['fact', 'trivia', 'did you know', 'something cool', 'something crazy', 
+                                'something amazing', 'something unique', 'something weird', 'something special',
+                                'cool thing', 'crazy thing', 'interesting thing']
+        has_fact_intent = any(kw in query.lower() for kw in fact_intent_keywords)
+        
+        # Also check for direct fun fact patterns
+        direct_patterns = ['fun fact', 'interesting fact', 'cool fact', 'crazy fact', 'amazing fact', 
+                          'unique fact', 'weird fact', 'surprising fact']
+        has_direct_pattern = any(kw in query.lower() for kw in direct_patterns)
+        
+        is_fun_fact_query = has_direct_pattern or (has_fact_intent and any(kw in query.lower() for kw in ['fact', 'thing', 'special']))
+        if is_fun_fact_query and city:
+            try:
+                from city_guides.src.data.seeded_facts import get_city_fun_facts
+                facts = get_city_fun_facts(city)
+                if facts:
+                    import random
+                    selected_fact = random.choice(facts)
+                    answer = f"Here's an interesting fact about {city}: {selected_fact}"
+                    return jsonify({"answer": answer})
+            except Exception as e:
+                app.logger.debug(f'Fun facts lookup failed for {city}: {e}')
+                # Continue to normal flow if seeded data not available
+        
         # Compute a cache key for this query+city and try Redis cache to avoid repeating long work
         try:
             cache_key = None
@@ -295,29 +324,8 @@ async def api_chat_rag():
         except Exception:
             app.logger.exception('Redis cache lookup failed')
 
-        # If lat/lon provided, use them to fetch venues
-        if lat and lon:
-            # Reverse geocode to get city if not provided
-            if not city:
-                city_name = await reverse_geocode(lat, lon)
-                if city_name:
-                    city = city_name
-            # Fetch venues for the coordinates
-            # Fetch venues for the coordinates using reverse geocoded city
-            venues = await multi_provider.async_discover_pois(city, poi_type="all", limit=10)
-            # Add venue context to the query
-            venue_context = "\n\nNearby venues: " + ", ".join([v['name'] for v in venues]) if venues else ""
-            full_query += venue_context
-        elif city:
-            # Geocode the city to get coordinates
-            geocoded = await geocode_city(city)
-            if geocoded:
-                lat = geocoded.get('lat')
-                lon = geocoded.get('lon')
-                if lat and lon:
-                    venues = await multi_provider.async_discover_pois(city, poi_type="all", limit=10)
-                    venue_context = "\n\nNearby venues: " + ", ".join([v['name'] for v in venues]) if venues else ""
-                    full_query += venue_context
+        # Skip venue fetching for speed - web search + Groq is sufficient
+        venues = []
 
         context_snippets = []
 
@@ -354,26 +362,47 @@ async def api_chat_rag():
 
         # Compose Groq prompt (system + user)
         system_prompt = (
-            "You are Marco, a travel AI assistant. Given a user query and a set of recent web search snippets, synthesize a helpful, accurate, and up-to-date answer. "
-            "Never mention your sources or that you used web search. Respond as a unified expert, not a search engine."
+            "You are Marco, a travel AI assistant. Given a user query and web search snippets, provide helpful, accurate travel information. "
+            "IMPORTANT RULES: "
+            "1. This is a conversation - use the previous messages to understand context and answer follow-up questions. "
+            "2. When users ask vague questions like 'do you have a link?' or 'where is it?', they are referring to the most recent place/thing you mentioned. "
+            "3. CLARIFYING QUESTIONS - ONLY when user uses pronouns like 'they', 'it', 'this', 'that' without clear context. "
+            "Example: User asks 'do they do tours?' after you mentioned campus and gardens → Ask 'Do you mean the university campus or the botanical gardens?' "
+            "DON'T ask clarifying questions when user makes clear requests like 'Tell me about historic sites in Luminy' - just answer!"
+            "4. STAY ON TOPIC - if user asks about tours of a specific place, answer about THAT place, not generic city tours. "
+            "5. Provide specific Google Maps links in format: [Place Name](https://www.google.com/maps/search/?api=1&query=Place+Name+City). "
+            "6. Always mention full names of places so the frontend can auto-link them. "
+            "7. Never say 'I don't have a link' - instead provide the relevant Maps search link. "
+            "8. Never mention your sources or that you used web search. "
+            "9. GEOGRAPHIC ACCURACY: Verify if an area is coastal or inland before mentioning beaches. Never claim inland areas have beaches."
         )
         location_fragment = f" in {city}" if city else ""
         user_prompt = f"User query: {query}{location_fragment}\n\nRelevant web snippets:\n{context_text}"
 
+        # Build messages array with conversation history if provided
+        conversation_history = data.get('history', [])
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
         ]
+        
+        # Add conversation history (up to last 6 messages to stay within token limits)
+        if conversation_history and isinstance(conversation_history, list):
+            for msg in conversation_history[-6:]:
+                if isinstance(msg, dict) and 'role' in msg and 'content' in msg:
+                    messages.append({"role": msg['role'], "content": msg['content']})
+        
+        # Add current user query
+        messages.append({"role": "user", "content": user_prompt})
 
         # Analyze user intent and determine if we should call Groq
         intent = analyze_user_intent(query, venues or [])
         should_use_groq = should_call_groq({"quality_score": 0.5}, intent)  # Default quality score
 
-        # Call Groq via recommender (direct call_groq_chat) with a shorter timeout to keep UX snappy
-        GROQ_TIMEOUT = int(os.getenv('GROQ_CHAT_TIMEOUT', '10'))
+        # Call Groq via recommender (6s timeout for Flash Gordon speed)
+        GROQ_TIMEOUT = int(os.getenv('GROQ_CHAT_TIMEOUT', '6'))
         groq_resp = None
         if should_use_groq:
-            groq_resp = recommender.call_groq_chat(messages, timeout=GROQ_TIMEOUT)
+            groq_resp = await recommender.call_groq_chat(messages, timeout=GROQ_TIMEOUT)
             if not groq_resp:
                 # record groq failure
                 try:
@@ -440,8 +469,10 @@ async def _handle_options_preflight():
 
 @app.before_serving
 async def startup():
-    global aiohttp_session, redis_client
+    global aiohttp_session, redis_client, recommender
     aiohttp_session = aiohttp.ClientSession(headers={"User-Agent": "city-guides-async"})
+    # Update recommender with shared session for connection reuse
+    recommender = TravelLandRecommender(session=aiohttp_session)
     try:
         redis_client = aioredis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
         await redis_client.ping()  # type: ignore
@@ -573,15 +604,21 @@ async def get_neighborhoods():
         except Exception:
             app.logger.exception("redis get failed for neighborhoods")
 
-    # fetch from provider
+    # fetch from provider with timeout
     try:
-        data = await multi_provider.async_get_neighborhoods(
-            city=city or None,
-            lat=float(lat) if lat else None,
-            lon=float(lon) if lon else None,
-            lang=lang,
-            session=aiohttp_session,
+        data = await asyncio.wait_for(
+            multi_provider.async_get_neighborhoods(
+                city=city or None,
+                lat=float(lat) if lat else None,
+                lon=float(lon) if lon else None,
+                lang=lang,
+                session=aiohttp_session,
+            ),
+            timeout=15.0  # 15 second timeout
         )
+    except asyncio.TimeoutError:
+        app.logger.warning(f"Neighborhoods fetch timeout for {city or lat+','+lon}")
+        data = []
     except Exception:
         app.logger.exception("neighborhoods fetch failed")
         data = []
@@ -1062,11 +1099,20 @@ async def get_fun_fact():
         
 
         
-        # Normalize city name
-        city_lower = city.lower().strip()
+        # Normalize city name but preserve spaces for multi-word cities
+        import unicodedata
+        normalized = unicodedata.normalize('NFKD', city.lower())
+        # Keep alphanumeric and spaces, remove other punctuation
+        city_lower = ''.join(c for c in normalized if c.isalnum() or c.isspace()).strip()
         
-        # If city not in hardcoded list, fetch interesting facts
-        if city_lower not in fun_facts:
+        # Initialize city_facts to prevent UnboundLocalError
+        city_facts = []
+        
+        # Get seeded facts for this city
+        seeded_facts = get_city_fun_facts(city_lower)
+        
+        # If city not in seeded list, fetch interesting facts
+        if not seeded_facts:
             try:
                 # Try DDGS for fun facts first
                 try:
@@ -1100,14 +1146,16 @@ async def get_fun_fact():
                 app.logger.warning(f"Failed to fetch Wikipedia fun fact for {city}: {e}")
                 city_facts = [f"Explore {city.title()} and discover what makes it special!"]
         else:
-            city_facts = fun_facts[city_lower]
+            city_facts = seeded_facts
         
         # Select a random fun fact
         import random
+        if not city_facts:
+            city_facts = [f"Explore {city.title()} and discover what makes it special!"]
         selected_fact = random.choice(city_facts)
         
         # Track the fact quality
-        source = "hardcoded" if city_lower in fun_facts else "dynamic"
+        source = "seeded" if seeded_facts else "dynamic"
         track_fun_fact(city, selected_fact, source)
         
         return jsonify({
@@ -1215,8 +1263,11 @@ async def search():
     payload = await request.get_json(silent=True) or {}
     print(f"[SEARCH ROUTE] Payload: {payload}")
     
-    # Lightweight heuristic to decide whether to cache this search (focuses on food/top queries)
-    city = (payload.get("query") or "").strip()
+    # Normalize city name but preserve spaces for multi-word cities
+    import unicodedata
+    normalized = unicodedata.normalize('NFKD', (payload.get("query") or "").strip())
+    # Keep alphanumeric and spaces, remove other punctuation
+    city = ''.join(c for c in normalized if c.isalnum() or c.isspace()).strip()
     q = (payload.get("category") or payload.get("intent") or "").strip().lower()
     neighborhood = payload.get("neighborhood")
     state_name = (payload.get("state") or payload.get("stateName") or "").strip()
@@ -1230,6 +1281,29 @@ async def search():
         # Use the search implementation from routes
         from .routes import _search_impl
         result = await asyncio.to_thread(_search_impl, payload)
+
+        # Add categories to the search result
+        if isinstance(result, dict):
+            try:
+                from .simple_categories import get_dynamic_categories
+                categories = await get_dynamic_categories(city, state_name, country_name)
+                result['categories'] = categories
+            except Exception as e:
+                import traceback
+                app.logger.error(f'Failed to get categories for {city}: {e}')
+                app.logger.error(traceback.format_exc())
+                result['categories'] = []
+
+        # Add fun facts from seeded data
+        if isinstance(result, dict):
+            try:
+                seeded_facts = get_city_fun_facts(city)
+                if seeded_facts:
+                    import random
+                    result['fun_facts'] = [random.choice(seeded_facts)]
+                    result['fun_fact'] = result['fun_facts'][0]
+            except Exception as e:
+                app.logger.debug(f'Failed to get fun facts for {city}: {e}')
 
         # If no quick_guide/summary provided by upstream providers, supplement with Wikipedia summary
         if WIKI_CITY_AVAILABLE and isinstance(result, dict):
@@ -2863,17 +2937,78 @@ async def geonames_search():
                     city_name = geoname.get("name", "")
                     country_name = geoname.get("countryName", "")
                     country_code = geoname.get("countryCode", "")
+                    population = geoname.get("population", 0) or 0
+                    feature_code = geoname.get("fcode", "")
                     
                     if not city_name or not country_name:
+                        continue
+                    
+                    # Skip postal districts (arrondissements) - they look like "Lyon 03", "Paris 15"
+                    import re
+                    if re.match(r'^.+\s+\d{2}$', city_name):
+                        app.logger.debug(f"Skipping postal district: {city_name}")
+                        continue
+                    
+                    # Skip suburbs and small localities - tourists want major cities
+                    # PPLX = section of populated place (suburb), PPLQ = abandoned place
+                    if feature_code in ["PPLX", "PPLQ", "PPLH"]:
+                        app.logger.debug(f"Skipping suburb/abandoned place: {city_name} ({feature_code})")
+                        continue
+                    
+                    # Skip Lyon suburbs (communes in Lyon metro area) - tourists want Lyon
+                    if country_code == "FR" and city_name in ["Villeurbanne", "Bron", "Vénissieux", "Saint-Priest", "Meyzieu", "Rillieux-la-Pape", "Décines-Charpieu"]:
+                        app.logger.debug(f"Skipping Lyon suburb: {city_name}")
+                        continue
+                    
+                    # Skip very small places (less than 50,000 people) unless it's a hardcoded destination
+                    if population > 0 and population < 50000:
+                        app.logger.debug(f"Skipping small place: {city_name} (pop: {population})")
                         continue
                     
                     # Get emoji for country
                     country_emoji = ""
                     try:
                         if country_code:
-                            # Convert country code to emoji
-                            emoji = "".join([chr(ord(c) + 127397) for c in country_code.upper()])
-                            country_emoji = emoji
+                            # Hardcoded map of country codes to flag emojis for reliability
+                            country_emoji_map = {
+                                'FR': '🇫🇷', 'JP': '🇯🇵', 'ES': '🇪🇸', 'GB': '🇬🇧', 'US': '🇺🇸',
+                                'IT': '🇮🇹', 'DE': '🇩🇪', 'NL': '🇳🇱', 'PT': '🇵🇹', 'SE': '🇸🇪',
+                                'NO': '🇳🇴', 'DK': '🇩🇰', 'IS': '🇮🇸', 'CA': '🇨🇦', 'AU': '🇦🇺',
+                                'CN': '🇨🇳', 'IN': '🇮🇳', 'BR': '🇧🇷', 'AR': '🇦🇷', 'ZA': '🇿🇦',
+                                'MX': '🇲🇽', 'AE': '🇦🇪', 'SG': '🇸🇬', 'HK': '🇭🇰', 'TH': '🇹🇭',
+                                'KR': '🇰🇷', 'TW': '🇹🇼', 'MY': '🇲🇾', 'ID': '🇮🇩', 'PH': '🇵🇭',
+                                'VN': '🇻🇳', 'TR': '🇹🇷', 'IL': '🇮🇱', 'EG': '🇪🇬', 'MA': '🇲🇦',
+                                'SD': '🇸🇩', 'MR': '🇲🇷', 'DZ': '🇩🇿', 'LY': '🇱🇾', 'TN': '🇹🇳',
+                                'NZ': '🇳🇿', 'CH': '🇨🇭', 'AT': '🇦🇹', 'BE': '🇧🇪', 'CZ': '🇨🇿',
+                                'GR': '🇬🇷', 'HU': '🇭🇺', 'IE': '🇮🇪', 'PL': '🇵🇱', 'RO': '🇷🇴',
+                                'SK': '🇸🇰', 'SI': '🇸🇮', 'UA': '🇺🇦', 'UY': '🇺🇾', 'VE': '🇻🇪',
+                                'ME': '🇲🇪', 'RS': '🇷🇸', 'BA': '🇧🇦', 'AL': '🇦🇱', 'MK': '🇲🇰',
+                                'UG': '🇺🇬', 'KE': '🇰🇪', 'TZ': '🇹🇿', 'GH': '🇬🇭', 'NG': '🇳🇬',
+                                'CI': '🇨🇮', 'SN': '🇸🇳', 'ML': '🇲🇱', 'BF': '🇧🇫', 'NE': '🇳🇪',
+                                'CM': '🇨🇲', 'CD': '🇨🇩', 'CG': '🇨🇬', 'GA': '🇬🇦', 'GQ': '🇬🇶',
+                                'AO': '🇦🇴', 'ZM': '🇿🇲', 'MW': '🇲🇼', 'MZ': '🇲🇿', 'ZW': '🇿🇼',
+                                'BW': '🇧🇼', 'NA': '🇳🇦', 'SZ': '🇸🇿', 'LS': '🇱🇸', 'LR': '🇱🇷',
+                                'SL': '🇸🇱', 'GN': '🇬🇳', 'GW': '🇬🇼', 'CV': '🇨🇻', 'ST': '🇸🇹',
+                                'ER': '🇪🇷', 'DJ': '🇩🇯', 'SO': '🇸🇴', 'ET': '🇪🇹', 'SS': '🇸🇸',
+                                'TD': '🇹🇩', 'CF': '🇨🇫', 'CM': '🇨🇲', 'GA': '🇬🇦', 'GQ': '🇬🇶',
+                                'SA': '🇸🇦', 'IQ': '🇮🇶', 'IR': '🇮🇷', 'AF': '🇦🇫', 'PK': '🇵🇰',
+                                'BD': '🇧🇩', 'LK': '🇱🇰', 'MM': '🇲🇲', 'TH': '🇹🇭', 'KH': '🇰🇭',
+                                'LA': '🇱🇦', 'VN': '🇻🇳', 'PH': '🇵🇭', 'MY': '🇲🇾', 'SG': '🇸🇬',
+                                'ID': '🇮🇩', 'BN': '🇧🇳', 'TL': '🇹🇱', 'PG': '🇵🇬', 'FJ': '🇫🇯',
+                                'SB': '🇸🇧', 'VU': '🇻🇺', 'NC': '🇳🇨', 'PF': '🇵🇫', 'WS': '🇼🇸',
+                                'KI': '🇰🇮', 'TV': '🇹🇻', 'TO': '🇹🇴', 'NU': '🇳🇺', 'PW': '🇵🇼',
+                                'FM': '🇫🇲', 'MH': '🇲🇭', 'MP': '🇲🇵', 'GU': '🇬🇺', 'AS': '🇦🇸',
+                                'KY': '🇰🇾', 'BM': '🇧🇲', 'VG': '🇻🇬', 'AI': '🇦🇮', 'MS': '🇲🇸',
+                                'TC': '🇹🇨', 'DO': '🇩🇴', 'HT': '🇭🇹', 'JM': '🇯🇲', 'BB': '🇧🇧',
+                                'GD': '🇬🇩', 'TT': '🇹🇹', 'LC': '🇱🇨', 'VC': '🇻🇨', 'AG': '🇦🇬',
+                                'DM': '🇩🇲', 'KN': '🇰🇳', 'BS': '🇧🇸', 'BZ': '🇧🇿', 'GT': '🇬🇹',
+                                'SV': '🇸🇻', 'HN': '🇭🇳', 'NI': '🇳🇮', 'CR': '🇨🇷', 'PA': '🇵🇦',
+                                'CO': '🇨🇴', 'VE': '🇻🇪', 'GY': '🇬🇾', 'SR': '🇸🇷', 'GF': '🇬🇫',
+                                'PE': '🇵🇪', 'BO': '🇧🇴', 'PY': '🇵🇾', 'UY': '🇺🇾', 'CL': '🇨🇱',
+                                'AR': '🇦🇷', 'EC': '🇪🇨', 'CU': '🇨🇺', 'PR': '🇵🇷', 'VI': '🇻🇮',
+                                'GL': '🇬🇱', 'CA': '🇨🇦', 'US': '🇺🇸', 'MX': '🇲🇽'
+                            }
+                            country_emoji = country_emoji_map.get(country_code.upper(), '')
                     except Exception:
                         pass
                     
@@ -2884,9 +3019,12 @@ async def geonames_search():
                         "geonameId": geoname.get("geonameId"),
                         "lat": geoname.get("lat"),
                         "lng": geoname.get("lng"),
-                        "population": geoname.get("population"),
+                        "population": population,
                         "source": "geonames"
                     })
+                
+                # Sort by population (largest cities first) to prioritize major cities over suburbs
+                suggestions.sort(key=lambda x: x.get("population", 0) or 0, reverse=True)
                 
                 return jsonify({'suggestions': suggestions})
         
@@ -3057,6 +3195,10 @@ def increment_location_weight(location):
 # Import and register routes from routes module
 from city_guides.src.routes import register_routes
 register_routes(app)
+
+# Register category routes for cache management
+from city_guides.src.simple_categories import register_category_routes
+register_category_routes(app)
 
 if __name__ == "__main__":
     # Load environment variables from .env file manually

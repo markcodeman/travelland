@@ -47,6 +47,9 @@ const ALL_DESTINATIONS = [
   { city: 'Nice', country: 'France', emoji: '🇫🇷' },
   { city: 'Bordeaux', country: 'France', emoji: '🇫🇷' },
   { city: 'Strasbourg', country: 'France', emoji: '🇫🇷' },
+  
+  // US cities (for ambiguous names)
+  { city: 'Lyon', country: 'United States', state: 'Mississippi', emoji: '🇺🇸' },
   { city: 'Barcelona', country: 'Spain', emoji: '🇪🇸' },
   { city: 'Madrid', country: 'Spain', emoji: '🇪🇸' },
   { city: 'Seville', country: 'Spain', emoji: '🇪🇸' },
@@ -87,6 +90,34 @@ const ALL_DESTINATIONS = [
   { city: 'Reykjavik', country: 'Iceland', emoji: '🇮🇸' },
   { city: 'Zurich', country: 'Switzerland', emoji: '🇨🇭' },
   { city: 'Brussels', country: 'Belgium', emoji: '🇧🇪' },
+  
+  // Americas
+  { city: 'Havana', country: 'Cuba', emoji: '🇨🇺' },
+  { city: 'Mexico City', country: 'Mexico', emoji: '🇲🇽' },
+  { city: 'Cancun', country: 'Mexico', emoji: '🇲🇽' },
+  { city: 'Guadalajara', country: 'Mexico', emoji: '🇲🇽' },
+  { city: 'Rio de Janeiro', country: 'Brazil', emoji: '🇧🇷' },
+  { city: 'São Paulo', country: 'Brazil', emoji: '🇧🇷' },
+  { city: 'Buenos Aires', country: 'Argentina', emoji: '🇦🇷' },
+  { city: 'Lima', country: 'Peru', emoji: '🇵🇪' },
+  { city: 'Bogota', country: 'Colombia', emoji: '🇨🇴' },
+  { city: 'Santiago', country: 'Chile', emoji: '🇨🇱' },
+  { city: 'Caracas', country: 'Venezuela', emoji: '🇻🇪' },
+  { city: 'Quito', country: 'Ecuador', emoji: '🇪🇨' },
+  { city: 'La Paz', country: 'Bolivia', emoji: '🇧🇴' },
+  { city: 'Montevideo', country: 'Uruguay', emoji: '🇺🇾' },
+  { city: 'San Jose', country: 'Costa Rica', emoji: '🇨🇷' },
+  { city: 'Panama City', country: 'Panama', emoji: '🇵🇦' },
+  { city: 'Guatemala City', country: 'Guatemala', emoji: '🇬🇹' },
+  { city: 'San Salvador', country: 'El Salvador', emoji: '🇸🇻' },
+  { city: 'Managua', country: 'Nicaragua', emoji: '🇳🇮' },
+  { city: 'Tegucigalpa', country: 'Honduras', emoji: '🇭🇳' },
+  { city: 'San Pedro Sula', country: 'Honduras', emoji: '🇭🇳' },
+  { city: 'Kingston', country: 'Jamaica', emoji: '🇯🇲' },
+  { city: 'Port of Spain', country: 'Trinidad and Tobago', emoji: '🇹🇹' },
+  { city: 'Georgetown', country: 'Guyana', emoji: '🇬🇾' },
+  { city: 'Paramaribo', country: 'Suriname', emoji: '🇸🇷' },
+  { city: 'Cayenne', country: 'French Guiana', emoji: '🇫🇷' },
 
   // Asia
   { city: 'Tokyo', country: 'Japan', emoji: '🇯🇵' },
@@ -113,6 +144,7 @@ const ALL_DESTINATIONS = [
   { city: 'Jaipur', country: 'India', emoji: '🇮🇳' },
   { city: 'Seoul', country: 'South Korea', emoji: '🇰🇷' },
   { city: 'Busan', country: 'South Korea', emoji: '🇰🇷' },
+  { city: 'Tokchon', country: 'North Korea', emoji: '🇰🇵' },
   { city: 'Taipei', country: 'Taiwan', emoji: '🇹🇼' },
   { city: 'Kuala Lumpur', country: 'Malaysia', emoji: '🇲🇾' },
   { city: 'Jakarta', country: 'Indonesia', emoji: '🇮�' },
@@ -157,6 +189,7 @@ const ALL_DESTINATIONS = [
   { city: 'Tel Aviv', country: 'Israel', emoji: '🇮🇱' },
   { city: 'Jerusalem', country: 'Israel', emoji: '🇮🇱' },
   { city: 'Cairo', country: 'Egypt', emoji: '🇪🇬' },
+  { city: 'Kampala', country: 'Uganda', emoji: '🇺🇬' },
   { city: 'Cape Town', country: 'South Africa', emoji: '🇿🇦' },
   { city: 'Johannesburg', country: 'South Africa', emoji: '🇿🇦' },
   { city: 'Marrakech', country: 'Morocco', emoji: '🇲🇦' },
@@ -329,7 +362,9 @@ const SimpleLocationSelector = ({ onLocationChange, onCityGuide }) => {
                 <span className="flag" data-country={dest.country}>{dest.emoji}</span>
                 <div className="destination-info">
                   <span className="city-name">{dest.city}</span>
-                  <span className="country-name">{dest.country}</span>
+                  <span className="country-name">
+                    {dest.state ? `${dest.state}, ${dest.country}` : dest.country}
+                  </span>
                   {dest.source === 'geonames' && (
                     <span className="geonames-badge">🌍</span>
                   )}

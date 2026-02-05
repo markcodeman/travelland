@@ -5,7 +5,7 @@ Integrates with existing semantic.py for structured venue recommendations
 
 import os
 import json
-import requests
+import aiohttp
 from typing import List, Dict, Optional
 import logging
 
@@ -26,9 +26,10 @@ else:
 class TravelLandRecommender:
     """RAG-based recommender adapted for TravelLand's venue/neighborhood system"""
 
-    def __init__(self):
+    def __init__(self, session: aiohttp.ClientSession = None):
         self.api_key = GROQ_API_KEY
         self.model = GROQ_MODEL
+        self.session = session  # Shared aiohttp session for connection reuse
         # Local synthesizer fallback (keeps outputs usable when Groq fails)
         try:
             from city_guides.src.synthesis_enhancer import SynthesisEnhancer
@@ -108,8 +109,8 @@ class TravelLandRecommender:
 
         return json.dumps(user, ensure_ascii=False)
 
-    def call_groq_chat(self, messages: List[Dict], timeout: int = 20) -> Optional[Dict]:
-        """Call GROQ API with error handling"""
+    async def call_groq_chat(self, messages: List[Dict], timeout: int = 6) -> Optional[Dict]:
+        """Call GROQ API with async aiohttp for speed - 6s timeout for snappy UX"""
         if not self.api_key:
             logger.warning("GROQ_API_KEY not configured")
             return None
@@ -118,19 +119,24 @@ class TravelLandRecommender:
         payload = {
             "model": self.model,
             "messages": messages,
-            "max_tokens": 512,
+            "max_tokens": 400,  # Reduced from 512 for speed
             "temperature": 0.2
         }
 
         try:
-            r = requests.post(GROQ_CHAT_URL, json=payload, headers=headers, timeout=timeout)
-            r.raise_for_status()
-            return r.json()
+            session = self.session or aiohttp.ClientSession()
+            try:
+                async with session.post(GROQ_CHAT_URL, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=timeout)) as resp:
+                    resp.raise_for_status()
+                    return await resp.json()
+            finally:
+                if not self.session:
+                    await session.close()
         except Exception as e:
             logger.error(f"GROQ API call failed: {e}")
             return None
 
-    def recommend_synthesis_enhanced(self, user_context: Dict, candidates: List[Dict]) -> List[Dict]:
+    async def recommend_synthesis_enhanced(self, user_context: Dict, candidates: List[Dict]) -> List[Dict]:
         """
         Enhanced synthesis flow:
           - Try RAG synthesis via Groq
@@ -141,7 +147,7 @@ class TravelLandRecommender:
         try:
             sys_msg = {"role": "system", "content": self.build_system_prompt("synthesis")}
             user_msg = {"role": "user", "content": self.build_user_prompt(user_context, candidates, "synthesis")}
-            resp = self.call_groq_chat([sys_msg, user_msg], timeout=15)
+            resp = await self.call_groq_chat([sys_msg, user_msg], timeout=10)
             if resp:
                 raw = resp["choices"][0]["message"]["content"]
                 try:
@@ -201,7 +207,7 @@ class TravelLandRecommender:
 
         return validated
 
-    def recommend_with_rag(self, user_context: Dict, candidates: List[Dict],
+    async def recommend_with_rag(self, user_context: Dict, candidates: List[Dict],
                           recommendation_type: str = "venues") -> List[Dict]:
         """
         Main RAG recommendation method
@@ -220,7 +226,7 @@ class TravelLandRecommender:
         sys_msg = {"role": "system", "content": self.build_system_prompt(recommendation_type)}
         user_msg = {"role": "user", "content": self.build_user_prompt(user_context, candidates, recommendation_type)}
 
-        resp = self.call_groq_chat([sys_msg, user_msg])
+        resp = await self.call_groq_chat([sys_msg, user_msg], timeout=10)
         if not resp:
             return []
 
@@ -255,7 +261,7 @@ class TravelLandRecommender:
             logger.error(f"Groq model raw response (for debug): {raw}")
             return []
 
-# Global instance for use in semantic.py
+# Global instance for use in semantic.py - will be updated with shared session in app.py
 recommender = TravelLandRecommender()
 
 def recommend_venues_rag(user_context: Dict, candidates: List[Dict]) -> List[Dict]:

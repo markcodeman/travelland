@@ -127,6 +127,11 @@ CITY_SEEDS = {
     "istanbul": ["Sultanahmet", "Beyoğlu", "Karaköy", "Kadıköy", "Üsküdar"],
     "marrakech": ["Medina", "Gueliz", "Hivernage", "Marrakech Palmeraie", "Agdal"],
     "nairobi": ["Westlands", "Karen", "Nairobi CBD", "Lavington", "Kilimani"],
+    "marseille": [],
+    
+    # Lyon suburbs
+    "villeurbanne": ["Centre Villeurbanne", "Cusset", "Gratte-Ciel", "Charpennes", "Laurent Bonnevay"],
+    "lyon": ["Vieux Lyon", "Croix-Rousse", "Presqu'île", "Confluence", "Part-Dieu", "Bellecour", "Fourvière", "Villeurbanne"],
     
     # Oceania
     "sydney": ["CBD", "The Rocks", "Darling Harbour", "Bondi", "Newtown"],
@@ -315,10 +320,17 @@ def get_neighborhood_suggestions(city: str, category: Optional[str] = None) -> L
     # Fall back to seed data
     seeds = CITY_SEEDS.get(city_key, [])
     print(f"[DEBUG] {city_key}: falling back to {len(seeds)} seed neighborhoods")
-    return [
-        {"name": name, "description": f"Neighborhood in {city_key.title()}", "type": "culture"}
-        for name in seeds
-    ]
+    
+    # Check if seeds are strings or dictionaries
+    if seeds and isinstance(seeds[0], str):
+        return [
+            {"name": name, "description": f"Neighborhood in {city_key.title()}", "type": "culture"}
+            for name in seeds
+        ]
+    elif seeds and isinstance(seeds[0], dict):
+        return seeds
+    else:
+        return []
 
 
 def is_large_city(city: str) -> bool:

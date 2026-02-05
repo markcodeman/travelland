@@ -1,5007 +1,639 @@
 {
+  "source": "seed",
   "version": "1.0",
-  "last_updated": "2026-02-04T19:04:27.505195Z",
-  "count": 500,
-  "cities": [
-    {
-      "name": "Toronto",
-      "countryCode": "CA",
-      "stateCode": "08",
-      "lat": 43.70643,
-      "lon": -79.39864,
-      "population": 2600000,
-      "geonameId": 6167865,
-      "source": "seed"
-    },
-    {
-      "name": "Shanghai",
-      "countryCode": "CN",
-      "stateCode": "23",
-      "lat": 31.22222,
-      "lon": 121.45806,
-      "population": 24874500,
-      "geonameId": 1796236,
-      "source": "seed"
-    },
-    {
-      "name": "Bergen",
-      "countryCode": "NO",
-      "stateCode": "46",
-      "lat": 60.39299,
-      "lon": 5.32415,
-      "population": 285911,
-      "geonameId": 3161732,
-      "source": "seed"
-    },
-    {
-      "name": "Marseille",
-      "countryCode": "FR",
-      "stateCode": "93",
-      "lat": 43.29695,
-      "lon": 5.38107,
-      "population": 870731,
-      "geonameId": 2995469,
-      "source": "seed"
-    },
-    {
-      "name": "Golden Sands",
-      "countryCode": "BG",
-      "stateCode": "61",
-      "lat": 43.285,
-      "lon": 28.0418,
-      "population": 9760,
-      "geonameId": 6355004,
-      "source": "seed"
-    },
-    {
-      "name": "Jaipur",
-      "countryCode": "IN",
-      "stateCode": "24",
-      "lat": 26.91962,
-      "lon": 75.78781,
-      "population": 2711758,
-      "geonameId": 1269515,
-      "source": "seed"
-    },
-    {
-      "name": "Queens County",
-      "countryCode": "US",
-      "stateCode": "NY",
-      "lat": 40.68149,
-      "lon": -73.83652,
-      "population": 2272771,
-      "geonameId": 5133273,
-      "source": "seed"
-    },
-    {
-      "name": "Denver",
-      "countryCode": "US",
-      "stateCode": "CO",
-      "lat": 39.73915,
-      "lon": -104.9847,
-      "population": 729019,
-      "geonameId": 5419384,
-      "source": "seed"
-    },
-    {
-      "name": "Tokyo",
-      "countryCode": "JP",
-      "stateCode": "40",
-      "lat": 35.6895,
-      "lon": 139.69171,
-      "population": 9733276,
-      "geonameId": 1850147,
-      "source": "seed"
-    },
-    {
-      "name": "Dublin",
-      "countryCode": "IE",
-      "stateCode": "L",
-      "lat": 53.33306,
-      "lon": -6.24889,
-      "population": 1024027,
-      "geonameId": 2964574,
-      "source": "seed"
-    },
-    {
-      "name": "Paris",
-      "countryCode": "FR",
-      "stateCode": "11",
-      "lat": 48.85341,
-      "lon": 2.3488,
-      "population": 2138551,
-      "geonameId": 2988507,
-      "source": "seed"
-    },
-    {
-      "name": "Brussels",
-      "countryCode": "BE",
-      "stateCode": "BRU",
-      "lat": 50.85045,
-      "lon": 4.34878,
-      "population": 1019022,
-      "geonameId": 2800866,
-      "source": "seed"
-    },
-    {
-      "name": "Baltimore",
-      "countryCode": "US",
-      "stateCode": "MD",
-      "lat": 39.29038,
-      "lon": -76.61219,
-      "population": 576498,
-      "geonameId": 4347778,
-      "source": "seed"
-    },
-    {
-      "name": "Charlotte Amalie",
-      "countryCode": "VI",
-      "stateCode": "030",
-      "lat": 18.3419,
-      "lon": -64.9307,
-      "population": 20000,
-      "geonameId": 4795467,
-      "source": "seed"
-    },
-    {
-      "name": "Vancouver",
-      "countryCode": "CA",
-      "stateCode": "02",
-      "lat": 49.24966,
-      "lon": -123.11934,
-      "population": 600000,
-      "geonameId": 6173331,
-      "source": "seed"
-    },
-    {
-      "name": "Budapest",
-      "countryCode": "HU",
-      "stateCode": "05",
-      "lat": 47.49835,
-      "lon": 19.04045,
-      "population": 1741041,
-      "geonameId": 3054643,
-      "source": "seed"
-    },
-    {
-      "name": "Sunset",
-      "countryCode": "US",
-      "stateCode": "FL",
-      "lat": 25.70594,
-      "lon": -80.35228,
-      "population": 16389,
-      "geonameId": 4174425,
-      "source": "seed"
-    },
-    {
-      "name": "Sellá",
-      "countryCode": "GR",
-      "stateCode": "ESYE24",
-      "lat": 38.87112,
-      "lon": 21.6821,
-      "population": 101,
-      "geonameId": 254020,
-      "source": "seed"
-    },
-    {
-      "name": "Rio de Janeiro",
-      "countryCode": "BR",
-      "stateCode": "21",
-      "lat": -22.90642,
-      "lon": -43.18223,
-      "population": 6747815,
-      "geonameId": 3451190,
-      "source": "seed"
-    },
-    {
-      "name": "Tijuana",
-      "countryCode": "MX",
-      "stateCode": "02",
-      "lat": 32.5027,
-      "lon": -117.00371,
-      "population": 1922523,
-      "geonameId": 3981609,
-      "source": "seed"
-    },
-    {
-      "name": "Indianapolis",
-      "countryCode": "US",
-      "stateCode": "IN",
-      "lat": 39.76838,
-      "lon": -86.15804,
-      "population": 887642,
-      "geonameId": 4259418,
-      "source": "seed"
-    },
-    {
-      "name": "Mar del Plata",
-      "countryCode": "AR",
-      "stateCode": "01",
-      "lat": -38.00042,
-      "lon": -57.5562,
-      "population": 593337,
-      "geonameId": 3430863,
-      "source": "seed"
-    },
-    {
-      "name": "Port of Spain",
-      "countryCode": "TT",
-      "stateCode": "05",
-      "lat": 10.66668,
-      "lon": -61.51889,
-      "population": 49031,
-      "geonameId": 3573890,
-      "source": "seed"
-    },
-    {
-      "name": "San Antonio",
-      "countryCode": "US",
-      "stateCode": "TX",
-      "lat": 29.42412,
-      "lon": -98.49363,
-      "population": 1434625,
-      "geonameId": 4726206,
-      "source": "seed"
-    },
-    {
-      "name": "Buenos Aires",
-      "countryCode": "AR",
-      "stateCode": "07",
-      "lat": -34.61315,
-      "lon": -58.37723,
-      "population": 2891082,
-      "geonameId": 3435910,
-      "source": "seed"
-    },
-    {
-      "name": "Nashville",
-      "countryCode": "US",
-      "stateCode": "TN",
-      "lat": 36.16589,
-      "lon": -86.78444,
-      "population": 689447,
-      "geonameId": 4644585,
-      "source": "seed"
-    },
-    {
-      "name": "Reykjavik",
-      "countryCode": "IS",
-      "stateCode": "39",
-      "lat": 64.13548,
-      "lon": -21.89541,
-      "population": 118918,
-      "geonameId": 3413829,
-      "source": "seed"
-    },
-    {
-      "name": "Oshawa",
-      "countryCode": "CA",
-      "stateCode": "08",
-      "lat": 43.90012,
-      "lon": -78.84957,
-      "population": 166000,
-      "geonameId": 6094578,
-      "source": "seed"
-    },
-    {
-      "name": "Santa Teresa Gallura",
-      "countryCode": "IT",
-      "stateCode": "14",
-      "lat": 41.23859,
-      "lon": 9.18873,
-      "population": 3283,
-      "geonameId": 3167359,
-      "source": "seed"
-    },
-    {
-      "name": "Oxford",
-      "countryCode": "US",
-      "stateCode": "OH",
-      "lat": 39.507,
-      "lon": -84.74523,
-      "population": 22104,
-      "geonameId": 4520760,
-      "source": "seed"
-    },
-    {
-      "name": "Manhattan Beach",
-      "countryCode": "US",
-      "stateCode": "CA",
-      "lat": 33.88474,
-      "lon": -118.41091,
-      "population": 35818,
-      "geonameId": 5370082,
-      "source": "seed"
-    },
-    {
-      "name": "Barcelona",
-      "countryCode": "ES",
-      "stateCode": "56",
-      "lat": 41.38879,
-      "lon": 2.15899,
-      "population": 1620343,
-      "geonameId": 3128760,
-      "source": "seed"
-    },
-    {
-      "name": "Montreal",
-      "countryCode": "CA",
-      "stateCode": "10",
-      "lat": 45.50884,
-      "lon": -73.58781,
-      "population": 1762949,
-      "geonameId": 6077243,
-      "source": "seed"
-    },
-    {
-      "name": "Oaxaca City",
-      "countryCode": "MX",
-      "stateCode": "20",
-      "lat": 17.06025,
-      "lon": -96.72544,
-      "population": 255029,
-      "geonameId": 3522507,
-      "source": "seed"
-    },
-    {
-      "name": "Vidigal",
-      "countryCode": "BR",
-      "stateCode": "21",
-      "lat": -22.99483,
-      "lon": -43.23989,
-      "population": 0,
-      "geonameId": 7538522,
-      "source": "seed"
-    },
-    {
-      "name": "Bucharest",
-      "countryCode": "RO",
-      "stateCode": "10",
-      "lat": 44.43225,
-      "lon": 26.10626,
-      "population": 1877155,
-      "geonameId": 683506,
-      "source": "seed"
-    },
-    {
-      "name": "Bratislava",
-      "countryCode": "SK",
-      "stateCode": "02",
-      "lat": 48.14816,
-      "lon": 17.10674,
-      "population": 423737,
-      "geonameId": 3060972,
-      "source": "seed"
-    },
-    {
-      "name": "Chiado",
-      "countryCode": "PT",
-      "stateCode": "14",
-      "lat": 38.71083,
-      "lon": -9.14066,
-      "population": 0,
-      "geonameId": 6930126,
-      "source": "seed"
-    },
-    {
-      "name": "Milan",
-      "countryCode": "IT",
-      "stateCode": "09",
-      "lat": 45.46427,
-      "lon": 9.18951,
-      "population": 1371498,
-      "geonameId": 3173435,
-      "source": "seed"
-    },
-    {
-      "name": "Country Park",
-      "countryCode": "IT",
-      "stateCode": "04",
-      "lat": 40.88234,
-      "lon": 14.07786,
-      "population": 1469,
-      "geonameId": 8949160,
-      "source": "seed"
-    },
-    {
-      "name": "Copenhagen",
-      "countryCode": "DK",
-      "stateCode": "17",
-      "lat": 55.67594,
-      "lon": 12.56553,
-      "population": 1153615,
-      "geonameId": 2618425,
-      "source": "seed"
-    },
-    {
-      "name": "Town 'n' Country",
-      "countryCode": "US",
-      "stateCode": "FL",
-      "lat": 28.01057,
-      "lon": -82.57732,
-      "population": 78442,
-      "geonameId": 4175538,
-      "source": "seed"
-    },
-    {
-      "name": "Copacabana",
-      "countryCode": "CO",
-      "stateCode": "02",
-      "lat": 6.34633,
-      "lon": -75.50888,
-      "population": 49169,
-      "geonameId": 3685949,
-      "source": "seed"
-    },
-    {
-      "name": "Beijing",
-      "countryCode": "CN",
-      "stateCode": "22",
-      "lat": 39.9075,
-      "lon": 116.39723,
-      "population": 18960744,
-      "geonameId": 1816670,
-      "source": "seed"
-    },
-    {
-      "name": "Kyoto",
-      "countryCode": "JP",
-      "stateCode": "22",
-      "lat": 35.02107,
-      "lon": 135.75385,
-      "population": 1463723,
-      "geonameId": 1857910,
-      "source": "seed"
-    },
-    {
-      "name": "Portland",
-      "countryCode": "US",
-      "stateCode": "OR",
-      "lat": 45.52345,
-      "lon": -122.67621,
-      "population": 652503,
-      "geonameId": 5746545,
-      "source": "seed"
-    },
-    {
-      "name": "Rome",
-      "countryCode": "IT",
-      "stateCode": "07",
-      "lat": 41.89193,
-      "lon": 12.51133,
-      "population": 2318895,
-      "geonameId": 3169070,
-      "source": "seed"
-    },
-    {
-      "name": "Toronto",
-      "countryCode": "CA",
-      "stateCode": "08",
-      "lat": 43.70643,
-      "lon": -79.39864,
-      "population": 2600000,
-      "geonameId": 6167865,
-      "source": "seed"
-    },
-    {
-      "name": "Prague",
-      "countryCode": "CZ",
-      "stateCode": "52",
-      "lat": 50.08804,
-      "lon": 14.42076,
-      "population": 1165581,
-      "geonameId": 3067696,
-      "source": "seed"
-    },
-    {
-      "name": "Florence",
-      "countryCode": "IT",
-      "stateCode": "16",
-      "lat": 43.77925,
-      "lon": 11.24626,
-      "population": 367150,
-      "geonameId": 3176959,
-      "source": "seed"
-    },
-    {
-      "name": "Stockholm",
-      "countryCode": "SE",
-      "stateCode": "26",
-      "lat": 59.32938,
-      "lon": 18.06871,
-      "population": 1515017,
-      "geonameId": 2673730,
-      "source": "seed"
-    },
-    {
-      "name": "Brasília",
-      "countryCode": "BR",
-      "stateCode": "07",
-      "lat": -15.77972,
-      "lon": -47.92972,
-      "population": 2207718,
-      "geonameId": 3469058,
-      "source": "seed"
-    },
-    {
-      "name": "São Paulo",
-      "countryCode": "BR",
-      "stateCode": "27",
-      "lat": -23.5475,
-      "lon": -46.63611,
-      "population": 12400232,
-      "geonameId": 3448439,
-      "source": "seed"
-    },
-    {
-      "name": "Dubai",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.07725,
-      "lon": 55.30927,
-      "population": 3790000,
-      "geonameId": 292223,
-      "source": "seed"
-    },
-    {
-      "name": "Greenwich",
-      "countryCode": "GB",
-      "stateCode": "ENG",
-      "lat": 51.47785,
-      "lon": -0.01176,
-      "population": 0,
-      "geonameId": 2647937,
-      "source": "seed"
-    },
-    {
-      "name": "Seoul",
-      "countryCode": "KR",
-      "stateCode": "11",
-      "lat": 37.566,
-      "lon": 126.9784,
-      "population": 10349312,
-      "geonameId": 1835848,
-      "source": "seed"
-    },
-    {
-      "name": "Madrid",
-      "countryCode": "ES",
-      "stateCode": "29",
-      "lat": 40.4165,
-      "lon": -3.70256,
-      "population": 3255944,
-      "geonameId": 3117735,
-      "source": "seed"
-    },
-    {
-      "name": "Seattle",
-      "countryCode": "US",
-      "stateCode": "WA",
-      "lat": 47.60621,
-      "lon": -122.33207,
-      "population": 737015,
-      "geonameId": 5809844,
-      "source": "seed"
-    },
-    {
-      "name": "Berlin",
-      "countryCode": "DE",
-      "stateCode": "16",
-      "lat": 52.52437,
-      "lon": 13.41053,
-      "population": 3426354,
-      "geonameId": 2950159,
-      "source": "seed"
-    },
-    {
-      "name": "Lyon",
-      "countryCode": "FR",
-      "stateCode": "84",
-      "lat": 45.74846,
-      "lon": 4.84671,
-      "population": 522969,
-      "geonameId": 2996944,
-      "source": "seed"
-    },
-    {
-      "name": "Angers",
-      "countryCode": "FR",
-      "stateCode": "52",
-      "lat": 47.47156,
-      "lon": -0.55202,
-      "population": 168279,
-      "geonameId": 3037656,
-      "source": "seed"
-    },
-    {
-      "name": "Coimbra",
-      "countryCode": "PT",
-      "stateCode": "07",
-      "lat": 40.20564,
-      "lon": -8.41955,
-      "population": 106582,
-      "geonameId": 2740637,
-      "source": "seed"
-    },
-    {
-      "name": "Helsinki",
-      "countryCode": "FI",
-      "stateCode": "01",
-      "lat": 60.16952,
-      "lon": 24.93545,
-      "population": 658864,
-      "geonameId": 658225,
-      "source": "seed"
-    },
-    {
-      "name": "Oklahoma City",
-      "countryCode": "US",
-      "stateCode": "OK",
-      "lat": 35.46756,
-      "lon": -97.51643,
-      "population": 681054,
-      "geonameId": 4544349,
-      "source": "seed"
-    },
-    {
-      "name": "Tallinn",
-      "countryCode": "EE",
-      "stateCode": "01",
-      "lat": 59.43696,
-      "lon": 24.75353,
-      "population": 394024,
-      "geonameId": 588409,
-      "source": "seed"
-    },
-    {
-      "name": "San José",
-      "countryCode": "CR",
-      "stateCode": "08",
-      "lat": 9.93388,
-      "lon": -84.08489,
-      "population": 335007,
-      "geonameId": 3621849,
-      "source": "seed"
-    },
-    {
-      "name": "Playa del Carmen",
-      "countryCode": "MX",
-      "stateCode": "23",
-      "lat": 20.6274,
-      "lon": -87.07987,
-      "population": 149923,
-      "geonameId": 3521342,
-      "source": "seed"
-    },
-    {
-      "name": "Dublin",
-      "countryCode": "IE",
-      "stateCode": "L",
-      "lat": 53.33306,
-      "lon": -6.24889,
-      "population": 1024027,
-      "geonameId": 2964574,
-      "source": "seed"
-    },
-    {
-      "name": "Takht-e Parmīn",
-      "countryCode": "AF",
-      "stateCode": "02",
-      "lat": 35.17359,
-      "lon": 64.65962,
-      "population": 0,
-      "geonameId": 1123150,
-      "source": "seed"
-    },
-    {
-      "name": "New York",
-      "countryCode": "US",
-      "stateCode": "NY",
-      "lat": 40.71427,
-      "lon": -74.00597,
-      "population": 8804190,
-      "geonameId": 5128581,
-      "source": "seed"
-    },
-    {
-      "name": "Shoreditch",
-      "countryCode": "GB",
-      "stateCode": "ENG",
-      "lat": 51.52509,
-      "lon": -0.07695,
-      "population": 0,
-      "geonameId": 2637918,
-      "source": "seed"
-    },
-    {
-      "name": "Amsterdam",
-      "countryCode": "NL",
-      "stateCode": "07",
-      "lat": 52.37403,
-      "lon": 4.88969,
-      "population": 741636,
-      "geonameId": 2759794,
-      "source": "seed"
-    },
-    {
-      "name": "Chengdu",
-      "countryCode": "CN",
-      "stateCode": "32",
-      "lat": 30.66667,
-      "lon": 104.06667,
-      "population": 13568357,
-      "geonameId": 1815286,
-      "source": "seed"
-    },
-    {
-      "name": "Philadelphia",
-      "countryCode": "US",
-      "stateCode": "PA",
-      "lat": 39.95238,
-      "lon": -75.16362,
-      "population": 1573916,
-      "geonameId": 4560349,
-      "source": "seed"
-    },
-    {
-      "name": "Sydney",
-      "countryCode": "AU",
-      "stateCode": "02",
-      "lat": -33.86785,
-      "lon": 151.20732,
-      "population": 5557233,
-      "geonameId": 2147714,
-      "source": "seed"
-    },
-    {
-      "name": "East Harlem",
-      "countryCode": "US",
-      "stateCode": "NY",
-      "lat": 40.79472,
-      "lon": -73.9425,
-      "population": 115921,
-      "geonameId": 6332428,
-      "source": "seed"
-    },
-    {
-      "name": "Kiruna",
-      "countryCode": "SE",
-      "stateCode": "14",
-      "lat": 67.85572,
-      "lon": 20.22513,
-      "population": 17037,
-      "geonameId": 605155,
-      "source": "seed"
-    },
-    {
-      "name": "Porto",
-      "countryCode": "PT",
-      "stateCode": "17",
-      "lat": 41.14961,
-      "lon": -8.61099,
-      "population": 249633,
-      "geonameId": 2735943,
-      "source": "seed"
-    },
-    {
-      "name": "Brooktondale",
-      "countryCode": "US",
-      "stateCode": "NY",
-      "lat": 42.38063,
-      "lon": -76.39466,
-      "population": 0,
-      "geonameId": 5110351,
-      "source": "seed"
-    },
-    {
-      "name": "Jacksonville",
-      "countryCode": "US",
-      "stateCode": "FL",
-      "lat": 30.33218,
-      "lon": -81.65565,
-      "population": 954614,
-      "geonameId": 4160021,
-      "source": "seed"
-    },
-    {
-      "name": "Tokyo",
-      "countryCode": "JP",
-      "stateCode": "40",
-      "lat": 35.6895,
-      "lon": 139.69171,
-      "population": 9733276,
-      "geonameId": 1850147,
-      "source": "seed"
-    },
-    {
-      "name": "Faro",
-      "countryCode": "PT",
-      "stateCode": "09",
-      "lat": 37.01869,
-      "lon": -7.92716,
-      "population": 41355,
-      "geonameId": 2268339,
-      "source": "seed"
-    },
-    {
-      "name": "Riga",
-      "countryCode": "LV",
-      "stateCode": "25",
-      "lat": 56.946,
-      "lon": 24.10589,
-      "population": 742572,
-      "geonameId": 456172,
-      "source": "seed"
-    },
-    {
-      "name": "Flore de Café",
-      "countryCode": "MX",
-      "stateCode": "05",
-      "lat": 16.52369,
-      "lon": -91.63702,
-      "population": 0,
-      "geonameId": 11264561,
-      "source": "seed"
-    },
-    {
-      "name": "Ho Chi Minh City",
-      "countryCode": "VN",
-      "stateCode": "20",
-      "lat": 10.82302,
-      "lon": 106.62965,
-      "population": 8993082,
-      "geonameId": 1566083,
-      "source": "seed"
-    },
-    {
-      "name": "Braga",
-      "countryCode": "PT",
-      "stateCode": "04",
-      "lat": 41.55032,
-      "lon": -8.42005,
-      "population": 121394,
-      "geonameId": 2742032,
-      "source": "seed"
-    },
-    {
-      "name": "Port Elizabeth",
-      "countryCode": "ZA",
-      "stateCode": "05",
-      "lat": -33.96109,
-      "lon": 25.61494,
-      "population": 1050078,
-      "geonameId": 964420,
-      "source": "seed"
-    },
-    {
-      "name": "Calgary",
-      "countryCode": "CA",
-      "stateCode": "01",
-      "lat": 51.05011,
-      "lon": -114.08529,
-      "population": 1019942,
-      "geonameId": 5913490,
-      "source": "seed"
-    },
-    {
-      "name": "Sar-e Pul",
-      "countryCode": "AF",
-      "stateCode": "33",
-      "lat": 36.21544,
-      "lon": 65.93249,
-      "population": 52121,
-      "geonameId": 1127110,
-      "source": "seed"
-    },
-    {
-      "name": "Belém",
-      "countryCode": "BR",
-      "stateCode": "16",
-      "lat": -1.45583,
-      "lon": -48.50444,
-      "population": 1499641,
-      "geonameId": 3405870,
-      "source": "seed"
-    },
-    {
-      "name": "Mumbai",
-      "countryCode": "IN",
-      "stateCode": "16",
-      "lat": 19.07283,
-      "lon": 72.88261,
-      "population": 12691836,
-      "geonameId": 1275339,
-      "source": "seed"
-    },
-    {
-      "name": "Madrid",
-      "countryCode": "ES",
-      "stateCode": "29",
-      "lat": 40.4165,
-      "lon": -3.70256,
-      "population": 3255944,
-      "geonameId": 3117735,
-      "source": "seed"
-    },
-    {
-      "name": "Utrecht",
-      "countryCode": "NL",
-      "stateCode": "09",
-      "lat": 52.09083,
-      "lon": 5.12222,
-      "population": 375161,
-      "geonameId": 2745912,
-      "source": "seed"
-    },
-    {
-      "name": "Nantes",
-      "countryCode": "FR",
-      "stateCode": "52",
-      "lat": 47.21725,
-      "lon": -1.55336,
-      "population": 318808,
-      "geonameId": 2990969,
-      "source": "seed"
-    },
-    {
-      "name": "Austin",
-      "countryCode": "US",
-      "stateCode": "TX",
-      "lat": 30.26715,
-      "lon": -97.74306,
-      "population": 974447,
-      "geonameId": 4671654,
-      "source": "seed"
-    },
-    {
-      "name": "Montreal",
-      "countryCode": "CA",
-      "stateCode": "10",
-      "lat": 45.50884,
-      "lon": -73.58781,
-      "population": 1762949,
-      "geonameId": 6077243,
-      "source": "seed"
-    },
-    {
-      "name": "Cape Town",
-      "countryCode": "ZA",
-      "stateCode": "11",
-      "lat": -33.92584,
-      "lon": 18.42322,
-      "population": 4710000,
-      "geonameId": 3369157,
-      "source": "seed"
-    },
-    {
-      "name": "Halifax",
-      "countryCode": "CA",
-      "stateCode": "07",
-      "lat": 44.64269,
-      "lon": -63.57688,
-      "population": 439819,
-      "geonameId": 6324729,
-      "source": "seed"
-    },
-    {
-      "name": "Los Angeles",
-      "countryCode": "US",
-      "stateCode": "CA",
-      "lat": 34.05223,
-      "lon": -118.24368,
-      "population": 3820914,
-      "geonameId": 5368361,
-      "source": "seed"
-    },
-    {
-      "name": "Stavanger",
-      "countryCode": "NO",
-      "stateCode": "14",
-      "lat": 58.97005,
-      "lon": 5.73332,
-      "population": 144877,
-      "geonameId": 3137115,
-      "source": "seed"
-    },
-    {
-      "name": "Durban",
-      "countryCode": "ZA",
-      "stateCode": "02",
-      "lat": -29.8579,
-      "lon": 31.0292,
-      "population": 3338026,
-      "geonameId": 1007311,
-      "source": "seed"
-    },
-    {
-      "name": "Rosario",
-      "countryCode": "AR",
-      "stateCode": "21",
-      "lat": -32.94682,
-      "lon": -60.63932,
-      "population": 948312,
-      "geonameId": 3838583,
-      "source": "seed"
-    },
-    {
-      "name": "Singapore",
-      "countryCode": "SG",
-      "stateCode": "01",
-      "lat": 1.28967,
-      "lon": 103.85007,
-      "population": 5638700,
-      "geonameId": 1880252,
-      "source": "seed"
-    },
-    {
-      "name": "Recife",
-      "countryCode": "BR",
-      "stateCode": "30",
-      "lat": -8.05389,
-      "lon": -34.88111,
-      "population": 1653461,
-      "geonameId": 3390760,
-      "source": "seed"
-    },
-    {
-      "name": "San Diego",
-      "countryCode": "US",
-      "stateCode": "CA",
-      "lat": 32.71571,
-      "lon": -117.16472,
-      "population": 1394928,
-      "geonameId": 5391811,
-      "source": "seed"
-    },
-    {
-      "name": "Santana do Ipanema",
-      "countryCode": "BR",
-      "stateCode": "02",
-      "lat": -9.37833,
-      "lon": -37.24528,
-      "population": 26146,
-      "geonameId": 3389384,
-      "source": "seed"
-    },
-    {
-      "name": "Vilnius",
-      "countryCode": "LT",
-      "stateCode": "65",
-      "lat": 54.68916,
-      "lon": 25.2798,
-      "population": 542366,
-      "geonameId": 593116,
-      "source": "seed"
-    },
-    {
-      "name": "Roskilde",
-      "countryCode": "DK",
-      "stateCode": "20",
-      "lat": 55.64152,
-      "lon": 12.08035,
-      "population": 51916,
-      "geonameId": 2614481,
-      "source": "seed"
-    },
-    {
-      "name": "Botafogo",
-      "countryCode": "BR",
-      "stateCode": "21",
-      "lat": -22.95092,
-      "lon": -43.18232,
-      "population": 0,
-      "geonameId": 3473663,
-      "source": "seed"
-    },
-    {
-      "name": "Oslo",
-      "countryCode": "NO",
-      "stateCode": "12",
-      "lat": 59.91273,
-      "lon": 10.74609,
-      "population": 1082575,
-      "geonameId": 3143244,
-      "source": "seed"
-    },
-    {
-      "name": "Town and Country Estates",
-      "countryCode": "US",
-      "stateCode": "OH",
-      "lat": 38.84091,
-      "lon": -82.22459,
-      "population": 0,
-      "geonameId": 4526422,
-      "source": "seed"
-    },
-    {
-      "name": "Sŏho-ri",
-      "countryCode": "KP",
-      "stateCode": "06",
-      "lat": 38.4122,
-      "lon": 125.49124,
-      "population": 0,
-      "geonameId": 1870052,
-      "source": "seed"
-    },
-    {
-      "name": "Berlin",
-      "countryCode": "DE",
-      "stateCode": "16",
-      "lat": 52.52437,
-      "lon": 13.41053,
-      "population": 3426354,
-      "geonameId": 2950159,
-      "source": "seed"
-    },
-    {
-      "name": "Lisbon",
-      "countryCode": "PT",
-      "stateCode": "14",
-      "lat": 38.71667,
-      "lon": -9.13333,
-      "population": 517802,
-      "geonameId": 2267057,
-      "source": "seed"
-    },
-    {
-      "name": "Hyderabad",
-      "countryCode": "IN",
-      "stateCode": "40",
-      "lat": 17.38405,
-      "lon": 78.45636,
-      "population": 6809970,
-      "geonameId": 1269843,
-      "source": "seed"
-    },
-    {
-      "name": "Kitchener",
-      "countryCode": "CA",
-      "stateCode": "08",
-      "lat": 43.42537,
-      "lon": -80.5112,
-      "population": 256885,
-      "geonameId": 5992996,
-      "source": "seed"
-    },
-    {
-      "name": "Córdoba",
-      "countryCode": "AR",
-      "stateCode": "05",
-      "lat": -31.40648,
-      "lon": -64.18853,
-      "population": 1317298,
-      "geonameId": 3860259,
-      "source": "seed"
-    },
-    {
-      "name": "Barra da Tijuca",
-      "countryCode": "BR",
-      "stateCode": "21",
-      "lat": -22.99835,
-      "lon": -43.36545,
-      "population": 39403,
-      "geonameId": 7290718,
-      "source": "seed"
-    },
-    {
-      "name": "Windsor",
-      "countryCode": "CA",
-      "stateCode": "08",
-      "lat": 42.30008,
-      "lon": -83.01654,
-      "population": 278013,
-      "geonameId": 6182962,
-      "source": "seed"
-    },
-    {
-      "name": "Fortaleza",
-      "countryCode": "BR",
-      "stateCode": "06",
-      "lat": -3.71722,
-      "lon": -38.54306,
-      "population": 2400000,
-      "geonameId": 3399415,
-      "source": "seed"
-    },
-    {
-      "name": "Trondheim",
-      "countryCode": "NO",
-      "stateCode": "21",
-      "lat": 63.43049,
-      "lon": 10.39506,
-      "population": 212660,
-      "geonameId": 3133880,
-      "source": "seed"
-    },
-    {
-      "name": "Reykjavik",
-      "countryCode": "IS",
-      "stateCode": "39",
-      "lat": 64.13548,
-      "lon": -21.89541,
-      "population": 118918,
-      "geonameId": 3413829,
-      "source": "seed"
-    },
-    {
-      "name": "Vancouver",
-      "countryCode": "CA",
-      "stateCode": "02",
-      "lat": 49.24966,
-      "lon": -123.11934,
-      "population": 600000,
-      "geonameId": 6173331,
-      "source": "seed"
-    },
-    {
-      "name": "Buenos Aires",
-      "countryCode": "AR",
-      "stateCode": "07",
-      "lat": -34.61315,
-      "lon": -58.37723,
-      "population": 2891082,
-      "geonameId": 3435910,
-      "source": "seed"
-    },
-    {
-      "name": "Cape Town",
-      "countryCode": "ZA",
-      "stateCode": "11",
-      "lat": -33.92584,
-      "lon": 18.42322,
-      "population": 4710000,
-      "geonameId": 3369157,
-      "source": "seed"
-    },
-    {
-      "name": "Perth",
-      "countryCode": "AU",
-      "stateCode": "08",
-      "lat": -31.95224,
-      "lon": 115.8614,
-      "population": 2192229,
-      "geonameId": 2063523,
-      "source": "seed"
-    },
-    {
-      "name": "Rennes",
-      "countryCode": "FR",
-      "stateCode": "53",
-      "lat": 48.11198,
-      "lon": -1.67429,
-      "population": 220488,
-      "geonameId": 2983990,
-      "source": "seed"
-    },
-    {
-      "name": "Villeurbanne",
-      "countryCode": "FR",
-      "stateCode": "84",
-      "lat": 45.76601,
-      "lon": 4.8795,
-      "population": 131445,
-      "geonameId": 2968254,
-      "source": "seed"
-    },
-    {
-      "name": "Munich",
-      "countryCode": "DE",
-      "stateCode": "02",
-      "lat": 48.13743,
-      "lon": 11.57549,
-      "population": 1260391,
-      "geonameId": 2867714,
-      "source": "seed"
-    },
-    {
-      "name": "Bergen",
-      "countryCode": "NO",
-      "stateCode": "46",
-      "lat": 60.39299,
-      "lon": 5.32415,
-      "population": 285911,
-      "geonameId": 3161732,
-      "source": "seed"
-    },
-    {
-      "name": "Surat",
-      "countryCode": "IN",
-      "stateCode": "09",
-      "lat": 21.19594,
-      "lon": 72.83023,
-      "population": 4591246,
-      "geonameId": 1255364,
-      "source": "seed"
-    },
-    {
-      "name": "Vienna",
-      "countryCode": "AT",
-      "stateCode": "09",
-      "lat": 48.20849,
-      "lon": 16.37208,
-      "population": 1691468,
-      "geonameId": 2761369,
-      "source": "seed"
-    },
-    {
-      "name": "Guangzhou",
-      "countryCode": "CN",
-      "stateCode": "30",
-      "lat": 23.11667,
-      "lon": 113.25,
-      "population": 16096724,
-      "geonameId": 1809858,
-      "source": "seed"
-    },
-    {
-      "name": "Hiroshima",
-      "countryCode": "JP",
-      "stateCode": "11",
-      "lat": 34.4,
-      "lon": 132.45,
-      "population": 1200754,
-      "geonameId": 1862415,
-      "source": "seed"
-    },
-    {
-      "name": "Sapporo",
-      "countryCode": "JP",
-      "stateCode": "12",
-      "lat": 43.06667,
-      "lon": 141.35,
-      "population": 1973832,
-      "geonameId": 2128295,
-      "source": "seed"
-    },
-    {
-      "name": "Louisville",
-      "countryCode": "US",
-      "stateCode": "KY",
-      "lat": 38.25424,
-      "lon": -85.75941,
-      "population": 624444,
-      "geonameId": 4299276,
-      "source": "seed"
-    },
-    {
-      "name": "Aarhus",
-      "countryCode": "DK",
-      "stateCode": "18",
-      "lat": 56.15674,
-      "lon": 10.21076,
-      "population": 285273,
-      "geonameId": 2624652,
-      "source": "seed"
-    },
-    {
-      "name": "Odense",
-      "countryCode": "DK",
-      "stateCode": "21",
-      "lat": 55.39594,
-      "lon": 10.38831,
-      "population": 180863,
-      "geonameId": 2615876,
-      "source": "seed"
-    },
-    {
-      "name": "Paris",
-      "countryCode": "FR",
-      "stateCode": "11",
-      "lat": 48.85341,
-      "lon": 2.3488,
-      "population": 2138551,
-      "geonameId": 2988507,
-      "source": "seed"
-    },
-    {
-      "name": "Fukuoka",
-      "countryCode": "JP",
-      "stateCode": "07",
-      "lat": 33.6,
-      "lon": 130.41667,
-      "population": 1612392,
-      "geonameId": 1863967,
-      "source": "seed"
-    },
-    {
-      "name": "Nara",
-      "countryCode": "JP",
-      "stateCode": "28",
-      "lat": 34.68505,
-      "lon": 135.80485,
-      "population": 367353,
-      "geonameId": 1855612,
-      "source": "seed"
-    },
-    {
-      "name": "Zagreb",
-      "countryCode": "HR",
-      "stateCode": "21",
-      "lat": 45.81444,
-      "lon": 15.97798,
-      "population": 663592,
-      "geonameId": 3186886,
-      "source": "seed"
-    },
-    {
-      "name": "Cancún",
-      "countryCode": "MX",
-      "stateCode": "23",
-      "lat": 21.17429,
-      "lon": -86.84656,
-      "population": 628306,
-      "geonameId": 3531673,
-      "source": "seed"
-    },
-    {
-      "name": "Lisbon",
-      "countryCode": "PT",
-      "stateCode": "14",
-      "lat": 38.72509,
-      "lon": -9.1498,
-      "population": 517802,
-      "geonameId": 2267057,
-      "source": "seed"
-    },
-    {
-      "name": "Valletta",
-      "countryCode": "MT",
-      "stateCode": "60",
-      "lat": 35.89968,
-      "lon": 14.5148,
-      "population": 6794,
-      "geonameId": 2562305,
-      "source": "seed"
-    },
-    {
-      "name": "Bairro Alto",
-      "countryCode": "PT",
-      "stateCode": "14",
-      "lat": 38.7119,
-      "lon": -9.14411,
-      "population": 9658,
-      "geonameId": 6930127,
-      "source": "seed"
-    },
-    {
-      "name": "Chicago",
-      "countryCode": "US",
-      "stateCode": "IL",
-      "lat": 41.85003,
-      "lon": -87.65005,
-      "population": 2664452,
-      "geonameId": 4887398,
-      "source": "seed"
-    },
-    {
-      "name": "Chelsea",
-      "countryCode": "GB",
-      "stateCode": "ENG",
-      "lat": 51.48755,
-      "lon": -0.16936,
-      "population": 60000,
-      "geonameId": 2653265,
-      "source": "seed"
-    },
-    {
-      "name": "Phoenix",
-      "countryCode": "US",
-      "stateCode": "AZ",
-      "lat": 33.44838,
-      "lon": -112.07404,
-      "population": 1650070,
-      "geonameId": 5308655,
-      "source": "seed"
-    },
-    {
-      "name": "Ahmedabad",
-      "countryCode": "IN",
-      "stateCode": "09",
-      "lat": 23.02579,
-      "lon": 72.58727,
-      "population": 6357693,
-      "geonameId": 1279233,
-      "source": "seed"
-    },
-    {
-      "name": "Cairo",
-      "countryCode": "EG",
-      "stateCode": "11",
-      "lat": 30.06263,
-      "lon": 31.24967,
-      "population": 9606916,
-      "geonameId": 360630,
-      "source": "seed"
-    },
-    {
-      "name": "Hong Kong",
-      "countryCode": "HK",
-      "stateCode": "",
-      "lat": 22.27832,
-      "lon": 114.17469,
-      "population": 7491609,
-      "geonameId": 1819729,
-      "source": "seed"
-    },
-    {
-      "name": "Mendoza",
-      "countryCode": "AR",
-      "stateCode": "13",
-      "lat": -32.88946,
-      "lon": -68.84582,
-      "population": 114893,
-      "geonameId": 3844421,
-      "source": "seed"
-    },
-    {
-      "name": "Las Vegas",
-      "countryCode": "US",
-      "stateCode": "NV",
-      "lat": 36.17497,
-      "lon": -115.13722,
-      "population": 623747,
-      "geonameId": 5506956,
-      "source": "seed"
-    },
-    {
-      "name": "Jakarta",
-      "countryCode": "ID",
-      "stateCode": "04",
-      "lat": -6.21462,
-      "lon": 106.84513,
-      "population": 8540121,
-      "geonameId": 1642911,
-      "source": "seed"
-    },
-    {
-      "name": "Liverpool",
-      "countryCode": "GB",
-      "stateCode": "ENG",
-      "lat": 53.41058,
-      "lon": -2.97794,
-      "population": 864122,
-      "geonameId": 2644210,
-      "source": "seed"
-    },
-    {
-      "name": "Strasbourg",
-      "countryCode": "FR",
-      "stateCode": "44",
-      "lat": 48.58392,
-      "lon": 7.74553,
-      "population": 274845,
-      "geonameId": 2973783,
-      "source": "seed"
-    },
-    {
-      "name": "Granada",
-      "countryCode": "NI",
-      "stateCode": "06",
-      "lat": 11.93062,
-      "lon": -85.95368,
-      "population": 89409,
-      "geonameId": 3619136,
-      "source": "seed"
-    },
-    {
-      "name": "Québec",
-      "countryCode": "CA",
-      "stateCode": "10",
-      "lat": 46.81228,
-      "lon": -71.21454,
-      "population": 531902,
-      "geonameId": 6325494,
-      "source": "seed"
-    },
-    {
-      "name": "Prague",
-      "countryCode": "CZ",
-      "stateCode": "52",
-      "lat": 50.08804,
-      "lon": 14.42076,
-      "population": 1165581,
-      "geonameId": 3067696,
-      "source": "seed"
-    },
-    {
-      "name": "Goulds Country",
-      "countryCode": "AU",
-      "stateCode": "06",
-      "lat": -41.24222,
-      "lon": 148.05596,
-      "population": 75,
-      "geonameId": 2164827,
-      "source": "seed"
-    },
-    {
-      "name": "Hamburg",
-      "countryCode": "DE",
-      "stateCode": "04",
-      "lat": 53.55073,
-      "lon": 9.99302,
-      "population": 1845229,
-      "geonameId": 2911298,
-      "source": "seed"
-    },
-    {
-      "name": "Bom Jesus da Lapa",
-      "countryCode": "BR",
-      "stateCode": "05",
-      "lat": -13.255,
-      "lon": -43.41806,
-      "population": 40691,
-      "geonameId": 3469437,
-      "source": "seed"
-    },
-    {
-      "name": "Monaco",
-      "countryCode": "MC",
-      "stateCode": "00",
-      "lat": 43.73718,
-      "lon": 7.42145,
-      "population": 32965,
-      "geonameId": 2993458,
-      "source": "seed"
-    },
-    {
-      "name": "Houston",
-      "countryCode": "US",
-      "stateCode": "TX",
-      "lat": 29.76328,
-      "lon": -95.36327,
-      "population": 2314157,
-      "geonameId": 4699066,
-      "source": "seed"
-    },
-    {
-      "name": "Leme",
-      "countryCode": "BR",
-      "stateCode": "27",
-      "lat": -22.18556,
-      "lon": -47.39028,
-      "population": 81209,
-      "geonameId": 3458662,
-      "source": "seed"
-    },
-    {
-      "name": "Valencia",
-      "countryCode": "VE",
-      "stateCode": "07",
-      "lat": 10.16153,
-      "lon": -68.00044,
-      "population": 1619470,
-      "geonameId": 3625549,
-      "source": "seed"
-    },
-    {
-      "name": "Pune",
-      "countryCode": "IN",
-      "stateCode": "16",
-      "lat": 18.51957,
-      "lon": 73.85535,
-      "population": 3124458,
-      "geonameId": 1259229,
-      "source": "seed"
-    },
-    {
-      "name": "Ottawa",
-      "countryCode": "CA",
-      "stateCode": "08",
-      "lat": 45.41117,
-      "lon": -75.69812,
-      "population": 812129,
-      "geonameId": 6094817,
-      "source": "seed"
-    },
-    {
-      "name": "Rotterdam",
-      "countryCode": "NL",
-      "stateCode": "11",
-      "lat": 51.9225,
-      "lon": 4.47917,
-      "population": 598199,
-      "geonameId": 2747891,
-      "source": "seed"
-    },
-    {
-      "name": "Berlin",
-      "countryCode": "DE",
-      "stateCode": "16",
-      "lat": 52.52437,
-      "lon": 13.41053,
-      "population": 3426354,
-      "geonameId": 2950159,
-      "source": "seed"
-    },
-    {
-      "name": "Odense",
-      "countryCode": "DK",
-      "stateCode": "21",
-      "lat": 55.39594,
-      "lon": 10.38831,
-      "population": 180863,
-      "geonameId": 2615876,
-      "source": "seed"
-    },
-    {
-      "name": "Manila",
-      "countryCode": "PH",
-      "stateCode": "NCR",
-      "lat": 14.6042,
-      "lon": 120.9822,
-      "population": 1600000,
-      "geonameId": 1701668,
-      "source": "seed"
-    },
-    {
-      "name": "Tegucigalpa",
-      "countryCode": "HN",
-      "stateCode": "08",
-      "lat": 14.0818,
-      "lon": -87.20681,
-      "population": 850848,
-      "geonameId": 3600949,
-      "source": "seed"
-    },
-    {
-      "name": "Okanagan",
-      "countryCode": "CA",
-      "stateCode": "02",
-      "lat": 50.36386,
-      "lon": -119.34997,
-      "population": 297601,
-      "geonameId": 7281931,
-      "source": "seed"
-    },
-    {
-      "name": "Camden",
-      "countryCode": "US",
-      "stateCode": "NJ",
-      "lat": 39.92595,
-      "lon": -75.11962,
-      "population": 76119,
-      "geonameId": 4501018,
-      "source": "seed"
-    },
-    {
-      "name": "Crystal Cove",
-      "countryCode": "US",
-      "stateCode": "FL",
-      "lat": 28.1329,
-      "lon": -82.4738,
-      "population": 0,
-      "geonameId": 7217497,
-      "source": "seed"
-    },
-    {
-      "name": "Maastricht",
-      "countryCode": "NL",
-      "stateCode": "05",
-      "lat": 50.84833,
-      "lon": 5.68889,
-      "population": 122378,
-      "geonameId": 2751283,
-      "source": "seed"
-    },
-    {
-      "name": "Puerto Plata",
-      "countryCode": "DO",
-      "stateCode": "18",
-      "lat": 19.79344,
-      "lon": -70.6884,
-      "population": 146000,
-      "geonameId": 3493175,
-      "source": "seed"
-    },
-    {
-      "name": "Lisbon",
-      "countryCode": "PT",
-      "stateCode": "14",
-      "lat": 38.71667,
-      "lon": -9.13333,
-      "population": 517802,
-      "geonameId": 2267057,
-      "source": "seed"
-    },
-    {
-      "name": "Brooklyn",
-      "countryCode": "US",
-      "stateCode": "NY",
-      "lat": 40.6501,
-      "lon": -73.94958,
-      "population": 2736074,
-      "geonameId": 5110302,
-      "source": "seed"
-    },
-    {
-      "name": "Boston",
-      "countryCode": "US",
-      "stateCode": "MA",
-      "lat": 42.35843,
-      "lon": -71.05977,
-      "population": 653833,
-      "geonameId": 4930956,
-      "source": "seed"
-    },
-    {
-      "name": "Denigomodu",
-      "countryCode": "NR",
-      "stateCode": "08",
-      "lat": -0.52574,
-      "lon": 166.91259,
-      "population": 1804,
-      "geonameId": 12129637,
-      "source": "seed"
-    },
-    {
-      "name": "Paris",
-      "countryCode": "FR",
-      "stateCode": "11",
-      "lat": 48.85341,
-      "lon": 2.3488,
-      "population": 2138551,
-      "geonameId": 2988507,
-      "source": "seed"
-    },
-    {
-      "name": "Ponta Alfama",
-      "countryCode": "GW",
-      "stateCode": "00",
-      "lat": 12.1,
-      "lon": -15.7,
-      "population": 0,
-      "geonameId": 2370705,
-      "source": "seed"
-    },
-    {
-      "name": "London",
-      "countryCode": "GB",
-      "stateCode": "ENG",
-      "lat": 51.50853,
-      "lon": -0.12574,
-      "population": 8961989,
-      "geonameId": 2643743,
-      "source": "seed"
-    },
-    {
-      "name": "Zurich",
-      "countryCode": "CH",
-      "stateCode": "ZH",
-      "lat": 47.36667,
-      "lon": 8.55,
-      "population": 341730,
-      "geonameId": 2657896,
-      "source": "seed"
-    },
-    {
-      "name": "Funchal",
-      "countryCode": "PT",
-      "stateCode": "10",
-      "lat": 32.66568,
-      "lon": -16.92547,
-      "population": 100847,
-      "geonameId": 2267827,
-      "source": "seed"
-    },
-    {
-      "name": "Kolkata",
-      "countryCode": "IN",
-      "stateCode": "28",
-      "lat": 22.56263,
-      "lon": 88.36304,
-      "population": 4631392,
-      "geonameId": 1275004,
-      "source": "seed"
-    },
-    {
-      "name": "Dallas",
-      "countryCode": "US",
-      "stateCode": "TX",
-      "lat": 32.78306,
-      "lon": -96.80667,
-      "population": 1300092,
-      "geonameId": 4684888,
-      "source": "seed"
-    },
-    {
-      "name": "Brisbane",
-      "countryCode": "AU",
-      "stateCode": "04",
-      "lat": -27.46794,
-      "lon": 153.02809,
-      "population": 2582007,
-      "geonameId": 2174003,
-      "source": "seed"
-    },
-    {
-      "name": "New York",
-      "countryCode": "US",
-      "stateCode": "NY",
-      "lat": 40.71427,
-      "lon": -74.00597,
-      "population": 8804190,
-      "geonameId": 5128581,
-      "source": "seed"
-    },
-    {
-      "name": "Paradise Island",
-      "countryCode": "US",
-      "stateCode": "MD",
-      "lat": 38.90206,
-      "lon": -76.35357,
-      "population": 0,
-      "geonameId": 4364847,
-      "source": "seed"
-    },
-    {
-      "name": "Belgrade",
-      "countryCode": "RS",
-      "stateCode": "SE",
-      "lat": 44.80401,
-      "lon": 20.46513,
-      "population": 1273651,
-      "geonameId": 792680,
-      "source": "seed"
-    },
-    {
-      "name": "Bangkok",
-      "countryCode": "TH",
-      "stateCode": "40",
-      "lat": 13.75398,
-      "lon": 100.50144,
-      "population": 5104476,
-      "geonameId": 1609350,
-      "source": "seed"
-    },
-    {
-      "name": "Melbourne",
-      "countryCode": "AU",
-      "stateCode": "07",
-      "lat": -37.814,
-      "lon": 144.96332,
-      "population": 4917750,
-      "geonameId": 2158177,
-      "source": "seed"
-    },
-    {
-      "name": "Singapore",
-      "countryCode": "SG",
-      "stateCode": "01",
-      "lat": 1.28967,
-      "lon": 103.85007,
-      "population": 5638700,
-      "geonameId": 1880252,
-      "source": "seed"
-    },
-    {
-      "name": "Mexico City",
-      "countryCode": "MX",
-      "stateCode": "09",
-      "lat": 19.42847,
-      "lon": -99.12766,
-      "population": 12294193,
-      "geonameId": 3530597,
-      "source": "seed"
-    },
-    {
-      "name": "Winnipeg",
-      "countryCode": "CA",
-      "stateCode": "03",
-      "lat": 49.8844,
-      "lon": -97.14704,
-      "population": 749607,
-      "geonameId": 6183235,
-      "source": "seed"
-    },
-    {
-      "name": "Toulon",
-      "countryCode": "FR",
-      "stateCode": "93",
-      "lat": 43.12442,
-      "lon": 5.92836,
-      "population": 168701,
-      "geonameId": 2972328,
-      "source": "seed"
-    },
-    {
-      "name": "Warsaw",
-      "countryCode": "PL",
-      "stateCode": "78",
-      "lat": 52.22977,
-      "lon": 21.01178,
-      "population": 1702139,
-      "geonameId": 756135,
-      "source": "seed"
-    },
-    {
-      "name": "London",
-      "countryCode": "CA",
-      "stateCode": "08",
-      "lat": 42.98339,
-      "lon": -81.23304,
-      "population": 346765,
-      "geonameId": 6058560,
-      "source": "seed"
-    },
-    {
-      "name": "Chennai",
-      "countryCode": "IN",
-      "stateCode": "25",
-      "lat": 13.08784,
-      "lon": 80.27847,
-      "population": 4681087,
-      "geonameId": 1264527,
-      "source": "seed"
-    },
-    {
-      "name": "Eindhoven",
-      "countryCode": "NL",
-      "stateCode": "06",
-      "lat": 51.44083,
-      "lon": 5.47778,
-      "population": 209620,
-      "geonameId": 2756253,
-      "source": "seed"
-    },
-    {
-      "name": "Verona",
-      "countryCode": "IT",
-      "stateCode": "20",
-      "lat": 45.43854,
-      "lon": 10.9938,
-      "population": 258031,
-      "geonameId": 3164527,
-      "source": "seed"
-    },
-    {
-      "name": "Ålesund",
-      "countryCode": "NO",
-      "stateCode": "08",
-      "lat": 62.47225,
-      "lon": 6.15492,
-      "population": 52626,
-      "geonameId": 3163392,
-      "source": "seed"
-    },
-    {
-      "name": "Miami",
-      "countryCode": "US",
-      "stateCode": "FL",
-      "lat": 25.77427,
-      "lon": -80.19366,
-      "population": 441003,
-      "geonameId": 4164138,
-      "source": "seed"
-    },
-    {
-      "name": "Perth",
-      "countryCode": "AU",
-      "stateCode": "08",
-      "lat": -31.95224,
-      "lon": 115.8614,
-      "population": 2192229,
-      "geonameId": 2063523,
-      "source": "seed"
-    },
-    {
-      "name": "The Hague",
-      "countryCode": "NL",
-      "stateCode": "11",
-      "lat": 52.07667,
-      "lon": 4.29861,
-      "population": 474292,
-      "geonameId": 2747373,
-      "source": "seed"
-    },
-    {
-      "name": "Dijon",
-      "countryCode": "FR",
-      "stateCode": "27",
-      "lat": 47.31667,
-      "lon": 5.01667,
-      "population": 158002,
-      "geonameId": 3021372,
-      "source": "seed"
-    },
-    {
-      "name": "Sofia",
-      "countryCode": "BG",
-      "stateCode": "42",
-      "lat": 42.69751,
-      "lon": 23.32415,
-      "population": 1152556,
-      "geonameId": 727011,
-      "source": "seed"
-    },
-    {
-      "name": "Adelaide",
-      "countryCode": "AU",
-      "stateCode": "05",
-      "lat": -34.92866,
-      "lon": 138.59863,
-      "population": 1387290,
-      "geonameId": 2078025,
-      "source": "seed"
-    },
-    {
-      "name": "Ljubljana",
-      "countryCode": "SI",
-      "stateCode": "61",
-      "lat": 46.05108,
-      "lon": 14.50513,
-      "population": 272220,
-      "geonameId": 3196359,
-      "source": "seed"
-    },
-    {
-      "name": "Bordeaux",
-      "countryCode": "FR",
-      "stateCode": "75",
-      "lat": 44.84044,
-      "lon": -0.5805,
-      "population": 260958,
-      "geonameId": 3031582,
-      "source": "seed"
-    },
-    {
-      "name": "Guadalajara",
-      "countryCode": "MX",
-      "stateCode": "14",
-      "lat": 20.67738,
-      "lon": -103.34749,
-      "population": 1385629,
-      "geonameId": 4005539,
-      "source": "seed"
-    },
-    {
-      "name": "West Island",
-      "countryCode": "CC",
-      "stateCode": "",
-      "lat": -12.15681,
-      "lon": 96.82251,
-      "population": 120,
-      "geonameId": 7304591,
-      "source": "seed"
-    },
-    {
-      "name": "Jardim Botanico",
-      "countryCode": "BR",
-      "stateCode": "21",
-      "lat": -22.96385,
-      "lon": -43.22356,
-      "population": 0,
-      "geonameId": 7538558,
-      "source": "seed"
-    },
-    {
-      "name": "Reims",
-      "countryCode": "FR",
-      "stateCode": "44",
-      "lat": 49.26526,
-      "lon": 4.02853,
-      "population": 196565,
-      "geonameId": 2984114,
-      "source": "seed"
-    },
-    {
-      "name": "Montpellier",
-      "countryCode": "FR",
-      "stateCode": "76",
-      "lat": 43.61093,
-      "lon": 3.87635,
-      "population": 248252,
-      "geonameId": 2992166,
-      "source": "seed"
-    },
-    {
-      "name": "Bilbao",
-      "countryCode": "ES",
-      "stateCode": "59",
-      "lat": 43.26271,
-      "lon": -2.92528,
-      "population": 345821,
-      "geonameId": 3128026,
-      "source": "seed"
-    },
-    {
-      "name": "Istanbul",
-      "countryCode": "TR",
-      "stateCode": "34",
-      "lat": 41.01384,
-      "lon": 28.94966,
-      "population": 15701602,
-      "geonameId": 745044,
-      "source": "seed"
-    },
-    {
-      "name": "Helsinki",
-      "countryCode": "FI",
-      "stateCode": "01",
-      "lat": 60.16952,
-      "lon": 24.93545,
-      "population": 658864,
-      "geonameId": 658225,
-      "source": "seed"
-    },
-    {
-      "name": "Manchester",
-      "countryCode": "US",
-      "stateCode": "NH",
-      "lat": 42.99564,
-      "lon": -71.45479,
-      "population": 110229,
-      "geonameId": 5089178,
-      "source": "seed"
-    },
-    {
-      "name": "Langa",
-      "countryCode": "ZA",
-      "stateCode": "11",
-      "lat": -33.94506,
-      "lon": 18.53431,
-      "population": 0,
-      "geonameId": 3364823,
-      "source": "seed"
-    },
-    {
-      "name": "Delhi",
-      "countryCode": "IN",
-      "stateCode": "07",
-      "lat": 28.65195,
-      "lon": 77.23149,
-      "population": 11034555,
-      "geonameId": 1273294,
-      "source": "seed"
-    },
-    {
-      "name": "Barcelona",
-      "countryCode": "ES",
-      "stateCode": "56",
-      "lat": 41.38879,
-      "lon": 2.15899,
-      "population": 1620343,
-      "geonameId": 3128760,
-      "source": "seed"
-    },
-    {
-      "name": "Monterrey",
-      "countryCode": "MX",
-      "stateCode": "19",
-      "lat": 25.68435,
-      "lon": -100.31721,
-      "population": 1135512,
-      "geonameId": 3995465,
-      "source": "seed"
-    },
-    {
-      "name": "Kuala Lumpur",
-      "countryCode": "MY",
-      "stateCode": "14",
-      "lat": 3.1412,
-      "lon": 101.68653,
-      "population": 1453975,
-      "geonameId": 1735161,
-      "source": "seed"
-    },
-    {
-      "name": "Warsaw",
-      "countryCode": "PL",
-      "stateCode": "78",
-      "lat": 52.22977,
-      "lon": 21.01178,
-      "population": 1702139,
-      "geonameId": 756135,
-      "source": "seed"
-    },
-    {
-      "name": "Oslo",
-      "countryCode": "NO",
-      "stateCode": "12",
-      "lat": 59.91273,
-      "lon": 10.74609,
-      "population": 1082575,
-      "geonameId": 3143244,
-      "source": "seed"
-    },
-    {
-      "name": "Bangkok",
-      "countryCode": "TH",
-      "stateCode": "40",
-      "lat": 13.75398,
-      "lon": 100.50144,
-      "population": 5104476,
-      "geonameId": 1609350,
-      "source": "seed"
-    },
-    {
-      "name": "Toulouse",
-      "countryCode": "FR",
-      "stateCode": "76",
-      "lat": 43.60426,
-      "lon": 1.44367,
-      "population": 493465,
-      "geonameId": 2972315,
-      "source": "seed"
-    },
-    {
-      "name": "Venice",
-      "countryCode": "IT",
-      "stateCode": "20",
-      "lat": 45.43713,
-      "lon": 12.33265,
-      "population": 51298,
-      "geonameId": 3164603,
-      "source": "seed"
-    },
-    {
-      "name": "Bronx",
-      "countryCode": "US",
-      "stateCode": "NY",
-      "lat": 40.84985,
-      "lon": -73.86641,
-      "population": 1385108,
-      "geonameId": 5110266,
-      "source": "seed"
-    },
-    {
-      "name": "Athens",
-      "countryCode": "GR",
-      "stateCode": "ESYE31",
-      "lat": 37.98376,
-      "lon": 23.72784,
-      "population": 664046,
-      "geonameId": 264371,
-      "source": "seed"
-    },
-    {
-      "name": "El Paso",
-      "countryCode": "US",
-      "stateCode": "TX",
-      "lat": 31.75872,
-      "lon": -106.48693,
-      "population": 681124,
-      "geonameId": 5520993,
-      "source": "seed"
-    },
-    {
-      "name": "Salvador",
-      "countryCode": "BR",
-      "stateCode": "05",
-      "lat": -12.97563,
-      "lon": -38.49096,
-      "population": 2711840,
-      "geonameId": 3450554,
-      "source": "seed"
-    },
-    {
-      "name": "Edinburgh",
-      "countryCode": "GB",
-      "stateCode": "SCT",
-      "lat": 55.95206,
-      "lon": -3.19648,
-      "population": 514990,
-      "geonameId": 2650225,
-      "source": "seed"
-    },
-    {
-      "name": "Pretoria",
-      "countryCode": "ZA",
-      "stateCode": "06",
-      "lat": -25.74486,
-      "lon": 28.18783,
-      "population": 2112693,
-      "geonameId": 964137,
-      "source": "seed"
-    },
-    {
-      "name": "Bengaluru",
-      "countryCode": "IN",
-      "stateCode": "19",
-      "lat": 12.97194,
-      "lon": 77.59369,
-      "population": 8443675,
-      "geonameId": 1277333,
-      "source": "seed"
-    },
-    {
-      "name": "Shenzhen",
-      "countryCode": "CN",
-      "stateCode": "30",
-      "lat": 22.54554,
-      "lon": 114.0683,
-      "population": 17494398,
-      "geonameId": 1795565,
-      "source": "seed"
-    },
-    {
-      "name": "Moscow",
-      "countryCode": "RU",
-      "stateCode": "48",
-      "lat": 55.75222,
-      "lon": 37.61556,
-      "population": 10381222,
-      "geonameId": 524901,
-      "source": "seed"
-    },
-    {
-      "name": "Da Lat",
-      "countryCode": "VN",
-      "stateCode": "23",
-      "lat": 11.94646,
-      "lon": 108.44193,
-      "population": 197000,
-      "geonameId": 1584071,
-      "source": "seed"
-    },
-    {
-      "name": "Lille",
-      "countryCode": "FR",
-      "stateCode": "32",
-      "lat": 50.63297,
-      "lon": 3.05858,
-      "population": 234475,
-      "geonameId": 2998324,
-      "source": "seed"
-    },
-    {
-      "name": "Nîmes",
-      "countryCode": "FR",
-      "stateCode": "76",
-      "lat": 43.83665,
-      "lon": 4.35788,
-      "population": 148236,
-      "geonameId": 2990363,
-      "source": "seed"
-    },
-    {
-      "name": "Rome",
-      "countryCode": "IT",
-      "stateCode": "07",
-      "lat": 41.89193,
-      "lon": 12.51133,
-      "population": 2318895,
-      "geonameId": 3169070,
-      "source": "seed"
-    },
-    {
-      "name": "Stockholm",
-      "countryCode": "SE",
-      "stateCode": "26",
-      "lat": 59.32938,
-      "lon": 18.06871,
-      "population": 1515017,
-      "geonameId": 2673730,
-      "source": "seed"
-    },
-    {
-      "name": "New Orleans",
-      "countryCode": "US",
-      "stateCode": "LA",
-      "lat": 29.95465,
-      "lon": -90.07507,
-      "population": 389617,
-      "geonameId": 4335045,
-      "source": "seed"
-    },
-    {
-      "name": "Vitoria-Gasteiz",
-      "countryCode": "ES",
-      "stateCode": "59",
-      "lat": 42.84998,
-      "lon": -2.67268,
-      "population": 249176,
-      "geonameId": 3104499,
-      "source": "seed"
-    },
-    {
-      "name": "Vienna",
-      "countryCode": "AT",
-      "stateCode": "09",
-      "lat": 48.20849,
-      "lon": 16.37208,
-      "population": 1691468,
-      "geonameId": 2761369,
-      "source": "seed"
-    },
-    {
-      "name": "Frankfurt am Main",
-      "countryCode": "DE",
-      "stateCode": "05",
-      "lat": 50.11552,
-      "lon": 8.68417,
-      "population": 650000,
-      "geonameId": 2925533,
-      "source": "seed"
-    },
-    {
-      "name": "Town 'n' Country",
-      "countryCode": "US",
-      "stateCode": "FL",
-      "lat": 28.01057,
-      "lon": -82.57732,
-      "population": 78442,
-      "geonameId": 4175538,
-      "source": "seed"
-    },
-    {
-      "name": "Esbjerg",
-      "countryCode": "DK",
-      "stateCode": "21",
-      "lat": 55.47028,
-      "lon": 8.45187,
-      "population": 71698,
-      "geonameId": 2622447,
-      "source": "seed"
-    },
-    {
-      "name": "Hamilton",
-      "countryCode": "BM",
-      "stateCode": "03",
-      "lat": 32.2949,
-      "lon": -64.78303,
-      "population": 902,
-      "geonameId": 3573197,
-      "source": "seed"
-    },
-    {
-      "name": "Sydney",
-      "countryCode": "AU",
-      "stateCode": "02",
-      "lat": -33.86785,
-      "lon": 151.20732,
-      "population": 5231147,
-      "geonameId": 2147714,
-      "source": "seed"
-    },
-    {
-      "name": "Wacheng Neighborhood",
-      "countryCode": "CN",
-      "stateCode": "09",
-      "lat": 33.78333,
-      "lon": 114.51667,
-      "population": 66848,
-      "geonameId": 1789427,
-      "source": "seed"
-    },
-    {
-      "name": "Brasília",
-      "countryCode": "BR",
-      "stateCode": "07",
-      "lat": -15.77972,
-      "lon": -47.92972,
-      "population": 2207718,
-      "geonameId": 3469058,
-      "source": "seed"
-    },
-    {
-      "name": "Budapest",
-      "countryCode": "HU",
-      "stateCode": "05",
-      "lat": 47.49835,
-      "lon": 19.04045,
-      "population": 1741041,
-      "geonameId": 3054643,
-      "source": "seed"
-    },
-    {
-      "name": "San Diego",
-      "countryCode": "US",
-      "stateCode": "CA",
-      "lat": 32.71571,
-      "lon": -117.16472,
-      "population": 1394928,
-      "geonameId": 5391811,
-      "source": "seed"
-    },
-    {
-      "name": "Mumbai",
-      "countryCode": "IN",
-      "stateCode": "16",
-      "lat": 19.07283,
-      "lon": 72.88261,
-      "population": 12691836,
-      "geonameId": 1275339,
-      "source": "seed"
-    },
-    {
-      "name": "Visby",
-      "countryCode": "SE",
-      "stateCode": "05",
-      "lat": 57.64089,
-      "lon": 18.29602,
-      "population": 23402,
-      "geonameId": 2662689,
-      "source": "seed"
-    },
-    {
-      "name": "Rome",
-      "countryCode": "IT",
-      "stateCode": "07",
-      "lat": 41.89193,
-      "lon": 12.51133,
-      "population": 2318895,
-      "geonameId": 3169070,
-      "source": "seed"
-    },
-    {
-      "name": "Victoria",
-      "countryCode": "CA",
-      "stateCode": "02",
-      "lat": 48.4359,
-      "lon": -123.35155,
-      "population": 289625,
-      "geonameId": 6174041,
-      "source": "seed"
-    },
-    {
-      "name": "Uppsala",
-      "countryCode": "SE",
-      "stateCode": "21",
-      "lat": 59.85882,
-      "lon": 17.63889,
-      "population": 177074,
-      "geonameId": 2666199,
-      "source": "seed"
-    },
-    {
-      "name": "Dresden",
-      "countryCode": "DE",
-      "stateCode": "13",
-      "lat": 51.05089,
-      "lon": 13.73832,
-      "population": 556227,
-      "geonameId": 2935022,
-      "source": "seed"
-    },
-    {
-      "name": "Leblon",
-      "countryCode": "BR",
-      "stateCode": "21",
-      "lat": -22.98444,
-      "lon": -43.22315,
-      "population": 0,
-      "geonameId": 3473654,
-      "source": "seed"
-    },
-    {
-      "name": "Luxembourg",
-      "countryCode": "LU",
-      "stateCode": "LU",
-      "lat": 49.61167,
-      "lon": 6.13,
-      "population": 76684,
-      "geonameId": 2960316,
-      "source": "seed"
-    },
-    {
-      "name": "Paris",
-      "countryCode": "FR",
-      "stateCode": "11",
-      "lat": 48.85341,
-      "lon": 2.3488,
-      "population": 2138551,
-      "geonameId": 2988507,
-      "source": "seed"
-    },
-    {
-      "name": "Amsterdam",
-      "countryCode": "NL",
-      "stateCode": "07",
-      "lat": 52.37403,
-      "lon": 4.88969,
-      "population": 741636,
-      "geonameId": 2759794,
-      "source": "seed"
-    },
-    {
-      "name": "Malmo",
-      "countryCode": "SE",
-      "stateCode": "27",
-      "lat": 55.60587,
-      "lon": 13.00073,
-      "population": 362133,
-      "geonameId": 2692969,
-      "source": "seed"
-    },
-    {
-      "name": "Cologne",
-      "countryCode": "DE",
-      "stateCode": "07",
-      "lat": 50.93333,
-      "lon": 6.95,
-      "population": 963395,
-      "geonameId": 2886242,
-      "source": "seed"
-    },
-    {
-      "name": "Mumbai",
-      "countryCode": "IN",
-      "stateCode": "16",
-      "lat": 19.07283,
-      "lon": 72.88261,
-      "population": 12691836,
-      "geonameId": 1275339,
-      "source": "seed"
-    },
-    {
-      "name": "Naples",
-      "countryCode": "IT",
-      "stateCode": "04",
-      "lat": 40.85216,
-      "lon": 14.26811,
-      "population": 909048,
-      "geonameId": 3172394,
-      "source": "seed"
-    },
-    {
-      "name": "Milwaukee",
-      "countryCode": "US",
-      "stateCode": "WI",
-      "lat": 43.0389,
-      "lon": -87.90647,
-      "population": 600155,
-      "geonameId": 5263045,
-      "source": "seed"
-    },
-    {
-      "name": "Fort Worth",
-      "countryCode": "US",
-      "stateCode": "TX",
-      "lat": 32.72541,
-      "lon": -97.32085,
-      "population": 918915,
-      "geonameId": 4691930,
-      "source": "seed"
-    },
-    {
-      "name": "Detroit",
-      "countryCode": "US",
-      "stateCode": "MI",
-      "lat": 42.33143,
-      "lon": -83.04575,
-      "population": 677116,
-      "geonameId": 4990729,
-      "source": "seed"
-    },
-    {
-      "name": "Stockholm",
-      "countryCode": "SE",
-      "stateCode": "26",
-      "lat": 59.32938,
-      "lon": 18.06871,
-      "population": 1515017,
-      "geonameId": 2673730,
-      "source": "seed"
-    },
-    {
-      "name": "Aalborg",
-      "countryCode": "DK",
-      "stateCode": "19",
-      "lat": 57.048,
-      "lon": 9.9187,
-      "population": 142937,
-      "geonameId": 2624886,
-      "source": "seed"
-    },
-    {
-      "name": "Washington",
-      "countryCode": "US",
-      "stateCode": "DC",
-      "lat": 38.89511,
-      "lon": -77.03637,
-      "population": 689545,
-      "geonameId": 4140963,
-      "source": "seed"
-    },
-    {
-      "name": "Soweto",
-      "countryCode": "ZA",
-      "stateCode": "06",
-      "lat": -26.26781,
-      "lon": 27.85849,
-      "population": 1695047,
-      "geonameId": 953781,
-      "source": "seed"
-    },
-    {
-      "name": "Singapore",
-      "countryCode": "SG",
-      "stateCode": "01",
-      "lat": 1.28967,
-      "lon": 103.85007,
-      "population": 5638700,
-      "geonameId": 1880252,
-      "source": "seed"
-    },
-    {
-      "name": "Bath",
-      "countryCode": "GB",
-      "stateCode": "ENG",
-      "lat": 51.3751,
-      "lon": -2.36172,
-      "population": 101557,
-      "geonameId": 2656173,
-      "source": "seed"
-    },
-    {
-      "name": "Tromsø",
-      "countryCode": "NO",
-      "stateCode": "18",
-      "lat": 69.6489,
-      "lon": 18.95508,
-      "population": 64448,
-      "geonameId": 3133895,
-      "source": "seed"
-    },
-    {
-      "name": "Nice",
-      "countryCode": "FR",
-      "stateCode": "93",
-      "lat": 43.70313,
-      "lon": 7.26608,
-      "population": 342669,
-      "geonameId": 2990440,
-      "source": "seed"
-    },
-    {
-      "name": "Mexico City",
-      "countryCode": "MX",
-      "stateCode": "09",
-      "lat": 19.42847,
-      "lon": -99.12766,
-      "population": 12294193,
-      "geonameId": 3530597,
-      "source": "seed"
-    },
-    {
-      "name": "Columbus",
-      "countryCode": "US",
-      "stateCode": "OH",
-      "lat": 39.96118,
-      "lon": -82.99879,
-      "population": 913175,
-      "geonameId": 4509177,
-      "source": "seed"
-    },
-    {
-      "name": "Bloemfontein",
-      "countryCode": "ZA",
-      "stateCode": "03",
-      "lat": -29.12107,
-      "lon": 26.214,
-      "population": 556637,
-      "geonameId": 1018725,
-      "source": "seed"
-    },
-    {
-      "name": "Gamboa",
-      "countryCode": "PA",
-      "stateCode": "04",
-      "lat": 9.11697,
-      "lon": -79.70105,
-      "population": 0,
-      "geonameId": 3709373,
-      "source": "seed"
-    },
-    {
-      "name": "Albuquerque",
-      "countryCode": "US",
-      "stateCode": "NM",
-      "lat": 35.08449,
-      "lon": -106.65114,
-      "population": 559121,
-      "geonameId": 5454711,
-      "source": "seed"
-    },
-    {
-      "name": "Mexico City",
-      "countryCode": "MX",
-      "stateCode": "09",
-      "lat": 19.42847,
-      "lon": -99.12766,
-      "population": 12294193,
-      "geonameId": 3530597,
-      "source": "seed"
-    },
-    {
-      "name": "Berkley Square",
-      "countryCode": "US",
-      "stateCode": "NV",
-      "lat": 36.19058,
-      "lon": -115.14918,
-      "population": 0,
-      "geonameId": 12324531,
-      "source": "seed"
-    },
-    {
-      "name": "London",
-      "countryCode": "GB",
-      "stateCode": "ENG",
-      "lat": 51.50853,
-      "lon": -0.12574,
-      "population": 8961989,
-      "geonameId": 2643743,
-      "source": "seed"
-    },
-    {
-      "name": "Edmonton",
-      "countryCode": "CA",
-      "stateCode": "01",
-      "lat": 53.55014,
-      "lon": -113.46871,
-      "population": 1010899,
-      "geonameId": 5946768,
-      "source": "seed"
-    },
-    {
-      "name": "Seville",
-      "countryCode": "ES",
-      "stateCode": "51",
-      "lat": 37.38283,
-      "lon": -5.97317,
-      "population": 684234,
-      "geonameId": 2510911,
-      "source": "seed"
-    },
-    {
-      "name": "Long Xuyen",
-      "countryCode": "VN",
-      "stateCode": "91",
-      "lat": 10.38639,
-      "lon": 105.43518,
-      "population": 286140,
-      "geonameId": 1575627,
-      "source": "seed"
-    },
-    {
-      "name": "Amsterdam",
-      "countryCode": "NL",
-      "stateCode": "07",
-      "lat": 52.37403,
-      "lon": 4.88969,
-      "population": 741636,
-      "geonameId": 2759794,
-      "source": "seed"
-    },
-    {
-      "name": "Gold Coast",
-      "countryCode": "AU",
-      "stateCode": "04",
-      "lat": -28.00029,
-      "lon": 153.43088,
-      "population": 640778,
-      "geonameId": 2165087,
-      "source": "seed"
-    },
-    {
-      "name": "Grenoble",
-      "countryCode": "FR",
-      "stateCode": "84",
-      "lat": 45.17869,
-      "lon": 5.71479,
-      "population": 158552,
-      "geonameId": 3014728,
-      "source": "seed"
-    },
-    {
-      "name": "Athens Center",
-      "countryCode": "GR",
-      "stateCode": "ESYE31",
-      "lat": 37.97758,
-      "lon": 23.73048,
-      "population": 0,
-      "geonameId": 9036467,
-      "source": "seed"
-    },
-    {
-      "name": "Copenhagen",
-      "countryCode": "DK",
-      "stateCode": "17",
-      "lat": 55.67594,
-      "lon": 12.56553,
-      "population": 1153615,
-      "geonameId": 2618425,
-      "source": "seed"
-    },
-    {
-      "name": "Dubai",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.07725,
-      "lon": 55.30927,
-      "population": 3790000,
-      "geonameId": 292223,
-      "source": "seed"
-    },
-    {
-      "name": "Gothenburg",
-      "countryCode": "US",
-      "stateCode": "NE",
-      "lat": 40.92945,
-      "lon": -100.16068,
-      "population": 3514,
-      "geonameId": 5695743,
-      "source": "seed"
-    },
-    {
-      "name": "Yokohama",
-      "countryCode": "JP",
-      "stateCode": "19",
-      "lat": 35.43333,
-      "lon": 139.65,
-      "population": 3777491,
-      "geonameId": 1848354,
-      "source": "seed"
-    },
-    {
-      "name": "Le Havre",
-      "countryCode": "FR",
-      "stateCode": "28",
-      "lat": 49.49346,
-      "lon": 0.10785,
-      "population": 185972,
-      "geonameId": 3003796,
-      "source": "seed"
-    },
-    {
-      "name": "Buenos Aires",
-      "countryCode": "AR",
-      "stateCode": "07",
-      "lat": -34.61315,
-      "lon": -58.37723,
-      "population": 2891082,
-      "geonameId": 3435910,
-      "source": "seed"
-    },
-    {
-      "name": "Johannesburg",
-      "countryCode": "ZA",
-      "stateCode": "06",
-      "lat": -26.20227,
-      "lon": 28.04363,
-      "population": 9418183,
-      "geonameId": 993800,
-      "source": "seed"
-    },
-    {
-      "name": "Osaka",
-      "countryCode": "JP",
-      "stateCode": "32",
-      "lat": 34.69379,
-      "lon": 135.50107,
-      "population": 2753862,
-      "geonameId": 1853909,
-      "source": "seed"
-    },
-    {
-      "name": "Andorra la Vella",
-      "countryCode": "AD",
-      "stateCode": "07",
-      "lat": 42.50779,
-      "lon": 1.52109,
-      "population": 20430,
-      "geonameId": 3041563,
-      "source": "seed"
-    },
-    {
-      "name": "Les Escaldes",
-      "countryCode": "AD",
-      "stateCode": "08",
-      "lat": 42.50729,
-      "lon": 1.53414,
-      "population": 15853,
-      "geonameId": 3040051,
-      "source": "seed"
-    },
-    {
-      "name": "Encamp",
-      "countryCode": "AD",
-      "stateCode": "03",
-      "lat": 42.53474,
-      "lon": 1.58014,
-      "population": 11223,
-      "geonameId": 3040686,
-      "source": "seed"
-    },
-    {
-      "name": "Sant Julià de Lòria",
-      "countryCode": "AD",
-      "stateCode": "06",
-      "lat": 42.46372,
-      "lon": 1.49129,
-      "population": 8022,
-      "geonameId": 3039163,
-      "source": "seed"
-    },
-    {
-      "name": "La Massana",
-      "countryCode": "AD",
-      "stateCode": "04",
-      "lat": 42.54499,
-      "lon": 1.51483,
-      "population": 7211,
-      "geonameId": 3040132,
-      "source": "seed"
-    },
-    {
-      "name": "Canillo",
-      "countryCode": "AD",
-      "stateCode": "02",
-      "lat": 42.5676,
-      "lon": 1.59756,
-      "population": 3292,
-      "geonameId": 3041204,
-      "source": "seed"
-    },
-    {
-      "name": "Ordino",
-      "countryCode": "AD",
-      "stateCode": "05",
-      "lat": 42.55623,
-      "lon": 1.53319,
-      "population": 3066,
-      "geonameId": 3039678,
-      "source": "seed"
-    },
-    {
-      "name": "Pas de la Casa",
-      "countryCode": "AD",
-      "stateCode": "03",
-      "lat": 42.54277,
-      "lon": 1.73361,
-      "population": 2363,
-      "geonameId": 3039604,
-      "source": "seed"
-    },
-    {
-      "name": "Arinsal",
-      "countryCode": "AD",
-      "stateCode": "04",
-      "lat": 42.57205,
-      "lon": 1.48453,
-      "population": 1419,
-      "geonameId": 3041519,
-      "source": "seed"
-    },
-    {
-      "name": "Vila",
-      "countryCode": "AD",
-      "stateCode": "03",
-      "lat": 42.53176,
-      "lon": 1.56654,
-      "population": 1418,
-      "geonameId": 3038832,
-      "source": "seed"
-    },
-    {
-      "name": "El Tarter",
-      "countryCode": "AD",
-      "stateCode": "02",
-      "lat": 42.57952,
-      "lon": 1.65362,
-      "population": 1052,
-      "geonameId": 3039154,
-      "source": "seed"
-    },
-    {
-      "name": "Aixirivall",
-      "countryCode": "AD",
-      "stateCode": "06",
-      "lat": 42.46245,
-      "lon": 1.50209,
-      "population": 1041,
-      "geonameId": 3041604,
-      "source": "seed"
-    },
-    {
-      "name": "Anyós",
-      "countryCode": "AD",
-      "stateCode": "04",
-      "lat": 42.53465,
-      "lon": 1.5251,
-      "population": 1006,
-      "geonameId": 3041543,
-      "source": "seed"
-    },
-    {
-      "name": "Sispony",
-      "countryCode": "AD",
-      "stateCode": "04",
-      "lat": 42.53368,
-      "lon": 1.51613,
-      "population": 833,
-      "geonameId": 3039077,
-      "source": "seed"
-    },
-    {
-      "name": "Soldeu",
-      "countryCode": "AD",
-      "stateCode": "02",
-      "lat": 42.57688,
-      "lon": 1.66769,
-      "population": 602,
-      "geonameId": 3038999,
-      "source": "seed"
-    },
-    {
-      "name": "l'Aldosa",
-      "countryCode": "AD",
-      "stateCode": "04",
-      "lat": 42.54391,
-      "lon": 1.52289,
-      "population": 594,
-      "geonameId": 3040141,
-      "source": "seed"
-    },
-    {
-      "name": "Puiol del Piu",
-      "countryCode": "AD",
-      "stateCode": "04",
-      "lat": 42.5652,
-      "lon": 1.49159,
-      "population": 400,
-      "geonameId": 10630523,
-      "source": "seed"
-    },
-    {
-      "name": "Pal",
-      "countryCode": "AD",
-      "stateCode": "04",
-      "lat": 42.54592,
-      "lon": 1.47524,
-      "population": 235,
-      "geonameId": 3039634,
-      "source": "seed"
-    },
-    {
-      "name": "l'Aldosa de canillo",
-      "countryCode": "AD",
-      "stateCode": "02",
-      "lat": 42.57895,
-      "lon": 1.62902,
-      "population": 195,
-      "geonameId": 3040140,
-      "source": "seed"
-    },
-    {
-      "name": "La Margineda",
-      "countryCode": "AD",
-      "stateCode": "07",
-      "lat": 42.48599,
-      "lon": 1.49024,
-      "population": 155,
-      "geonameId": 7302102,
-      "source": "seed"
-    },
-    {
-      "name": "Les Subiranes",
-      "countryCode": "AD",
-      "stateCode": "05",
-      "lat": 42.62055,
-      "lon": 1.54147,
-      "population": 6,
-      "geonameId": 3040025,
-      "source": "seed"
-    },
-    {
-      "name": "Xixerella",
-      "countryCode": "AD",
-      "stateCode": "04",
-      "lat": 42.55327,
-      "lon": 1.48736,
-      "population": 0,
-      "geonameId": 3038816,
-      "source": "seed"
-    },
-    {
-      "name": "Tossalet i Vinyals1",
-      "countryCode": "AD",
-      "stateCode": "07",
-      "lat": 42.48597,
-      "lon": 1.4891,
-      "population": 0,
-      "geonameId": 3038899,
-      "source": "seed"
-    },
-    {
-      "name": "Sornàs",
-      "countryCode": "AD",
-      "stateCode": "05",
-      "lat": 42.56461,
-      "lon": 1.52757,
-      "population": 0,
-      "geonameId": 3038987,
-      "source": "seed"
-    },
-    {
-      "name": "Segudet",
-      "countryCode": "AD",
-      "stateCode": "05",
-      "lat": 42.55713,
-      "lon": 1.53808,
-      "population": 0,
-      "geonameId": 3039132,
-      "source": "seed"
-    },
-    {
-      "name": "Sant Joan de Caselles",
-      "countryCode": "AD",
-      "stateCode": "02",
-      "lat": 42.57116,
-      "lon": 1.60761,
-      "population": 0,
-      "geonameId": 3039166,
-      "source": "seed"
-    },
-    {
-      "name": "Santa Coloma",
-      "countryCode": "AD",
-      "stateCode": "07",
-      "lat": 42.49454,
-      "lon": 1.49897,
-      "population": 0,
-      "geonameId": 3039181,
-      "source": "seed"
-    },
-    {
-      "name": "Ransol",
-      "countryCode": "AD",
-      "stateCode": "02",
-      "lat": 42.58137,
-      "lon": 1.63812,
-      "population": 0,
-      "geonameId": 3039320,
-      "source": "seed"
-    },
-    {
-      "name": "Ràmio",
-      "countryCode": "AD",
-      "stateCode": "08",
-      "lat": 42.49734,
-      "lon": 1.57401,
-      "population": 0,
-      "geonameId": 3039322,
-      "source": "seed"
-    },
-    {
-      "name": "Prats",
-      "countryCode": "AD",
-      "stateCode": "02",
-      "lat": 42.56003,
-      "lon": 1.59396,
-      "population": 0,
-      "geonameId": 3039386,
-      "source": "seed"
-    },
-    {
-      "name": "Nagol",
-      "countryCode": "AD",
-      "stateCode": "06",
-      "lat": 42.47142,
-      "lon": 1.50231,
-      "population": 0,
-      "geonameId": 3039757,
-      "source": "seed"
-    },
-    {
-      "name": "Molleres",
-      "countryCode": "AD",
-      "stateCode": "02",
-      "lat": 42.55093,
-      "lon": 1.58985,
-      "population": 0,
-      "geonameId": 3039819,
-      "source": "seed"
-    },
-    {
-      "name": "Meritxell",
-      "countryCode": "AD",
-      "stateCode": "02",
-      "lat": 42.55403,
-      "lon": 1.59087,
-      "population": 0,
-      "geonameId": 3039862,
-      "source": "seed"
-    },
-    {
-      "name": "Mas de Ribafeta",
-      "countryCode": "AD",
-      "stateCode": "04",
-      "lat": 42.56932,
-      "lon": 1.48858,
-      "population": 0,
-      "geonameId": 3039896,
-      "source": "seed"
-    },
-    {
-      "name": "Mas d’Alins",
-      "countryCode": "AD",
-      "stateCode": "06",
-      "lat": 42.44112,
-      "lon": 1.45128,
-      "population": 0,
-      "geonameId": 3039901,
-      "source": "seed"
-    },
-    {
-      "name": "Llumeneres",
-      "countryCode": "AD",
-      "stateCode": "06",
-      "lat": 42.47229,
-      "lon": 1.51165,
-      "population": 0,
-      "geonameId": 3039959,
-      "source": "seed"
-    },
-    {
-      "name": "Llorts",
-      "countryCode": "AD",
-      "stateCode": "05",
-      "lat": 42.59625,
-      "lon": 1.52658,
-      "population": 0,
-      "geonameId": 3039979,
-      "source": "seed"
-    },
-    {
-      "name": "Les Salines",
-      "countryCode": "AD",
-      "stateCode": "05",
-      "lat": 42.60952,
-      "lon": 1.53697,
-      "population": 0,
-      "geonameId": 3040027,
-      "source": "seed"
-    },
-    {
-      "name": "Les Bons",
-      "countryCode": "AD",
-      "stateCode": "03",
-      "lat": 42.53873,
-      "lon": 1.58649,
-      "population": 0,
-      "geonameId": 3040067,
-      "source": "seed"
-    },
-    {
-      "name": "La Plana",
-      "countryCode": "AD",
-      "stateCode": "08",
-      "lat": 42.50471,
-      "lon": 1.53862,
-      "population": 0,
-      "geonameId": 3040116,
-      "source": "seed"
-    },
-    {
-      "name": "La Cortinada",
-      "countryCode": "AD",
-      "stateCode": "05",
-      "lat": 42.57423,
-      "lon": 1.51845,
-      "population": 0,
-      "geonameId": 3040154,
-      "source": "seed"
-    },
-    {
-      "name": "Juberri",
-      "countryCode": "AD",
-      "stateCode": "06",
-      "lat": 42.44,
-      "lon": 1.49194,
-      "population": 0,
-      "geonameId": 3040200,
-      "source": "seed"
-    },
-    {
-      "name": "Fontaneda",
-      "countryCode": "AD",
-      "stateCode": "06",
-      "lat": 42.45405,
-      "lon": 1.46471,
-      "population": 0,
-      "geonameId": 3040437,
-      "source": "seed"
-    },
-    {
-      "name": "Escàs",
-      "countryCode": "AD",
-      "stateCode": "04",
-      "lat": 42.54643,
-      "lon": 1.50895,
-      "population": 0,
-      "geonameId": 3040601,
-      "source": "seed"
-    },
-    {
-      "name": "Erts",
-      "countryCode": "AD",
-      "stateCode": "04",
-      "lat": 42.56218,
-      "lon": 1.4968,
-      "population": 0,
-      "geonameId": 3040609,
-      "source": "seed"
-    },
-    {
-      "name": "Engordany",
-      "countryCode": "AD",
-      "stateCode": "08",
-      "lat": 42.51115,
-      "lon": 1.54118,
-      "population": 0,
-      "geonameId": 3040648,
-      "source": "seed"
-    },
-    {
-      "name": "El Vilar",
-      "countryCode": "AD",
-      "stateCode": "02",
-      "lat": 42.57204,
-      "lon": 1.608,
-      "population": 0,
-      "geonameId": 3040694,
-      "source": "seed"
-    },
-    {
-      "name": "Els Plans",
-      "countryCode": "AD",
-      "stateCode": "02",
-      "lat": 42.58143,
-      "lon": 1.63273,
-      "population": 0,
-      "geonameId": 3040709,
-      "source": "seed"
-    },
-    {
-      "name": "El Serrat",
-      "countryCode": "AD",
-      "stateCode": "05",
-      "lat": 42.6183,
-      "lon": 1.53912,
-      "population": 0,
-      "geonameId": 3040737,
-      "source": "seed"
-    },
-    {
-      "name": "Els Cortals",
-      "countryCode": "AD",
-      "stateCode": "03",
-      "lat": 42.53338,
-      "lon": 1.58853,
-      "population": 0,
-      "geonameId": 3040740,
-      "source": "seed"
-    },
-    {
-      "name": "Certers",
-      "countryCode": "AD",
-      "stateCode": "06",
-      "lat": 42.47457,
-      "lon": 1.50611,
-      "population": 0,
-      "geonameId": 3041098,
-      "source": "seed"
-    },
-    {
-      "name": "Bixessarri",
-      "countryCode": "AD",
-      "stateCode": "06",
-      "lat": 42.48197,
-      "lon": 1.46052,
-      "population": 0,
-      "geonameId": 3041375,
-      "source": "seed"
-    },
-    {
-      "name": "Aubinyà",
-      "countryCode": "AD",
-      "stateCode": "06",
-      "lat": 42.4531,
-      "lon": 1.49247,
-      "population": 0,
-      "geonameId": 3041475,
-      "source": "seed"
-    },
-    {
-      "name": "Arans",
-      "countryCode": "AD",
-      "stateCode": "05",
-      "lat": 42.58226,
-      "lon": 1.51844,
-      "population": 0,
-      "geonameId": 3041541,
-      "source": "seed"
-    },
-    {
-      "name": "Ansalonga",
-      "countryCode": "AD",
-      "stateCode": "05",
-      "lat": 42.56881,
-      "lon": 1.52198,
-      "population": 0,
-      "geonameId": 3041546,
-      "source": "seed"
-    },
-    {
-      "name": "Aixovall",
-      "countryCode": "AD",
-      "stateCode": "06",
-      "lat": 42.4764,
-      "lon": 1.48899,
-      "population": 0,
-      "geonameId": 3041598,
-      "source": "seed"
-    },
-    {
-      "name": "Aixàs",
-      "countryCode": "AD",
-      "stateCode": "06",
-      "lat": 42.48647,
-      "lon": 1.46838,
-      "population": 0,
-      "geonameId": 3041609,
-      "source": "seed"
-    },
-    {
-      "name": "Incles",
-      "countryCode": "AD",
-      "stateCode": "02",
-      "lat": 42.58285,
-      "lon": 1.66267,
-      "population": 0,
-      "geonameId": 8260082,
-      "source": "seed"
-    },
-    {
-      "name": "Bordes de Envalira",
-      "countryCode": "AD",
-      "stateCode": "02",
-      "lat": 42.55962,
-      "lon": 1.68576,
-      "population": 0,
-      "geonameId": 8260083,
-      "source": "seed"
-    },
-    {
-      "name": "Sant Miquel d'Engolasters",
-      "countryCode": "AD",
-      "stateCode": "08",
-      "lat": 42.51119,
-      "lon": 1.55987,
-      "population": 0,
-      "geonameId": 8260095,
-      "source": "seed"
-    },
-    {
-      "name": "Els Vilars",
-      "countryCode": "AD",
-      "stateCode": "08",
-      "lat": 42.51636,
-      "lon": 1.53356,
-      "population": 0,
-      "geonameId": 11945497,
-      "source": "seed"
-    },
-    {
-      "name": "Urbanització Ermengol-Serra",
-      "countryCode": "AD",
-      "stateCode": "08",
-      "lat": 42.51418,
-      "lon": 1.5418,
-      "population": 0,
-      "geonameId": 11945498,
-      "source": "seed"
-    },
-    {
-      "name": "Urbanització Guem",
-      "countryCode": "AD",
-      "stateCode": "08",
-      "lat": 42.51202,
-      "lon": 1.54505,
-      "population": 0,
-      "geonameId": 11945499,
-      "source": "seed"
-    },
-    {
-      "name": "Urbanització Sa Calma",
-      "countryCode": "AD",
-      "stateCode": "08",
-      "lat": 42.51095,
-      "lon": 1.54373,
-      "population": 0,
-      "geonameId": 11945501,
-      "source": "seed"
-    },
-    {
-      "name": "El Barri",
-      "countryCode": "AD",
-      "stateCode": "08",
-      "lat": 42.50909,
-      "lon": 1.54499,
-      "population": 0,
-      "geonameId": 11945505,
-      "source": "seed"
-    },
-    {
-      "name": "Urbanització la Plana",
-      "countryCode": "AD",
-      "stateCode": "08",
-      "lat": 42.50526,
-      "lon": 1.53995,
-      "population": 0,
-      "geonameId": 11945514,
-      "source": "seed"
-    },
-    {
-      "name": "Urbanització Can Noguer",
-      "countryCode": "AD",
-      "stateCode": "08",
-      "lat": 42.50886,
-      "lon": 1.55052,
-      "population": 0,
-      "geonameId": 11945519,
-      "source": "seed"
-    },
-    {
-      "name": "Urbanització Terra Vella",
-      "countryCode": "AD",
-      "stateCode": "07",
-      "lat": 42.50335,
-      "lon": 1.5225,
-      "population": 0,
-      "geonameId": 11945536,
-      "source": "seed"
-    },
-    {
-      "name": "La Comella",
-      "countryCode": "AD",
-      "stateCode": "07",
-      "lat": 42.50117,
-      "lon": 1.52879,
-      "population": 0,
-      "geonameId": 11945537,
-      "source": "seed"
-    },
-    {
-      "name": "El Cedre",
-      "countryCode": "AD",
-      "stateCode": "07",
-      "lat": 42.49776,
-      "lon": 1.50143,
-      "population": 0,
-      "geonameId": 11945552,
-      "source": "seed"
-    },
-    {
-      "name": "Abu Dhabi",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 24.45118,
-      "lon": 54.39696,
-      "population": 1807000,
-      "geonameId": 292968,
-      "source": "seed"
-    },
-    {
-      "name": "Sharjah",
-      "countryCode": "AE",
-      "stateCode": "06",
-      "lat": 25.33737,
-      "lon": 55.41206,
-      "population": 1800000,
-      "geonameId": 292672,
-      "source": "seed"
-    },
-    {
-      "name": "Al Ain",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 24.19167,
-      "lon": 55.76056,
-      "population": 846747,
-      "geonameId": 292913,
-      "source": "seed"
-    },
-    {
-      "name": "Ajman",
-      "countryCode": "AE",
-      "stateCode": "02",
-      "lat": 25.40177,
-      "lon": 55.47878,
-      "population": 490035,
-      "geonameId": 292932,
-      "source": "seed"
-    },
-    {
-      "name": "Deira",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.27143,
-      "lon": 55.30207,
-      "population": 400000,
-      "geonameId": 292261,
-      "source": "seed"
-    },
-    {
-      "name": "Ras al-Khaimah",
-      "countryCode": "AE",
-      "stateCode": "05",
-      "lat": 25.78953,
-      "lon": 55.9432,
-      "population": 351943,
-      "geonameId": 291074,
-      "source": "seed"
-    },
-    {
-      "name": "Musaffah City",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 24.35893,
-      "lon": 54.48267,
-      "population": 243341,
-      "geonameId": 12042053,
-      "source": "seed"
-    },
-    {
-      "name": "Jebel Ali",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.00255,
-      "lon": 55.10811,
-      "population": 210000,
-      "geonameId": 11524601,
-      "source": "seed"
-    },
-    {
-      "name": "Business Bay",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.18544,
-      "lon": 55.26969,
-      "population": 191000,
-      "geonameId": 13118432,
-      "source": "seed"
-    },
-    {
-      "name": "Dubai Investments Park",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.00827,
-      "lon": 55.15682,
-      "population": 160000,
-      "geonameId": 11048853,
-      "source": "seed"
-    },
-    {
-      "name": "Dubai International City",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.16383,
-      "lon": 55.40987,
-      "population": 120000,
-      "geonameId": 8469668,
-      "source": "seed"
-    },
-    {
-      "name": "Dubai Marina",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.08525,
-      "lon": 55.14646,
-      "population": 120000,
-      "geonameId": 8469788,
-      "source": "seed"
-    },
-    {
-      "name": "Fujairah",
-      "countryCode": "AE",
-      "stateCode": "04",
-      "lat": 25.11641,
-      "lon": 56.34141,
-      "population": 118933,
-      "geonameId": 292878,
-      "source": "seed"
-    },
-    {
-      "name": "Al Majaz",
-      "countryCode": "AE",
-      "stateCode": "06",
-      "lat": 25.32354,
-      "lon": 55.38774,
-      "population": 116503,
-      "geonameId": 8476509,
-      "source": "seed"
-    },
-    {
-      "name": "Warisan",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.16744,
-      "lon": 55.40708,
-      "population": 108759,
-      "geonameId": 290503,
-      "source": "seed"
-    },
-    {
-      "name": "Silicon Oasis",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.11985,
-      "lon": 55.38718,
-      "population": 90000,
-      "geonameId": 13118424,
-      "source": "seed"
-    },
-    {
-      "name": "Ar Rumaylah",
-      "countryCode": "AE",
-      "stateCode": "02",
-      "lat": 25.40338,
-      "lon": 55.4334,
-      "population": 86000,
-      "geonameId": 8475866,
-      "source": "seed"
-    },
-    {
-      "name": "Khalifah A City",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 24.42588,
-      "lon": 54.605,
-      "population": 85374,
-      "geonameId": 8057551,
-      "source": "seed"
-    },
-    {
-      "name": "Mohammed Bin Zayed City",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 24.34794,
-      "lon": 54.55368,
-      "population": 85000,
-      "geonameId": 13118447,
-      "source": "seed"
-    },
-    {
-      "name": "Hawr al ‘Anz",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.27744,
-      "lon": 55.33675,
-      "population": 84661,
-      "geonameId": 8201275,
-      "source": "seed"
-    },
-    {
-      "name": "Reef Al Fujairah City",
-      "countryCode": "AE",
-      "stateCode": "04",
-      "lat": 25.14479,
-      "lon": 56.24764,
-      "population": 82310,
-      "geonameId": 12047417,
-      "source": "seed"
-    },
-    {
-      "name": "Bani Yas City",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 24.30978,
-      "lon": 54.62944,
-      "population": 80498,
-      "geonameId": 12042052,
-      "source": "seed"
-    },
-    {
-      "name": "Dubai Festival City",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.22177,
-      "lon": 55.35733,
-      "population": 77000,
-      "geonameId": 8541937,
-      "source": "seed"
-    },
-    {
-      "name": "Al Karama",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.24004,
-      "lon": 55.30106,
-      "population": 75560,
-      "geonameId": 6691091,
-      "source": "seed"
-    },
-    {
-      "name": "Zayed City",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 23.65416,
-      "lon": 53.70522,
-      "population": 63482,
-      "geonameId": 291580,
-      "source": "seed"
-    },
-    {
-      "name": "Al Shamkhah City",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 24.39268,
-      "lon": 54.70779,
-      "population": 61710,
-      "geonameId": 12047416,
-      "source": "seed"
-    },
-    {
-      "name": "Mirdif",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.22443,
-      "lon": 55.41412,
-      "population": 60288,
-      "geonameId": 8200824,
-      "source": "seed"
-    },
-    {
-      "name": "Al Warqaa",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.19272,
-      "lon": 55.42013,
-      "population": 59111,
-      "geonameId": 8469658,
-      "source": "seed"
-    },
-    {
-      "name": "Umm al-Quwain",
-      "countryCode": "AE",
-      "stateCode": "07",
-      "lat": 25.56473,
-      "lon": 55.55517,
-      "population": 59098,
-      "geonameId": 290594,
-      "source": "seed"
-    },
-    {
-      "name": "Al Sajaah",
-      "countryCode": "AE",
-      "stateCode": "06",
-      "lat": 25.31532,
-      "lon": 55.63211,
-      "population": 53079,
-      "geonameId": 13118438,
-      "source": "seed"
-    },
-    {
-      "name": "Lahbab",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.03763,
-      "lon": 55.59135,
-      "population": 53079,
-      "geonameId": 13118439,
-      "source": "seed"
-    },
-    {
-      "name": "Nāyf",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.27139,
-      "lon": 55.30323,
-      "population": 53075,
-      "geonameId": 8226485,
-      "source": "seed"
-    },
-    {
-      "name": "Ţarīf Kalbā",
-      "countryCode": "AE",
-      "stateCode": "04",
-      "lat": 25.0695,
-      "lon": 56.33115,
-      "population": 51000,
-      "geonameId": 290680,
-      "source": "seed"
-    },
-    {
-      "name": "Muteena",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.27375,
-      "lon": 55.32265,
-      "population": 48739,
-      "geonameId": 13118421,
-      "source": "seed"
-    },
-    {
-      "name": "Al Qusais First",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.27925,
-      "lon": 55.36995,
-      "population": 48378,
-      "geonameId": 13118433,
-      "source": "seed"
-    },
-    {
-      "name": "Al Mankhool",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.24612,
-      "lon": 55.29222,
-      "population": 41244,
-      "geonameId": 8225407,
-      "source": "seed"
-    },
-    {
-      "name": "As Saţwah",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.22192,
-      "lon": 55.27459,
-      "population": 40997,
-      "geonameId": 385024,
-      "source": "seed"
-    },
-    {
-      "name": "Khor'fakkan",
-      "countryCode": "AE",
-      "stateCode": "06",
-      "lat": 25.33132,
-      "lon": 56.34199,
-      "population": 40677,
-      "geonameId": 291696,
-      "source": "seed"
-    },
-    {
-      "name": "Jumayrā",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.20795,
-      "lon": 55.24969,
-      "population": 39080,
-      "geonameId": 291775,
-      "source": "seed"
-    },
-    {
-      "name": "Ar Rāshidīyah",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.22499,
-      "lon": 55.38947,
-      "population": 38425,
-      "geonameId": 291061,
-      "source": "seed"
-    },
-    {
-      "name": "Kalbā",
-      "countryCode": "AE",
-      "stateCode": "06",
-      "lat": 25.0513,
-      "lon": 56.35422,
-      "population": 37545,
-      "geonameId": 291763,
-      "source": "seed"
-    },
-    {
-      "name": "Dubai International Financial Centre",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.2106,
-      "lon": 55.27787,
-      "population": 36000,
-      "geonameId": 8541977,
-      "source": "seed"
-    },
-    {
-      "name": "Dibba Al-Fujairah",
-      "countryCode": "AE",
-      "stateCode": "04",
-      "lat": 25.59246,
-      "lon": 56.26176,
-      "population": 30000,
-      "geonameId": 292231,
-      "source": "seed"
-    },
-    {
-      "name": "Al Ḩamīdīyah",
-      "countryCode": "AE",
-      "stateCode": "02",
-      "lat": 25.40001,
-      "lon": 55.52925,
-      "population": 27000,
-      "geonameId": 414901,
-      "source": "seed"
-    },
-    {
-      "name": "Dibba Al-Hisn",
-      "countryCode": "AE",
-      "stateCode": "04",
-      "lat": 25.61955,
-      "lon": 56.27291,
-      "population": 26395,
-      "geonameId": 292239,
-      "source": "seed"
-    },
-    {
-      "name": "Al Furjan",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.02651,
-      "lon": 55.14565,
-      "population": 26000,
-      "geonameId": 13118431,
-      "source": "seed"
-    },
-    {
-      "name": "Palm Jumeirah",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.11607,
-      "lon": 55.13506,
-      "population": 25500,
-      "geonameId": 6691113,
-      "source": "seed"
-    },
-    {
-      "name": "Ruwais",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 24.11028,
-      "lon": 52.73056,
-      "population": 25000,
-      "geonameId": 292688,
-      "source": "seed"
-    },
-    {
-      "name": "Dubai Internet City",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.09538,
-      "lon": 55.16171,
-      "population": 24000,
-      "geonameId": 8469811,
-      "source": "seed"
-    },
-    {
-      "name": "Al Waheda",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.29173,
-      "lon": 55.33822,
-      "population": 21608,
-      "geonameId": 6691079,
-      "source": "seed"
-    },
-    {
-      "name": "Dhaid",
-      "countryCode": "AE",
-      "stateCode": "06",
-      "lat": 25.28812,
-      "lon": 55.88157,
-      "population": 20165,
-      "geonameId": 292953,
-      "source": "seed"
-    },
-    {
-      "name": "Al Murar al Qadīm",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.27576,
-      "lon": 55.30738,
-      "population": 19831,
-      "geonameId": 8226590,
-      "source": "seed"
-    },
-    {
-      "name": "Halwan",
-      "countryCode": "AE",
-      "stateCode": "06",
-      "lat": 25.34586,
-      "lon": 55.42165,
-      "population": 19389,
-      "geonameId": 13118437,
-      "source": "seed"
-    },
-    {
-      "name": "Al Bada'a",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.22462,
-      "lon": 55.26888,
-      "population": 18816,
-      "geonameId": 13118420,
-      "source": "seed"
-    },
-    {
-      "name": "Bur Dubai",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.26038,
-      "lon": 55.29891,
-      "population": 18698,
-      "geonameId": 7289825,
-      "source": "seed"
-    },
-    {
-      "name": "Abū Hayl",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.28413,
-      "lon": 55.33153,
-      "population": 18043,
-      "geonameId": 292991,
-      "source": "seed"
-    },
-    {
-      "name": "Al Jurf",
-      "countryCode": "AE",
-      "stateCode": "02",
-      "lat": 25.41814,
-      "lon": 55.50791,
-      "population": 18000,
-      "geonameId": 8475923,
-      "source": "seed"
-    },
-    {
-      "name": "Al Mizhar First",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.24805,
-      "lon": 55.44128,
-      "population": 17498,
-      "geonameId": 13118422,
-      "source": "seed"
-    },
-    {
-      "name": "Umm Suqeim",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.15491,
-      "lon": 55.21015,
-      "population": 16459,
-      "geonameId": 290581,
-      "source": "seed"
-    },
-    {
-      "name": "Al Safa",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.17047,
-      "lon": 55.23336,
-      "population": 15672,
-      "geonameId": 8469819,
-      "source": "seed"
-    },
-    {
-      "name": "Hatta",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 24.80073,
-      "lon": 56.12726,
-      "population": 15324,
-      "geonameId": 292862,
-      "source": "seed"
-    },
-    {
-      "name": "Knowledge Village",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.10223,
-      "lon": 55.16433,
-      "population": 15000,
-      "geonameId": 6691109,
-      "source": "seed"
-    },
-    {
-      "name": "Dubai Sports City",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.03878,
-      "lon": 55.21725,
-      "population": 15000,
-      "geonameId": 8469805,
-      "source": "seed"
-    },
-    {
-      "name": "Masdar City",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 24.43208,
-      "lon": 54.61582,
-      "population": 15000,
-      "geonameId": 13118448,
-      "source": "seed"
-    },
-    {
-      "name": "Nadd al Ḩumr",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.20131,
-      "lon": 55.38388,
-      "population": 13589,
-      "geonameId": 412567,
-      "source": "seed"
-    },
-    {
-      "name": "Downtown Dubai",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.19408,
-      "lon": 55.2781,
-      "population": 13201,
-      "geonameId": 10172907,
-      "source": "seed"
-    },
-    {
-      "name": "Al Qusais Second",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.27148,
-      "lon": 55.38603,
-      "population": 12851,
-      "geonameId": 6691086,
-      "source": "seed"
-    },
-    {
-      "name": "Al Khawaneej 1",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.24882,
-      "lon": 55.48545,
-      "population": 12241,
-      "geonameId": 13118436,
-      "source": "seed"
-    },
-    {
-      "name": "Al Twar First",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.27148,
-      "lon": 55.36165,
-      "population": 12114,
-      "geonameId": 6691083,
-      "source": "seed"
-    },
-    {
-      "name": "Al Mizhar Second",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.24332,
-      "lon": 55.4619,
-      "population": 11967,
-      "geonameId": 13118423,
-      "source": "seed"
-    },
-    {
-      "name": "As Saţwah Sharq",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.23796,
-      "lon": 55.28678,
-      "population": 11619,
-      "geonameId": 8539023,
-      "source": "seed"
-    },
-    {
-      "name": "Al Twar Third",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.25159,
-      "lon": 55.39408,
-      "population": 11185,
-      "geonameId": 13118434,
-      "source": "seed"
-    },
-    {
-      "name": "Būr Sa‘īd",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.261,
-      "lon": 55.33016,
-      "population": 11142,
-      "geonameId": 8225949,
-      "source": "seed"
-    },
-    {
-      "name": "Al Jazīrah al Ḩamrā’",
-      "countryCode": "AE",
-      "stateCode": "05",
-      "lat": 25.7091,
-      "lon": 55.80772,
-      "population": 10190,
-      "geonameId": 291794,
-      "source": "seed"
-    },
-    {
-      "name": "Mezaira’a",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 23.14355,
-      "lon": 53.7881,
-      "population": 10000,
-      "geonameId": 291279,
-      "source": "seed"
-    },
-    {
-      "name": "Maşfūţ",
-      "countryCode": "AE",
-      "stateCode": "02",
-      "lat": 24.81089,
-      "lon": 56.10657,
-      "population": 8988,
-      "geonameId": 291489,
-      "source": "seed"
-    },
-    {
-      "name": "Al Madam",
-      "countryCode": "AE",
-      "stateCode": "06",
-      "lat": 24.97355,
-      "lon": 55.77781,
-      "population": 8652,
-      "geonameId": 13118445,
-      "source": "seed"
-    },
-    {
-      "name": "Motor City",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.04593,
-      "lon": 55.24102,
-      "population": 8561,
-      "geonameId": 13118429,
-      "source": "seed"
-    },
-    {
-      "name": "Oud Metha",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.23685,
-      "lon": 55.31419,
-      "population": 8321,
-      "geonameId": 6691115,
-      "source": "seed"
-    },
-    {
-      "name": "Ar Riqqah",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.26797,
-      "lon": 55.31272,
-      "population": 8222,
-      "geonameId": 8226648,
-      "source": "seed"
-    },
-    {
-      "name": "DAMAC Hills",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.02924,
-      "lon": 55.25277,
-      "population": 8000,
-      "geonameId": 13118430,
-      "source": "seed"
-    },
-    {
-      "name": "Al Hudaiba",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.24151,
-      "lon": 55.27805,
-      "population": 7699,
-      "geonameId": 6691093,
-      "source": "seed"
-    },
-    {
-      "name": "Shabiat Al Hayer",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 24.58242,
-      "lon": 55.7467,
-      "population": 7610,
-      "geonameId": 12748680,
-      "source": "seed"
-    },
-    {
-      "name": "Al Khabaisi",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.26628,
-      "lon": 55.33379,
-      "population": 6737,
-      "geonameId": 13118435,
-      "source": "seed"
-    },
-    {
-      "name": "Mushayrif",
-      "countryCode": "AE",
-      "stateCode": "02",
-      "lat": 25.40977,
-      "lon": 55.47106,
-      "population": 6539,
-      "geonameId": 8475913,
-      "source": "seed"
-    },
-    {
-      "name": "Shakhbout City",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 24.36727,
-      "lon": 54.63721,
-      "population": 6515,
-      "geonameId": 8057552,
-      "source": "seed"
-    },
-    {
-      "name": "Umm Al Sheif",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.13227,
-      "lon": 55.20567,
-      "population": 6263,
-      "geonameId": 13118419,
-      "source": "seed"
-    },
-    {
-      "name": "Al Manāmah",
-      "countryCode": "AE",
-      "stateCode": "02",
-      "lat": 25.3299,
-      "lon": 56.02188,
-      "population": 5823,
-      "geonameId": 292799,
-      "source": "seed"
-    },
-    {
-      "name": "Suwayḩān",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 24.46235,
-      "lon": 55.33715,
-      "population": 5403,
-      "geonameId": 413256,
-      "source": "seed"
-    },
-    {
-      "name": "Zabeel",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.22536,
-      "lon": 55.305,
-      "population": 5283,
-      "geonameId": 6691114,
-      "source": "seed"
-    },
-    {
-      "name": "AL Twar Second",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.26309,
-      "lon": 55.38028,
-      "population": 5068,
-      "geonameId": 6691085,
-      "source": "seed"
-    },
-    {
-      "name": "Sha'biyyat Milе̄hah",
-      "countryCode": "AE",
-      "stateCode": "06",
-      "lat": 25.13518,
-      "lon": 55.8843,
-      "population": 4768,
-      "geonameId": 13117825,
-      "source": "seed"
-    },
-    {
-      "name": "Al Sufouh",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 25.12015,
-      "lon": 55.18285,
-      "population": 3337,
-      "geonameId": 8469814,
-      "source": "seed"
-    },
-    {
-      "name": "Al Ḩamrīyah",
-      "countryCode": "AE",
-      "stateCode": "06",
-      "lat": 25.47819,
-      "lon": 55.53377,
-      "population": 3297,
-      "geonameId": 292856,
-      "source": "seed"
-    },
-    {
-      "name": "Al Raafah",
-      "countryCode": "AE",
-      "stateCode": "07",
-      "lat": 25.55073,
-      "lon": 55.68619,
-      "population": 2704,
-      "geonameId": 13118446,
-      "source": "seed"
-    },
-    {
-      "name": "Al Lusaylī",
-      "countryCode": "AE",
-      "stateCode": "03",
-      "lat": 24.93138,
-      "lon": 55.47531,
-      "population": 2514,
-      "geonameId": 412981,
-      "source": "seed"
-    },
-    {
-      "name": "Al Faqaa",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 24.71242,
-      "lon": 55.67048,
-      "population": 2291,
-      "geonameId": 12748542,
-      "source": "seed"
-    },
-    {
-      "name": "Murbaḩ",
-      "countryCode": "AE",
-      "stateCode": "06",
-      "lat": 25.27623,
-      "lon": 56.36256,
-      "population": 2000,
-      "geonameId": 291339,
-      "source": "seed"
-    },
-    {
-      "name": "Al Wiqan",
-      "countryCode": "AE",
-      "stateCode": "01",
-      "lat": 23.75355,
-      "lon": 55.32739,
-      "population": 2000,
-      "geonameId": 12470174,
-      "source": "seed"
-    },
-    {
-      "name": "Kabul",
-      "countryCode": "AF",
-      "stateCode": "13",
-      "lat": 34.52813,
-      "lon": 69.17233,
-      "population": 4434550,
-      "geonameId": 1138958,
-      "source": "seed"
-    },
-    {
-      "name": "Herat",
-      "countryCode": "AF",
-      "stateCode": "11",
-      "lat": 34.34817,
-      "lon": 62.19967,
-      "population": 574300,
-      "geonameId": 1140026,
-      "source": "seed"
-    },
-    {
-      "name": "Kandahar",
-      "countryCode": "AF",
-      "stateCode": "23",
-      "lat": 31.61332,
-      "lon": 65.71013,
-      "population": 523300,
-      "geonameId": 1138336,
-      "source": "seed"
-    },
-    {
-      "name": "Mazari Sharif",
-      "countryCode": "AF",
-      "stateCode": "30",
-      "lat": 36.70904,
-      "lon": 67.11087,
-      "population": 523300,
-      "geonameId": 1133616,
-      "source": "seed"
-    },
-    {
-      "name": "Jalalabad",
-      "countryCode": "AF",
-      "stateCode": "18",
-      "lat": 34.42647,
-      "lon": 70.45153,
-      "population": 271900,
-      "geonameId": 1139715,
-      "source": "seed"
-    },
-    {
-      "name": "Kunduz",
-      "countryCode": "AF",
-      "stateCode": "24",
-      "lat": 36.72895,
-      "lon": 68.857,
-      "population": 161902,
-      "geonameId": 1135689,
-      "source": "seed"
-    },
-    {
-      "name": "Ghazni",
-      "countryCode": "AF",
-      "stateCode": "08",
-      "lat": 33.55391,
-      "lon": 68.42096,
-      "population": 141000,
-      "geonameId": 1141269,
-      "source": "seed"
-    },
-    {
-      "name": "Balkh",
-      "countryCode": "AF",
-      "stateCode": "30",
-      "lat": 36.75635,
-      "lon": 66.8972,
-      "population": 114883,
-      "geonameId": 1147290,
-      "source": "seed"
-    },
-    {
-      "name": "Baghlan",
-      "countryCode": "AF",
-      "stateCode": "03",
-      "lat": 36.13068,
-      "lon": 68.70829,
-      "population": 108449,
-      "geonameId": 1147540,
-      "source": "seed"
-    },
-    {
-      "name": "Gardez",
-      "countryCode": "AF",
-      "stateCode": "36",
-      "lat": 33.59744,
-      "lon": 69.22592,
-      "population": 103601,
-      "geonameId": 1141857,
-      "source": "seed"
-    },
-    {
-      "name": "Khōst",
-      "countryCode": "AF",
-      "stateCode": "37",
-      "lat": 33.33951,
-      "lon": 69.92041,
-      "population": 96123,
-      "geonameId": 1136469,
-      "source": "seed"
-    },
-    {
-      "name": "Maymana",
-      "countryCode": "AF",
-      "stateCode": "07",
-      "lat": 35.92139,
-      "lon": 64.78361,
-      "population": 75900,
-      "geonameId": 1133453,
-      "source": "seed"
-    },
-    {
-      "name": "Khanabad",
-      "countryCode": "AF",
-      "stateCode": "24",
-      "lat": 36.68304,
-      "lon": 69.11279,
-      "population": 71531,
-      "geonameId": 1137168,
-      "source": "seed"
-    },
-    {
-      "name": "Bāzār-e Yakāwlang",
-      "countryCode": "AF",
-      "stateCode": "05",
-      "lat": 34.73525,
-      "lon": 66.97379,
-      "population": 65000,
-      "geonameId": 1121381,
-      "source": "seed"
-    },
-    {
-      "name": "Bāzārak",
-      "countryCode": "AF",
-      "stateCode": "42",
-      "lat": 35.31292,
-      "lon": 69.51519,
-      "population": 65000,
-      "geonameId": 1429434,
-      "source": "seed"
-    },
-    {
-      "name": "Khulm",
-      "countryCode": "AF",
-      "stateCode": "30",
-      "lat": 36.69736,
-      "lon": 67.69826,
-      "population": 64933,
-      "geonameId": 1136575,
-      "source": "seed"
-    },
-    {
-      "name": "Taloqan",
-      "countryCode": "AF",
-      "stateCode": "26",
-      "lat": 36.73605,
-      "lon": 69.53451,
-      "population": 64256,
-      "geonameId": 1123004,
-      "source": "seed"
-    },
-    {
-      "name": "Bāmyān",
-      "countryCode": "AF",
-      "stateCode": "05",
-      "lat": 34.82156,
-      "lon": 67.82734,
-      "population": 61863,
-      "geonameId": 1147242,
-      "source": "seed"
-    },
-    {
-      "name": "Pul-e Khumrī",
-      "countryCode": "AF",
-      "stateCode": "03",
-      "lat": 35.94458,
-      "lon": 68.71512,
-      "population": 56369,
-      "geonameId": 1130490,
-      "source": "seed"
-    },
-    {
-      "name": "Shibirghān",
-      "countryCode": "AF",
-      "stateCode": "31",
-      "lat": 36.66757,
-      "lon": 65.7529,
-      "population": 55641,
-      "geonameId": 1125444,
-      "source": "seed"
-    },
-    {
-      "name": "Charikar",
-      "countryCode": "AF",
-      "stateCode": "40",
-      "lat": 35.01361,
-      "lon": 69.17139,
-      "population": 53676,
-      "geonameId": 1145352,
-      "source": "seed"
-    },
-    {
-      "name": "Sar-e Pul",
-      "countryCode": "AF",
-      "stateCode": "33",
-      "lat": 36.21544,
-      "lon": 65.93249,
-      "population": 52121,
-      "geonameId": 1127110,
-      "source": "seed"
-    },
-    {
-      "name": "Zaranj",
-      "countryCode": "AF",
-      "stateCode": "19",
-      "lat": 30.95962,
-      "lon": 61.86037,
-      "population": 49851,
-      "geonameId": 1120985,
-      "source": "seed"
-    },
-    {
-      "name": "Paghmān",
-      "countryCode": "AF",
-      "stateCode": "13",
-      "lat": 34.58787,
-      "lon": 68.95091,
-      "population": 49157,
-      "geonameId": 1131316,
-      "source": "seed"
-    }
-  ]
+  "last_updated": "2025-01-05",
+  "refresh_strategy": "wikipedia_api_monthly",
+  "description": "City-specific fun facts for distinctive category generation",
+  "cities": {
+    "paris": [
+      "The Eiffel Tower was originally intended to be temporary and was almost dismantled in 1909!",
+      "Paris has the most visited museum in the world - the Louvre with over 10 million visitors annually!",
+      "The city's subway system (M\u00e9tro) has 16 lines and is one of the densest in the world!",
+      "Paris was originally called Lutetia when it was a Roman settlement over 2,000 years ago!",
+      "The city has over 6,000 streets and each arrondissement has its own unique character and charm!"
+    ],
+    "london": [
+      "The Tower of London houses the Crown Jewels worth over \u00a320 billion!",
+      "London's Big Ben is actually the name of the bell, not the clock tower!",
+      "The city has over 170 museums, many of which are free to visit!",
+      "London Underground is the world's oldest underground railway system, opened in 1863!",
+      "The city was founded by the Romans as Londinium in AD 43 and has been continuously inhabited ever since!"
+    ],
+    "new york": [
+      "New York City has over 800 languages spoken, making it the most linguistically diverse city in the world!",
+      "Central Park is larger than Monaco and was designed by Frederick Law Olmsted and Calvert Vaux!",
+      "The New York City subway system has 472 stations, the most of any metro system in the world!",
+      "Times Square is named after the New York Times building, which moved there in 1904!",
+      "The city was originally called New Amsterdam when it was a Dutch colony until 1664!"
+    ],
+    "tokyo": [
+      "Tokyo is the world's most populous metropolitan area with over 37 million residents!",
+      "Shibuya Crossing is the world's busiest pedestrian crossing with up to 3,000 people crossing at once!",
+      "Tokyo has more Michelin-starred restaurants than any other city in the world!",
+      "The city's Tsukiji Fish Market is the largest wholesale fish and seafood market in the world!",
+      "Tokyo was originally called Edo and was renamed Tokyo in 1868 when it became Japan's capital!"
+    ],
+    "dubai": [
+      "Dubai has the world's tallest building, the Burj Khalifa at 828 meters tall!",
+      "The city has no income tax and no personal income tax, making it attractive to expatriates!",
+      "Dubai's police force uses supercars like Lamborghinis and Ferraris as patrol cars!",
+      "The city has the world's largest shopping mall by total area, the Dubai Mall!",
+      "Dubai has man-made islands including the Palm Jumeirah, which can be seen from space!"
+    ],
+    "mumbai": [
+      "Mumbai has the most expensive real estate in the world - a single square foot can cost over $10,000!",
+      "The city's local trains carry over 7.5 million passengers daily, more than the entire population of Switzerland!",
+      "Mumbai's Dharavi slum is the largest in Asia and has an estimated annual turnover of $1 billion!",
+      "The city has the world's largest open-air laundry, the Dhobi Ghat, where thousands of clothes are washed daily!",
+      "Mumbai's 'Victoria Terminus' is a UNESCO World Heritage Site and the headquarters of India's railway network!"
+    ],
+    "navi mumbai": [
+      "Navi Mumbai is India's largest planned city with over 1.2 million residents!",
+      "The city was developed in 1972 to decongest Mumbai and has world-class infrastructure!",
+      "Navi Mumbai has the largest container port in India - Jawaharlal Nehru Port Trust!",
+      "The city features the Nerul Balaji Temple, one of the most visited religious sites in Maharashtra!",
+      "Navi Mumbai's Vashi node is a major commercial hub with modern business districts!"
+    ],
+    "albuquerque": [
+      "Albuquerque hosts the world's largest hot air balloon festival with over 500 balloons painting the sky!",
+      "The Sandia Peak Tramway is North America's longest aerial tramway, climbing 10,378 feet up the Sandia Mountains!",
+      "Albuquerque is nicknamed 'Duke City' and was founded in 1706 as La Villa de Alburquerque!",
+      "The city's Sandia Mountains glow brilliant pink at sunset - their name means 'watermelon' in Spanish!",
+      "Breaking Bad was filmed in Albuquerque - you can visit Walter White's car wash and Jesse's house!"
+    ],
+    "shanghai": [
+      "Shanghai has the world's longest metro system at 803 km, longer than London's Underground!",
+      "The Shanghai Tower is the second tallest building in the world at 632 meters tall.",
+      "Shanghai has more skyscrapers than any other city in the world - over 1,300 buildings taller than 150 meters!",
+      "The Bund waterfront area features 52 buildings of various architectural styles, earning it the nickname 'museum of international architecture'.",
+      "Shanghai's Maglev train is the fastest commercial train in the world, reaching speeds of 431 km/h."
+    ],
+    "barcelona": [
+      "Barcelona's Sagrada Familia has been under construction since 1882 and is still not completed!",
+      "Barcelona has 9 UNESCO World Heritage Sites, the most of any city in Spain.",
+      "The city has 4.5 km of beaches within its city limits, making it the only major European city with beaches.",
+      "Barcelona's Park G\u00fcell was originally a failed housing development project that Gaud\u00ed turned into a public park.",
+      "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!"
+    ],
+    "rome": [
+      "Rome has more fountains than any other city in the world - over 2,000 fountains!",
+      "The Colosseum could hold 50,000-80,000 spectators and had a retractable awning for shade.",
+      "Rome's Trevi Fountain collects about \u20ac3,000 in coins every day, which are donated to charity.",
+      "The Vatican City is the smallest country in the world, only 0.44 km\u00b2 with a population of about 800.",
+      "Rome's Pantheon has the largest unreinforced concrete dome in the world, still the world's largest after 2,000 years!"
+    ],
+    "berlin": [
+      "Berlin has more bridges than Venice - around 1,700 bridges compared to Venice's 400!",
+      "The Berlin Wall fell on November 9, 1989, and people started chipping away at it with hammers.",
+      "Berlin's Museum Island has 5 museums and is a UNESCO World Heritage Site.",
+      "The city has more than 2,500 parks and green spaces, making it one of Europe's greenest capitals.",
+      "Berlin's TV Tower is 368 meters tall and has a revolving restaurant that makes one full rotation every hour."
+    ],
+    "amsterdam": [
+      "Amsterdam has more canals than Venice and more bridges than any other city in the world!",
+      "The city has over 1 million bicycles, which is more than the number of residents.",
+      "Amsterdam's canal houses are leaning because they were built on wooden poles that sank unevenly.",
+      "The Anne Frank House receives over 1.2 million visitors per year but can only accommodate 512 at a time.",
+      "Amsterdam has more museums per square meter than any other city in the world."
+    ],
+    "sydney": [
+      "The Sydney Harbour Bridge is the widest long-span steel-arch bridge in the world at 48.8 meters wide.",
+      "Sydney Opera House took 14 years to build and was designed by Danish architect J\u00f8rn Utzon.",
+      "Sydney has over 100 beaches, including the famous Bondi Beach which is 1 km long.",
+      "The city's Royal Botanic Gardens are the oldest scientific institution in Australia, established in 1816.",
+      "Sydney hosted the 2000 Olympics and is the only city to have hosted the Olympics twice (1932 and 2000)."
+    ],
+    "abu dhabi": [
+      "Abu Dhabi's Sheikh Zayed Grand Mosque features 82 domes and the world's largest hand-woven carpet!",
+      "Yas Island is home to Ferrari World - the world's largest Ferrari theme park with the fastest roller coaster!",
+      "The Emirates Palace hotel costs $3 billion to build and uses 1,002 chandeliers and 6,000 square meters of gold leaf!",
+      "Abu Dhabi is the capital of the UAE and sits on an island with beautiful Arabian Gulf beaches!",
+      "The city practices traditional falconry - falcons are so valued they have their own passports!"
+    ],
+    "auckland": [
+      "Auckland's Sky Tower is the Southern Hemisphere's tallest structure at 328 meters high!",
+      "The city is built on 53 volcanic cones, earning it the nickname 'City of Volcanoes'!",
+      "Auckland has more boats per capita than any other city in the world - it's called the 'City of Sails'!",
+      "Nearby Hobbiton movie set from Lord of the Rings attracts thousands of fans daily!",
+      "The region is home to over 100 wineries, particularly known for Pinot Noir and Chardonnay!"
+    ],
+    "singapore": [
+      "Singapore is the only country that is also a city-state!",
+      "The city has the world's first night safari, opened in 1971.",
+      "Singapore's Changi Airport has been voted the world's best airport for over 20 consecutive years.",
+      "The city has over 5.6 million trees, earning it the nickname 'Garden City'.",
+      "Singapore's famous 'Gardens by the Bay' has supertrees that are 50 meters tall and act as vertical gardens."
+    ],
+    "bangkok": [
+      "Bangkok's full ceremonial name is the longest city name in the world at 169 characters!",
+      "The city has over 400 temples, more than any other city in the world.",
+      "Bangkok's traffic is so bad that the city has helicopter taxis for the wealthy!",
+      "The city's Chatuchak Weekend Market is the world's largest weekend market with over 15,000 stalls.",
+      "Bangkok's Skytrain is the only metro system in Thailand and carries over 700,000 passengers daily."
+    ],
+    "edinburgh": [
+      "Edinburgh Castle sits on an extinct volcano and is home to the Scottish Crown Jewels!",
+      "The city hosts the world's largest arts festival - the Edinburgh Festival Fringe with over 3,000 shows!",
+      "The Royal Mile is a historic street connecting Edinburgh Castle to Holyroodhouse Palace!",
+      "Edinburgh's Old Town and New Town are both UNESCO World Heritage Sites!",
+      "The city invented many famous things including golf, whiskey, and Harry Potter inspiration!"
+    ],
+    "dublin": [
+      "Dublin's Guinness Storehouse is Ireland's most popular attraction with over 1.7 million visitors annually!",
+      "The city has over 1,000 pubs - one for every 1,000 residents!",
+      "Trinity College Dublin is Ireland's oldest university, founded in 1592 and home to the Book of Kells!",
+      "Dublin Castle was built in the 13th century and served as British headquarters until 1922!",
+      "The Ha'penny Bridge is Dublin's oldest pedestrian bridge crossing the River Liffey!"
+    ],
+    "lisburn": [
+      "Lisburn is known as Northern Ireland's Cathedral City and became a city in 2002!",
+      "The city has the world's oldest linen market, dating back to the 17th century!",
+      "Lisburn Castle was built in the 1600s and is a historic landmark in the city center!",
+      "The city hosts the popular Lisburn Festival which celebrates local culture and music!",
+      "Lisburn is home to the Irish Linen Centre and Museums showcasing the region's textile heritage!"
+    ],
+    "dundonald": [
+      "Dundonald is home to the historic Dundonald Castle, built by the Normans in the 12th century!",
+      "The town has the Ice Bowl - Northern Ireland's premier ice hockey and skating venue!",
+      "Dundonald International Park hosts major concerts and events throughout the year!",
+      "The area has ancient hillforts dating back to the Iron Age!",
+      "Dundonald is famous for its excellent transport links to Belfast and George Best Belfast City Airport!"
+    ],
+    "bilbao": [
+      "Bilbao is home to the iconic Guggenheim Museum, a masterpiece of contemporary architecture!",
+      "The city has the world's oldest transporter bridge, the Vizcaya Bridge, dating back to 1893!",
+      "Bilbao's Casco Viejo (Old Town) features seven medieval streets and traditional Basque architecture!",
+      "The city is famous for its pintxos (Basque tapas) culture with over 400 bars serving delicious small plates!",
+      "Bilbao has been transformed from an industrial port to a vibrant cultural hub since the 1990s!"
+    ],
+    "santutxu": [
+      "Santutxu is a vibrant district in Bilbao known for its traditional Basque neighborhood atmosphere!",
+      "The area features the iconic Santutxu Market, one of the most popular markets in Bilbao!",
+      "Santutxu has excellent metro connections making it easy to explore the rest of Bilbao!",
+      "The district is famous for its local festivals and strong community spirit!",
+      "Santutxu offers stunning views of the surrounding Basque mountains and coastline!"
+    ],
+    "los angeles": [
+      "LA has more cars than people - there are about 8.5 million vehicles for 4 million residents!",
+      "Hollywood was originally called Hollywoodland and the sign was built in 1923 to advertise a housing development.",
+      "LA has the largest number of museums per capita in the US, with over 841 museums.",
+      "The city has more than 300 days of sunshine per year, earning it the nickname 'City of Angels'.",
+      "LA's freeway system is the most extensive in the world, with over 850 miles of freeways."
+    ],
+    "toronto": [
+      "Toronto has more high-rise buildings than any other city in North America except New York.",
+      "The city has over 800 restaurants on just one street - Yonge Street!",
+      "Toronto's PATH system is the largest underground shopping complex in the world with 29 km of tunnels.",
+      "The city has more than 1,500 parks and is one of the greenest cities in North America.",
+      "Toronto's CN Tower was the world's tallest free-standing structure until 2007 and still has the world's longest metal staircase."
+    ],
+    "mexico city": [
+      "Mexico City is built on a lake bed and sinks about 10 inches each year!",
+      "The city has more museums than any other city in the world - over 170 museums.",
+      "Mexico City's metro system has 195 stations and is the second largest in North America.",
+      "The city's Z\u00f3calo square is the largest city square in Latin America.",
+      "Mexico City was built on top of the Aztec capital Tenochtitlan, which was built on an island in a lake."
+    ],
+    "rio de janeiro": [
+      "Rio's Christ the Redeemer statue is struck by lightning 3-5 times per year!",
+      "The city has over 50 km of beaches, including the famous Copacabana and Ipanema.",
+      "Rio's Carnival is the world's largest carnival, attracting over 2 million people daily.",
+      "The city has more than 500 fountains, earning it the nickname 'City of Fountains'.",
+      "Rio's Sugarloaf Mountain got its name because it looked like concentrated sugar loaves to Portuguese settlers."
+    ],
+    "cairo": [
+      "Cairo is the only city in the world that has ancient monuments still standing in the middle of a modern city!",
+      "The city has more than 500 registered mosques, some dating back over 1,000 years.",
+      "Cairo's Khan el-Khalili market has been operating continuously since the 14th century.",
+      "The city's traffic lights are often just suggestions - drivers follow their own rules!",
+      "Cairo has the world's oldest university, Al-Azhar University, founded in 970 AD."
+    ],
+    "istanbul": [
+      "Istanbul is the only city in the world located on two continents - Europe and Asia!",
+      "The city's Grand Bazaar has been operating continuously since 1461 and has over 4,000 shops.",
+      "Istanbul has more than 3,000 mosques, including the famous Blue Mosque with over 20,000 blue tiles.",
+      "The city was the capital of three different empires: Roman, Byzantine, and Ottoman.",
+      "Istanbul's Hagia Sophia was the world's largest cathedral for nearly 1,000 years and is now a museum."
+    ],
+    "lyon": [
+      "Lyon is known as the gastronomic capital of France with over 4,000 restaurants!",
+      "The city has more than 400 hidden passages called 'traboules' dating back to the 4th century.",
+      "Lyon's Festival of Lights attracts over 2 million visitors every December.",
+      "The city is home to the oldest opera house in France, built in 1756.",
+      "Lyon was the birthplace of cinema, invented by the Lumi\u00e8re brothers in 1895."
+    ],
+    "marseille": [
+      "Marseille is the oldest city in France, founded by Greek sailors around 600 BC!",
+      "The city has over 40 km of coastline with more than 20 beaches.",
+      "Marseille's port is the largest in France and one of the busiest in the Mediterranean.",
+      "The city's famous basilica, Notre-Dame de la Garde, stands 154 meters above sea level.",
+      "Marseille is the only French city to have won the UEFA Champions League trophy."
+    ],
+    "nice": [
+      "Nice has over 300 days of sunshine per year, making it one of the sunniest cities in France!",
+      "The famous Promenade des Anglais is 7 km long and took over 100 years to complete.",
+      "Nice's Carnival is one of the largest in the world, attracting over 1 million visitors.",
+      "The city was founded by the Greeks around 350 BC and named after Nike, the goddess of victory.",
+      "Nice has the largest Russian Orthodox cathedral outside Russia, built in 1912."
+    ],
+    "bordeaux": [
+      "Bordeaux is home to over 7,000 wine producers in the surrounding region!",
+      "The city's Place de la Bourse features the largest reflecting pool in the world, covering 3,450 square meters.",
+      "Bordeaux has the longest shopping street in Europe, Rue Sainte-Catherine, at 1.2 km.",
+      "The city has more than 350 registered historic monuments.",
+      "Bordeaux's wine has been produced since the 8th century, spanning over 1,200 years."
+    ],
+    "lille": [
+      "Lille's Christmas market is one of the largest in France with over 80 chalets!",
+      "The city was European Capital of Culture in 2004.",
+      "Lille's famous waffles called 'gaufres' have been made since the 18th century.",
+      "The city is home to the largest university in France with over 100,000 students.",
+      "Lille's Belfry is 104 meters tall and offers views of Belgium on clear days."
+    ],
+    "toulouse": [
+      "Toulouse is known as 'La Ville Rose' (The Pink City) due to its distinctive terracotta bricks!",
+      "The city is the European capital of the aerospace industry and home to Airbus headquarters.",
+      "Toulouse has over 250,000 students, making it one of the youngest cities in Europe.",
+      "The city's Capitole building has been the seat of local government for over 800 years.",
+      "Toulouse's Canal du Midi, built in 1681, is a UNESCO World Heritage site."
+    ],
+    "nantes": [
+      "Nantes was the birthplace of Jules Verne, author of 'Around the World in 80 Days'!",
+      "The city's famous mechanical elephant stands 12 meters tall and can carry 50 passengers.",
+      "Nantes was named the most livable city in Europe by Time magazine in 2004.",
+      "The city has over 100 km of cycling paths throughout the urban area.",
+      "Nantes' Ch\u00e2teau des Ducs de Bretagne was the residence of the Dukes of Brittany for 300 years."
+    ],
+    "montpellier": [
+      "Montpellier is the fastest-growing city in France with over 40% population increase since 1990!",
+      "The city is home to the oldest medical school in the world still in operation, founded in 1220.",
+      "Montpellier has over 300 days of sunshine per year.",
+      "The city's historic center is one of the largest pedestrian zones in Europe.",
+      "Montpellier's Place de la Com\u00e9die is called 'l'Oeuf' (the Egg) because of its oval shape."
+    ],
+    "lisbon": [
+      "Lisbon is built on seven steep hills, creating spectacular viewpoints throughout the city!",
+      "The city's iconic yellow trams have been operating since 1873.",
+      "Lisbon's Vasco da Gama Bridge is the longest in Europe at 17.2 km.",
+      "The city survived one of the most powerful earthquakes in European history in 1755.",
+      "Lisbon's Oceanarium is the largest indoor aquarium in Europe."
+    ],
+    "prague": [
+      "Prague's astronomical clock, built in 1410, is the oldest working medieval clock in the world!",
+      "The city has over 500 spires and towers, earning it the nickname 'City of a Hundred Spires'.",
+      "Prague Castle is the largest ancient castle complex in the world, covering 70,000 square meters.",
+      "The Charles Bridge has 30 baroque statues and has stood since 1357.",
+      "Prague's Jewish Cemetery has over 12,000 tombstones stacked in 12 layers due to lack of space."
+    ],
+    "schiltigheim": [
+      "Schiltigheim is known as the 'City of Brewers' and was once home to Europe's largest beer producers!",
+      "The Fischer brewery moved to Schiltigheim in 1854 specifically because of the superior water quality.",
+      "Heineken closed all three major Schiltigheim breweries: Fischer (2009), Schutzenberger (2006), and Adelshoffen (2000).",
+      "The street leading to the Schutzenberger brewery was called 'Rue Perle' - Pearl Street.",
+      "First mentioned in 1265, Schiltigheim's brewing tradition dates back over 750 years."
+    ],
+    "ghent": [
+      "Ghent has over 70,000 bikes for 260,000 residents - making it the bike capital of Belgium!",
+      "The famous Gentse Feesten festival attracts over 2 million visitors for 10 days of street parties.",
+      "Gravensteen Castle sits in the middle of the city - students once conquered it (not an army)!",
+      "Ghent was once the second largest city in Europe after Paris, bigger than London or Cologne.",
+      "The city's dragon statue on the bell tower actually spits fire on special occasions."
+    ],
+    "matera": [
+      "Matera's cave dwellings (Sassi) have been inhabited for 9,000 years - the oldest in Europe!",
+      "The city was called the 'Shame of Italy' in the 1950s and 15,000 cave residents were evacuated.",
+      "Mel Gibson filmed 'The Passion of the Christ' in Matera, using it as a stand-in for ancient Jerusalem.",
+      "Matera became a UNESCO World Heritage site in 1993 and European Capital of Culture in 2019.",
+      "Families once lived in single-room caves with their livestock - heating came from manure!"
+    ],
+    "ljubljana": [
+      "Ljubljana is protected by dragons - the symbol appears everywhere including the famous Dragon Bridge!",
+      "It's one of the smallest capital cities in Europe with only 280,000 residents.",
+      "The Dragon Bridge was the first in Slovenia to be paved with asphalt in 1901.",
+      "Ljubljana was named European Green Capital in 2016 - its city center is car-free.",
+      "Legend says the city was founded by the Greek hero Jason who slew a dragon here."
+    ],
+    "bergamo": [
+      "Bergamo is two cities in one - Citt\u00e0 Alta (Upper Town) and Citt\u00e0 Bassa (Lower Town)!",
+      "The city's Venetian walls are 6km long and became a UNESCO World Heritage Site in 2017.",
+      "Bergamo was part of the Venetian Republic for over 250 years - they built the massive defensive walls.",
+      "The upper town sits on a hill and can only be reached by funicular or steep stairs!",
+      "Bergamo is called the 'City of a Thousand' due to its many medieval towers and buildings."
+    ],
+    "mostar": [
+      "Mostar's Stari Most (Old Bridge) stood for 427 years before being destroyed in 1993 and rebuilt in 2004.",
+      "Every summer, brave divers leap 24 meters from the bridge into the Neretva River - a tradition over 400 years old!",
+      "The bridge was built by Ottoman architect Mimar Hayruddin in just 9 years (1557-1566).",
+      "Mostar was named after the bridge keepers ('mostari') who guarded the crossing.",
+      "The bridge's unique design uses a single stone arch - it was the largest of its kind when built."
+    ],
+    "aveiro": [
+      "Aveiro is called the 'Venice of Portugal' with colorful canals and traditional Moliceiro boats!",
+      "The city's salt pans have been producing salt for over 1,000 years using ancient methods.",
+      "Aveiro is Portugal's Art Nouveau capital with over 200 decorated buildings from the early 1900s.",
+      "The colorful Moliceiro boats were originally used to transport salt from the salt pans.",
+      "Aveiro's famous 'ovos moles' (sweet eggs) are a local delicacy made from sugar and egg yolks."
+    ],
+    "valpara\u00edso": [
+      "Valpara\u00edso is built on 42 steep hills and has 15 historic funicular elevators dating back to the 1800s!",
+      "The city is Chile's street art capital - colorful murals cover nearly every wall in the historic center.",
+      "Pablo Neruda called Valpara\u00edso 'the city that never finishes being built'.",
+      "The city's labyrinth of streets and staircases inspired the song 'Valpara\u00edso' by Rodrigo 'Fresita' Gonz\u00e1lez.",
+      "Valpara\u00edso was Chile's main port until the Panama Canal opened - now it's a UNESCO World Heritage site."
+    ],
+    "oaxaca": [
+      "Oaxaca is the birthplace of corn cultivation - maize was first domesticated here 9,000 years ago!",
+      "The state speaks 16 indigenous languages - the most linguistically diverse in Mexico.",
+      "Oaxaca is the mezcal capital of the world with over 600 brands of the agave spirit.",
+      "The city's Day of the Dead celebrations are considered the most authentic in all of Mexico.",
+      "Oaxaca's seven mole sauces are so complex they take days to prepare and contain 30+ ingredients each."
+    ],
+    "guanajuato": [
+      "Guanajuato has a network of underground tunnels that were once used to transport silver during the mining boom.",
+      "The city's Mummy Museum displays naturally mummified bodies - one of the strangest museums in the world!",
+      "Guanajuato's Callej\u00f3n del Beso (Alley of the Kiss) is so narrow that couples on opposite balconies can kiss across it.",
+      "The city was built in a narrow canyon with houses climbing up the steep canyon walls.",
+      "Guanajuato has 3,200 'callejones' (narrow alleys) that can only be accessed on foot."
+    ],
+    "george town": [
+      "George Town is Malaysia's street food capital with UNESCO calling it a 'gastronomical paradise'!",
+      "The city is a UNESCO World Heritage Site with over 1,700 heritage buildings from the 18th-20th centuries.",
+      "George Town's hawker centers serve over 100 different dishes - you can eat something different every day for months!",
+      "The city has unique 'kopi tiam' (coffee shops) that have been social gathering places for over 100 years.",
+      "George Town's Clan Jetties are wooden houses on stilts over the water, built by Chinese immigrants in the 19th century."
+    ],
+    "stuttgart": [
+      "Stuttgart is the 'cradle of the automobile' - Karl Benz and Gottlieb Daimler invented the automobile here in 1887!",
+      "The city has unique 'St\u00e4ffele' (steep stairways) - over 400 flights of stairs built for vineyard workers on hilly terrain.",
+      "Stuttgart has Europe's second-largest collection of mineral springs, producing 250 million liters of therapeutic water daily.",
+      "Unlike most German cities, Stuttgart is famous for wine, not beer - vineyards exist within the city limits!",
+      "The Cannstatter Volksfest is Germany's second-largest beer festival, rivaling Munich's Oktoberfest."
+    ],
+    "antofagasta": [
+      "Antofagasta was once part of Bolivia until 1879 when Chile captured it during the War of the Pacific!",
+      "The city's name means 'great view' in the Quechua language - referring to its coastal desert location.",
+      "Antofagasta is home to La Portada, a 43-meter high natural arch that's Chile's most iconic coastal landmark.",
+      "The city grew rich from the 1866 nitrate boom and now exports more copper than any other Chilean port!",
+      "Antofagasta sits in the Atacama Desert - the driest place on Earth with some areas never recording rain!"
+    ],
+    "strasbourg": [
+      "Strasbourg is called the 'European Capital' - it hosts the European Parliament, Council of Europe, and European Court of Human Rights!",
+      "The city's Notre-Dame Cathedral was the world's tallest building from 1647 to 1874 - it's 142 meters high!",
+      "Strasbourg's Christmas market is the oldest in Europe, dating back to 1570 and attracting 2 million visitors annually.",
+      "The city is bilingual - both French and Alsatian (a German dialect) are commonly spoken on the streets.",
+      "Strasbourg's Grande \u00cele (historic center) was the first entire city center to become a UNESCO World Heritage site in 1988!"
+    ],
+    "ruse": [
+      "Ruse is Bulgaria's largest river port on the Danube, connecting Bulgaria to Romania via the Friendship Bridge!",
+      "The city is called 'Little Vienna' for its stunning Baroque and Neo-Renaissance architecture from the 19th century.",
+      "Ruse and the Romanian city Giurgiu across the Danube were once a single settlement in the Middle Ages!",
+      "The city became a major trade center in the 17th century, linking Central Europe with the Balkans.",
+      "Ruse was the first Bulgarian city with electric street lighting and the first with a Bulgarian-language theater!"
+    ],
+    "zamboanga": [
+      "Zamboanga is called the 'City of Flowers' and is known for its unique Spanish-style architecture in the Philippines!",
+      "The city speaks Chavacano - a Spanish-based creole language that's one of the world's few Spanish creoles!",
+      "Fort Pilar, built in 1635, is a 400-year-old Spanish fortress that still guards the city's harbor!",
+      "Zamboanga was once the capital of the short-lived Republic of Zamboanga in 1899!",
+      "The city is nicknamed 'Asia's Latin City' due to its Hispanic culture and Spanish-influenced heritage."
+    ],
+    "ibarra": [
+      "Ibarra is called the 'White City' because most buildings have colonial whitewashed architecture!",
+      "The city invented helados de paila - handmade ice cream made in bronze pans using ice from Imbabura Volcano!",
+      "Ibarra sits at 7,300 feet in the Andes Mountains and was founded in 1606 by Spanish conquistadors!",
+      "The famous 'Tren de la Libertad' train ride from Ibarra offers spectacular views of the Andean highlands!",
+      "Ibarra is the capital of Ecuador's Imbabura province, home to the famous Otavalo indigenous markets."
+    ],
+    "santa cruz": [
+      "Santa Cruz is Bolivia's largest city by population, surpassing the administrative capital La Paz!",
+      "The city sits at only 400 meters above sea level in the Amazon basin, making it much hotter than highland Bolivian cities!",
+      "Santa Cruz is Bolivia's economic powerhouse, producing soybean oil, refined sugar, and wood products!",
+      "The city was founded in 1561 by Spanish explorer \u00d1uflo de Chavez and is named after the Holy Cross!",
+      "Santa Cruz experiences a tropical climate with year-round warm temperatures, unlike the cold Andes cities!"
+    ],
+    "davao": [
+      "Davao is the Philippines' largest city by land area - bigger than the entire Metro Manila combined!",
+      "Mount Apo, the Philippines' highest mountain at 2,954 meters, is visible from most parts of Davao!",
+      "Davao is called the 'Durian Capital' of the Philippines - the pungent 'king of fruits' grows abundantly here!",
+      "The city hosts the Kadayawan Festival, celebrating the harvest of 10 indigenous tribes with colorful street dances!",
+      "Davao is home to the Philippine Eagle Center, protecting one of the world's rarest eagles found only in the Philippines!"
+    ],
+    "san pedro": [
+      "San Pedro is Paraguay's cattle capital - the department produces half of the country's beef!",
+      "The city sits on the banks of the Paraguay River, which forms the border with Brazil!",
+      "San Pedro is known as the 'Granero del Paraguay' (Granary of Paraguay) due to its vast agricultural production!",
+      "The department is the largest in Paraguay's Oriental Region, dedicated mostly to agriculture and forestry!",
+      "San Pedro's economy relies on soybeans, wheat, and cattle - making it Paraguay's agricultural powerhouse!"
+    ],
+    "aba": [
+      "Aba is Nigeria's commercial hub, famous for the Ariaria International Market - one of Africa's largest markets!",
+      "The city is called 'Japan of Africa' for its thriving manufacturing and textile industries!",
+      "Aba is renowned for its skilled craftsmen who create everything from shoes to electronics!",
+      "The city played a crucial role in Nigeria's independence movement and was a center of anti-colonial resistance!",
+      "Aba's Ariaria Market attracts traders from across West and Central Africa - it's a true commercial melting pot!"
+    ],
+    "victoria": [
+      "Victoria is one of the world's smallest capitals - the entire city has only 2 traffic lights!",
+      "The capital of Seychelles was founded by British colonists in 1814 on Mah\u00e9 Island!",
+      "Victoria is home to the Sir Selwyn Selwyn-Clarke Market, famous for its fresh fish and exotic fruits!",
+      "The city's clock tower is a miniature replica of London's Big Ben - a gift from the British Empire!",
+      "Victoria serves as the gateway to Seychelles' 115 paradise islands and stunning coral reefs!"
+    ],
+    "bharatpur": [
+      "Bharatpur is home to Keoladeo National Park - a UNESCO World Heritage Site with over 370 bird species!",
+      "The park was once a royal hunting ground for the Maharajas of Bharatpur who built dykes to attract waterfowl!",
+      "Bharatpur is called the 'Eastern Gateway to Rajasthan' and was founded by Maharaja Suraj Mal in 1733!",
+      "The city's Lohagarh Fort (Iron Fort) was considered one of the strongest in India and never conquered!",
+      "Bharatpur hosts thousands of migratory birds from Siberia and Central Asia every winter!"
+    ],
+    "balaka": [
+      "Balaka is home to one of Malawi's most impressive Catholic cathedrals - the St. Louis Montfort Catholic Parish!",
+      "The town serves as an important religious center with both Christian and Muslim communities!",
+      "Balaka is located in Malawi's Southern Region and is known for its missionary heritage!",
+      "The town is home to Montfort Media, which publishes books and magazines for all of Africa!",
+      "Balaka's Chapel of Reconciliation is a symbol of unity between different religious communities in Malawi!"
+    ],
+    "chiba": [
+      "Chiba is home to the Chiba Urban Monorail - the world's longest suspended monorail system!",
+      "The city hosts Makuhari Messe, one of Japan's largest convention centers and concert venues!",
+      "Chiba is just 40 minutes from Tokyo and serves as a major industrial and technological hub!",
+      "The city is famous for its anime and manga industry - many studios are located in Chiba Prefecture!",
+      "Chiba Port is one of Japan's busiest maritime cargo hubs, handling millions of containers annually!"
+    ],
+    "cartagena": [
+      "Cartagena's colonial walled city and fortress are a UNESCO World Heritage Site since 1984!",
+      "The city took almost 200 years to build its walls - completed in 1796 to defend against pirates!",
+      "Cartagena was one of the most important Caribbean ports during the Spanish colonial empire!",
+      "The city's colorful Getseman\u00ed neighborhood is famous for its street art and vibrant nightlife!",
+      "Cartagena's Castillo San Felipe de Barajas is the largest Spanish fort in the Americas!"
+    ],
+    "modena": [
+      "Modena is the birthplace of traditional balsamic vinegar - aged for at least 12 years in wooden barrels!",
+      "The city is home to Ferrari, Maserati, and is the heart of Italy's 'Motor Valley'!",
+      "Modena is the culinary capital of Emilia-Romagna, producing Parmigiano-Reggiano and prosciutto!",
+      "Opera legend Luciano Pavarotti was born in Modena and called it his beloved hometown!",
+      "Modena's cathedral and Torre della Ghirlandina are UNESCO World Heritage Sites!"
+    ],
+    "bago": [
+      "Bago was the capital of the Hanthawaddy Kingdom from 1369 to 1635 in ancient Myanmar!",
+      "The city is home to the Shwemawdaw Pagoda - taller than Yangon's famous Shwedagon Pagoda!",
+      "Bago boasts the world's largest reclining Buddha at 55 meters long and 16 meters high!",
+      "The city was an important Buddhist center with over 1,000 monasteries during its golden age!",
+      "Bago's Kanbawzathadi Palace was rebuilt to showcase the glory of Myanmar's ancient kingdoms!"
+    ],
+    "encarnacion": [
+      "Encarnaci\u00f3n is called the 'Pearl of the South' and is Paraguay's summer capital!",
+      "The city sits on the Paran\u00e1 River, forming the border with Argentina across from Encarnaci\u00f3n's twin city!",
+      "Encarnaci\u00f3n is famous for its Carnaval celebrations - the largest in Paraguay with Brazilian-style samba!",
+      "The city was completely rebuilt in the 1980s after the Yacyret\u00e1 Dam flooded the original town!",
+      "Encarnaci\u00f3n is Paraguay's youngest and most modern city, with wide boulevards and beautiful beaches!"
+    ],
+    "manta": [
+      "Manta is Ecuador's tuna fishing capital - claiming to be the world's largest tuna processing hub!",
+      "The city was once famous for exporting Panama hats before becoming a major commercial port!",
+      "Manta ships processed tuna to Europe and the United States, making it Ecuador's most important Pacific port!",
+      "The city is a popular beach destination with beautiful Pacific coastline and vibrant seafood culture!",
+      "Manta is home to Universidad Laica Eloy Alfaro, one of Ecuador's largest and most traditional universities!"
+    ],
+    "salto": [
+      "Salto is Uruguay's second-largest city and was founded in 1756 as a military settlement!",
+      "The Salto Grande Hydroelectric Dam provides 70% of Uruguay's electricity and 10% of Argentina's!",
+      "The city sits on the eastern banks of the Uruguay River, 260 miles from Montevideo!",
+      "Salto is famous for its paper mills and hydroelectric power generation!",
+      "The city is one of Uruguay's oldest settlements and a major industrial center!"
+    ],
+    "varna": [
+      "Varna is Bulgaria's third-largest city and has been considered a health resort for over 100 years!",
+      "The city is home to Golden Sands - one of Bulgaria's most famous Black Sea beach resorts!",
+      "Varna's Sea Garden is a massive park along the Black Sea coast with beautiful beaches and cafes!",
+      "The city is Bulgaria's naval base and an important port on the Black Sea!",
+      "Varna has been inhabited for over 6,000 years, making it one of Europe's oldest continuously inhabited cities!"
+    ],
+    "kinabalu": [
+      "Kinabalu is home to Mount Kinabalu - Malaysia's highest peak at 4,095 meters and the third-highest island peak on Earth!",
+      "The mountain contains an estimated 5,000 plant species and is a UNESCO World Heritage Site!",
+      "Kinabalu Park is designated as a center of plant diversity for Southeast Asia!",
+      "The nearby town of Kundasang is often compared to Swiss Alpine villages for its spectacular mountain scenery!",
+      "Mount Kinabalu is sacred to the local Dusun people, who call it 'Aki Nabalu' (Revered Place of the Dead)!"
+    ],
+    "cuenca": [
+      "Cuenca is a UNESCO World Heritage Site famous for its well-preserved colonial Spanish architecture!",
+      "The city is called the 'Athens of Ecuador' for its rich cultural heritage and numerous universities!",
+      "Cuenca's historic center has cobblestone streets, domed churches, and traditional colonial buildings!",
+      "The city is famous for its Panama hat production - the finest quality hats come from the Cuenca region!",
+      "Cuenca sits at 2,560 meters in the Andes and is Ecuador's third-largest city!"
+    ],
+    "santa fe": [
+      "Santa Fe is one of Argentina's oldest cities, founded in 1573 and serving as a provincial capital!",
+      "The city sits at the confluence of the Salado and Paran\u00e1 rivers, making it an important inland port!",
+      "Santa Fe is known as the 'Cradle of the Argentine Constitution' - the 1853 constitution was signed here!",
+      "The city has a rich colonial heritage with well-preserved Spanish architecture and historic churches!",
+      "Santa Fe is famous for its traditional Argentine cuisine, particularly its river fish dishes!"
+    ],
+    "saitama": [
+      "Saitama is home to the Omiya Bonsai Village - considered the 'Bonsai Capital' of the world!",
+      "The city was formed in 2001 by merging three cities: Omiya, Urawa, and Yono!",
+      "Saitama is a major railway hub with Omiya Station being one of Japan's busiest shinkansen transfer points!",
+      "The Japan Mint Museum moved from Tokyo to Saitama, showcasing the history of Japanese currency!",
+      "Saitama is just northwest of Tokyo and serves as a major commuter city for the capital!"
+    ],
+    "loja": [
+      "Loja is called the 'Music Capital of Ecuador' for its rich musical traditions and conservatories!",
+      "The city borders Podocarpus National Park - a massive cloud-forest reserve with incredible biodiversity!",
+      "Loja was founded in 1548 by Spanish captain Alonso de Mercadillo and rebuilt after being destroyed!",
+      "The city sits at the junction of the Zamora and Malacatos rivers in the southern Andes!",
+      "Loja is famous for its traditional Ecuadorian music, particularly the pasillo and sanjuanito genres!"
+    ],
+    "trujillo": [
+      "Trujillo is home to Chan Chan - the world's largest mud-brick city and capital of the ancient Chim\u00fa kingdom!",
+      "The city is called the 'City of Eternal Spring' for its pleasant year-round climate!",
+      "Trujillo was founded in 1534 by Spanish conquistador Francisco Pizarro, making it one of Peru's oldest colonial cities!",
+      "The nearby Huaca del Sol is the largest adobe pyramid in the Americas, built with 140 million mud bricks!",
+      "Trujillo is the birthplace of the Marinera dance - Peru's national dance representing coastal culture!"
+    ],
+    "tanga": [
+      "Tanga was Tanzania's chief port for sisal export - once called 'white gold' for its economic importance!",
+      "The city has many German colonial buildings from the 1890s when Germany modernized the port facilities!",
+      "Tanga-Moshi railway, built during German colonial rule, stimulated agricultural development in the region!",
+      "The city has a semi-colonial atmosphere with wide streets full of cyclists and motorbikes!",
+      "Tanga experienced great development under German rule, becoming one of East Africa's most modern ports!"
+    ],
+    "ambato": [
+      "Ambato is called the 'City of Flowers and Fruits' for its vibrant gardens and fruit production!",
+      "The city is carved into the side of Cerro Casigana mountain with views of snow-capped volcanoes!",
+      "Ambato is known as the 'Cradle of the Three Juanes' for three famous Ecuadorian writers born here!",
+      "The city hosts the famous 'Fiesta de las Frutas y las Flores' (Fruits and Flowers Festival) annually!",
+      "Ambato was rebuilt after a 1949 earthquake and is now a major commercial center in the Andes!"
+    ],
+    "labasa": [
+      "Labasa is home to one of Fiji's four sugar mills - the Labasa Mill processes sugarcane from northern Vanua Levu!",
+      "The city is located on Vanua Levu, Fiji's second-largest island, and is the main commercial hub of the north!",
+      "Labasa's sugar mill was erected in 1890 from a dismantled mill brought from Queensland, Australia!",
+      "The city has a large Indo-Fijian population due to the historical sugar cane industry!",
+      "Labasa serves as the referral center for northern Fiji with its major hospital and medical facilities!"
+    ],
+    "zomba": [
+      "Zomba was Malawi's first capital city and remained so until 1974 when Lilongwe took over!",
+      "The city is home to Chancellor College - the oldest and most prestigious college of the University of Malawi!",
+      "Zomba is famous for its British colonial architecture and location at the base of the dramatic Zomba Plateau!",
+      "The Parliament remained in Zomba until 1994, making it the political center for 20 years after the capital moved!",
+      "Zomba is known as the 'University City' of Malawi due to its educational institutions and student population!"
+    ],
+    "klang": [
+      "Klang is one of Malaysia's oldest cities and was the capital of Selangor until 1974!",
+      "The city is a Royal city with the Sultan of Selangor's official palace located here!",
+      "Klang was the site of the famous Klang War in 1868, a significant conflict in Malaysian history!",
+      "The city is home to Port Klang - Malaysia's largest port by cargo volume and gateway to international trade!",
+      "Klang has a vibrant Little India district and the distinctive red-and-white colonial-era fire station!"
+    ],
+    "villeurbanne": [
+      "Villeurbanne is the largest suburb of Lyon and has over 150,000 residents, making it the 6th largest city in France's Auvergne-Rhône-Alpes region!",
+      "The city's Gratte-Ciel district features stunning Art Deco architecture from the 1930s, including the famous twin skyscrapers!",
+      "Villeurbanne is home to the Tony Garnier Urban Museum, an outdoor museum showcasing 25 giant murals depicting ideal cities!",
+      "The Charpennes neighborhood is a major transportation hub connecting Villeurbanne to Lyon via metro line A!",
+      "Villeurbanne was originally an independent commune but has grown into a vibrant extension of Lyon with its own distinct culture!"
+    ],
+    "kampala": [
+      "Kampala is known as the 'City of Seven Hills' - each hill historically had a different purpose and character!",
+      "The city sits on the shores of Lake Victoria, the world's second-largest freshwater lake!",
+      "Kampala is home to the Uganda Museum, which showcases the country's rich cultural heritage and history!",
+      "The bustling Owino Market is one of East Africa's largest markets, where you can find everything from traditional fabrics to fresh produce!",
+      "Kampala's nightlife is legendary, with the vibrant area of Kabalagala offering numerous bars and clubs!",
+      "The city is the political and economic heart of Uganda, housing the official residence of the President!",
+      "Kampala's climate is spring-like year-round due to its high elevation near the equator!"
+    ],
+    "tokchon": [
+      "Home to the Sungri Motor Plant, North Korea's largest automobile factory",
+      "Industrial city known for heavy manufacturing and vehicle production",
+      "Located in South Pyongan Province with significant industrial output",
+      "Strategic manufacturing center for the country's automotive industry",
+      "Features natural springs and agricultural areas in surrounding regions"
+    ],
+    "faro": [
+      "Gateway to the beautiful Ria Formosa Natural Park with stunning lagoons and islands",
+      "Historic Old Town with cobblestone streets and medieval architecture dating back to Moorish times",
+      "Home to the impressive Faro Cathedral and the Bone Chapel with eerie skeletal decorations",
+      "Stunning beaches and islands nearby like Ilha Deserta and Ilha da Barreta",
+      "Capital of the Algarve region with vibrant marina and waterfront dining",
+      "Rich maritime history as a major port city exploring Portuguese discoveries"
+    ],
+    "tegucigalpa": [
+      "Capital city of Honduras located in a mountain valley at 3,300 feet elevation",
+      "Home to the historic Basilica of Suyapa, a major Catholic pilgrimage site housing the Virgin of Suyapa",
+      "Features colonial Spanish architecture throughout the historic city center",
+      "Surrounded by lush mountainous cloud forests and scenic landscapes",
+      "Known for traditional Honduran cuisine including baleadas and pastelitos",
+      "Important financial and political center of Honduras with a blend of old and modern architecture"
+    ],
+    "hong kong": [
+      "The iconic Star Ferry has been crossing Victoria Harbour since 1888 for just a few cents",
+      "Home to the world's longest outdoor covered escalator system - the Mid-Levels Escalator",
+      "More than 7,000 skyscrapers make it one of the most vertical cities on Earth",
+      "The Peak Tram has been hauling visitors up Victoria Peak since 1888 at a 27-degree angle",
+      "Dim sum originated here - over 50 million dumplings are consumed daily across the city",
+      "Features the Big Buddha on Lantau Island, one of the largest outdoor bronze Buddha statues in the world",
+      "The Symphony of Lights show illuminates Victoria Harbour every night with music and lasers",
+      "Temple Street Night Market transforms into a vibrant open-air bazaar every evening"
+    ]
+  }
 }
