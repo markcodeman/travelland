@@ -8,12 +8,12 @@ const CitySuggestions = ({ city, onCategorySelect }) => {
 
   // Fallback categories while loading or on error
   const defaultCategories = [
-    { icon: '🍽️', label: 'Food & Dining', intent: 'dining' },
-    { icon: '🏛️', label: 'Historic Sites', intent: 'historical' },
-    { icon: '🎨', label: 'Art & Culture', intent: 'culture' },
-    { icon: '🌳', label: 'Parks & Nature', intent: 'nature' },
-    { icon: '🛍️', label: 'Shopping', intent: 'shopping' },
-    { icon: '🌙', label: 'Nightlife', intent: 'nightlife' }
+    { icon: '🍽️', label: 'Food & Dining 🍕🍷', intent: 'dining' },
+    { icon: '🏛️', label: 'Historic Sites 🏰📜', intent: 'historical' },
+    { icon: '🎨', label: 'Art & Culture 🎭🖼️', intent: 'culture' },
+    { icon: '🌳', label: 'Parks & Nature 🌲🏔️', intent: 'nature' },
+    { icon: '🛍️', label: 'Shopping 🛒💎', intent: 'shopping' },
+    { icon: '🌙', label: 'Nightlife 🍸🎵', intent: 'nightlife' }
   ];
 
   useEffect(() => {

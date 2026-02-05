@@ -630,21 +630,52 @@ const LocationSelector = ({
               overflowY: 'auto',
               zIndex: 1000
             }}>
-              {filteredStates.map(state => (
-                <div
-                  key={state.code}
-                  onClick={() => handleStateSelect(state)}
-                  style={{
-                    padding: '8px',
-                    cursor: 'pointer',
-                    borderBottom: '1px solid #eee'
-                  }}
-                  onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
-                  onMouseLeave={(e) => e.target.style.background = 'white'}
-                >
-                  {state.name}
-                </div>
-              ))}
+              {filteredStates.map(state => {
+                // Add US state icons for US states
+                const getStateIcon = (stateName, countryCode) => {
+                  if (countryCode !== 'US') return '';
+                  
+                  const US_STATE_ICONS = {
+                    'Alabama': '🏛️', 'Alaska': '🏔️', 'Arizona': '🌵', 'Arkansas': '🌲',
+                    'California': '🌴', 'Colorado': '🏔️', 'Connecticut': '⚓', 'Delaware': '🦢',
+                    'Florida': '🏖️', 'Georgia': '🍑', 'Hawaii': '🌺', 'Idaho': '🥔',
+                    'Illinois': '🏛️', 'Indiana': '🏀', 'Iowa': '🌽', 'Kansas': '🌾',
+                    'Kentucky': '🥃', 'Louisiana': '🎷', 'Maine': '🦞', 'Maryland': '🦀',
+                    'Massachusetts': '⚓', 'Michigan': '🍒', 'Minnesota': '🏒', 'Mississippi': '🦈',
+                    'Missouri': '🏛️', 'Montana': '🐻', 'Nebraska': '🌽', 'Nevada': '🎰',
+                    'New Hampshire': '🏔️', 'New Jersey': '🍔', 'New Mexico': '🌶️', 'New York': '🗽',
+                    'North Carolina': '🍑', 'North Dakota': '🌾', 'Ohio': '🏛️', 'Oklahoma': '🌪️',
+                    'Oregon': '🌲', 'Pennsylvania': '🔔', 'Rhode Island': '⚓', 'South Carolina': '🍑',
+                    'South Dakota': '🏔️', 'Tennessee': '🎵', 'Texas': '🤠', 'Utah': '🏔️',
+                    'Vermont': '🍁', 'Virginia': '🏛️', 'Washington': '🍎', 'West Virginia': '🏔️',
+                    'Wisconsin': '🧀', 'Wyoming': '🐎', 'District of Columbia': '🏛️'
+                  };
+                  
+                  return US_STATE_ICONS[stateName] || '';
+                };
+                
+                return (
+                  <div
+                    key={state.code}
+                    onClick={() => handleStateSelect(state)}
+                    style={{
+                      padding: '8px',
+                      cursor: 'pointer',
+                      borderBottom: '1px solid #eee',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                    onMouseLeave={(e) => e.target.style.background = 'white'}
+                  >
+                    <span style={{ fontSize: '16px' }}>
+                      {getStateIcon(state.name, selectedCountry)}
+                    </span>
+                    <span>{state.name}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

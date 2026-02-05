@@ -82,9 +82,12 @@ from city_guides.providers.geocoding import geocode_city, reverse_geocode
 from city_guides.providers.overpass_provider import async_geocode_city
 from city_guides.providers.utils import get_session
 from city_guides.src.semantic import semantic
+# metrics helper (Redis-backed counters and latency samples)
+from city_guides.src.metrics import increment, observe_latency, get_metrics as get_metrics_dict
 from city_guides.src.geo_enrichment import enrich_neighborhood
 from city_guides.src.synthesis_enhancer import SynthesisEnhancer
 from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
+from city_guides.src.marco_response_enhancer import should_call_groq, analyze_user_intent
 from city_guides.src.neighborhood_disambiguator import NeighborhoodDisambiguator
 
 # Create Quart app instance at the very top so it is always defined before any route decorators
@@ -111,17 +114,43 @@ redis_client: aioredis.Redis | None = None
 # Track active long-running searches (search_id -> metadata)
 active_searches = {}
 
+# Import configuration
+from city_guides.src.config import (
+    CACHE_TTL_TELEPORT,
+    CACHE_TTL_RAG,
+    CACHE_TTL_NEIGHBORHOOD,
+    CACHE_TTL_SEARCH,
+    DDGS_TIMEOUT,
+    GROQ_TIMEOUT,
+    GEOCODING_TIMEOUT,
+    DDGS_CONCURRENCY,
+    PREWARM_RAG_CONCURRENCY,
+    DISABLE_PREWARM,
+    VERBOSE_OPEN_HOURS,
+    DEFAULT_PREWARM_CITIES,
+    DEFAULT_PREWARM_QUERIES,
+    POPULAR_CITIES
+)
 # Constants
-CACHE_TTL_TELEPORT = int(os.getenv("CACHE_TTL_TELEPORT", "86400"))  # 24 hours
-VERBOSE_OPEN_HOURS = os.getenv("VERBOSE_OPEN_HOURS", "false").lower() == "true"
-DEFAULT_PREWARM_CITIES = os.getenv("SEARCH_PREWARM_CITIES", "London,Paris")
-PREWARM_QUERIES = [q.strip() for q in os.getenv("SEARCH_PREWARM_QUERIES", "Top food").split(",") if q.strip()]
-PREWARM_TTL = int(os.getenv("SEARCH_PREWARM_TTL", "3600"))
-NEIGHBORHOOD_CACHE_TTL = int(os.getenv("NEIGHBORHOOD_CACHE_TTL", 60 * 60 * 24 * 7))  # 7 days
+PREWARM_TTL = CACHE_TTL_SEARCH
 PREWARM_RAG_TOP_N = int(os.getenv('PREWARM_RAG_TOP_N', '50'))
-POPULAR_CITIES = [c.strip() for c in os.getenv("POPULAR_CITIES", "London,Paris,New York,Tokyo,Rome,Barcelona,Bruges,Hallstatt,Chefchaouen,Ravello,Colmar,Sintra,Ghent,Annecy,Kotor,Cesky Krumlov,Rothenburg,Positano").split(",") if c.strip()]
-DISABLE_PREWARM = True  # os.getenv("DISABLE_PREWARM", "false").lower() == "true"
 
+# US State Icons - State-specific symbols instead of limited flag emojis
+US_STATE_ICONS = {
+    'Alabama': '🏛️', 'Alaska': '🏔️', 'Arizona': '🌵', 'Arkansas': '🌲',
+    'California': '🌴', 'Colorado': '🏔️', 'Connecticut': '⚓', 'Delaware': '🦢',
+    'Florida': '🏖️', 'Georgia': '🍑', 'Hawaii': '🌺', 'Idaho': '🥔',
+    'Illinois': '🏛️', 'Indiana': '🏀', 'Iowa': '🌽', 'Kansas': '🌾',
+    'Kentucky': '🥃', 'Louisiana': '🎷', 'Maine': '🦞', 'Maryland': '🦀',
+    'Massachusetts': '⚓', 'Michigan': '🍒', 'Minnesota': '🏒', 'Mississippi': '🦈',
+    'Missouri': '🏛️', 'Montana': '🐻', 'Nebraska': '🌽', 'Nevada': '🎰',
+    'New Hampshire': '🏔️', 'New Jersey': '🍔', 'New Mexico': '🌶️', 'New York': '🗽',
+    'North Carolina': '🍑', 'North Dakota': '🌾', 'Ohio': '🏛️', 'Oklahoma': '🌪️',
+    'Oregon': '🌲', 'Pennsylvania': '🔔', 'Rhode Island': '⚓', 'South Carolina': '🍑',
+    'South Dakota': '🏔️', 'Tennessee': '🎵', 'Texas': '🤠', 'Utah': '🏔️',
+    'Vermont': '🍁', 'Virginia': '🏛️', 'Washington': '🍎', 'West Virginia': '🏔️',
+    'Wisconsin': '🧀', 'Wyoming': '🐎', 'District of Columbia': '🏛️'
+}
 
 async def fetch_city_wikipedia(city: str, state: str | None = None, country: str | None = None) -> tuple[str, str] | None:
     """Return (summary, url) for the given city using Wikipedia."""
@@ -233,6 +262,12 @@ async def api_chat_rag():
         lon = data.get("lon")
         if not query:
             return jsonify({"error": "Missing query"}), 400
+        # Track request count
+        try:
+            await increment('rag.requests')
+        except Exception:
+            pass
+        start_time = time.time()
 
         full_query = query
         # Compute a cache key for this query+city and try Redis cache to avoid repeating long work
@@ -244,6 +279,11 @@ async def api_chat_rag():
                 cached = await redis_client.get(cache_key)
                 if cached:
                     app.logger.info('RAG cache hit for key %s', cache_key)
+                    try:
+                        # metrics: cache hit
+                        await increment('rag.cache_hit')
+                    except Exception:
+                        pass
                     try:
                         cached_parsed = json.loads(cached)
                         return jsonify(cached_parsed)
@@ -322,19 +362,43 @@ async def api_chat_rag():
             {"role": "user", "content": user_prompt},
         ]
 
+        # Analyze user intent and determine if we should call Groq
+        intent = analyze_user_intent(query, venues or [])
+        should_use_groq = should_call_groq({"quality_score": 0.5}, intent)  # Default quality score
+
         # Call Groq via recommender (direct call_groq_chat) with a shorter timeout to keep UX snappy
         GROQ_TIMEOUT = int(os.getenv('GROQ_CHAT_TIMEOUT', '10'))
-        groq_resp = recommender.call_groq_chat(messages, timeout=GROQ_TIMEOUT)
-        if not groq_resp:
-            return jsonify({"error": "Groq API call failed"}), 502
-        try:
-            answer = groq_resp["choices"][0]["message"]["content"]
-        except Exception:
-            answer = None
-        if not answer:
-            return jsonify({"error": "No answer generated"}), 502
+        groq_resp = None
+        if should_use_groq:
+            groq_resp = recommender.call_groq_chat(messages, timeout=GROQ_TIMEOUT)
+            if not groq_resp:
+                # record groq failure
+                try:
+                    await increment('rag.groq_fail')
+                except Exception:
+                    pass
+                return jsonify({"error": "Groq API call failed"}), 502
+            try:
+                answer = groq_resp["choices"][0]["message"]["content"]
+            except Exception:
+                answer = None
+            if not answer:
+                try:
+                    await increment('rag.no_answer')
+                except Exception:
+                    pass
+                return jsonify({"error": "No answer generated"}), 502
+        else:
+            # If we shouldn't call Groq, use a simple fallback answer
+            answer = f"I found some information about {city}. Let me know what specific details you're looking for!"
 
         result_payload = {"answer": answer.strip()}
+        # record latency
+        try:
+            elapsed = (time.time() - start_time) * 1000.0
+            await observe_latency('rag.latency_ms', elapsed)
+        except Exception:
+            pass
         # Cache the result for repeated queries to improve latency on hot paths
         try:
             if redis_client and cache_key:
@@ -410,7 +474,16 @@ async def shutdown():
     if aiohttp_session:
         await aiohttp_session.close()
     if redis_client:
-        await redis_client.close()
+        # Some test fakes or third-party clients may not provide an async close
+        # method. Call it if available and await if it returns a coroutine.
+        close_fn = getattr(redis_client, 'close', None)
+        if callable(close_fn):
+            try:
+                maybe_coro = close_fn()
+                if asyncio.iscoroutine(maybe_coro):
+                    await maybe_coro
+            except Exception:
+                app.logger.exception('error closing redis client')
 
 @app.context_processor
 def inject_feature_flags():
@@ -663,6 +736,17 @@ async def healthz():
         'geonames': bool(os.getenv('GEONAMES_USERNAME'))
     }
     return jsonify(status)
+
+
+@app.route('/metrics/json')
+async def metrics_json():
+    """Return simple JSON metrics (counters and latency summaries)"""
+    try:
+        metrics = await get_metrics_dict()
+        return jsonify(metrics)
+    except Exception:
+        app.logger.exception('Failed to get metrics')
+        return jsonify({'error': 'failed to fetch metrics'}), 500
 
 @app.route('/smoke')
 async def smoke():
@@ -2656,6 +2740,13 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
             except Exception:
                 out['quick_guide'] = f"{neighborhood} is a neighborhood in {city}."
                 out['source'] = 'data-first'
+
+        # Neutralize tone for the quick_guide before persisting (ensure persisted copy is neutral)
+        try:
+            from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+            out['quick_guide'] = SynthesisEnhancer.neutralize_tone(out.get('quick_guide') or '', neighborhood=neighborhood, city=city)
+        except Exception:
+            app.logger.exception('Failed to neutralize quick_guide before persist')
 
         # Persist using module-level helper
         await _persist_quick_guide(out, city, neighborhood, cache_file)

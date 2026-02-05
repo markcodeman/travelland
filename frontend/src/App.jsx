@@ -1108,7 +1108,7 @@ function App() {
           <MarcoChat
             city={location.city}
             neighborhood={location.neighborhood}
-            venues={venues}
+            venues={[]}  // Let Marco fetch fresh venues for the city
             category={categoryLabel || SUGGESTION_MAP[selectedSuggestion] || (typeof category === 'string' ? category : '')}
             initialInput={`Tell me about ${categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category} in ${location.neighborhood ? `${location.neighborhood}, ` : ''}${location.city}`}
             results={results}

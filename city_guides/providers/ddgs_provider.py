@@ -2,7 +2,8 @@
 # Supports Google, Brave, Yahoo, Yandex, DuckDuckGo
 # No API key required, 100% free
 
-from duckduckgo_search import DDGS
+import os
+from ddgs import DDGS
 
 async def ddgs_search(query, engine="google", max_results=3, timeout=5):
     """
@@ -44,8 +45,18 @@ async def ddgs_search(query, engine="google", max_results=3, timeout=5):
         results = await asyncio.wait_for(loop.run_in_executor(ThreadPoolExecutor(), _search), timeout=timeout)
     except asyncio.TimeoutError:
         # Search timed out; return empty list to allow graceful fallback
+        try:
+            from city_guides.src.metrics import increment
+            await increment('ddgs.timeout')
+        except Exception:
+            pass
         return []
     except Exception:
+        try:
+            from city_guides.src.metrics import increment
+            await increment('ddgs.error')
+        except Exception:
+            pass
         return []
     return results
 

@@ -37,39 +37,66 @@ except ImportError:
     from venue_quality import filter_high_quality_venues, calculate_venue_quality_score, enhance_chinese_venue_processing
 
 
-def _persist_quick_guide(out_obj: Dict, city_name: str, neighborhood_name: str, file_path: Path) -> None:
-    """Persist quick_guide to the filesystem and (optionally) to Redis."""
+async def _persist_quick_guide(out_obj: Dict, city_name: str, neighborhood_name: str, file_path: Path) -> None:
+    """Persist quick_guide to the filesystem and (optionally) to Redis.
+
+    This is an async function safe to call from an already-running event loop.
+    It prefers `aiofiles` for non-blocking writes and falls back to `asyncio.to_thread`.
+    """
     try:
         if looks_like_ddgs_disambiguation_text(out_obj.get('quick_guide') or ''):
             logging.info('Not caching disambiguation/promotional ddgs quick_guide for %s/%s', city_name, neighborhood_name)
-            # replace with synthesized neutral paragraph if available
-            # Use lazy loading
+            # replace with synthesized neutral paragraph if available; fall back to a simple sentence
             try:
                 se = get_synthesis_enhancer()
-                new_para = se.generate_neighborhood_paragraph(neighborhood_name, city_name)
+                try:
+                    # call possible sync or async method on enhancer in a thread-safe way
+                    if hasattr(se, 'generate_neighborhood_paragraph'):
+                        # if it's async, run it; otherwise run in thread
+                        gen = se.generate_neighborhood_paragraph
+                        if asyncio.iscoroutinefunction(gen):
+                            new_para = await gen(neighborhood_name, city_name)
+                        else:
+                            new_para = await asyncio.to_thread(gen, neighborhood_name, city_name)
+                    else:
+                        new_para = f"{neighborhood_name} is a neighborhood in {city_name}."
+                except Exception:
+                    new_para = f"{neighborhood_name} is a neighborhood in {city_name}."
             except Exception:
-                out_obj['quick_guide'] = new_para
-                out_obj['source'] = 'synthesized'
-                out_obj['source_url'] = None
-                out_obj['confidence'] = 'low'
-            except Exception:
-                out_obj['quick_guide'] = f"{neighborhood_name} is a neighborhood in {city_name}."
-                out_obj['source'] = 'data-first'
-                out_obj['confidence'] = 'low'
-        
-        # Write to file asynchronously using aiofiles if available, otherwise fallback to sync
+                new_para = f"{neighborhood_name} is a neighborhood in {city_name}."
+
+            out_obj['quick_guide'] = new_para
+            out_obj['source'] = out_obj.get('source', 'synthesized')
+            out_obj['source_url'] = None
+            out_obj['confidence'] = out_obj.get('confidence', 'low')
+
+        # Neutralize tone on quick_guide before persisting (async-safe)
+        try:
+            se = get_synthesis_enhancer()
+            qg = out_obj.get('quick_guide') or ''
+            if hasattr(se, 'neutralize_tone'):
+                neutral = se.neutralize_tone
+                if asyncio.iscoroutinefunction(neutral):
+                    qg_clean = await neutral(qg, neighborhood_name, city_name)
+                else:
+                    qg_clean = await asyncio.to_thread(neutral, qg, neighborhood_name, city_name)
+                out_obj['quick_guide'] = qg_clean
+        except Exception:
+            # Proceed even if neutralization fails
+            pass
+
+        # Write to file asynchronously using aiofiles if available, otherwise use thread
         try:
             import aiofiles
-            import asyncio
-            async def write_file():
-                async with aiofiles.open(file_path, 'w', encoding='utf-8') as f:
-                    await f.write(json.dumps(out_obj, ensure_ascii=False, indent=2))
-            asyncio.run(write_file())
+            async with aiofiles.open(file_path, 'w', encoding='utf-8') as f:
+                await f.write(json.dumps(out_obj, ensure_ascii=False, indent=2))
         except ImportError:
-            # Fallback to sync file write if aiofiles not available
-            with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(out_obj, f, ensure_ascii=False, indent=2)
-            
+            # Fallback: run blocking write in thread to avoid blocking event loop
+            def _sync_write():
+                with open(file_path, 'w', encoding='utf-8') as fh:
+                    json.dump(out_obj, fh, ensure_ascii=False, indent=2)
+            await asyncio.to_thread(_sync_write)
+
     except Exception as e:
         logging.exception('Failed to persist quick_guide: %s', e)
 
@@ -1681,10 +1708,47 @@ def _search_impl(payload):
                     result["venues"] = formatted_venues
                 
                 # Apply venue quality filtering
-                high_quality_venues = filter_high_quality_venues(result["venues"])
+                # Use a lower threshold for neighborhood searches to avoid over-filtering
+                try:
+                    from city_guides.src.venue_quality import MINIMUM_QUALITY_SCORE
+                except Exception:
+                    from venue_quality import MINIMUM_QUALITY_SCORE
+
+                threshold = MINIMUM_QUALITY_SCORE
+                # If a neighborhood is specified, be slightly more permissive
+                if neighborhood:
+                    threshold = min(threshold, 0.6)  # lower to 0.6 for neighborhood-level searches
+
+                # Filter using the selected threshold
+                high_quality_venues = filter_high_quality_venues(result["venues"], min_score=threshold)
                 result["debug_info"]["quality_filtered"] = len(result["venues"]) - len(high_quality_venues)
+
+                # Fallback: if too few venues remain, include top-scoring remaining venues until we reach MIN_VENUES
+                MIN_VENUES = 5
+                fallback_included = False
+                if len(high_quality_venues) < MIN_VENUES:
+                    # Ensure quality scores exist for all venues
+                    for v in result["venues"]:
+                        if 'quality_score' not in v:
+                            v['quality_score'] = calculate_venue_quality_score(v)
+
+                    existing_ids = set(v.get('id') for v in high_quality_venues)
+                    remaining = [v for v in result["venues"] if v.get('id') not in existing_ids]
+                    remaining_sorted = sorted(remaining, key=lambda x: x.get('quality_score', 0), reverse=True)
+
+                    to_add = []
+                    for v in remaining_sorted:
+                        if len(high_quality_venues) + len(to_add) >= MIN_VENUES:
+                            break
+                        to_add.append(v)
+
+                    if to_add:
+                        fallback_included = True
+                        high_quality_venues.extend(to_add)
+                        result["debug_info"]["fallback_included"] = True
+                        result["debug_info"]["fallback_added"] = [ {"id": v.get("id"), "name": v.get("name"), "quality_score": v.get("quality_score")} for v in to_add ]
+
                 result["venues"] = high_quality_venues
-                
                 result["debug_info"]["venues_found"] = len(result["venues"])
                 
             finally:

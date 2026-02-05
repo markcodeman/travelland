@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, Fragment, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Popover, Transition } from '@headlessui/react';
-import VenueCard from './VenueCard';
 import './MarcoChat.css';
 
 export default function MarcoChat({ city, neighborhood, venues, category, initialInput, onClose, results, wikivoyage }) {
@@ -30,37 +29,31 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     "Crafting the perfect response..."
   ];
 
-  // Cached quick responses for common queries
+  // Cached quick responses for common queries (neutral, city-aware templates)
   const quickResponses = {
     cafes: [
-      "☕ Paris is famous for its café culture! Here are some must-visit spots:",
-      "🥐 For the best croissants and coffee, try these beloved Parisian cafés:",
-      "📍 Let me share some hidden gems where locals actually hang out:"
+      "☕ I can find the best cafés in {city} — searching local favorites now...",
+      "☕ Looking up coffee spots in {city} — stand by while I pull top picks..."
     ],
     restaurants: [
-      "🍽️ Paris has incredible dining options! From bistros to fine dining:",
-      "🥘 For authentic French cuisine, these restaurants are exceptional:",
-      "🌟 Here are some dining spots that capture the essence of Paris:"
+      "🍽️ I can find top restaurants in {city} — searching now...",
+      "🍽️ Looking up popular dining spots in {city} — one moment..."
     ],
     museums: [
-      "🎨 Paris is a paradise for art lovers! Beyond the Louvre:",
-      "🖼️ The city's museums are world-class. Here are my top picks:",
-      "🏛️ From classical to contemporary, Paris has it all:"
+      "🎨 I can find notable museums and galleries in {city} — fetching highlights...",
+      "🎨 Looking up art and cultural spots in {city} — stand by..."
     ],
     landmarks: [
-      "🗼 Paris's landmarks are iconic! Here are the must-sees:",
-      "🏰 Beyond the Eiffel Tower, discover these incredible sites:",
-      "📸 For the best photos and memories, visit these landmarks:"
+      "🗺️ I can list iconic landmarks and viewpoints in {city} — fetching...",
+      "📸 Finding the best photo-worthy landmarks in {city} — one moment..."
     ],
     shopping: [
-      "🛍️ Paris is a shopping paradise! From luxury to vintage:",
-      "👗 For the ultimate retail therapy, explore these areas:",
-      "💎 Discover unique Parisian shopping experiences:"
+      "🛍️ Searching for shopping districts and unique stores in {city}...",
+      "🛍️ Looking up local markets and boutiques in {city} — stand by..."
     ],
     nightlife: [
-      "🌙 Paris comes alive after dark! Here's where to go:",
-      "🍸 From chic cocktail bars to lively clubs:",
-      "🎭 Experience Paris's vibrant nightlife scene:"
+      "🌙 Searching for bars and nightlife spots in {city} — fetching live results...",
+      "🌙 Looking up late-night options and cocktail bars in {city} — one moment..."
     ]
   };
 
@@ -83,26 +76,31 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     const lowerText = text.toLowerCase();
     let quickResponse = null;
     
+    // Detect a category match and prefer fetching real venues instead of immediately showing a canned reply
+    let matchedCategory = null;
     if (lowerText.includes('cafe') || lowerText.includes('coffee')) {
-      quickResponse = quickResponses.cafes[Math.floor(Math.random() * quickResponses.cafes.length)];
+      matchedCategory = 'cafes';
     } else if (lowerText.includes('restaurant') || lowerText.includes('food') || lowerText.includes('dining')) {
-      quickResponse = quickResponses.restaurants[Math.floor(Math.random() * quickResponses.restaurants.length)];
+      matchedCategory = 'restaurants';
     } else if (lowerText.includes('museum') || lowerText.includes('art') || lowerText.includes('gallery')) {
-      quickResponse = quickResponses.museums[Math.floor(Math.random() * quickResponses.museums.length)];
+      matchedCategory = 'museums';
     } else if (lowerText.includes('landmark') || lowerText.includes('eiffel') || lowerText.includes('monument')) {
-      quickResponse = quickResponse.landmarks[Math.floor(Math.random() * quickResponse.landmarks.length)];
+      matchedCategory = 'landmarks';
     } else if (lowerText.includes('shop') || lowerText.includes('store') || lowerText.includes('boutique')) {
-      quickResponse = quickResponses.shopping[Math.floor(Math.random() * quickResponses.shopping.length)];
+      matchedCategory = 'shopping';
     } else if (lowerText.includes('nightlife') || lowerText.includes('bar') || lowerText.includes('club')) {
-      quickResponse = quickResponses.nightlife[Math.floor(Math.random() * quickResponses.nightlife.length)];
+      matchedCategory = 'nightlife';
     }
 
-    // Show quick response after 1.5 seconds if we have one
-    if (quickResponse) {
-      setTimeout(() => {
-        setMessages(m => [...m, { role: 'assistant', text: quickResponse }]);
-        setLoading(false);
-      }, 1500);
+    if (matchedCategory) {
+      // Use a neutral, city-aware quick message while we fetch venues
+      const templates = quickResponses[matchedCategory] || [];
+      const tmpl = templates.length ? templates[Math.floor(Math.random() * templates.length)] : `Searching for ${matchedCategory} in ${city}...`;
+      const quickMsg = tmpl.replace('{city}', city || 'this city');
+      setMessages(m => [...m, { role: 'assistant', text: quickMsg, isQuick: true }]);
+
+      // Ask the client to fetch venues for the matched category (override allowed)
+      fetchVenuesForCategory(matchedCategory);
       return;
     }
 
@@ -174,12 +172,13 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     }
   }, [city, messages.length]); // Include category in dependencies
 
-  const fetchVenuesForCategory = async () => {
-    console.debug('fetchVenuesForCategory', { city, neighborhood, category });
+  const fetchVenuesForCategory = async (overrideCategory = null) => {
+    const useCategory = overrideCategory || category;
+    console.debug('fetchVenuesForCategory', { city, neighborhood, category: useCategory });
     try {
       const payload = {
         query: city,
-        category: category,
+        category: useCategory,
         neighborhood: neighborhood,
       };
       const resp = await fetch('/search', {
@@ -195,13 +194,13 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
         // Use REAL venue data from backend
         setMessages([{ role: 'assistant', venues: fetchedVenues.slice(0, 10) }]);
       } else {
-        const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and found some great ${category} options! Let me search for more details.`;
+        const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and found some great ${useCategory} options! Let me search for more details.`;
         // Keep existing behavior when user explicitly triggers a search
-        sendMessage(venueText, `What are some great ${category} options in ${neighborhood ? neighborhood + ', ' : ''}${city}?`);
+        sendMessage(venueText, `What are some great ${useCategory} options in ${neighborhood ? neighborhood + ', ' : ''}${city}?`);
       }
     } catch (e) {
       console.error('Failed to fetch venues for category', e);
-      const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and I'm ready to help you discover the best spots! What are you interested in - ${category}?`;
+      const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and I'm ready to help you discover the best spots! What are you interested in - ${useCategory}?`;
       sendMessage(venueText);
     }
   };
@@ -313,65 +312,79 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                 <div className="venue-message">
                   <div style={{fontWeight:700, fontSize:'1.1em', marginBottom:16}}>☕ Here are some great places I found:</div>
                   {msg.venues && msg.venues.length > 0 ? (
-                    <div className="venues-grid">
-                      {msg.venues.map((venue, idx) => (
-                        <VenueCard
-                          key={venue.id || idx}
-                          venue={{
-                            ...venue,
-                            city: city, // Add city for better Google Maps search
-                            emoji: (venue.description || '').toLowerCase().includes('tea') ? '🫖' : (venue.description || '').toLowerCase().includes('coffee') ? '☕' : '📍',
-                            sustainability: venue.tags?.includes('eco') ? '♻️' : '',
-                            pricing: venue.price_level ? '💰'.repeat(venue.price_level) : ''
-                          }}
-                          onAddToItinerary={(v) => {
-                            const newDay = {
-                              date: new Date().toISOString().split('T')[0],
-                              places: [v]
-                            };
-                            setItineraries(prev => {
-                              const updated = [...prev, newDay];
-                              localStorage.setItem('traveland_itineraries', JSON.stringify(updated));
-                              return updated;
-                            });
-                            setMessages(m => [...m, {
-                              role: 'assistant',
-                              text: `Added **${v.name}** to your itinerary for ${newDay.date}!`
-                            }]);
-                          }}
-                          onDirections={(v) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.address || v.name + ' ' + (v.city || ''))}`,'_blank')}
-                          onMap={(v) => window.open(v.mapsUrl, '_blank')}
-                          onSave={null}
-                          onAskMarco={(v) => {
-                            const question = `Tell me more about ${v.name}${v.description ? ' - ' + v.description : ''}. What makes it special?`;
-                            setInput(question);
-                            setMessages(m => [...m, { role: 'user', text: question }]);
-                            handleSubmit(question);
-                          }}
-                        />
-                      ))}
+                    <div className="venues-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {msg.venues.map((venue, idx) => {
+                        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.name + ' ' + (city || ''))}`;
+                        return (
+                          <div key={venue.id || idx} style={{
+                            background: 'white',
+                            borderRadius: '8px',
+                            padding: '12px 16px',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}>
+                            <div>
+                              <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600' }}>
+                                {venue.name}
+                              </h4>
+                              {venue.address && (
+                                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                                  {venue.address}
+                                </p>
+                              )}
+                            </div>
+                            <a
+                              href={mapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                background: '#4285f4',
+                                color: 'white',
+                                padding: '8px 12px',
+                                borderRadius: '6px',
+                                textDecoration: 'none',
+                                fontSize: '14px',
+                                fontWeight: '500'
+                              }}
+                            >
+                              📍 Maps
+                            </a>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
-                    // Client-side fallback card when venues array is empty or only contains summaries
-                    <VenueCard key="fallback-google-maps" venue={{
-                      id: 'google-maps-fallback-client',
-                      name: `See more on Google Maps`,
-                      address: city || '',
-                      description: `No detailed venues found for ${neighborhood ? neighborhood + ', ' : ''}${city}. Explore more on Google Maps.`,
-                      latitude: null,
-                      longitude: null,
-                      city: city || '',
-                      provider: 'fallback',
-                      osm_url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(city || '')}`,
-                      website: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(city || '')}`,
-                      image: null,
-                      emoji: '📍',
-                      mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(city || '')}`
-                    }}
-                    onDirections={(v) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.address || v.name + ' ' + (v.city || ''))}`,'_blank')}
-                    onMap={(v) => window.open(v.mapsUrl, '_blank')}
-                    onSave={null}
-                    />
+                    // Client-side fallback when no venues found
+                    <div style={{
+                      background: 'white',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      textAlign: 'center'
+                    }}>
+                      <p style={{ margin: '0 0 12px 0', color: '#666' }}>
+                        No detailed venues found for {neighborhood ? neighborhood + ', ' : ''}{city}. Explore more on Google Maps.
+                      </p>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(category + ' ' + (city || ''))}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          background: '#4285f4',
+                          color: 'white',
+                          padding: '10px 16px',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          display: 'inline-block'
+                        }}
+                      >
+                        📍 Search on Google Maps
+                      </a>
+                    </div>
                   )}
                   <div style={{marginTop:12, color:'#888'}}>What would you like to know about these places?</div>
                 </div>
@@ -379,27 +392,36 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                 <div>
                   {/* Condensed handling for generic Google Maps fallback text */}
                   {isGoogleMapsFallback(msg.text) ? (
-                    <div className="venue-message" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       <div style={{ fontWeight: 700, marginBottom: 6 }}>{firstSentences(msg.text, 1)}</div>
-                      <VenueCard key="fallback-google-maps-short" venue={{
-                        id: 'google-maps-fallback-client',
-                        name: `See more on Google Maps`,
-                        address: city || '',
-                        description: `No venues found, but you can explore more options on Google Maps for ${neighborhood ? neighborhood + ', ' : ''}${city}.`,
-                        latitude: null,
-                        longitude: null,
-                        city: city || '',
-                        provider: 'fallback',
-                        osm_url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(neighborhood ? neighborhood + ', ' + city : city || '')}`,
-                        website: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(neighborhood ? neighborhood + ', ' + city : city || '')}`,
-                        image: null,
-                        emoji: '📍',
-                        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(neighborhood ? neighborhood + ', ' + city : city || '')}`
-                      }}
-                      onDirections={(v) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.address || v.name + ' ' + (v.city || ''))}`,'_blank')}
-                      onMap={(v) => window.open(v.mapsUrl, '_blank')}
-                      onSave={null}
-                      />
+                      <div style={{
+                        background: 'white',
+                        borderRadius: '8px',
+                        padding: '16px',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ margin: '0 0 12px 0', color: '#666' }}>
+                          No venues found, but you can explore more options on Google Maps for {neighborhood ? neighborhood + ', ' : ''}{city}.
+                        </p>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(neighborhood ? neighborhood + ', ' + city : city || '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            background: '#4285f4',
+                            color: 'white',
+                            padding: '10px 16px',
+                            borderRadius: '6px',
+                            textDecoration: 'none',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            display: 'inline-block'
+                          }}
+                        >
+                          📍 Search on Google Maps
+                        </a>
+                      </div>
                       <div style={{ color: '#666' }}>Tip: try toggling <strong>Local Gems Only</strong> or selecting a nearby neighborhood for better local results.</div>
                     </div>
                   ) : (
@@ -524,19 +546,43 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                               // Generate a Google Maps search URL using name and city
                               const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + (city ? ' ' + city : ''))}`;
                               return (
-                                <VenueCard
-                                  key={idx}
-                                  venue={{
-                                    name,
-                                    description,
-                                    emoji,
-                                    tags,
-                                    category,
-                                    city: city || '',
-                                    provider: '',
-                                    mapsUrl,
-                                  }}
-                                />
+                                <div key={idx} style={{
+                                  background: 'white',
+                                  borderRadius: '8px',
+                                  padding: '12px 16px',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  marginBottom: '8px'
+                                }}>
+                                  <div>
+                                    <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600' }}>
+                                      {emoji} {name}
+                                    </h4>
+                                    {description && (
+                                      <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                                        {description}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <a
+                                    href={mapsUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      background: '#4285f4',
+                                      color: 'white',
+                                      padding: '8px 12px',
+                                      borderRadius: '6px',
+                                      textDecoration: 'none',
+                                      fontSize: '14px',
+                                      fontWeight: '500'
+                                    }}
+                                  >
+                                    📍 Maps
+                                  </a>
+                                </div>
                               );
                             })}
                           </div>
