@@ -54,11 +54,11 @@ start_backend() {
     
     # Use venv hypercorn if available, else fallback
     if [ -x "./.venv/bin/hypercorn" ]; then
-        ./.venv/bin/hypercorn city_guides.src.app:app --bind 0.0.0.0:5010 &
+        ./.venv/bin/hypercorn city_guides.src.app:app --reload --bind 0.0.0.0:5010 &
     elif [ -x "./.venv/bin/python" ]; then
-        ./.venv/bin/python -m hypercorn city_guides.src.app:app --bind 0.0.0.0:5010 &
+        ./.venv/bin/python -m hypercorn city_guides.src.app:app --reload --bind 0.0.0.0:5010 &
     else
-        hypercorn city_guides.src.app:app --bind 0.0.0.0:5010 &
+        hypercorn city_guides.src.app:app --reload --bind 0.0.0.0:5010 &
     fi
     BACKEND_PID=$!
     echo $BACKEND_PID > backend.pid

@@ -69,33 +69,39 @@ def get_category_icon(category: str) -> str:
     icons = {
         # Distinctive category icons
         'fashion': '👗', 'design': '✨',
-        'film': '�', 'entertainment': '�',
+        'film': '🎬', 'entertainment': '🎭',
         'tech': '💻', 'innovation': '🚀',
         'finance': '💰', 'business': '💼',
-        'michelin': '⭐', 'dining': '�️',
-        'nightlife': '�', 
-        'architecture': '�️',
+        'michelin': '⭐', 'dining': '🍽️',
+        'nightlife': '🌙', 
+        'architecture': '🏛️',
         'ancient': '🏛️', 'history': '📜',
-        'religious': '⛪', 'spiritual': '�',
+        'religious': '⛪', 'spiritual': '🕊️',
         'markets': '🛒', 'shopping': '🛍️',
         'bridges': '🌉', 'waterways': '⛵',
-        'skyscrapers': '�️',
-        'beach': '�️', 'coast': '�', 'sea': '🏖️', 'ocean': '�️',
-        'parks': '🌳', 'gardens': '�', 'nature': '�',
+        'skyscrapers': '🏙️',
+        'beach': '🏖️', 'coast': '🌊', 'sea': '🏖️', 'ocean': '🌊',
+        'parks': '🌳', 'gardens': '🌸', 'nature': '🌿',
         'museums': '🏛️', 'culture': '🎨',
-        'transport': '�', 'metro': '🚉',
+        'transport': '🚇', 'metro': '🚉',
         'food': '🍔', 'cuisine': '🍜', 'specialties': '🥐',
         'wine': '🍷', 'vineyards': '🍇',
+        'gold': '🥇', 'souk': '🏪', 'markets': '🛍️',
         'festivals': '🎉', 'events': '🎊',
         # Original icons
-        'restaurant': '�️', 'dining': '🍽️',
-        'historic': '🏛️', 'museum': '�️', 'art': '🎨',
-        'bar': '🍷', 'club': '�', 'music': '�',
+        'restaurant': '🍽️', 'dining': '🍽️',
+        'historic': '🏛️', 'museum': '🏛️', 'art': '🎨',
+        'bar': '🍷', 'club': '🎭', 'music': '🎵',
         'sport': '⚽', 'stadium': '🏟️',
         'education': '🎓', 'university': '🏛️', 'school': '🏫',
         'mountain': '🏔️', 'hiking': '🥾',
         'airport': '✈️', 'transportation': '🚇',
         'recreation': '🏃',
+        # Abu Dhabi specific
+        'theme': '🎢', 'park': '🎢', 'entertainment': '🎭',
+        'luxury': '🏨', 'resort': '🏨',
+        'desert': '🏜️', 'adventure': '🚙',
+        'cultural': '🎭', 'activities': '🎪',
     }
 
     for key, icon in icons.items():
@@ -193,188 +199,189 @@ def extract_from_fun_facts(city: str) -> List[Dict[str, Any]]:
     try:
         city_lower = city.lower().strip()
         
-        # Import the fun_facts dictionary directly from app.py
-        import sys
-        import os
-        sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-        import city_guides.src.app as app_module
+        # Import the actual fun_facts from app.py
+        try:
+            from city_guides.src.app import fun_facts
+            fun_facts_data = fun_facts
+        except ImportError:
+            # Fallback to hardcoded data if import fails
+            fun_facts_data = {
+                'paris': [
+                    "Eiffel Tower", "bakeries", "baguettes", "Louvre", "art", "fashion", "Métro"
+                ],
+                'london': [
+                    "British Museum", "museums", "Underground", "Big Ben", "ravens", "Tower"
+                ],
+                'new york': [
+                    "Statue of Liberty", "Central Park", "parks", "subway", "Times Square", "languages"
+                ],
+                'tokyo': [
+                    "Shibuya", "Michelin", "restaurants", "Skytree", "trains", "Edo"
+                ],
+                'barcelona': [
+                    "Sagrada Familia", "Gaudí", "Park Güell", "beaches", "architecture", "orange trees"
+                ],
+                'rome': [
+                    "Colosseum", "Vatican", "Pantheon", "fountains", " Trevi", "ancient"
+                ],
+                'los angeles': [
+                    "Hollywood", "film", "movies", "studios", "Walk of Fame", "sunshine"
+                ],
+                'sydney': [
+                    "Opera House", "Harbour Bridge", "beaches", "Bondi Beach", "Royal Botanic Gardens"
+                ],
+                'dubai': [
+                    "Burj Khalifa", "skyscrapers", "shopping", "Palm Jumeirah", "supercars"
+                ],
+                'amsterdam': [
+                    "canals", "bicycles", "museums", "Anne Frank House", "bridges"
+                ],
+                'istanbul': [
+                    "Hagia Sophia", "Grand Bazaar", "mosques", "Blue Mosque", "two continents"
+                ],
+                'rio de janeiro': [
+                    "Christ the Redeemer", "Copacabana", "beaches", "Carnival", "Sugarloaf"
+                ],
+                'albuquerque': [
+                    "hot air balloon", "Sandia Peak Tramway", "Breaking Bad", "Sandia Mountains", "Duke City"
+                ],
+                'mumbai': [
+                    "real estate", "local trains", "Dharavi", "Dhobi Ghat", "Victoria Terminus", "expensive"
+                ],
+                'new orleans': [
+                    "Mardi Gras", "French Quarter", "jazz", "Cajun food", "Bourbon Street", "Plantation homes"
+                ],
+                'virginia beach': [
+                    "beaches", "boardwalk", "surfing", "naval base", "Atlantic Ocean", "outdoor activities"
+                ],
+                'shanghai': [
+                    "skyscrapers", "The Bund", "Shanghai Tower", "Yu Garden", "acrobats", "street food"
+                ],
+                'auckland': [
+                    "harbor", "Sky Tower", "Hobbiton", "volcanoes", "winery tours", "waterfront"
+                ],
+                'frankfurt': [
+                    "airport", "banking", "Frankfurt Book Fair", "Römerberg", "Oktoberfest", "Main River"
+                ],
+                'zurich': [
+                    "banking", "Swiss Alps", "Lake Zurich", "Old Town", "chocolate", "skiing"
+                ],
+                'dubai': [
+                    "Burj Khalifa", "Palm Jumeirah", "shopping malls", "desert safari", "gold souk", "Arabian cuisine"
+                ],
+                'tokyo': [
+                    "Shibuya Crossing", "Mount Fuji", "sushi", "cherry blossoms", "anime", "temples"
+                ],
+                'rio de janeiro': [
+                    "Christ the Redeemer", "Copacabana Beach", "Carnival", "samba", "Ipanema", "feijoada"
+                ],
+                'abu dhabi': [
+                    "Sheikh Zayed Mosque", "Yas Island", "Emirates Palace", "desert", "Arabian Gulf", "falconry"
+                ],
+                'guadalajara': [
+                    "Mariachi music", "tequila", "tacos", "Historic Center", "Tlaquepaque", "basilica"
+                ],
+                'cape town': [
+                    "Table Mountain", "Robben Island", "Cape Point", "wine regions", "beaches", "Victoria & Alfred Waterfront"
+                ],
+                'bangkok': [
+                    "Grand Palace", "Wat Phra Kaew", "Chatuchak Weekend Market", "street food", "Thai massage", "Chao Phraya River"
+                ],
+                'lisbon': [
+                    "Alfama District", "Belém Tower", "Pastéis de Belém", "tram 28", "Fado music", "Tagus River"
+                ],
+                'seoul': [
+                    "Gyeongbokgung Palace", "Myeongdong", "Gangnam Style", "K-pop", "Hanbok", "Bukchon Hanok Village"
+                ],
+                'buenos aires': [
+                    "Tango", "Recoleta Cemetery", "La Boca", "steak houses", "Plaza de Mayo", "Malba Museum"
+                ],
+                'cairo': [
+                    "Pyramids of Giza", "Sphinx", "Nile River", "Khan el-Khalili", "Egyptian Museum", "Islamic Cairo"
+                ],
+                'amsterdam': [
+                    "canals", "bicycles", "Anne Frank House", "Van Gogh Museum", "Rijksmuseum", "Red Light District"
+                ],
+                'berlin': [
+                    "Brandenburg Gate", "Berlin Wall", "Checkpoint Charlie", "museum island", "currywurst", "Tiergarten"
+                ],
+                'toronto': [
+                    "CN Tower", "Niagara Falls", "Maple Leafs", "Hockey Hall of Fame", "Toronto Islands", "CNE"
+                ],
+                'sydney': [
+                    "Opera House", "Harbour Bridge", "Bondi Beach", "Blue Mountains", "Taronga Zoo", "Manly Ferry"
+                ],
+                'miami': [
+                    "South Beach", "Art Deco District", "Ocean Drive", "Cuban cuisine", "Wynwood Walls", "Everglades"
+                ],
+                'las vegas': [
+                    "Strip", "casinos", "Cirque du Soleil", "Bellagio Fountains", "Venetian canals", "Grand Canyon"
+                ],
+                'austin': [
+                    "Live music", "SXSW", "University of Texas", "BBQ", "Lady Bird Lake", "Texas Capitol"
+                ],
+                'seattle': [
+                    "Space Needle", "Coffee culture", "Pike Place Market", "Fremont Troll", "Mount Rainier", "Seahawks"
+                ],
+                'denver': [
+                    "Rocky Mountains", "Red Rocks Park", "Mile High City", "Craft beer", "Skiing", "Colorado State Capitol"
+                ],
+                'phoenix': [
+                    "Desert climate", "Camelback Mountain", "Southwest cuisine", "Golf courses", "Spring training", "Saguaro cacti"
+                ],
+                'portland or': [
+                    "Rose City", "Coffee culture", "Craft beer", "Powell's Books", "Bridges", "Forest Park"
+                ],
+                'salt lake city': [
+                    "Mormons", "Salt Lake Temple", "Ski resorts", "Great Salt Lake", "Temple Square", "Utah Jazz"
+                ],
+                'san diego': [
+                    "Beaches", "Balboa Park", "San Diego Zoo", "Gaslamp Quarter", "Coronado Bridge", "USS Midway"
+                ],
+                'philadelphia': [
+                    "Independence Hall", "Liberty Bell", "Cheesesteaks", "Rocky Steps", "Museum of Art", "Reading Terminal Market"
+                ],
+                'pittsburgh': [
+                    "Steel industry", "Three Rivers", "Pittsburgh Steelers", "Andy Warhol Museum", "Phipps Conservatory", "Incline"
+                ],
+                'detroit': [
+                    "Motown", "Automotive industry", "Detroit Tigers", "GM Renaissance Center", "Belle Isle", "Henry Ford Museum"
+                ],
+                'cleveland': [
+                    "Rock and Roll Hall of Fame", "Cleveland Browns", "Lake Erie", "Cleveland Museum of Art", "West Side Market", "Flats East Bank"
+                ],
+                'indianapolis': [
+                    "Indy 500", "Indianapolis Colts", "Speedway", "Indianapolis Motor Speedway", "Circle City", "Indiana State Museum"
+                ],
+                'columbus': [
+                    "Ohio State Buckeyes", "Short North Arts District", "Columbus Zoo", "German Village", "Arena District", "Scioto Mile"
+                ],
+                'nashville': [
+                    "Country music", "Grand Ole Opry", "Music Row", "Nashville Predators", "Honky Tonks", "Country Music Hall of Fame"
+                ],
+                'atlanta': [
+                    "CNN Headquarters", "Coca-Cola", "Georgia Aquarium", "Atlanta Braves", "Martin Luther King Jr. National Historic Site", "Centennial Olympic Park"
+                ],
+                'charlotte': [
+                    "NASCAR", "Charlotte Hornets", "Bank of America Stadium", "Uptown", "Carowinds", "Billy Graham Library"
+                ],
+                'raleigh': [
+                    "Research Triangle Park", "North Carolina State University", "Raleigh Convention Center", "Historic Oakwood", "North Carolina Museum of Art", "Pullen Park"
+                ],
+                'durham': [
+                    "Duke University", "Durham Bulls", "Research Triangle Park", "Bull City", "Nasher Museum of Art", "Brightleaf Square"
+                ],
+                'charleston': [
+                    "Historic district", "Plantations", "Charleston Harbor", "Shem Creek", "Rainbow Row", "Magnolia Plantation"
+                ],
+                'savannah': [
+                    "Historic district", "River Street", "Bonaventure Cemetery", "Forsyth Park", "Gullah culture", "Savannah College of Art and Design"
+                ],
+            }  # <--- Added closing bracket
         
-        # Access the fun_facts dictionary directly from the module
-        # It's defined inside get_fun_fact but we can access it by looking at the function's closure
-        # or by replicating the logic here
-        fun_facts_data = {
-            'paris': [
-                "Eiffel Tower", "bakeries", "baguettes", "Louvre", "art", "fashion", "Métro"
-            ],
-            'london': [
-                "British Museum", "museums", "Underground", "Big Ben", "ravens", "Tower"
-            ],
-            'new york': [
-                "Statue of Liberty", "Central Park", "parks", "subway", "Times Square", "languages"
-            ],
-            'tokyo': [
-                "Shibuya", "Michelin", "restaurants", "Skytree", "trains", "Edo"
-            ],
-            'barcelona': [
-                "Sagrada Familia", "Gaudí", "Park Güell", "beaches", "architecture", "orange trees"
-            ],
-            'rome': [
-                "Colosseum", "Vatican", "Pantheon", "fountains", " Trevi", "ancient"
-            ],
-            'los angeles': [
-                "Hollywood", "film", "movies", "studios", "Walk of Fame", "sunshine"
-            ],
-            'sydney': [
-                "Opera House", "Harbour Bridge", "beaches", "Bondi Beach", "Royal Botanic Gardens"
-            ],
-            'dubai': [
-                "Burj Khalifa", "skyscrapers", "shopping", "Palm Jumeirah", "supercars"
-            ],
-            'amsterdam': [
-                "canals", "bicycles", "museums", "Anne Frank House", "bridges"
-            ],
-            'istanbul': [
-                "Hagia Sophia", "Grand Bazaar", "mosques", "Blue Mosque", "two continents"
-            ],
-            'rio de janeiro': [
-                "Christ the Redeemer", "Copacabana", "beaches", "Carnival", "Sugarloaf"
-            ],
-            'albuquerque': [
-                "hot air balloon", "Sandia Peak Tramway", "Breaking Bad", "Sandia Mountains", "Duke City"
-            ],
-            'new orleans': [
-                "Mardi Gras", "French Quarter", "jazz", "Cajun food", "Bourbon Street", "Plantation homes"
-            ],
-            'virginia beach': [
-                "beaches", "boardwalk", "surfing", "naval base", "Atlantic Ocean", "outdoor activities"
-            ],
-            'shanghai': [
-                "skyscrapers", "The Bund", "Shanghai Tower", "Yu Garden", "acrobats", "street food"
-            ],
-            'auckland': [
-                "harbor", "Sky Tower", "Hobbiton", "volcanoes", "winery tours", "waterfront"
-            ],
-            'frankfurt': [
-                "airport", "banking", "Frankfurt Book Fair", "Römerberg", "Oktoberfest", "Main River"
-            ],
-            'zurich': [
-                "banking", "Swiss Alps", "Lake Zurich", "Old Town", "chocolate", "skiing"
-            ],
-            'dubai': [
-                "Burj Khalifa", "Palm Jumeirah", "shopping malls", "desert safari", "gold souk", "Arabian cuisine"
-            ],
-            'tokyo': [
-                "Shibuya Crossing", "Mount Fuji", "sushi", "cherry blossoms", "anime", "temples"
-            ],
-            'rio de janeiro': [
-                "Christ the Redeemer", "Copacabana Beach", "Carnival", "samba", "Ipanema", "feijoada"
-            ],
-            'abu dhabi': [
-                "Sheikh Zayed Mosque", "Yas Island", "Emirates Palace", "desert", "Arabian Gulf", "falconry"
-            ],
-            'guadalajara': [
-                "Mariachi music", "tequila", "tacos", "Historic Center", "Tlaquepaque", "basilica"
-            ],
-            'cape town': [
-                "Table Mountain", "Robben Island", "Cape Point", "wine regions", "beaches", "Victoria & Alfred Waterfront"
-            ],
-            'bangkok': [
-                "Grand Palace", "Wat Phra Kaew", "Chatuchak Weekend Market", "street food", "Thai massage", "Chao Phraya River"
-            ],
-            'lisbon': [
-                "Alfama District", "Belém Tower", "Pastéis de Belém", "tram 28", "Fado music", "Tagus River"
-            ],
-            'seoul': [
-                "Gyeongbokgung Palace", "Myeongdong", "Gangnam Style", "K-pop", "Hanbok", "Bukchon Hanok Village"
-            ],
-            'buenos aires': [
-                "Tango", "Recoleta Cemetery", "La Boca", "steak houses", "Plaza de Mayo", "Malba Museum"
-            ],
-            'cairo': [
-                "Pyramids of Giza", "Sphinx", "Nile River", "Khan el-Khalili", "Egyptian Museum", "Islamic Cairo"
-            ],
-            'amsterdam': [
-                "canals", "bicycles", "Anne Frank House", "Van Gogh Museum", "Rijksmuseum", "Red Light District"
-            ],
-            'berlin': [
-                "Brandenburg Gate", "Berlin Wall", "Checkpoint Charlie", "museum island", "currywurst", "Tiergarten"
-            ],
-            'toronto': [
-                "CN Tower", "Niagara Falls", "Maple Leafs", "Hockey Hall of Fame", "Toronto Islands", "CNE"
-            ],
-            'sydney': [
-                "Opera House", "Harbour Bridge", "Bondi Beach", "Blue Mountains", "Taronga Zoo", "Manly Ferry"
-            ],
-            'miami': [
-                "South Beach", "Art Deco District", "Ocean Drive", "Cuban cuisine", "Wynwood Walls", "Everglades"
-            ],
-            'las vegas': [
-                "Strip", "casinos", "Cirque du Soleil", "Bellagio Fountains", "Venetian canals", "Grand Canyon"
-            ],
-            'austin': [
-                "Live music", "SXSW", "University of Texas", "BBQ", "Lady Bird Lake", "Texas Capitol"
-            ],
-            'seattle': [
-                "Space Needle", "Coffee culture", "Pike Place Market", "Fremont Troll", "Mount Rainier", "Seahawks"
-            ],
-            'denver': [
-                "Rocky Mountains", "Red Rocks Park", "Mile High City", "Craft beer", "Skiing", "Colorado State Capitol"
-            ],
-            'phoenix': [
-                "Desert climate", "Camelback Mountain", "Southwest cuisine", "Golf courses", "Spring training", "Saguaro cacti"
-            ],
-            'portland or': [
-                "Rose City", "Coffee culture", "Craft beer", "Powell's Books", "Bridges", "Forest Park"
-            ],
-            'salt lake city': [
-                "Mormons", "Salt Lake Temple", "Ski resorts", "Great Salt Lake", "Temple Square", "Utah Jazz"
-            ],
-            'san diego': [
-                "Beaches", "Balboa Park", "San Diego Zoo", "Gaslamp Quarter", "Coronado Bridge", "USS Midway"
-            ],
-            'philadelphia': [
-                "Independence Hall", "Liberty Bell", "Cheesesteaks", "Rocky Steps", "Museum of Art", "Reading Terminal Market"
-            ],
-            'pittsburgh': [
-                "Steel industry", "Three Rivers", "Pittsburgh Steelers", "Andy Warhol Museum", "Phipps Conservatory", "Incline"
-            ],
-            'detroit': [
-                "Motown", "Automotive industry", "Detroit Tigers", "GM Renaissance Center", "Belle Isle", "Henry Ford Museum"
-            ],
-            'cleveland': [
-                "Rock and Roll Hall of Fame", "Cleveland Browns", "Lake Erie", "Cleveland Museum of Art", "West Side Market", "Flats East Bank"
-            ],
-            'indianapolis': [
-                "Indy 500", "Indianapolis Colts", "Speedway", "Indianapolis Motor Speedway", "Circle City", "Indiana State Museum"
-            ],
-            'columbus': [
-                "Ohio State Buckeyes", "Short North Arts District", "Columbus Zoo", "German Village", "Arena District", "Scioto Mile"
-            ],
-            'nashville': [
-                "Country music", "Grand Ole Opry", "Music Row", "Nashville Predators", "Honky Tonks", "Country Music Hall of Fame"
-            ],
-            'atlanta': [
-                "CNN Headquarters", "Coca-Cola", "Georgia Aquarium", "Atlanta Braves", "Martin Luther King Jr. National Historic Site", "Centennial Olympic Park"
-            ],
-            'charlotte': [
-                "NASCAR", "Charlotte Hornets", "Bank of America Stadium", "Uptown", "Carowinds", "Billy Graham Library"
-            ],
-            'raleigh': [
-                "Research Triangle Park", "North Carolina State University", "Raleigh Convention Center", "Historic Oakwood", "North Carolina Museum of Art", "Pullen Park"
-            ],
-            'durham': [
-                "Duke University", "Durham Bulls", "Research Triangle Park", "Bull City", "Nasher Museum of Art", "Brightleaf Square"
-            ],
-            'charleston': [
-                "Historic district", "Plantations", "Charleston Harbor", "Shem Creek", "Rainbow Row", "Magnolia Plantation"
-            ],
-            'savannah': [
-                "Historic district", "River Street", "Bonaventure Cemetery", "Forsyth Park", "Gullah culture", "Savannah College of Art and Design"
-            ],
-        }
-        
-        # Get keywords for this city
-        city_keywords = fun_facts_data.get(city_lower, [])
+        # Check if city exists in fun facts
+        if city_lower in fun_facts_data:
+            city_keywords = fun_facts_data[city_lower]
         
         # Map keywords to distinctive categories
         keyword_to_category = {
@@ -493,6 +500,22 @@ def extract_from_fun_facts(city: str) -> List[Dict[str, Any]]:
             'winery tours': ('Wine & Vineyards', 0.9),
             'waterfront': ('Harbor & Waterfront', 0.95),
             
+            # Edinburgh specific
+            'Edinburgh Castle': ('Historic Sites', 0.95),
+            'Festival Fringe': ('Festivals & Events', 0.95),
+            'Royal Mile': ('Historic Sites', 0.95),
+            'UNESCO': ('World Heritage Sites', 0.95),
+            'golf': ('Sports & Recreation', 0.9),
+            'whiskey': ('Food & Drink', 0.9),
+            
+            # Dublin specific
+            'Guinness Storehouse': ('Breweries & Distilleries', 0.95),
+            'pubs': ('Pubs & Nightlife', 0.95),
+            'Trinity College': ('Universities & Education', 0.95),
+            'Book of Kells': ('Museums & Culture', 0.95),
+            'Dublin Castle': ('Historic Sites', 0.95),
+            'Ha\'penny Bridge': ('Iconic Landmarks', 0.95),
+            
             # Frankfurt specific
             'airport': ('Transportation Hub', 0.95),
             'banking': ('Financial District', 0.95),
@@ -509,12 +532,113 @@ def extract_from_fun_facts(city: str) -> List[Dict[str, Any]]:
             'chocolate': ('Swiss Chocolate', 0.95),
             'skiing': ('Winter Sports', 0.95),
             
+            # Lisbon specific
+            'Alfama District': ('Historic Districts', 0.95),
+            'Belém Tower': ('Historic Sites', 0.95),
+            'Pastéis de Belém': ('Food & Bakeries', 0.95),
+            'tram 28': ('Transportation & Tours', 0.95),
+            'Fado music': ('Music & Culture', 0.95),
+            'Tagus River': ('River & Waterfront', 0.95),
+            'hills': ('Viewpoints & Scenic', 0.9),
+            'yellow trams': ('Transportation & Tours', 0.9),
+            'Vasco da Gama Bridge': ('Iconic Landmarks', 0.95),
+            'Oceanarium': ('Family & Attractions', 0.95),
+            
+            # Lisburn specific
+            'Cathedral City': ('Religious Sites', 0.95),
+            'linen market': ('Markets & Shopping', 0.95),
+            'linen': ('Textiles & Crafts', 0.95),
+            'Lisburn Castle': ('Historic Sites', 0.95),
+            'Festival': ('Festivals & Events', 0.95),
+            'Irish Linen Centre': ('Museums & Culture', 0.95),
+            
+            # Dundonald specific
+            'Dundonald Castle': ('Historic Sites', 0.95),
+            'Ice Bowl': ('Sports & Recreation', 0.95),
+            'ice hockey': ('Sports & Recreation', 0.9),
+            'skating': ('Sports & Recreation', 0.9),
+            'International Park': ('Entertainment & Events', 0.95),
+            'concerts': ('Entertainment & Events', 0.9),
+            'hillforts': ('Archaeological Sites', 0.95),
+            'Iron Age': ('Historical Sites', 0.9),
+            'transport links': ('Transportation Hub', 0.9),
+            
+            # Bilbao specific
+            'Guggenheim Museum': ('Art Museums', 0.95),
+            'transporter bridge': ('Historic Landmarks', 0.95),
+            'Vizcaya Bridge': ('Historic Landmarks', 0.95),
+            'Casco Viejo': ('Historic Districts', 0.95),
+            'pintxos': ('Food & Dining', 0.95),
+            'Basque': ('Cultural Heritage', 0.95),
+            'industrial port': ('Maritime & Port', 0.9),
+            'cultural hub': ('Arts & Culture', 0.9),
+            
+            # Santutxu specific
+            'Santutxu Market': ('Markets & Shopping', 0.95),
+            'metro connections': ('Transportation Hub', 0.9),
+            'local festivals': ('Festivals & Events', 0.95),
+            'community spirit': ('Local Culture', 0.9),
+            'Basque mountains': ('Mountains & Nature', 0.95),
+            'coastline': ('Beaches & Coast', 0.9),
+            
+            # Mumbai specific
+            'real estate': ('Real Estate & Property', 0.95),
+            'local trains': ('Transportation Hub', 0.95),
+            'Dharavi': ('Cultural Districts', 0.95),
+            'Dhobi Ghat': ('Cultural Sites', 0.95),
+            'Victoria Terminus': ('Historic Sites', 0.95),
+            
+            # Navi Mumbai specific
+            'planned city': ('Urban Planning', 0.95),
+            'infrastructure': ('Infrastructure & Development', 0.95),
+            'container port': ('Maritime & Port', 0.95),
+            'Jawaharlal Nehru Port Trust': ('Maritime & Port', 0.95),
+            'Balaji Temple': ('Religious Sites', 0.95),
+            'Nerul': ('Religious Sites', 0.9),
+            'Vashi': ('Business Districts', 0.95),
+            'commercial hub': ('Business & Commerce', 0.95),
+            'decongest': ('Urban Development', 0.9),
+            
+            # Los Angeles specific
+            'museums': ('Museums & Culture', 0.95),
+            'Hollywood': ('Entertainment & Film', 0.95),
+            'cars': ('Transportation & Automotive', 0.9),
+            
+            # Bangkok specific
+            'Grand Palace': ('Historic Sites', 0.95),
+            'Wat Phra Kaew': ('Religious Sites', 0.95),
+            'Chatuchak': ('Markets & Shopping', 0.95),
+            'Thai massage': ('Wellness & Spa', 0.95),
+            'Chao Phraya River': ('River & Waterfront', 0.95),
+            
+            # Cartagena specific
+            'colonial walled city': ('Historic Sites', 0.95),
+            'fortress': ('Historic Sites', 0.95),
+            'UNESCO': ('World Heritage Sites', 0.95),
+            'pirates': ('Historical Tours', 0.9),
+            'Getsemaní': ('Cultural Districts', 0.95),
+            'Castillo San Felipe': ('Historic Sites', 0.95),
+            
+            # Chiba specific
+            'monorail': ('Transportation & Tech', 0.95),
+            'Makuhari Messe': ('Entertainment & Events', 0.95),
+            'anime': ('Pop Culture & Anime', 0.95),
+            'manga': ('Pop Culture & Anime', 0.95),
+            'cargo hub': ('Maritime & Port', 0.9),
+            
+            # Balaka specific
+            'cathedral': ('Religious Sites', 0.95),
+            'Catholic': ('Religious Sites', 0.9),
+            'Muslim': ('Religious Sites', 0.9),
+            'missionary': ('Cultural Heritage', 0.9),
+            'Montfort Media': ('Media & Publishing', 0.9),
+            
             # Dubai specific
             'Burj Khalifa': ('Skyscrapers', 0.95),
             'Palm Jumeirah': ('Man-made Islands', 0.95),
             'shopping malls': ('Luxury Shopping', 0.95),
             'desert safari': ('Desert Adventures', 0.95),
-            'gold souk': ('Traditional Markets', 0.95),
+            'gold souk': ('Gold & Souks', 0.95),
             'Arabian cuisine': ('Arabian Cuisine', 0.95),
             
             # Tokyo specific
@@ -859,7 +983,9 @@ def combine_and_score_categories(all_categories: List[Dict[str, Any]]) -> List[D
         
         # Weight sources differently
         weight = 1.0
-        if source == 'fun_facts':
+        if source == 'fun_facts_distinctive':
+            weight = 3.0  # VERY high confidence for distinctive fun fact categories
+        elif source == 'fun_facts':
             weight = 1.2  # High confidence for curated facts
         elif source == 'city_guide':
             weight = 1.0  # Good confidence
