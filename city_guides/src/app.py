@@ -1300,12 +1300,25 @@ async def api_smart_neighborhoods():
             try:
                 with open(seed_file, 'r', encoding='utf-8') as f:
                     seed_data = json.load(f)
+                
+                # Skip files that don't have proper neighborhood structure (like seeded_cities.json)
+                if not isinstance(seed_data, dict) or 'cities' not in seed_data:
+                    continue
+                    
                 cities = seed_data.get('cities', {})
+                if not isinstance(cities, dict):
+                    continue
+                    
                 city_key = next((k for k in cities.keys() if k.lower() == city.lower()), None)
                 if city_key:
-                    seed_neighborhoods = cities[city_key]  # Return full objects with name, description, type
-                    app.logger.info(f"Found {len(seed_neighborhoods)} neighborhoods in {seed_file.name} for {city}")
-                    break  # Found the city, stop searching
+                    neighborhoods_data = cities[city_key]
+                    # Validate that neighborhoods are objects with name/description, not strings (fun facts)
+                    if neighborhoods_data and isinstance(neighborhoods_data, list) and len(neighborhoods_data) > 0:
+                        first_item = neighborhoods_data[0]
+                        if isinstance(first_item, dict) and 'name' in first_item:
+                            seed_neighborhoods = neighborhoods_data
+                            app.logger.info(f"Found {len(seed_neighborhoods)} neighborhoods in {seed_file.name} for {city}")
+                            break  # Found the city, stop searching
             except Exception as e:
                 app.logger.debug(f"Could not load {seed_file.name} for {city}: {e}")
 
