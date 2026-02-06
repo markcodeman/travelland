@@ -11,7 +11,7 @@ services:
       cd frontend && \
       npm ci && \
       npm run build && \
-      cp -R dist/* ../city_guides/static/ && \
+      cp -R dist/. ../city_guides/static/ && \
       cp public/marcos.png ../city_guides/static/ || true
     envVars:
       - key: NODE_VERSION
