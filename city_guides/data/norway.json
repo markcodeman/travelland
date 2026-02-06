@@ -1,0 +1,16 @@
+{
+  "country": "Norway",
+  "cities": {
+    "Oslo": [
+      {"name": "Sentrum", "description": "City center with Royal Palace, Karl Johans gate, and Oslo Cathedral", "type": "historic"},
+      {"name": "Grünerløkka", "description": "Trendy district with vintage shops, cafes, street art, and river walks", "type": "trendy"},
+      {"name": "Aker Brygge", "description": "Waterfront development with restaurants, bars, and fjord views", "type": "waterfront"},
+      {"name": "Frogner", "description": "Upscale residential area with Vigeland Sculpture Park and embassies", "type": "residential"},
+      {"name": "Majorstuen", "description": "Shopping and residential district with boutiques and cafes", "type": "shopping"}
+    ],
+    "Bergen": [
+      {"name": "Bryggen", "description": "UNESCO Hanseatic wharf with colorful wooden warehouses and fish market", "type": "historic"},
+      {"name": "Fisketorget", "description": "Fish market area with fresh seafood, restaurants, and harbor views", "type": "food"}
+    ]
+  }
+}

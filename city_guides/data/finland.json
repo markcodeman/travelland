@@ -1,0 +1,13 @@
+{
+  "country": "Finland",
+  "cities": {
+    "Helsinki": [
+      {"name": "Kruununhaka", "description": "Historic center with Senate Square, Cathedral, and Government Palace", "type": "historic"},
+      {"name": "Kallio", "description": "Trendy working-class district with bars, rock venues, and hipster cafes", "type": "nightlife"},
+      {"name": "Punavuori", "description": "Design district with boutiques, galleries, and Helsinki Design Museum", "type": "trendy"},
+      {"name": "Ullanlinna", "description": "Upscale Art Nouveau area with Kaivopuisto park and sea views", "type": "residential"},
+      {"name": "Töölö", "description": "Cultural district with Finlandia Hall, National Museum, and Temppeliaukio Church", "type": "culture"},
+      {"name": "Katajanokka", "description": "Peninsula with Uspenski Cathedral, icebreakers, and waterfront restaurants", "type": "waterfront"}
+    ]
+  }
+}

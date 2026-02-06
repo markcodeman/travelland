@@ -1,0 +1,19 @@
+{
+  "country": "Sweden",
+  "cities": {
+    "Stockholm": [
+      {"name": "Gamla Stan", "description": "Medieval old town with Royal Palace, Nobel Museum, and cobblestone streets", "type": "historic"},
+      {"name": "Södermalm", "description": "Trendy island district with vintage shops, cafes, and SoFo neighborhood", "type": "trendy"},
+      {"name": "Östermalm", "description": "Upscale area with Östermalms Saluhall, Strandvägen, and luxury shopping", "type": "shopping"},
+      {"name": "Kungsholmen", "description": "Residential island with City Hall, waterfront promenades, and local vibe", "type": "residential"},
+      {"name": "Djurgården", "description": "Green island with Vasa Museum, Skansen, Gröna Lund, and royal park", "type": "nature"},
+      {"name": "Vasastan", "description": "Elegant neighborhood with Observatory Museum, cafes, and 19th-century architecture", "type": "residential"},
+      {"name": "Norrmalm", "description": "Central business district with Drottninggatan shopping and Central Station", "type": "shopping"}
+    ],
+    "Gothenburg": [
+      {"name": "Haga", "description": "Historic wooden house district with cobblestone streets and cafes", "type": "historic"},
+      {"name": "Linné", "description": "Trendy area with independent shops, restaurants, and nightlife", "type": "trendy"},
+      {"name": "Avenyn", "description": "Main boulevard with restaurants, theaters, and Poseidon statue", "type": "culture"}
+    ]
+  }
+}

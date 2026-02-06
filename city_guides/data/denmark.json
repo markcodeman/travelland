@@ -1,0 +1,18 @@
+{
+  "country": "Denmark",
+  "cities": {
+    "Copenhagen": [
+      {"name": "Indre By", "description": "Historic center with Tivoli Gardens, Strøget shopping, and Nyhavn harbor", "type": "historic"},
+      {"name": "Christianshavn", "description": "Canal district with Christiania free town, houseboats, and waterfront dining", "type": "culture"},
+      {"name": "Vesterbro", "description": "Trendy former meatpacking district with restaurants, bars, and creative spaces", "type": "trendy"},
+      {"name": "Nørrebro", "description": "Multicultural neighborhood with Superkilen park, beer gardens, and diverse food", "type": "food"},
+      {"name": "Østerbro", "description": "Upscale residential area with Little Mermaid, parks, and family-friendly vibe", "type": "residential"},
+      {"name": "Frederiksberg", "description": "Elegant enclave with Zoo, gardens, and Frederiksberg Castle", "type": "residential"},
+      {"name": "Kødbyen", "description": "Meatpacking District with nightlife, galleries, and innovative restaurants", "type": "nightlife"}
+    ],
+    "Aarhus": [
+      {"name": "Latin Quarter", "description": "Oldest neighborhood with cobblestone streets, cafes, and Latinerkvarteret charm", "type": "historic"},
+      {"name": "Åboulevarden", "description": "Riverside promenade with restaurants, bars, and waterfront atmosphere", "type": "waterfront"}
+    ]
+  }
+}

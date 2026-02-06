@@ -1,0 +1,26 @@
+{
+  "country": "Portugal",
+  "cities": {
+    "Lisbon": [
+      {"name": "Alfama", "description": "Ancient Moorish quarter with narrow alleys, Fado music, São Jorge Castle views, and tram 28", "type": "historic"},
+      {"name": "Bairro Alto", "description": "Bohemian nightlife district with rooftop bars, street art, and traditional Fado houses", "type": "nightlife"},
+      {"name": "Belém", "description": "Historic waterfront with Tower of Belém, Jerónimos Monastery, and pastéis de Belém", "type": "historic"},
+      {"name": "Príncipe Real", "description": "Trendy neighborhood with antique shops, botanical gardens, and designer boutiques", "type": "trendy"},
+      {"name": "Chiado", "description": "Elegant shopping district with historic cafés, theaters, and Baixa-Chiado metro", "type": "shopping"},
+      {"name": "Mouraria", "description": "Multicultural neighborhood with Moorish heritage, traditional taverns, and street art", "type": "culture"},
+      {"name": "Graça", "description": "Hilltop residential area with miradouros, local tascas, and panoramic city views", "type": "residential"},
+      {"name": "Parque das Nações", "description": "Modern waterfront district with Oceanarium, Vasco da Gama Bridge, and contemporary architecture", "type": "modern"},
+      {"name": "LX Factory", "description": "Creative hub in former industrial complex with street art, restaurants, and Sunday market", "type": "trendy"},
+      {"name": "Cais do Sodré", "description": "Transportation hub turned nightlife destination with Pink Street bars and Time Out Market", "type": "nightlife"}
+    ],
+    "Porto": [
+      {"name": "Ribeira", "description": "UNESCO-listed waterfront with colorful houses, Douro river views, and traditional boats", "type": "historic"},
+      {"name": "Baixa", "description": "Downtown area with São Bento station, boutiques, and Port wine cellars nearby", "type": "shopping"},
+      {"name": "Cedofeita", "description": "Arts district with galleries, craft shops, and the trendy Miguel Bombarda street", "type": "culture"},
+      {"name": "Foz do Douro", "description": "Upscale seaside neighborhood with beaches, promenade, and seafood restaurants", "type": "beach"},
+      {"name": "Boavista", "description": "Modern business district with Casa da Música, shopping centers, and Rotunda", "type": "modern"},
+      {"name": "Miragaia", "description": "Traditional fishing quarter with authentic atmosphere and local tascas", "type": "historic"},
+      {"name": "Massarelos", "description": "University area with botanical garden, tram museum, and relaxed student vibe", "type": "culture"}
+    ]
+  }
+}

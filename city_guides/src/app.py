@@ -1293,7 +1293,10 @@ async def api_smart_neighborhoods():
 
         # FIRST: Check all country seed files for known cities
         seed_neighborhoods = []
-        country_seed_files = ['france.json', 'spain.json', 'italy.json', 'uk.json', 'germany.json', 'usa.json']
+        country_seed_files = ['france.json', 'spain.json', 'italy.json', 'uk.json', 'germany.json', 'usa.json',
+                                'portugal.json', 'netherlands.json', 'belgium.json', 'austria.json', 
+                                'switzerland.json', 'czech_republic.json', 'greece.json',
+                                'sweden.json', 'norway.json', 'denmark.json', 'finland.json']
         
         for seed_file in country_seed_files:
             try:

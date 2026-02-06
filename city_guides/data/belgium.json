@@ -1,0 +1,26 @@
+{
+  "country": "Belgium",
+  "cities": {
+    "Brussels": [
+      {"name": "Grand Place", "description": "UNESCO-listed central square with opulent guild houses and Brussels Town Hall", "type": "historic"},
+      {"name": "Marolles", "description": "Working-class district with daily flea market, antique shops, and authentic atmosphere", "type": "market"},
+      {"name": "Saint-Géry", "description": "Trendy area in former covered market with bars, galleries, and Halles Saint-Géry", "type": "nightlife"},
+      {"name": "Ixelles", "description": "Fashionable neighborhood with Art Nouveau architecture, Flagey market, and ponds", "type": "trendy"},
+      {"name": "European Quarter", "description": "EU institutions with modern architecture, Parc Leopold, and institutional buildings", "type": "modern"},
+      {"name": "Sablon", "description": "Upscale antiques district with chocolatiers, weekend market, and Royal Square", "type": "shopping"},
+      {"name": "Saint-Catherine", "description": "Seaside-themed area with fish restaurants, canals, and Sainte-Catherine church", "type": "food"},
+      {"name": "Matongé", "description": "African quarter with Congolese shops, African restaurants, and vibrant street life", "type": "culture"}
+    ],
+    "Bruges": [
+      {"name": "Historic Centre", "description": "UNESCO medieval core with canals, Belfry tower, and Market Square", "type": "historic"},
+      {"name": "Damme", "description": "Charming village suburb with canal views, windmills, and bike paths", "type": "historic"},
+      {"name": "Sint-Andries", "description": "Upscale residential area with museums and Beguinage", "type": "residential"}
+    ],
+    "Antwerp": [
+      {"name": "Old Town", "description": "Historic center with Cathedral, Grote Markt, and Renaissance City Hall", "type": "historic"},
+      {"name": "Zuid", "description": "Trendy south district with MAS museum, Het Eilandje, and galleries", "type": "trendy"},
+      {"name": "Eilandje", "description": "Redeveloped docklands with MAS, water views, and modern architecture", "type": "waterfront"},
+      {"name": "Kammenstraat", "description": "Fashion district with designer boutiques and the ModeMuseum", "type": "shopping"}
+    ]
+  }
+}
