@@ -5,7 +5,9 @@ services:
     region: oregon
     plan: free
     buildCommand: |
-      pip install -r city_guides/requirements.txt && \
+      python -m venv .venv && \
+      . .venv/bin/activate && \
+      pip install --no-cache-dir -r city_guides/requirements.txt && \
       mkdir -p city_guides/static && \
       mkdir -p ../city_guides/static && \
       cd frontend && \
