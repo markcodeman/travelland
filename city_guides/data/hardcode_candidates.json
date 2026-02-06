@@ -1,0 +1,26 @@
+[
+  {
+    "city": "faro",
+    "attempts": 3,
+    "avg_quality": 0.16666666666666666,
+    "last_attempt": 1770320568.7485778,
+    "sample_facts": [
+      "Explore Faro and discover what makes it special!",
+      "Explore Faro and discover what makes it special!",
+      "Home to the impressive Faro Cathedral and the Bone Chapel with eerie skeletal decorations"
+    ],
+    "priority": 3.0
+  },
+  {
+    "city": "testcity1",
+    "attempts": 3,
+    "avg_quality": 0.19999999999999998,
+    "last_attempt": 1770233765.973543,
+    "sample_facts": [
+      "Explore TestCity1 and discover what makes it special!",
+      "TestCity1 is a city in TestCountry",
+      "Visit TestCity1 for interesting experiences"
+    ],
+    "priority": 2.9000000000000004
+  }
+]
