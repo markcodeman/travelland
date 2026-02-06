@@ -1,12 +1,52 @@
 import React from 'react';
 import './NeighborhoodPicker.css';
+import { pinyin } from 'pinyin-pro';
 
 const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, loading = false }) => {
+  // Override translations for better names (pinyin is fallback)
+  const chineseTranslations = {
+    // Shanghai landmarks with better English names
+    '外滩': 'The Bund',
+    '南京路': 'Nanjing Road',
+    '陆家嘴': 'Lujiazui',
+    '豫园': 'Yu Garden',
+    '静安寺': "Jing'an Temple",
+    '新天地': 'Xintiandi',
+    '田子坊': 'Tianzifang',
+    '浦东': 'Pudong',
+    '浦西': 'Puxi',
+    // Common district suffixes
+    '街道': 'District',
+    '区': 'District',
+    '镇': 'Town',
+    '乡': 'Township',
+    '村': 'Village',
+  };
+
   const formatBilingualName = (name) => {
-    // Check if name contains Korean characters
+    // Check if name contains Chinese characters
+    const hasChinese = /[\u4e00-\u9fff]/.test(name);
     const hasKorean = /[가-힣]/.test(name);
     
-    if (hasKorean) {
+    if (hasChinese) {
+      // First apply specific translations for landmarks
+      let displayName = name;
+      for (const [cn, en] of Object.entries(chineseTranslations)) {
+        if (name.includes(cn)) {
+          displayName = displayName.replace(cn, `${cn} (${en})`);
+        }
+      }
+      
+      // If no specific translation was applied, convert to pinyin
+      if (displayName === name) {
+        const pinyinName = pinyin(name, { toneType: 'none', type: 'string', separator: ' ' });
+        // Capitalize each word
+        const capitalized = pinyinName.replace(/\b\w/g, c => c.toUpperCase());
+        displayName = `${name} (${capitalized})`;
+      }
+      
+      return displayName;
+    } else if (hasKorean) {
       // If it's Korean, try to extract English part if available, or just show Korean
       const englishMatch = name.match(/\(([^)]+)\)/);
       if (englishMatch) {
