@@ -367,39 +367,52 @@ async def api_chat_rag():
         context_text = "\n\n".join(context_snippets)
 
         # Compose Groq prompt (system + user)
-        # Get neighborhood from query if present (e.g., "Tell me about X in Neighborhood, City")
+        # Get neighborhood from query if present (e.g., "Tell me about X in Neighborhood, City" or "in la Vila de Gràcia, Barcelona")
         neighborhood_from_query = None
         if city and ',' in query:
-            # Try to extract neighborhood from patterns like "in L'Ariane, Nice" or "L'Ariane, Nice"
+            # Try to extract neighborhood from various patterns
             patterns = [
-                rf'in\s+([^,]+),\s*{re.escape(city)}',
-                rf'([^,]+),\s*{re.escape(city)}',
+                rf'in\s+([^,]+),\s*{re.escape(city)}',  # "in La Vila de Gràcia, Barcelona"
+                rf'about\s+([^,]+),\s*{re.escape(city)}',  # "about Music Heritage in Gràcia, Barcelona"
+                rf'([^,]+),\s*{re.escape(city)}',  # "Gràcia, Barcelona"
             ]
             for pattern in patterns:
                 match = re.search(pattern, query, re.IGNORECASE)
                 if match:
-                    neighborhood_from_query = match.group(1).strip()
+                    candidate = match.group(1).strip()
+                    # Don't capture the query subject (e.g., "Music Heritage") as neighborhood
+                    # Heuristic: if it contains multiple words and looks like a topic, skip
+                    skip_keywords = ['music', 'heritage', 'food', 'tours', 'sites', 'restaurants', 'things', 'places', 'what', 'where', 'how']
+                    if any(kw in candidate.lower() for kw in skip_keywords):
+                        continue
+                    neighborhood_from_query = candidate
                     break
+        
+        # Also try to extract from "in [Neighborhood]" patterns without city comma
+        if not neighborhood_from_query:
+            # Pattern: "in la Vila de Gràcia" or "in Gràcia" (Catalan/Spanish neighborhoods often have articles)
+            match = re.search(r'in\s+(la\s+|el\s+|les\s+|els\s+)?([^,]+?)(?:\s+in|\s+near|\s+area)?\s*$', query, re.IGNORECASE)
+            if match:
+                article = match.group(1) or ''
+                neighborhood_from_query = (article + match.group(2)).strip()
         
         system_prompt = (
             "You are Marco, a travel AI assistant. Given a user query and web search snippets, provide helpful, accurate travel information. "
-            "IMPORTANT RULES: "
-            "1. This is a conversation - use the previous messages to understand context and answer follow-up questions. "
-            "2. When users ask vague questions like 'do you have a link?' or 'where is it?', they are referring to the most recent place/thing you mentioned. "
+            "CRITICAL RULES - VIOLATION IS NOT ALLOWED:\n"
+            "1. This is a conversation - use previous messages for context and answer follow-up questions.\n"
+            "2. When users ask vague questions like 'do you have a link?' or 'where is it?', refer to the most recent place you mentioned.\n"
             "3. CLARIFYING QUESTIONS - ONLY when user uses pronouns like 'they', 'it', 'this', 'that' without clear context. "
-            "Example: User asks 'do they do tours?' after you mentioned campus and gardens → Ask 'Do you mean the university campus or the botanical gardens?' "
-            "DON'T ask clarifying questions when user makes clear requests like 'Tell me about historic sites in Luminy' - just answer!"
-            "4. STAY ON TOPIC - if user asks about tours of a specific place, answer about THAT place, not generic city tours. "
-            "5. When user specifies a NEIGHBORHOOD (e.g., 'in L'Ariane, Nice'), focus ONLY on that neighborhood, not the whole city. "
-            "6. If no relevant info exists for the specific neighborhood, say so directly - don't give generic city info. "
-            "7. Provide specific Google Maps links using EXACT format: [Place Name](https://www.google.com/maps/search/?api=1&query=Place+Name+City). "
-            "   - The link TEXT goes in [brackets], the URL goes in (parentheses) "
-            "   - Keep the URL short: only place name + city, no full sentences "
-            "   - Example: [Castle of Nice](https://www.google.com/maps/search/?api=1&query=Castle+of+Nice+Nice) "
-            "8. Always mention full names of places so the frontend can auto-link them. "
-            "9. Never say 'I don't have a link' - instead provide the relevant Maps search link. "
-            "10. Never mention your sources or that you used web search. "
-            "11. GEOGRAPHIC ACCURACY: Verify if an area is coastal or inland before mentioning beaches. Never claim inland areas have beaches."
+            "DON'T ask clarifying questions for clear requests like 'Tell me about historic sites in Luminy' - just answer!\n"
+            "4. STAY ON TOPIC - answer about the SPECIFIC place requested, not generic alternatives.\n"
+            "5. NEIGHBORHOOD FOCUS IS MANDATORY: When user mentions a neighborhood (e.g., 'la Vila de Gràcia, Barcelona', 'Le Marais, Paris'), "
+            "   you MUST focus ONLY on that neighborhood. ZERO generic city information allowed.\n"
+            "6. ABSOLUTE PROHIBITION: Never provide city-wide overview when a neighborhood is specified. "
+            "   If you lack neighborhood-specific info, say 'I don't have specific information about [neighborhood]' rather than giving generic city info.\n"
+            "7. Google Maps format: [Place Name](https://www.google.com/maps/search/?api=1&query=Place+Name+City) "
+            "   - Text in [brackets], URL in (parentheses), short URL with place+city only.\n"
+            "8. Always use full place names for auto-linking. Never say 'I don't have a link' - provide Maps search link instead.\n"
+            "9. Never mention sources or web search usage.\n"
+            "10. GEOGRAPHIC ACCURACY: Verify coastal vs inland before mentioning beaches."
         )
         
         # Build location context with neighborhood if available
