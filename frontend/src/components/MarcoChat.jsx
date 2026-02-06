@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, Fragment, useCallback } from 'react';
-import ReactMarkdown from 'react-markdown';
 import { Popover, Transition } from '@headlessui/react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import './MarcoChat.css';
 
 export default function MarcoChat({ city, neighborhood, venues, category, initialInput, onClose, results, wikivoyage }) {
@@ -61,6 +61,47 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     if (sessionId) localStorage.setItem('marco_session_id', sessionId);
   }, [sessionId]);
 
+  // Context-aware loading messages
+  const getContextualLoadingMessage = (query) => {
+    const lower = query.toLowerCase();
+    if (lower.includes('coffee') || lower.includes('cafe')) return `Finding the best cafés in ${city}...`;
+    if (lower.includes('restaurant') || lower.includes('food')) return `Searching for top dining spots in ${city}...`;
+    if (lower.includes('museum') || lower.includes('art')) return `Looking up cultural highlights in ${city}...`;
+    return thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
+  };
+
+  // Generate smart suggestions based on conversation context
+  const generateSuggestions = (lastMessage) => {
+    if (!city) return [];
+    
+    const baseSuggestions = [
+      `Best ${category || 'places'} in ${city}`,
+      'Hidden local gems',
+      'How to get around',
+      'What to avoid'
+    ];
+    
+    if (neighborhood) {
+      baseSuggestions.push(`More about ${neighborhood}`);
+    }
+    
+    // Add context-aware suggestions based on last message
+    if (lastMessage?.text) {
+      const text = lastMessage.text.toLowerCase();
+      if (text.includes('cafe') || text.includes('coffee')) {
+        return ['☕ Best coffee', '🥐 Great pastries', '💻 Work-friendly spots', ...baseSuggestions];
+      }
+      if (text.includes('restaurant') || text.includes('food')) {
+        return ['🍽️ Local specialties', '💰 Budget options', '🌱 Vegetarian', ...baseSuggestions];
+      }
+      if (text.includes('museum') || text.includes('sight')) {
+        return ['🏛️ Must-see museums', '🎨 Hidden galleries', '🎭 Art walks', ...baseSuggestions];
+      }
+    }
+    
+    return baseSuggestions;
+  };
+
   const sendMessage = useCallback(async (text, query = null) => {
     if (!text || !text.trim()) return;
     const msg = { role: 'user', text };
@@ -68,9 +109,8 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     setInput('');
     setLoading(true);
 
-    // Start with an engaging loading message
-    const initialMessage = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
-    setLoadingMessage(initialMessage);
+    // Use contextual loading message
+    setLoadingMessage(getContextualLoadingMessage(text));
 
     // Add a quick response for common queries after a short delay
     const lowerText = text.toLowerCase();
@@ -134,8 +174,15 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
 
       const data = await response.json();
       const assistantMessage = data.answer || data.response || 'I apologize, but I encountered an issue processing your request.';
+      
+      // Generate contextual suggestions based on the response
+      const suggestions = generateSuggestions({ text: assistantMessage });
 
-      setMessages(m => [...m, { role: 'assistant', text: assistantMessage }]);
+      setMessages(m => [...m, { 
+        role: 'assistant', 
+        text: assistantMessage,
+        suggestions: suggestions.slice(0, 4) // Add top 4 suggestions
+      }]);
       
       // Update session ID if provided
       if (data.session_id) {
@@ -143,14 +190,18 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       }
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages(m => [...m, { 
+      const errorMsg = { 
         role: 'assistant', 
-        text: 'I apologize, but I\'m having trouble connecting right now. Please try again in a moment.' 
-      }]);
+        text: `I'm having trouble connecting right now. This could be a network issue or the server might be busy.`,
+        isError: true,
+        retryText: text, // Store original text for retry
+        suggestions: ['🔄 Try again', '💬 Ask something else', '📍 Show me venues']
+      };
+      setMessages(m => [...m, errorMsg]);
     } finally {
       setLoading(false);
     }
-  }, [city, neighborhood, category, sessionId, thinkingMessages, quickResponses]);
+  }, [city, neighborhood, category, sessionId, thinkingMessages, quickResponses, generateSuggestions]);
 
   // Auto-send initialInput if provided
   useEffect(() => {
@@ -169,14 +220,14 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
   useEffect(() => {
     if (city && messages.length === 0 && !hasSentInitial.current) {
       const initialMessage = {
-        id: 'initial',
-        type: 'assistant',
-        content: `I found great info about ${city}! What interests you? ☕ Coffee & tea, 🚌 Transport, 💎 Hidden gems`
+        role: 'assistant',
+        text: `I found great info about ${city}! What interests you?`,
+        suggestions: ['☕ Coffee & tea', '🚌 Transport', '💎 Hidden gems', '🍽️ Local food']
       };
       setMessages([initialMessage]);
       hasSentInitial.current = true;
     }
-  }, [city, messages.length]); // Include category in dependencies
+  }, [city, messages.length]);
 
   const fetchVenuesForCategory = async (overrideCategory = null) => {
     const useCategory = overrideCategory || category;
@@ -630,7 +681,40 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                   )}
                 </div>
               ) : (
-                msg.text
+                <div>
+                  {msg.isError ? (
+                    <div className="error-message">
+                      <div>{msg.text}</div>
+                      {msg.retryText && (
+                        <button 
+                          className="retry-btn"
+                          onClick={() => sendMessage(msg.retryText)}
+                          disabled={loading}
+                        >
+                          🔄 Try Again
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    msg.text
+                  )}
+                </div>
+              )}
+              
+              {/* Suggestion chips for quick replies */}
+              {msg.role === 'assistant' && msg.suggestions && msg.suggestions.length > 0 && (
+                <div className="suggestion-chips">
+                  {msg.suggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      className="suggestion-chip"
+                      onClick={() => sendMessage(suggestion)}
+                      disabled={loading}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           ))}
