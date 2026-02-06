@@ -876,6 +876,21 @@ async def api_countries():
         app.logger.exception('Failed to get countries')
         return jsonify([])
 
+@app.route('/api/neighborhoods/<country_code>')
+async def api_neighborhoods_country(country_code):
+    """Get neighborhoods for all cities in a country from seed data"""
+    try:
+        # Load country seed file
+        data_path = Path(__file__).parent.parent / 'data' / f'{country_code.lower()}.json'
+        if data_path.exists():
+            with open(data_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return jsonify(data.get('cities', {}))
+        return jsonify({})
+    except Exception as e:
+        app.logger.exception('Failed to load neighborhoods for %s', country_code)
+        return jsonify({})
+
 @app.route('/api/locations/states')
 async def api_states():
     """Get list of states/provinces for a country using GeoNames API"""

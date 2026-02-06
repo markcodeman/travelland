@@ -1,0 +1,43 @@
+{
+  "country": "France",
+  "cities": {
+    "Paris": [
+      {"name": "Le Marais", "description": "Historic district with medieval streets, boutiques, and the Place des Vosges", "type": "historic"},
+      {"name": "Saint-Germain-des-Prés", "description": "Elegant neighborhood known for cafés, galleries, and literary history", "type": "culture"},
+      {"name": "Montmartre", "description": "Artistic hillside district with Sacré-Cœur and sweeping city views", "type": "arts"},
+      {"name": "Latin Quarter", "description": "Student area around the Sorbonne with historic bookshops and cafés", "type": "historic"},
+      {"name": "Champs-Élysées", "description": "Famous avenue from Place de la Concorde to Arc de Triomphe", "type": "shopping"},
+      {"name": "Belleville", "description": "Diverse, multicultural neighborhood with street art and hip bars", "type": "trendy"},
+      {"name": "Oberkampf", "description": "Trendy area known for nightlife, bars, and indie shops", "type": "nightlife"},
+      {"name": "Canal Saint-Martin", "description": "Picturesque canal area with cafés, boutiques, and picnic spots", "type": "waterfront"},
+      {"name": "Palais-Royal", "description": "Elegant historic quarter near the Louvre with arcades and gardens", "type": "historic"}
+    ],
+    "Marseille": [
+      {"name": "Le Panier", "description": "Old town's historic fishing village with colorful buildings", "type": "historic"},
+      {"name": "Vieux-Port", "description": "Picturesque harbor with fish restaurants and boat tours", "type": "waterfront"},
+      {"name": "Corniche", "description": "Coastal road with stunning Mediterranean views and beaches", "type": "coastal"},
+      {"name": "Prado", "description": "Beach area with wide sandy shores and palm-lined promenades", "type": "beach"},
+      {"name": "Noailles", "description": "Bustling market district with North African influences", "type": "market"},
+      {"name": "Endoume", "description": "Charming fishermen's quarter near the old port", "type": "historic"}
+    ],
+    "Lyon": [
+      {"name": "Vieux Lyon", "description": "Renaissance old town with traboules and silk workshops", "type": "historic"},
+      {"name": "Fourvière", "description": "Hilltop area with the basilica and Roman amphitheater", "type": "historic"},
+      {"name": "Presqu'île", "description": "Peninsula between two rivers with nightlife and shopping", "type": "central"},
+      {"name": " Croix-Rousse", "description": "Former silk-weavers' district with artistic heritage", "type": "arts"},
+      {"name": "Guillotière", "description": "Multicultural area with diverse food and street art", "type": "cultural"}
+    ],
+    "Nice": [
+      {"name": "Vieux Nice", "description": "Colorful old town with Italian influences and flower market", "type": "historic"},
+      {"name": "Promenade des Anglais", "description": "Famous seaside walkway with beaches and Art Deco hotels", "type": "coastal"},
+      {"name": "Cimiez", "description": "Upscale residential area with Roman ruins and museums", "type": "historic"},
+      {"name": "Port", "description": "Lively harbor area with yachts, restaurants, and nightlife", "type": "waterfront"}
+    ],
+    "Bordeaux": [
+      {"name": "Vieux Bordeaux", "description": "Historic district with 18th-century architecture and wine bars", "type": "historic"},
+      {"name": "Chartrons", "description": "Trendy neighborhood with wine merchant houses and antiques", "type": "trendy"},
+      {"name": "Saint-Pierre", "description": "Central area with elegant squares and designer boutiques", "type": "central"},
+      {"name": "Bassins à Flot", "description": "Redeveloped port area with contemporary architecture", "type": "modern"}
+    ]
+  }
+}
