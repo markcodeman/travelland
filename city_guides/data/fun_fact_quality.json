@@ -6872,18 +6872,21 @@
     "last_attempt": 1770263798.4509223
   },
   "granada": {
-    "attempts": 1,
+    "attempts": 2,
     "facts": [
-      "Granada is the capital city of the province of Granada, in the autonomous community of Andalusia, Spain."
+      "Granada is the capital city of the province of Granada, in the autonomous community of Andalusia, Spain.",
+      "Granada was conquered in 1492 by the Catholic Monarchs and progressively transformed into a Christian city over the course of the 16th century."
     ],
     "sources": [
+      "dynamic",
       "dynamic"
     ],
     "quality_scores": [
-      0.3
+      0.3,
+      0.7
     ],
-    "avg_quality": 0.3,
-    "last_attempt": 1770260288.4688108
+    "avg_quality": 0.5,
+    "last_attempt": 1770395501.1869287
   },
   "rio de janeiro": {
     "attempts": 2,
@@ -7505,14 +7508,18 @@
     "last_attempt": 1770322791.1656868
   },
   "barcelona": {
-    "attempts": 4,
+    "attempts": 6,
     "facts": [
       "Barcelona's Park G\u00fcell was originally a failed housing development project that Gaud\u00ed turned into a public park.",
       "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!",
       "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!",
-      "Barcelona has 9 UNESCO World Heritage Sites, the most of any city in Spain."
+      "Barcelona has 9 UNESCO World Heritage Sites, the most of any city in Spain.",
+      "Barcelona's Park G\u00fcell was originally a failed housing development project that Gaud\u00ed turned into a public park.",
+      "Barcelona's Park G\u00fcell was originally a failed housing development project that Gaud\u00ed turned into a public park."
     ],
     "sources": [
+      "seeded",
+      "seeded",
       "seeded",
       "seeded",
       "seeded",
@@ -7522,10 +7529,12 @@
       0.5,
       0.7,
       0.7,
-      1.0
+      1.0,
+      0.5,
+      0.5
     ],
-    "avg_quality": 0.725,
-    "last_attempt": 1770391011.2761822
+    "avg_quality": 0.65,
+    "last_attempt": 1770396144.9954593
   },
   "tai po": {
     "attempts": 1,

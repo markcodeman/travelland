@@ -11,6 +11,8 @@ import os
 import time
 from pathlib import Path
 from typing import Dict, Optional
+import re
+import asyncio
 from urllib.parse import urlparse
 
 # Import SynthesisEnhancer lazily to break circular dependency
@@ -1150,6 +1152,16 @@ def fetch_safety_section(city: str) -> list[str]:
     # Last resort: synthesise safety tips via semantic module
     try:
         import asyncio
+        # Import semantic module lazily to avoid heavy imports at module import time
+        try:
+            import city_guides.src.semantic as semantic
+        except Exception:
+            try:
+                import semantic
+            except Exception:
+                semantic = None
+        if semantic is None:
+            return []
         q = f"Provide 5 concise crime and safety tips for travelers in {city}. Include common scams, areas to avoid, and nighttime safety."
         loop = asyncio.get_event_loop()
         if loop.is_running():

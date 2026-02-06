@@ -1,7 +1,7 @@
 from quart import request, jsonify
 from .enrichment import get_neighborhood_enrichment
 from .validation import validate_neighborhood
-from .geo_enrichment import enrich_neighborhood
+from .geo_enrichment import enrich_neighborhood, build_enriched_quick_guide
 from .simple_categories import get_dynamic_categories, get_generic_categories
 from .persistence import (
     _compute_open_now,
