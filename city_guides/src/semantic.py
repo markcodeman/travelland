@@ -15,7 +15,6 @@ from pathlib import Path
 _env_paths = [
     Path(__file__).parent / ".env",
     Path(__file__).parent.parent / ".env",
-    Path("/home/markm/TravelLand/.env"),
 ]
 for _env_file in _env_paths:
     if _env_file.exists():

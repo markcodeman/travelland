@@ -94,8 +94,14 @@ from city_guides.src.marco_response_enhancer import should_call_groq, analyze_us
 from city_guides.src.neighborhood_disambiguator import NeighborhoodDisambiguator
 from city_guides.src.data.seeded_facts import get_city_fun_facts
 
+# Use relative paths for deployment portability
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+STATIC_FOLDER = PROJECT_ROOT / "city_guides" / "static"
+TEMPLATE_FOLDER = PROJECT_ROOT / "city_guides" / "templates"
+
 # Create Quart app instance at the very top so it is always defined before any route decorators
-app = Quart(__name__, static_folder="/home/markm/TravelLand/city_guides/static", static_url_path='', template_folder="/home/markm/TravelLand/city_guides/templates")
+app = Quart(__name__, static_folder=str(STATIC_FOLDER), static_url_path='', template_folder=str(TEMPLATE_FOLDER))
 
 # Configure CORS
 cors(app, allow_origin=["http://localhost:5174", "https://travelland-w0ny.onrender.com"], allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
@@ -3202,7 +3208,7 @@ register_category_routes(app)
 
 if __name__ == "__main__":
     # Load environment variables from .env file manually
-    env_file = Path("/home/markm/TravelLand/.env")
+    env_file = PROJECT_ROOT / ".env"
     print(f"[DEBUG] Loading .env from {env_file}")
     if env_file.exists():
         with open(env_file) as f:

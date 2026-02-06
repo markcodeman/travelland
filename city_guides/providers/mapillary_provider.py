@@ -8,8 +8,7 @@ from pathlib import Path
 # Load environment variables from .env file (same as app.py)
 _env_paths = [
     Path(__file__).parent.parent / ".env",
-    Path(__file__).parent.parent.parent / ".env", 
-    Path("/home/markm/TravelLand/.env"),
+    Path(__file__).parent.parent.parent / ".env",
 ]
 for _env_file in _env_paths:
     if _env_file.exists():

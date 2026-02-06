@@ -12,6 +12,11 @@ import sys
 import subprocess
 from datetime import datetime
 import urllib.request
+from pathlib import Path
+
+# Get project root relative to this script
+SCRIPT_DIR = Path(__file__).parent.resolve()
+PROJECT_ROOT = SCRIPT_DIR.parent.parent
 
 
 def is_port_open(host: str, port: int, timeout=1.0) -> bool:
@@ -172,7 +177,8 @@ def restart_frontend(logfile_handle=None):
 
     # Start fresh frontend process
     try:
-        cmd = "cd /home/markm/TravelLand/frontend && nohup npm run dev > /home/markm/TravelLand/frontend.log 2>&1 & echo $! > /home/markm/TravelLand/frontend.pid"
+        frontend_dir = PROJECT_ROOT / "frontend"
+        cmd = f"cd {frontend_dir} && nohup npm run dev > {PROJECT_ROOT}/frontend.log 2>&1 & echo $! > {PROJECT_ROOT}/frontend.pid"
         subprocess.Popen(cmd, shell=True)
         msg = f"{now} restart_frontend: started fresh frontend process"
         print(msg)
@@ -234,7 +240,8 @@ def restart_backend(logfile_handle=None):
 
     # start backend and write pid file
     try:
-        cmd = "nohup /home/markm/TravelLand/city_guides/.venv/bin/python -m city_guides.app > /home/markm/TravelLand/app.log 2>&1 & echo $! > /home/markm/TravelLand/city_guides_backend.pid"
+        venv_python = PROJECT_ROOT / "city_guides" / ".venv" / "bin" / "python"
+        cmd = f"nohup {venv_python} -m city_guides.app > {PROJECT_ROOT}/app.log 2>&1 & echo $! > {PROJECT_ROOT}/city_guides_backend.pid"
         subprocess.Popen(cmd, shell=True)
         msg = f"{now} restart_backend: started backend with cmd"
         print(msg)
@@ -290,7 +297,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--ports', nargs='+', type=int, default=[5174], help='Ports to check')
     parser.add_argument('--interval', type=int, default=5, help='Polling interval seconds')
-    parser.add_argument('--log', type=str, default='/home/markm/TravelLand/port_monitor.log', help='Log file path')
+    parser.add_argument('--log', type=str, default=str(PROJECT_ROOT / 'port_monitor.log'), help='Log file path')
     parser.add_argument('--restart-cmd', type=str, default=None, help='Shell command to run when a port is down. Use {port} as placeholder')
     parser.add_argument('--use-builtins', action='store_true', help='Use built-in restart handlers for known services (frontend/backend)')
     parser.add_argument('--notify-methods', type=str, default=None, help='Comma-separated notification methods: log,desktop,webhook')
