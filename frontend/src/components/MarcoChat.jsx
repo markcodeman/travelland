@@ -44,8 +44,8 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       "🎨 Looking up art and cultural spots in {city} — stand by..."
     ],
     landmarks: [
-      "🗺️ I can list iconic landmarks and viewpoints in {city} — fetching...",
-      "📸 Finding the best photo-worthy landmarks in {city} — one moment..."
+      "🏛️ I can find iconic landmarks and architecture in {city} — fetching...",
+      "📸 Finding the best sights and monuments in {city} — one moment..."
     ],
     shopping: [
       "🛍️ Searching for shopping districts and unique stores in {city}...",
@@ -54,6 +54,14 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     nightlife: [
       "🌙 Searching for bars and nightlife spots in {city} — fetching live results...",
       "🌙 Looking up late-night options and cocktail bars in {city} — one moment..."
+    ],
+    parks: [
+      "🌳 Finding beautiful parks and gardens in {city}...",
+      "🌿 Looking up outdoor spaces and nature spots in {city} — stand by..."
+    ],
+    hotels: [
+      "🏨 Searching for accommodations in {city}...",
+      "🏨 Finding great places to stay in {city} — one moment..."
     ]
   };
 
@@ -67,6 +75,9 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     if (lower.includes('coffee') || lower.includes('cafe')) return `Finding the best cafés in ${city}...`;
     if (lower.includes('restaurant') || lower.includes('food')) return `Searching for top dining spots in ${city}...`;
     if (lower.includes('museum') || lower.includes('art')) return `Looking up cultural highlights in ${city}...`;
+    if (lower.includes('architecture') || lower.includes('design') || lower.includes('landmark')) return `Finding iconic architecture and design in ${city}...`;
+    if (lower.includes('park') || lower.includes('garden')) return `Searching for parks and outdoor spaces in ${city}...`;
+    if (lower.includes('hotel') || lower.includes('stay')) return `Finding accommodations in ${city}...`;
     return thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
   };
 
@@ -94,8 +105,8 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       if (text.includes('restaurant') || text.includes('food')) {
         return ['🍽️ Local specialties', '💰 Budget options', '🌱 Vegetarian', ...baseSuggestions];
       }
-      if (text.includes('museum') || text.includes('sight')) {
-        return ['🏛️ Must-see museums', '🎨 Hidden galleries', '🎭 Art walks', ...baseSuggestions];
+      if (text.includes('museum') || text.includes('art') || text.includes('gallery') || text.includes('architecture') || text.includes('design')) {
+        return ['🏛️ Must-see museums', '🎨 Architecture tours', '🎭 Art walks', ...baseSuggestions];
       }
     }
     
@@ -118,23 +129,27 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     
     // Detect a category match and prefer fetching real venues instead of immediately showing a canned reply
     let matchedCategory = null;
-    if (lowerText.includes('cafe') || lowerText.includes('coffee')) {
+    if (lowerText.includes('cafe') || lowerText.includes('coffee') || lowerText.includes('espresso')) {
       matchedCategory = 'cafes';
-    } else if (lowerText.includes('restaurant') || lowerText.includes('food') || lowerText.includes('dining')) {
+    } else if (lowerText.includes('restaurant') || lowerText.includes('food') || lowerText.includes('dining') || lowerText.includes('eat')) {
       matchedCategory = 'restaurants';
-    } else if (lowerText.includes('museum') || lowerText.includes('art') || lowerText.includes('gallery')) {
+    } else if (lowerText.includes('museum') || lowerText.includes('art') || lowerText.includes('gallery') || lowerText.includes('exhibition')) {
       matchedCategory = 'museums';
-    } else if (lowerText.includes('landmark') || lowerText.includes('eiffel') || lowerText.includes('monument')) {
+    } else if (lowerText.includes('landmark') || lowerText.includes('monument') || lowerText.includes('architecture') || lowerText.includes('design') || lowerText.includes('building') || lowerText.includes('sightseeing')) {
       matchedCategory = 'landmarks';
-    } else if (lowerText.includes('shop') || lowerText.includes('store') || lowerText.includes('boutique')) {
+    } else if (lowerText.includes('shop') || lowerText.includes('store') || lowerText.includes('boutique') || lowerText.includes('market') || lowerText.includes('shopping')) {
       matchedCategory = 'shopping';
-    } else if (lowerText.includes('nightlife') || lowerText.includes('bar') || lowerText.includes('club')) {
+    } else if (lowerText.includes('nightlife') || lowerText.includes('bar') || lowerText.includes('club') || lowerText.includes('pub') || lowerText.includes('drink')) {
       matchedCategory = 'nightlife';
+    } else if (lowerText.includes('park') || lowerText.includes('garden') || lowerText.includes('nature') || lowerText.includes('outdoor')) {
+      matchedCategory = 'parks';
+    } else if (lowerText.includes('hotel') || lowerText.includes('stay') || lowerText.includes('accommodation') || lowerText.includes('sleep')) {
+      matchedCategory = 'hotels';
     }
 
     if (matchedCategory) {
       // Use a neutral, city-aware quick message while we fetch venues
-      const templates = quickResponses[matchedCategory] || [];
+      const templates = quickResponses[matchedCategory] || [`Searching for ${matchedCategory} in ${city}...`];
       const tmpl = templates.length ? templates[Math.floor(Math.random() * templates.length)] : `Searching for ${matchedCategory} in ${city}...`;
       const quickMsg = tmpl.replace('{city}', city || 'this city');
       setMessages(m => [...m, { role: 'assistant', text: quickMsg, isQuick: true }]);
@@ -626,10 +641,10 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                                 tags = 'shop=retail';
                                 category = 'shop';
                               }
-                              else if (/(beach|platja)/i.test(lower)) {
-                                emoji = '🏖️';
-                                tags = 'natural=beach';
-                                category = 'beach';
+                              else if (/(architecture|design|building|modernisme|gaudi|sagrada)/i.test(lower)) {
+                                emoji = '�️';
+                                tags = 'tourism=attraction,architectural';
+                                category = 'architecture';
                               }
                               
                               // Generate a Google Maps search URL using name and city
