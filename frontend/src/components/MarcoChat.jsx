@@ -244,6 +244,15 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
 
   const fetchVenuesForCategory = async (overrideCategory = null) => {
     const useCategory = overrideCategory || category;
+    // Only fetch venues for actual venue-seeking categories
+    const venueCategories = ['cafes', 'restaurants', 'museums', 'nightlife', 'parks', 'hotels', 'shopping', 'landmarks'];
+    if (!venueCategories.includes(useCategory?.toLowerCase())) {
+      console.debug('Not a venue category, skipping venue fetch:', useCategory);
+      // Fall through to RAG mode instead
+      const query = `Tell me about ${useCategory} in ${neighborhood ? neighborhood + ', ' : ''}${city}`;
+      sendMessage(query);
+      return;
+    }
     console.debug('fetchVenuesForCategory', { city, neighborhood, category: useCategory });
     try {
       const payload = {
@@ -301,8 +310,11 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
   const handleSubmit = () => {
     console.debug('handleSubmit', { category, input, loading });
     if (!input.trim() || loading) return;
-    // If there's a category and input matches the category, fetch venues instead of AI chat
-    if (category && input.trim().toLowerCase().includes(category.toLowerCase())) {
+    // Only fetch venues for actual venue-seeking categories
+    const venueCategories = ['cafes', 'restaurants', 'museums', 'nightlife', 'parks', 'hotels', 'shopping', 'landmarks'];
+    const isVenueCategory = category && venueCategories.includes(category.toLowerCase());
+    // If there's a venue category and input matches the category, fetch venues instead of AI chat
+    if (isVenueCategory && input.trim().toLowerCase().includes(category.toLowerCase())) {
       console.debug('handleSubmit -> fetching venues for category', category);
       fetchVenuesForCategory();
       return;
