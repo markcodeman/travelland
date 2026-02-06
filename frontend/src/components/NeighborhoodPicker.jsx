@@ -50,7 +50,7 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
       const englishMatch = name.match(/\(([^)]+)\)/);
       if (englishMatch) {
         // Format: Korean (English)
-        const koreanPart = name.replace(/\s*\([^)]+\)/, '').trim();
+        const koreanPart = name.replace(/\s*\([^)]*\)/, '').trim();
         return `${koreanPart} (${englishMatch[1]})`;
       }
       // Just Korean, no English part available
@@ -60,6 +60,63 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
       // For now, just return as-is
       return name;
     }
+  };
+
+  const getCategoryEmoji = (type, name) => {
+    const emojiMap = {
+      'historic': '🏛️',
+      'culture': '🎨',
+      'nightlife': '🌙',
+      'shopping': '🛍️',
+      'food': '🍽️',
+      'bar': '🍸',
+      'pub': '🍺',
+      'residential': '🏘️',
+      'nature': '🌳',
+      'beach': '🏖️',
+      'waterfront': '🌊',
+      'market': '🛒',
+      'default': '📍'
+    };
+    
+    // Check for specific neighborhood names
+    const lowerName = (name || '').toLowerCase();
+    if (lowerName.includes('beach') || lowerName.includes('coastal') || lowerName.includes('waterfront')) {
+      return '🏖️';
+    }
+    if (lowerName.includes('park') || lowerName.includes('garden') || lowerName.includes('nature')) {
+      return '🌳';
+    }
+    if (lowerName.includes('historic') || lowerName.includes('old town')) {
+      return '🏛️';
+    }
+    if (lowerName.includes('market') || lowerName.includes('shopping')) {
+      return '🛍️';
+    }
+    if (lowerName.includes('wine') || lowerName.includes('vineyard')) {
+      return '🍷';
+    }
+    
+    return emojiMap[type] || emojiMap['default'];
+  };
+
+  const getCategoryColor = (type) => {
+    const colorMap = {
+      'historic': '#8B4513',
+      'culture': '#9C27B0',
+      'nightlife': '#FF6B6B',
+      'shopping': '#4CAF50',
+      'food': '#FF9800',
+      'bar': '#E91E63',
+      'pub': '#795548',
+      'residential': '#4CAF50',
+      'nature': '#2E7D32',
+      'beach': '#FF9800',
+      'waterfront': '#03A9F4',
+      'market': '#8BC34A',
+      'default': '#667eea'
+    };
+    return colorMap[type] || colorMap['default'];
   };
 
   if (loading) {
@@ -148,63 +205,6 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
       </div>
     );
   }
-
-  const getCategoryEmoji = (type, name) => {
-    const emojiMap = {
-      'historic': '🏛️',
-      'culture': '🎨',
-      'nightlife': '🌙',
-      'shopping': '🛍️',
-      'food': '🍽️',
-      'bar': '🍸',
-      'pub': '🍺',
-      'residential': '🏘️',
-      'nature': '🌳',
-      'beach': '🏖️',
-      'waterfront': '🌊',
-      'market': '🛒',
-      'default': '📍'
-    };
-    
-    // Check for specific neighborhood names
-    const lowerName = (name || '').toLowerCase();
-    if (lowerName.includes('beach') || lowerName.includes('coastal') || lowerName.includes('waterfront')) {
-      return '🏖️';
-    }
-    if (lowerName.includes('park') || lowerName.includes('garden') || lowerName.includes('nature')) {
-      return '🌳';
-    }
-    if (lowerName.includes('historic') || lowerName.includes('old town')) {
-      return '🏛️';
-    }
-    if (lowerName.includes('market') || lowerName.includes('shopping')) {
-      return '🛍️';
-    }
-    if (lowerName.includes('wine') || lowerName.includes('vineyard')) {
-      return '🍷';
-    }
-    
-    return emojiMap[type] || emojiMap['default'];
-  };
-
-  const getCategoryColor = (type) => {
-    const colorMap = {
-      'historic': '#8B4513',
-      'culture': '#9C27B0',
-      'nightlife': '#FF6B6B',
-      'shopping': '#4CAF50',
-      'food': '#FF9800',
-      'bar': '#E91E63',
-      'pub': '#795548',
-      'residential': '#4CAF50',
-      'nature': '#2E7D32',
-      'beach': '#FF9800',
-      'waterfront': '#03A9F4',
-      'market': '#8BC34A',
-      'default': '#667eea'
-    };
-    return colorMap[type] || colorMap['default'];
-  };
 
   return (
     <div className="neighborhood-picker-overlay">
