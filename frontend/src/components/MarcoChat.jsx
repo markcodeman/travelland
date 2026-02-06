@@ -57,7 +57,11 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     ],
     parks: [
       "🌳 Finding beautiful parks and gardens in {city}...",
-      "🌿 Looking up outdoor spaces and nature spots in {city} — stand by..."
+      "� Looking up green spaces and outdoor spots in {city} — stand by..."
+    ],
+    entertainment: [
+      "🎭 Searching for theaters and live performance venues in {city}...",
+      "🎭 Finding the best shows and entertainment spots in {city} — one moment..."
     ],
     hotels: [
       "🏨 Searching for accommodations in {city}...",
@@ -142,6 +146,8 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       matchedCategory = 'parks';
     } else if (lowerText.includes('hotel') || lowerText.includes('stay') || lowerText.includes('accommodation')) {
       matchedCategory = 'hotels';
+    } else if (lowerText.includes('theatre') || lowerText.includes('theater') || lowerText.includes('show') || lowerText.includes('performance') || lowerText.includes('play') || lowerText.includes('concert')) {
+      matchedCategory = 'entertainment';
     }
     // Note: heritage, maritime, history, architecture, etc. are NOT here - they go to RAG
 
@@ -245,7 +251,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
   const fetchVenuesForCategory = async (overrideCategory = null) => {
     const useCategory = overrideCategory || category;
     // Only fetch venues for actual venue-seeking categories
-    const venueCategories = ['cafes', 'restaurants', 'museums', 'nightlife', 'parks', 'hotels', 'shopping', 'landmarks'];
+    const venueCategories = ['cafes', 'restaurants', 'museums', 'nightlife', 'parks', 'hotels', 'shopping', 'landmarks', 'entertainment'];
     if (!venueCategories.includes(useCategory?.toLowerCase())) {
       console.debug('Not a venue category, skipping venue fetch:', useCategory);
       // Fall through to RAG mode instead
@@ -311,7 +317,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     console.debug('handleSubmit', { category, input, loading });
     if (!input.trim() || loading) return;
     // Only fetch venues for actual venue-seeking categories
-    const venueCategories = ['cafes', 'restaurants', 'museums', 'nightlife', 'parks', 'hotels', 'shopping', 'landmarks'];
+    const venueCategories = ['cafes', 'restaurants', 'museums', 'nightlife', 'parks', 'hotels', 'shopping', 'landmarks', 'entertainment'];
     const isVenueCategory = category && venueCategories.includes(category.toLowerCase());
     // If there's a venue category and input matches the category, fetch venues instead of AI chat
     if (isVenueCategory && input.trim().toLowerCase().includes(category.toLowerCase())) {
@@ -654,6 +660,11 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                                 emoji = '🏛️';
                                 tags = 'tourism=attraction,architectural';
                                 category = 'Architecture';
+                              }
+                              else if (/(theatre|theater|show|performance|play|concert|venue)/i.test(lower)) {
+                                emoji = '🎭';
+                                tags = 'amenity=theatre';
+                                category = 'Theater';
                               }
                               
                               // Generate a Google Maps search URL using name and city
