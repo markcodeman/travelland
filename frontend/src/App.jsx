@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import './styles/app.css';
-import AutocompleteInput from './components/AutocompleteInput';
 import WeatherDisplay from './components/WeatherDisplay';
 import Header from './components/Header';
 import MarcoChat from './components/MarcoChat';
