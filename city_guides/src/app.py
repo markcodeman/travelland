@@ -1291,27 +1291,23 @@ async def api_smart_neighborhoods():
                 app.logger.info(f"Cache hit for smart neighborhoods: {city}")
                 return jsonify(json.loads(cached_data))
 
-        # FIRST: Check all country seed files for known cities
+        # FIRST: Recursively scan all continent subdirectories for country seed files
         seed_neighborhoods = []
-        country_seed_files = ['france.json', 'spain.json', 'italy.json', 'uk.json', 'germany.json', 'usa.json',
-                                'portugal.json', 'netherlands.json', 'belgium.json', 'austria.json', 
-                                'switzerland.json', 'czech_republic.json', 'greece.json',
-                                'sweden.json', 'norway.json', 'denmark.json', 'finland.json']
+        data_path = Path(__file__).parent.parent / 'data'
         
-        for seed_file in country_seed_files:
+        # Find all JSON files in data/ and its subdirectories
+        for seed_file in data_path.rglob('*.json'):
             try:
-                seed_path = Path(__file__).parent.parent / 'data' / seed_file
-                if seed_path.exists():
-                    with open(seed_path, 'r', encoding='utf-8') as f:
-                        seed_data = json.load(f)
-                    cities = seed_data.get('cities', {})
-                    city_key = next((k for k in cities.keys() if k.lower() == city.lower()), None)
-                    if city_key:
-                        seed_neighborhoods = cities[city_key]  # Return full objects with name, description, type
-                        app.logger.info(f"Found {len(seed_neighborhoods)} neighborhoods in {seed_file} for {city}")
-                        break  # Found the city, stop searching
+                with open(seed_file, 'r', encoding='utf-8') as f:
+                    seed_data = json.load(f)
+                cities = seed_data.get('cities', {})
+                city_key = next((k for k in cities.keys() if k.lower() == city.lower()), None)
+                if city_key:
+                    seed_neighborhoods = cities[city_key]  # Return full objects with name, description, type
+                    app.logger.info(f"Found {len(seed_neighborhoods)} neighborhoods in {seed_file.name} for {city}")
+                    break  # Found the city, stop searching
             except Exception as e:
-                app.logger.debug(f"Could not load {seed_file} for {city}: {e}")
+                app.logger.debug(f"Could not load {seed_file.name} for {city}: {e}")
 
         # If we have seed data, use it
         if seed_neighborhoods:
