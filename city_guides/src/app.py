@@ -46,7 +46,6 @@ from city_guides.src.services.location import (
     levenshtein_distance
 )
 from city_guides.src.services.learning import (
-    _location_weights,
     get_location_weight,
     increment_location_weight,
     detect_hemisphere_from_searches
@@ -202,12 +201,14 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
 from typing import Callable, Awaitable, Any
 
 ddgs_search: Callable[..., Awaitable[list[dict[str, Any]]]]
+ddgs_import_err: str = "unknown error"
 try:
     from city_guides.providers.ddgs_provider import ddgs_search as _ddgs_provider_search
     # Use the provider's async function directly
     ddgs_search = _ddgs_provider_search  # type: ignore[assignment]
     app.logger.info('DDGS provider enabled for neighborhood search')
-except Exception as ddgs_import_err:
+except Exception as e:
+    ddgs_import_err = str(e)
     async def _ddgs_stub(*args: Any, **kwargs: Any) -> list[dict[str, Any]]:
         app.logger.warning('DDGS provider unavailable (%s); returning empty results', ddgs_import_err)
         return []
@@ -1302,7 +1303,7 @@ async def api_smart_neighborhoods():
                 cities = seed_data.get('cities', {})
                 city_key = next((k for k in cities.keys() if k.lower() == city.lower()), None)
                 if city_key:
-                    seed_neighborhoods = [n['name'] for n in cities[city_key]]
+                    seed_neighborhoods = cities[city_key]  # Return full objects with name, description, type
                     app.logger.info(f"Found {len(seed_neighborhoods)} neighborhoods in seed file for {city}")
         except Exception as e:
             app.logger.debug(f"Could not load seed file for {city}: {e}")
@@ -3331,24 +3332,12 @@ async def log_suggestion_success():
         app.logger.exception('Failed to log suggestion success')
         return jsonify({'error': 'logging_failed'}), 500
 
-# Simple in-memory learning storage (could be moved to database)
-_location_weights = {}
-
-def get_location_weight(location):
-    """Get learning weight for a location"""
-    return _location_weights.get(location.lower(), 1.0)
-
-def increment_location_weight(location):
-    """Increment weight for successful location"""
-    key = location.lower()
-    _location_weights[key] = _location_weights.get(key, 1.0) + 0.1
-
 # Import and register routes from routes module
-from city_guides.src.routes import register_routes
+from city_guides.src.routes import register_routes  # noqa: E402
 register_routes(app)
 
 # Register category routes for cache management
-from city_guides.src.simple_categories import register_category_routes
+from city_guides.src.simple_categories import register_category_routes  # noqa: E402
 register_category_routes(app)
 
 if __name__ == "__main__":
