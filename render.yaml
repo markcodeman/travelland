@@ -7,6 +7,7 @@ services:
     buildCommand: |
       pip install -r city_guides/requirements.txt && \
       mkdir -p city_guides/static && \
+      mkdir -p ../city_guides/static && \
       cd frontend && \
       npm ci && \
       npm run build && \
