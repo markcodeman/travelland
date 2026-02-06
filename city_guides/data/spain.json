@@ -1,0 +1,41 @@
+{
+  "country": "Spain",
+  "cities": {
+    "Barcelona": [
+      {"name": "Gothic Quarter (Barri Gòtic)", "description": "Medieval heart with Roman walls, Barcelona Cathedral, and Picasso's old haunts", "type": "historic"},
+      {"name": "El Born", "description": "Trendy medieval district with tapas bars, Santa Maria del Mar basilica, and designer boutiques", "type": "culture"},
+      {"name": "Eixample", "description": "Modernist grid with Gaudí's Sagrada Família, Casa Batlló, and Passeig de Gràcia shopping", "type": "culture"},
+      {"name": "Gràcia", "description": "Former village with bohemian vibe, Plaça del Sol nightlife, and Park Güell views", "type": "nightlife"},
+      {"name": "Barceloneta", "description": "Historic fisherman's quarter with beaches, seafood restaurants, and Mediterranean boardwalk", "type": "beach"},
+      {"name": "El Raval", "description": "Multicultural district with MACBA contemporary art, La Boqueria market, and street life", "type": "culture"},
+      {"name": "Poble Sec", "description": "Authentic neighborhood with tapas on Carrer de Blai and Montjuïc mountain access", "type": "food"},
+      {"name": "Sarrià-Sant Gervasi", "description": "Upscale residential area with Modernista mansions, gardens, and Tibidabo views", "type": "residential"},
+      {"name": "Poblenou", "description": "Former industrial area transformed into tech hub with beachfront and creative spaces", "type": "trendy"},
+      {"name": "Les Corts", "description": "Business district with Camp Nou stadium, upscale dining, and Diagonal shopping", "type": "shopping"}
+    ],
+    "Madrid": [
+      {"name": "Malasaña", "description": "Hipster central with vintage shops, street art, and the Movida Madrileña legacy", "type": "nightlife"},
+      {"name": "La Latina", "description": "Medieval quarter famous for Sunday tapas, El Rastro flea market, and lively bars", "type": "food"},
+      {"name": "Chueca", "description": "LGBTQ+ friendly district with trendy cafes, Plaza de Chueca, and vibrant nightlife", "type": "nightlife"},
+      {"name": "Salamanca", "description": "Luxury shopping on Calle Serrano, elegant 19th-century architecture, and fine dining", "type": "shopping"},
+      {"name": "Retiro", "description": "Elegant area surrounding Retiro Park with the Crystal Palace and boating lake", "type": "nature"},
+      {"name": "Barrio de Las Letras", "description": "Literary quarter where Cervantes lived, with sidewalk cafes and antique bookshops", "type": "culture"},
+      {"name": "Chamberí", "description": "Authentic Madrileño neighborhood with traditional taverns and the Sorolla Museum", "type": "residential"},
+      {"name": "Lavapiés", "description": "Multicultural melting pot with Indian restaurants, street art, and alternative culture", "type": "culture"}
+    ],
+    "Seville": [
+      {"name": "Santa Cruz", "description": "Former Jewish quarter with winding alleys, orange blossom scents, and the Alcázar", "type": "historic"},
+      {"name": "Triana", "description": "Flamenco heart across the river with ceramic workshops and traditional tapas bars", "type": "culture"},
+      {"name": "Alameda", "description": "Trendy nightlife district with the Alameda de Hércules plaza and alternative bars", "type": "nightlife"},
+      {"name": "Macarena", "description": "Traditional neighborhood with the Basilica of La Macarena and local food markets", "type": "historic"},
+      {"name": "El Arenal", "description": "Bullfighting district near Maestranza arena with historic churches and riverfront", "type": "historic"}
+    ],
+    "Valencia": [
+      {"name": "El Carmen", "description": "Medieval old town with street art, Central Market, and the Silk Exchange (Lonja)", "type": "historic"},
+      {"name": "Ruzafa", "description": "Trendy neighborhood with art galleries, craft coffee, and vibrant nightlife", "type": "trendy"},
+      {"name": "Cabanyal", "description": "Historic fisherman's quarter with colorful tiled facades and beach access", "type": "beach"},
+      {"name": "City of Arts and Sciences", "description": "Futuristic architectural complex with oceanarium, planetarium, and opera house", "type": "culture"},
+      {"name": "El Cabanyal-Cañamelar", "description": "Beachfront neighborhood with traditional Valencian architecture and paella restaurants", "type": "food"}
+    ]
+  }
+}

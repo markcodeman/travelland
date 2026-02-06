@@ -1291,22 +1291,24 @@ async def api_smart_neighborhoods():
                 app.logger.info(f"Cache hit for smart neighborhoods: {city}")
                 return jsonify(json.loads(cached_data))
 
-        # FIRST: Check seed files for known cities (e.g., france.json)
+        # FIRST: Check all country seed files for known cities
         seed_neighborhoods = []
-        try:
-            # Try to load from country seed files
-            seed_path = Path(__file__).parent.parent / 'data' / 'france.json'
-            if seed_path.exists():
-                with open(seed_path, 'r', encoding='utf-8') as f:
-                    seed_data = json.load(f)
-                # Check if city exists in seed file (case-insensitive)
-                cities = seed_data.get('cities', {})
-                city_key = next((k for k in cities.keys() if k.lower() == city.lower()), None)
-                if city_key:
-                    seed_neighborhoods = cities[city_key]  # Return full objects with name, description, type
-                    app.logger.info(f"Found {len(seed_neighborhoods)} neighborhoods in seed file for {city}")
-        except Exception as e:
-            app.logger.debug(f"Could not load seed file for {city}: {e}")
+        country_seed_files = ['france.json', 'spain.json', 'italy.json', 'uk.json', 'germany.json', 'usa.json']
+        
+        for seed_file in country_seed_files:
+            try:
+                seed_path = Path(__file__).parent.parent / 'data' / seed_file
+                if seed_path.exists():
+                    with open(seed_path, 'r', encoding='utf-8') as f:
+                        seed_data = json.load(f)
+                    cities = seed_data.get('cities', {})
+                    city_key = next((k for k in cities.keys() if k.lower() == city.lower()), None)
+                    if city_key:
+                        seed_neighborhoods = cities[city_key]  # Return full objects with name, description, type
+                        app.logger.info(f"Found {len(seed_neighborhoods)} neighborhoods in {seed_file} for {city}")
+                        break  # Found the city, stop searching
+            except Exception as e:
+                app.logger.debug(f"Could not load {seed_file} for {city}: {e}")
 
         # If we have seed data, use it
         if seed_neighborhoods:

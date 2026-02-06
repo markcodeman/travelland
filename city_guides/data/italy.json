@@ -1,0 +1,43 @@
+{
+  "country": "Italy",
+  "cities": {
+    "Rome": [
+      {"name": "Trastevere", "description": "Bohemian neighborhood across the Tiber with cobblestone streets, trattorias, and vibrant nightlife", "type": "nightlife"},
+      {"name": "Centro Storico", "description": "Historic center with Pantheon, Trevi Fountain, Piazza Navona, and Baroque masterpieces", "type": "historic"},
+      {"name": "Monti", "description": "Trendy ancient quarter near the Colosseum with vintage boutiques and hipster cafes", "type": "trendy"},
+      {"name": "Testaccio", "description": "Working-class food hub with traditional trattorias, MACRO museum, and authentic Roman soul", "type": "food"},
+      {"name": "Prati", "description": "Elegant area near Vatican City with upscale shopping and 19th-century architecture", "type": "shopping"},
+      {"name": "Campo de' Fiori", "description": "Historic market square with daily produce market, cafes, and evening aperitivo culture", "type": "market"},
+      {"name": "Aventino", "description": "Quiet residential hill with orange gardens, keyhole view of St. Peter's, and ancient churches", "type": "residential"},
+      {"name": "San Lorenzo", "description": "Student district with street art, affordable eateries, and vintage shops near La Sapienza", "type": "culture"}
+    ],
+    "Milan": [
+      {"name": "Brera", "description": "Artistic district with Pinacoteca gallery, cobblestone streets, and upscale trattorias", "type": "culture"},
+      {"name": "Navigli", "description": "Canal district with aperitivo bars, vintage shops, and lively evening promenades", "type": "nightlife"},
+      {"name": "Porta Nuova", "description": "Modern business district with Bosco Verticale towers, skyscrapers, and luxury shopping", "type": "modern"},
+      {"name": "Quadrilatero della Moda", "description": "Fashion district with Via Montenapoleone, designer flagship stores, and luxury boutiques", "type": "shopping"},
+      {"name": "Isola", "description": "Trendy former industrial area with street art, craft breweries, and creative restaurants", "type": "trendy"},
+      {"name": "Porta Venezia", "description": "Diverse neighborhood with Liberty-style villas, ethnic restaurants, and the Indro Montanelli gardens", "type": "culture"}
+    ],
+    "Florence": [
+      {"name": "Historic Centre", "description": "Renaissance heart with Duomo, Uffizi Gallery, Ponte Vecchio, and Michelangelo's David", "type": "historic"},
+      {"name": "Oltrarno", "description": "Artisan quarter across the Arno with botteghe workshops, Palazzo Pitti, and local character", "type": "culture"},
+      {"name": "Santa Croce", "description": "Neighborhood around the basilica with leather markets, students, and traditional restaurants", "type": "historic"},
+      {"name": "San Lorenzo", "description": "Market district with the famous Mercato Centrale and Medici Chapels", "type": "market"},
+      {"name": "Santo Spirito", "description": "Bohemian square with evening aperitivo, artisan workshops, and local vibe", "type": "nightlife"}
+    ],
+    "Venice": [
+      {"name": "San Marco", "description": "Iconic district with St. Mark's Square, Doge's Palace, and the Grand Canal", "type": "historic"},
+      {"name": "Cannaregio", "description": "Authentic residential area with Jewish Ghetto, historic synagogues, and local bacari", "type": "historic"},
+      {"name": "Dorsoduro", "description": "Artistic neighborhood with Peggy Guggenheim Collection, Accademia, and Squero di San Trovaso", "type": "culture"},
+      {"name": "Castello", "description": "Largest sestiere with Arsenale, Biennale gardens, and residential canals", "type": "residential"},
+      {"name": "San Polo", "description": "Smallest district with Rialto Market, historic bridges, and intimate squares", "type": "market"}
+    ],
+    "Naples": [
+      {"name": "Spaccanapoli", "description": "Ancient Roman street cutting through the historic center with churches and street life", "type": "historic"},
+      {"name": "Chiaia", "description": "Upscale waterfront district with designer shops, Lungomare promenade, and elegant cafes", "type": "shopping"},
+      {"name": "Vomero", "description": "Hilltop residential area with Castel Sant'Elmo, panoramic views, and art nouveau architecture", "type": "residential"},
+      {"name": "Posillipo", "description": "Prestigious coastal area with Roman ruins, sea views, and exclusive villas", "type": "residential"}
+    ]
+  }
+}

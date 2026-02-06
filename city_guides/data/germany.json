@@ -1,0 +1,38 @@
+{
+  "country": "Germany",
+  "cities": {
+    "Berlin": [
+      {"name": "Mitte", "description": "Historic center with Brandenburg Gate, Museum Island, and the Berlin Wall Memorial", "type": "historic"},
+      {"name": "Kreuzberg", "description": "Alternative district with street art, Turkish markets, techno clubs, and canal-side cafes", "type": "nightlife"},
+      {"name": "Prenzlauer Berg", "description": "Trendy former East Berlin area with boutiques, cafes, Mauerpark flea market, and family vibe", "type": "trendy"},
+      {"name": "Neukölln", "description": "Hip neighborhood with Weserstraße bars, Tempelhofer Feld park, and multicultural food scene", "type": "trendy"},
+      {"name": "Charlottenburg", "description": "Elegant West Berlin with palace, Ku'damm shopping, and upscale dining", "type": "shopping"},
+      {"name": "Friedrichshain", "description": "Student district with RAW-Gelände clubs, East Side Gallery, and Simon-Dach-Straße bars", "type": "nightlife"},
+      {"name": "Schöneberg", "description": "Traditional area with Nollendorfplatz, Winterfeldtplatz market, and LGBTQ+ history", "type": "culture"},
+      {"name": "Tiergarten", "description": "Green lung with park, zoo, Victory Column, and government district", "type": "nature"}
+    ],
+    "Munich": [
+      {"name": "Altstadt-Lehel", "description": "Historic core with Marienplatz, Viktualienmarkt, Residenz palace, and Hofbräuhaus", "type": "historic"},
+      {"name": "Schwabing", "description": "Bohemian district with Leopoldstraße, Englischer Garten, and art galleries", "type": "culture"},
+      {"name": "Maxvorstadt", "description": "University quarter with Kunstareal museums, student cafes, and Ludwig-Maximilians-Universität", "type": "culture"},
+      {"name": "Glockenbachviertel", "description": "Trendy area with independent shops, Gärtnerplatztheater, and vibrant nightlife", "type": "trendy"},
+      {"name": "Haidhausen", "description": "French quarter with Preysingstraße cafes, European architecture, and local atmosphere", "type": "residential"},
+      {"name": "Sendling", "description": "Traditional working-class area with Westpark, local beer gardens, and multicultural food", "type": "food"},
+      {"name": "Nymphenburg", "description": "Upscale residential area with baroque palace gardens and botanical garden", "type": "residential"}
+    ],
+    "Hamburg": [
+      {"name": "Sternschanze", "description": "Alternative district with Rote Flora, street art, cafes, and left-wing culture", "type": "culture"},
+      {"name": "St. Pauli", "description": "Famous red-light district with Reeperbahn, Beatles history, and harbor atmosphere", "type": "nightlife"},
+      {"name": "HafenCity", "description": "Modern harbor district with Elbphilharmonie, contemporary architecture, and maritime museum", "type": "modern"},
+      {"name": "Blankenese", "description": "Affluent hillside suburb with Elbe views, captains' houses, and stairs district", "type": "residential"},
+      {"name": "Eppendorf", "description": "Upscale neighborhood with Isemarkt, tree-lined streets, and Hamburg's old money", "type": "shopping"},
+      {"name": "Altona", "description": "Diverse district with Fish Market, Elbe beach, Ottensen cafes, and harbor views", "type": "waterfront"}
+    ],
+    "Cologne": [
+      {"name": "Altstadt", "description": "Old town with Cologne Cathedral, historic breweries, and Rhine promenade", "type": "historic"},
+      {"name": "Belgian Quarter", "description": "Trendy area with designer boutiques, art galleries, and Belgium-themed street names", "type": "trendy"},
+      {"name": "Ehrenfeld", "description": "Creative district with street art, live music venues, and multicultural eateries", "type": "culture"},
+      {"name": "Nippes", "description": "Up-and-coming neighborhood with cafes, parks, and authentic local atmosphere", "type": "residential"}
+    ]
+  }
+}

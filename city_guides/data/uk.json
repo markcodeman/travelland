@@ -1,0 +1,40 @@
+{
+  "country": "United Kingdom",
+  "cities": {
+    "London": [
+      {"name": "Soho", "description": "Entertainment district with theaters, jazz clubs, Chinatown, and vibrant LGBTQ+ scene", "type": "nightlife"},
+      {"name": "Shoreditch", "description": "Trendy East End area with street art, tech startups, vintage markets, and rooftop bars", "type": "trendy"},
+      {"name": "Covent Garden", "description": "Historic market area with street performers, opera house, and Piazza shopping arcade", "type": "culture"},
+      {"name": "Camden", "description": "Alternative neighborhood with famous market, music venues, and punk heritage", "type": "market"},
+      {"name": "Notting Hill", "description": "Colorful Victorian townhouses, Portobello Road Market, and the annual carnival", "type": "trendy"},
+      {"name": "South Bank", "description": "Riverside cultural hub with Tate Modern, National Theatre, and street food markets", "type": "culture"},
+      {"name": "Westminster", "description": "Political heart with Big Ben, Houses of Parliament, Westminster Abbey, and Buckingham Palace", "type": "historic"},
+      {"name": "Kensington", "description": "Museum district with V&A, Natural History Museum, and upscale shopping", "type": "culture"},
+      {"name": "Greenwich", "description": "Maritime heritage area with Royal Observatory, Cutty Sark, and Meridian Line", "type": "historic"},
+      {"name": "Brixton", "description": "Multicultural neighborhood with Electric Avenue market, Caribbean food, and live music venues", "type": "culture"},
+      {"name": "Chelsea", "description": "Affluent area with King's Road boutiques, Saatchi Gallery, and riverside walks", "type": "shopping"},
+      {"name": "Hampstead", "description": "Village atmosphere with Heath parkland, Fenton House, and literary history", "type": "nature"}
+    ],
+    "Edinburgh": [
+      {"name": "Old Town", "description": "Medieval core with Royal Mile, Edinburgh Castle, and underground vaults", "type": "historic"},
+      {"name": "New Town", "description": "Georgian elegance with neoclassical architecture, Princes Street shops, and gardens", "type": "historic"},
+      {"name": "Stockbridge", "description": "Bohemian neighborhood with artisan shops, Sunday market, and Water of Leith walkway", "type": "trendy"},
+      {"name": "Leith", "description": "Port district with waterfront dining, Royal Yacht Britannia, and vibrant nightlife", "type": "nightlife"},
+      {"name": "Bruntsfield", "description": "Trendy area with independent cafes, boutique shops, and Meadows park access", "type": "trendy"}
+    ],
+    "Manchester": [
+      {"name": "Northern Quarter", "description": "Creative hub with independent bars, vintage shops, street art, and music venues", "type": "nightlife"},
+      {"name": "Ancoats", "description": "Former industrial area reborn with artisan coffee, craft breweries, and canal-side living", "type": "trendy"},
+      {"name": "Castlefield", "description": "Urban heritage park with Roman fort, canal basins, and outdoor events", "type": "historic"},
+      {"name": "Chorlton", "description": "Leafy suburb with vegan cafes, independent shops, and a relaxed bohemian vibe", "type": "residential"},
+      {"name": "Deansgate", "description": "Central thoroughfare with Beetham Tower, shops, and Spinningfields business district", "type": "shopping"}
+    ],
+    "Bristol": [
+      {"name": "Clifton", "description": "Georgian architecture with suspension bridge views, village shops, and balloon fiesta", "type": "residential"},
+      {"name": "Stokes Croft", "description": "Street art capital with Banksy works, independent shops, and alternative culture", "type": "culture"},
+      {"name": "Harbourside", "description": "Waterfront area with SS Great Britain, museums, and modern apartment developments", "type": "waterfront"},
+      {"name": "Southville", "description": "Trendy neighborhood with independent cinema, community gardens, and North Street vibe", "type": "trendy"},
+      {"name": "Redland", "description": "Affluent residential area with Victorian villas, cafes, and green spaces", "type": "residential"}
+    ]
+  }
+}
