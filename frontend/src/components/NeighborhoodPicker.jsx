@@ -100,6 +100,16 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
   }
 
   if (!neighborhoods || neighborhoods.length === 0) {
+    // Generate generic directional neighborhoods instead of showing empty message
+    const genericNeighborhoods = [
+      { name: `${city} Centre`, description: `Downtown area of ${city}`, type: 'culture' },
+      { name: `${city} North`, description: `Northern area of ${city}`, type: 'residential' },
+      { name: `${city} South`, description: `Southern area of ${city}`, type: 'residential' },
+      { name: `${city} East`, description: `Eastern area of ${city}`, type: 'residential' },
+      { name: `${city} West`, description: `Western area of ${city}`, type: 'residential' },
+      { name: `${city} Old Town`, description: `Historic center of ${city}`, type: 'historic' },
+    ];
+    
     return (
       <div className="neighborhood-picker-overlay">
         <div className="neighborhood-picker">
@@ -110,23 +120,29 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
             </p>
           </div>
           
-          <div style={{ padding: '20px', textAlign: 'center' }}>
-            <p style={{ color: '#666', marginBottom: '16px' }}>
-              No specific neighborhoods found for {category} in {city}.
-            </p>
-            <button 
-              onClick={() => onSkip && onSkip()}
-              style={{
-                padding: '12px 24px',
-                background: '#667eea',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '16px'
-              }}
-            >
-              Search all of {city} →
+          <div className="neighborhoods-grid">
+            {genericNeighborhoods.map((hood, index) => (
+              <button
+                key={index}
+                className="neighborhood-card"
+                onClick={() => onSelect(hood.name)}
+                style={{ '--card-color': getCategoryColor(hood.type) }}
+              >
+                <div className="neighborhood-emoji">
+                  {getCategoryEmoji(hood.type, hood.name)}
+                </div>
+                <div className="neighborhood-info">
+                  <h4>{hood.name}</h4>
+                  <p>{hood.description}</p>
+                </div>
+                <div className="neighborhood-arrow">→</div>
+              </button>
+            ))}
+          </div>
+
+          <div className="picker-footer">
+            <button className="skip-button" onClick={onSkip}>
+              Search all of {city} anyway →
             </button>
           </div>
         </div>

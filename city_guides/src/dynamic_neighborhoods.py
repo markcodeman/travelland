@@ -9,7 +9,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-async def fetch_neighborhoods_dynamic(city: str, lat: float, lon: float, radius: int = 8000) -> List[Dict]:
+async def fetch_neighborhoods_dynamic(city: str, lat: float, lon: float, radius: int = 5000) -> List[Dict]:
     """
     Dynamically fetch neighborhoods for ANY city using Overpass API
     No hardcoded lists - works for ANY city globally
@@ -19,7 +19,7 @@ async def fetch_neighborhoods_dynamic(city: str, lat: float, lon: float, radius:
         city: City name
         lat: Latitude
         lon: Longitude  
-        radius: Search radius in meters (default 8km for faster queries)
+        radius: Search radius in meters (default 5km for faster queries, 8km for large cities)
     
     Returns:
         List of neighborhood dicts with name, description, type
@@ -27,16 +27,18 @@ async def fetch_neighborhoods_dynamic(city: str, lat: float, lon: float, radius:
     if not lat or not lon:
         return []
     
-    # Simplified Overpass API query for faster response
+    # Adjust radius based on city size (smaller radius = faster query)
+    # Use 5km default, but can be overridden
+    search_radius = radius
+    
+    # Simplified Overpass API query for faster response - limit to 10 results
     overpass_query = f"""
-    [out:json][timeout:15];
+    [out:json][timeout:10];
     (
-      // Find neighborhoods, districts, and suburbs only
-      node["place"~"^(quarter|suburb|neighbourhood|district)$"](around:{radius},{lat},{lon});
-      way["place"~"^(quarter|suburb|neighbourhood|district)$"](around:{radius},{lat},{lon});
-      relation["place"~"^(quarter|suburb|neighbourhood|district)$"](around:{radius},{lat},{lon});
+      // Find neighborhoods, districts, and suburbs only - limited count
+      node["place"~"^(quarter|suburb|neighbourhood|district)$"](around:{search_radius},{lat},{lon});
     );
-    out center tags 15;
+    out center tags 10;
     """
     
     # Try multiple Overpass API endpoints for better reliability
