@@ -4,7 +4,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 import asyncio
 from city_guides.src import app as appmod
-from pathlib import Path
 import json
 
 

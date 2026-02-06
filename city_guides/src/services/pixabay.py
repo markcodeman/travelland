@@ -8,13 +8,11 @@ Compliant with Pixabay API Terms of Use:
 """
 
 import aiohttp
-import asyncio
 import hashlib
-import json
 import time
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 import logging
 
 logger = logging.getLogger(__name__)

@@ -5,8 +5,7 @@ Track fun fact quality and auto-suggest cities for hardcoding
 import json
 import time
 from pathlib import Path
-from typing import Dict, Set, List, Tuple
-import hashlib
+from typing import Dict, List
 
 # Quality indicators
 GENERIC_PHRASES = [

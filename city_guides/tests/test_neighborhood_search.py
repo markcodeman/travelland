@@ -38,7 +38,7 @@ async def main():
         
         # Test 2: Search for restaurants in Temple
         if bbox:
-            print(f"\n[2] Searching for restaurants in Temple...")
+            print("\n[2] Searching for restaurants in Temple...")
             results = await discover_pois(
                 city="London",
                 poi_type="restaurant",
@@ -55,7 +55,7 @@ async def main():
                 sources[src] = sources.get(src, 0) + 1
             
             print(f"    Sources: {sources}")
-            print(f"\n    Top 5 restaurants:")
+            print("\n    Top 5 restaurants:")
             for i, r in enumerate(results[:5], 1):
                 print(f"      {i}. {r.get('name')} ({r.get('source')})")
         else:

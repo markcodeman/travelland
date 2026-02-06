@@ -1,157 +1,123 @@
 # Deployment Guide - Render.com
 
-## 📦 Step-by-Step Deployment
+## 🚀 Quick Deploy (Current Setup)
 
-### Method 1: Auto-Deploy from GitHub (Recommended)
+### Render Dashboard Settings
 
-#### Step 1: Connect Repository
-1. Go to [Render.com Dashboard](https://dashboard.render.com/)
-2. Click **New +** → **Web Service**
-3. Connect your GitHub account if not already connected
-4. Select your `Marco's Micro City Guides by Travel Land LLC` repository
+**Service Configuration:**
+- **Root Directory**: `./` (repo root)
+- **Build Command**:
+  ```bash
+  pip install --no-cache-dir -r requirements.txt && mkdir -p city_guides/static && mkdir -p ../city_guides/static && cd frontend && npm ci && npm run build && cp -R dist/. ../city_guides/static/ && cp public/marcos.png ../city_guides/static/ || true
+  ```
+- **Start Command**: `bash start_server.sh`
+- **Environment**: `Python 3`
+- **Region**: `Oregon` (or closest to users)
 
-#### Step 2: Configure Service
-Fill in these settings:
-
-**Basic Settings:**
-- **Name**: `travelland-city-guides` (or your preferred name)
-- **Region**: Choose closest to your users
-- **Branch**: `main` (or your deployment branch)
-- **Root Directory**: `city-guides`
-- **Runtime**: `Python 3`
-
-**Build & Deploy Settings:**
-- **Build Command**: `pip install -r requirements.txt`
-- **Start Command**: `python app.py`
-
-**Instance Type:**
-- Select **Free** tier (works great for this app!)
-
-#### Step 3: Environment Variables
-Click **Environment** tab and add:
-
-```
-GROQ_API_KEY=your_groq_key_here
-OPENTRIPMAP_KEY=your_opentripmap_key_here
-FLASK_ENV=production
-```
-
-#### Step 4: Deploy
-1. Click **Create Web Service**
-2. Wait 2-5 minutes for deployment
-3. Your app will be live at: `https://your-service-name.onrender.com`
+### Files Required (all in repo root):
+- ✅ `requirements.txt` - Python dependencies
+- ✅ `render.yaml` - Render configuration
+- ✅ `start_server.sh` - Server startup script
+- ✅ `frontend/` - Vite React frontend
+- ✅ `city_guides/` - Flask/Quart backend
 
 ---
 
-### Method 2: Manual Deploy via Dashboard
+## 📋 Step-by-Step Deployment
 
-If auto-deploy is disabled:
+### Step 1: Connect Repository
+1. Go to [Render.com Dashboard](https://dashboard.render.com/)
+2. Click **New +** → **Web Service**
+3. Connect GitHub → Select `travelland` repository
 
-1. Go to your service in Render dashboard
-2. Click **Manual Deploy** dropdown
-3. Select **Deploy latest commit**
-4. Wait for deployment to complete
+### Step 2: Configure Service
+Use settings from **Quick Deploy** section above
+
+### Step 3: Environment Variables
+Add these in Dashboard → Environment:
+```
+GROQ_API_KEY=your_groq_key
+OPENTRIPMAP_KEY=your_opentripmap_key
+```
+
+### Step 4: Deploy
+Click **Create Web Service** → wait 2-5 minutes
+
+---
+
+## 🔧 Files Explained
+
+### render.yaml
+Render Blueprint configuration with all settings defined. Render should auto-detect this file.
+
+### start_server.sh
+Activates Render's venv and starts Hypercorn server:
+```bash
+#!/bin/bash
+source /opt/render/project/src/.venv/bin/activate
+cd /opt/render/project/src
+export PYTHONPATH=/opt/render/project/src:$PYTHONPATH
+hypercorn city_guides.src.app:app --bind 0.0.0.0:$PORT
+```
+
+### requirements.txt
+Contains all Python dependencies (Flask, Quart, Hypercorn, etc.)
 
 ---
 
 ## 🧪 Verify Deployment
 
-### Test Checklist:
-1. ✅ Open your app URL
-2. ✅ Search for a city
-3. ✅ Toggle "Local Gems Only" to see the difference
-4. ✅ Verify you see:
-   - Budget-filtered results
-   - Descriptions and Tag-based features
-   - Clickable map links
-   - Visit Website links
-5. ✅ Chat with 🧭 Marco for local tips
+1. Open your app URL
+2. Search for a city
+3. Test local gems toggle
+4. Chat with Marco 🧭
 
 ---
 
-## 🔧 Troubleshooting
+## 🔄 Redeployment
 
-### Issue: 503 Service Unavailable
-**Solution**: Wait 2-3 minutes. Render takes time to build and start the app.
+### Auto-Deploy
+Push to `main` branch → Render auto-deploys
 
-### Issue: No Google Places data showing
-**Solutions**:
-1. Verify `GOOGLE_PLACES_API_KEY` is set in Environment variables
-2. Check that Google Places API is enabled in Google Cloud Console
-3. Verify API key restrictions aren't blocking requests
-4. Check Render logs for errors: Dashboard → Logs
+### Manual Deploy
+Dashboard → Manual Deploy → Deploy latest commit
 
-### Issue: Port binding error
-**Solution**: Ensure `app.py` uses:
-```python
-port = int(os.getenv('PORT', 5010))
-app.run(host='0.0.0.0', port=port, debug=False)
+---
+
+## 🐛 Troubleshooting
+
+### "No module named hypercorn"
+- ✅ Verify `requirements.txt` has `hypercorn>=0.14.0`
+- ✅ Build command installs: `pip install -r requirements.txt`
+- ✅ Start script activates venv: `source .venv/bin/activate`
+
+### Build fails
+- Check Dashboard → Logs for errors
+- Verify all files are committed: `git status`
+
+### Port binding error
+- Start script uses `$PORT` from Render environment
+
+---
+
+## 📁 Project Structure
+
+```
+travelland/
+├── requirements.txt          # Python deps (ROOT)
+├── render.yaml               # Render config (ROOT)
+├── start_server.sh           # Startup script (ROOT)
+├── frontend/                 # Vite React app
+│   ├── package.json
+│   └── src/
+├── city_guides/              # Flask/Quart backend
+│   ├── requirements.txt       # Backup deps
+│   ├── src/
+│   │   └── app.py            # Main app
+│   └── static/               # Built frontend files
+└── tests/
 ```
 
-### Issue: Build fails
-**Solutions**:
-1. Verify `requirements.txt` exists in `city-guides/` directory
-2. Check that all packages are spelled correctly
-3. View build logs for specific error messages
-
 ---
 
-## 📊 Monitoring
-
-### View Logs:
-1. Go to your service in Render dashboard
-2. Click **Logs** tab
-3. See real-time application logs
-
-### Restart Service:
-1. Go to your service settings
-2. Click **Manual Deploy** → **Clear build cache & deploy**
-
----
-
-## 🚀 Production Checklist
-
-Before going live, verify:
-- [ ] `GOOGLE_PLACES_API_KEY` is set
-- [ ] API key has correct restrictions
-- [ ] `FLASK_ENV=production` is set
-- [ ] Auto-deploy is configured (if desired)
-- [ ] Health checks are passing
-- [ ] All tests pass: `python test_integration.py`
-- [ ] App loads in browser
-- [ ] Google Places checkbox works
-- [ ] Search returns results with ratings
-
----
-
-## 💰 Cost Estimate
-
-**Render.com Free Tier:**
-- ✅ 750 hours/month free
-- ✅ Automatic SSL
-- ✅ Custom domains
-- ✅ More than enough for testing and small-scale use
-
-**Google Places API Free Tier:**
-- ✅ $200 credit/month
-- ✅ ~28,000 requests/month free
-- ✅ Only pay if you exceed free tier
-
-**Total Monthly Cost**: $0 for most users! 🎉
-
----
-
-## 🔄 Updates & Redeployment
-
-### Auto-Deploy:
-- Push to `main` branch
-- Render automatically builds and deploys
-- Wait 2-5 minutes
-
-### Manual Deploy:
-- Dashboard → Manual Deploy → Deploy latest commit
-- Wait for build to complete
-
----
-
-**Need help?** Check `TROUBLESHOOTING.md` or open an issue on GitHub!
+**🎉 Deployment complete!**

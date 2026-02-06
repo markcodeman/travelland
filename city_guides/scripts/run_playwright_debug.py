@@ -87,7 +87,7 @@ with sync_playwright() as p:
                     el.first.click()
                     print(f"Clicked selector: {s}")
                     return True
-            except Exception as e:
+            except Exception:
                 # ignore and continue
                 pass
         return False

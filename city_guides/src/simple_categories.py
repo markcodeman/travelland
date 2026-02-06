@@ -26,7 +26,6 @@ except ImportError:
     WIKI_AVAILABLE = False
 
 # Redis for caching
-import redis
 redis_client = None  # Will be set from routes.py
 
 # Cache settings - REDUCED TTL for faster iteration

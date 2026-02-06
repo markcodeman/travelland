@@ -11,11 +11,9 @@ You can seed multiple cities by repeating or scripting over a list.
 """
 import argparse
 import json
-import os
-import time
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict
 
 from slugify import slugify
 

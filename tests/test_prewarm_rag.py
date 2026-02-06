@@ -1,6 +1,4 @@
-import asyncio
 import json
-import types
 import pytest
 from city_guides.src import app as quart_app_module
 

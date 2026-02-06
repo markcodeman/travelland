@@ -3,7 +3,6 @@ Reads pre-curated venue data from neighborhood JSON files.
 """
 
 import json
-import os
 from pathlib import Path
 from typing import List, Dict, Optional
 

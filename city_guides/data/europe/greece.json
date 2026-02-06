@@ -1,0 +1,19 @@
+{
+  "country": "Greece",
+  "cities": {
+    "Athens": [
+      {"name": "Plaka", "description": "Picturesque old quarter under the Acropolis with tavernas, shops, and neoclassical houses", "type": "historic"},
+      {"name": "Monastiraki", "description": "Vibrant flea market district with antique shops, street food, and Hadrian's Library", "type": "market"},
+      {"name": "Psiri", "description": "Trendy nightlife area with traditional tavernas turned into bars, street art, and music", "type": "nightlife"},
+      {"name": "Kolonaki", "description": "Upscale district with designer boutiques, galleries, and Lycabettus Hill views", "type": "shopping"},
+      {"name": "Exarcheia", "description": "Alternative neighborhood with anarchist culture, bookshops, and live music venues", "type": "culture"},
+      {"name": "Koukaki", "description": "Residential area beneath Acropolis with cafes, museums, and local atmosphere", "type": "residential"},
+      {"name": "Gazi", "description": "Former gasworks turned cultural center with Technopolis events and nightlife", "type": "culture"},
+      {"name": "Thissio", "description": "Pedestrian-friendly area with cafes overlooking the Ancient Agora and Herodion", "type": "historic"}
+    ],
+    "Thessaloniki": [
+      {"name": "Ladadika", "description": "Historic warehouse district with tavernas, bars, and nightlife by the port", "type": "nightlife"},
+      {"name": "Ano Poli", "description": "Upper Town with Ottoman walls, traditional houses, and panoramic views", "type": "historic"}
+    ]
+  }
+}

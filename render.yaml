@@ -1,23 +1,32 @@
 services:
+  - type: redis
+    name: travelland-redis
+    plan: free
+    ipAllowList: []  # Only accessible from other Render services
+    maxmemoryPolicy: allkeys-lru  # Evict least recently used keys when memory is full
+
   - type: web
     name: TravelLand (single-service)
     env: python
     region: oregon
     plan: free
     buildCommand: |
-      pip install -r city_guides/requirements.txt && \
-      mkdir -p city_guides/static && \
+      pip install --no-cache-dir -r requirements.txt && \
       cd frontend && \
       npm ci && \
       npm run build && \
-      cp -R dist/* ../city_guides/static/ && \
+      cp -R dist/. ../city_guides/static/ && \
       cp public/marcos.png ../city_guides/static/ || true
     envVars:
       - key: NODE_VERSION
         value: "18"
+      - key: REDIS_URL
+        fromService:
+          name: travelland-redis
+          type: redis
+          property: connectionString
     startCommand: |
-      # run Hypercorn and bind to the PORT Render provides
-      bash -lc "cd /opt/render/project/src || true; export PYTHONPATH=/opt/render/project/src:$PYTHONPATH; hypercorn city_guides.src.app:app --bind 0.0.0.0:$PORT"
+      bash start_server.sh
     # Environment variables are configured in the Render dashboard; keep secrets out of the manifest
     healthCheckPath: /health
     services:

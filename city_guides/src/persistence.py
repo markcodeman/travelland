@@ -10,7 +10,9 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
+import re
+import asyncio
 from urllib.parse import urlparse
 
 # Import SynthesisEnhancer lazily to break circular dependency
@@ -489,19 +491,19 @@ def enrich_venue_data(venue: Dict, city: str = "") -> Dict:
         elif any(word in venue_name_lower for word in ['menuiserie', 'atelier', 'workshop']):
             description_parts.append(f"Converted workshop {type_clean.lower()}")
         elif any(word in venue_name_lower for word in ['bistrot', 'bistro']):
-            description_parts.append(f"Traditional bistro")
+            description_parts.append("Traditional bistro")
         elif any(word in venue_name_lower for word in ['brasserie']):
-            description_parts.append(f"Classic brasserie")
+            description_parts.append("Classic brasserie")
         elif is_actual_bar and any(word in venue_name_lower for word in ['wine', 'vin']):
-            description_parts.append(f"Wine bar")
+            description_parts.append("Wine bar")
         elif is_actual_bar and any(word in venue_name_lower for word in ['belushi', 'sportsbar', 'sports bar']):
-            description_parts.append(f"Sports bar with American atmosphere")
+            description_parts.append("Sports bar with American atmosphere")
         elif 'juice bar' in venue_name_lower or 'juice' in venue_name_lower:
-            description_parts.append(f"Juice bar")
+            description_parts.append("Juice bar")
         elif 'sushi bar' in venue_name_lower:
-            description_parts.append(f"Sushi bar")
+            description_parts.append("Sushi bar")
         elif 'raw bar' in venue_name_lower:
-            description_parts.append(f"Raw bar")
+            description_parts.append("Raw bar")
         elif is_actual_bar and 'bar' in venue_name_lower:
             # Generic bar without wine/sports specifier
             description_parts.append(type_clean)
@@ -628,7 +630,7 @@ def _compute_open_now(lat, lon, opening_hours_str):
             if tz_env:
                 tzname = tz_env
 
-    from datetime import datetime, time, timedelta
+    from datetime import datetime, time
 
     try:
         from zoneinfo import ZoneInfo
@@ -1150,6 +1152,16 @@ def fetch_safety_section(city: str) -> list[str]:
     # Last resort: synthesise safety tips via semantic module
     try:
         import asyncio
+        # Import semantic module lazily to avoid heavy imports at module import time
+        try:
+            import city_guides.src.semantic as semantic
+        except Exception:
+            try:
+                import semantic
+            except Exception:
+                semantic = None
+        if semantic is None:
+            return []
         q = f"Provide 5 concise crime and safety tips for travelers in {city}. Include common scams, areas to avoid, and nighttime safety."
         loop = asyncio.get_event_loop()
         if loop.is_running():
@@ -1461,12 +1473,24 @@ def _search_impl(payload):
                 "food": "restaurant",
                 "restaurants": "restaurant",
                 "dining": "restaurant",
+                "cafe": "cafe",
+                "cafes": "cafe",
+                "coffee": "cafe",
+                "coffee shop": "cafe",
+                "espresso": "cafe",
                 "hotel": "hotel",
                 "hotels": "hotel",
                 "accommodation": "hotel",
                 "attractions": "tourism",
                 "attraction": "tourism",
                 "sights": "tourism",
+                "landmark": "tourism",
+                "landmarks": "tourism",
+                "monument": "tourism",
+                "monuments": "tourism",
+                "architecture": "tourism",
+                "design": "tourism",
+                "building": "tourism",
                 "historic": "historic",
                 "historic sites": "historic",
                 "historical": "historic",
@@ -1474,6 +1498,9 @@ def _search_impl(payload):
                 "art": "museum",
                 "museum": "museum",
                 "museums": "museum",
+                "gallery": "museum",
+                "galleries": "museum",
+                "exhibition": "museum",
                 "nature": "park",
                 "park": "park",
                 "parks": "park",
@@ -1481,7 +1508,16 @@ def _search_impl(payload):
                 "gardens": "park",
                 "shopping": "shop",
                 "shops": "shop",
+                "store": "shop",
+                "boutique": "shop",
+                "mall": "shop",
                 "nightlife": "bar",
+                "bar": "bar",
+                "bars": "bar",
+                "pub": "bar",
+                "pubs": "bar",
+                "club": "bar",
+                "clubs": "bar",
                 "entertainment": "amenity",
                 "public transport": "amenity",
                 "transport": "amenity",
@@ -1758,7 +1794,7 @@ def _search_impl(payload):
             print(f"[SEARCH DEBUG] Venue search error: {e}")
             result["debug_info"]["venue_search_error"] = str(e)
     else:
-        print(f"[SEARCH DEBUG] No category specified, skipping venue search - will return city guide only")
+        print("[SEARCH DEBUG] No category specified, skipping venue search - will return city guide only")
     
     # Generate quick guide using Wikipedia for CITY-level searches only
     # Neighborhood searches should use the existing /generate_quick_guide endpoint

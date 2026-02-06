@@ -1,6 +1,4 @@
 from providers import multi_provider
-import json
-import os
 
 city = "Chesapeake VA"
 cuisine = "burger"

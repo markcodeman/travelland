@@ -1,6 +1,5 @@
 import os
 import sys
-import pytest
 import asyncio
 import json
 import re
@@ -20,7 +19,6 @@ def test_quick_guide_written_to_redis(monkeypatch):
         fake = FakeRedis()
         appmod.redis_client = fake
         # Ensure no cached file exists so code will run generation path and persist to redis
-        import os, re
         def slug(s):
             return re.sub(r'[^a-z0-9]+', '_', s.lower()).strip('_')
         cache_path = Path('city_guides/src/data/neighborhood_quick_guides')/slug('Guadalajara, Mexico')/(slug('Analco')+'.json')

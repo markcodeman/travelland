@@ -1,0 +1,17 @@
+{
+  "country": "Czech Republic",
+  "cities": {
+    "Prague": [
+      {"name": "Old Town", "description": "Staré Město with Astronomical Clock, Týn Church, and Old Town Square", "type": "historic"},
+      {"name": "Malá Strana", "description": "Lesser Town with Baroque palaces, St. Nicholas Church, and Nerudova Street", "type": "historic"},
+      {"name": "Josefov", "description": "Jewish Quarter with Old-New Synagogue, cemetery, and Kafka's heritage", "type": "historic"},
+      {"name": "Žižkov", "description": "Working-class district with TV Tower, pubs, and independent spirit", "type": "nightlife"},
+      {"name": "Vinohrady", "description": "Elegant residential area with Art Nouveau villas, cafes, and parks", "type": "residential"},
+      {"name": "Karlín", "description": "Revitalized district with trendy restaurants, breweries, and Karlín Music Theater", "type": "trendy"},
+      {"name": "Holešovice", "description": "Industrial-chic with DOX gallery, Výstaviště fairgrounds, and creative spaces", "type": "trendy"},
+      {"name": "Hradčany", "description": "Castle District with Prague Castle, Golden Lane, and cathedral views", "type": "historic"},
+      {"name": "Nové Město", "description": "New Town with Wenceslas Square, shopping, and business district", "type": "shopping"},
+      {"name": "Kampa", "description": "Island park with Lennon Wall, modern art museum, and riverside cafes", "type": "culture"}
+    ]
+  }
+}

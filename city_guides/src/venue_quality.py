@@ -7,7 +7,7 @@ only high-quality venues are presented to users.
 
 import re
 import logging
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List
 
 # Quality scoring constants
 QUALITY_WEIGHTS = {
@@ -227,7 +227,7 @@ def _calculate_description_score(venue: Dict[str, Any]) -> float:
             return 0.0
     
     # If no tags, check if name is meaningful
-    if name and len(name) > 3 and not name.lower() in ['unknown', 'unnamed', '']:
+    if name and len(name) > 3 and name.lower() not in ['unknown', 'unnamed', '']:
         return 0.3
     
     return 0.0

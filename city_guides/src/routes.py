@@ -1,15 +1,7 @@
-from quart import Quart, request, jsonify
+from quart import request, jsonify
 from .enrichment import get_neighborhood_enrichment
 from .validation import validate_neighborhood
-from city_guides.providers import multi_provider
-from city_guides.providers.geocoding import geocode_city, reverse_geocode
-from city_guides.providers.overpass_provider import async_geocode_city
-from city_guides.providers.utils import get_session
-from . import semantic
-from .geo_enrichment import enrich_neighborhood
-from .synthesis_enhancer import SynthesisEnhancer
-from .snippet_filters import looks_like_ddgs_disambiguation_text
-from .neighborhood_disambiguator import NeighborhoodDisambiguator
+from .geo_enrichment import enrich_neighborhood, build_enriched_quick_guide
 from .simple_categories import get_dynamic_categories, get_generic_categories
 from .persistence import (
     _compute_open_now,
@@ -37,17 +29,7 @@ from .persistence import (
     shorten_place,
 )
 import asyncio
-import aiohttp
 import json
-import hashlib
-import re
-import time
-import requests
-from redis import asyncio as aioredis
-import logging
-import os
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
 
 # from .app import app  # Removed to avoid circular import
 
@@ -117,7 +99,7 @@ def register_routes(app):
     @app.route("/api/search", methods=["POST"])
     async def api_search():
         """API endpoint for searching venues and places in a city"""
-        print(f"[SEARCH ROUTE] Search request received")
+        print("[SEARCH ROUTE] Search request received")
         payload = await request.get_json(silent=True) or {}
         print(f"[SEARCH ROUTE] Payload: {payload}")
         
@@ -134,10 +116,12 @@ def register_routes(app):
             # Use the search implementation from persistence
             result = await asyncio.to_thread(_search_impl, payload)
             
-            if should_cache and redis_client:
+            redis = getattr(app, "redis_client", None)
+            prewarm_ttl = app.config.get("PREWARM_TTL")
+            if should_cache and redis:
                 cache_key = build_search_cache_key(city, q, neighborhood)
                 try:
-                    await redis_client.set(cache_key, json.dumps(result), ex=PREWARM_TTL)
+                    await redis.set(cache_key, json.dumps(result), ex=prewarm_ttl)
                     app.logger.info("Cached search result for %s/%s", city, q)
                 except Exception:
                     app.logger.exception("Failed to cache search result")

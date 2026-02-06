@@ -1,0 +1,37 @@
+{
+  "country": "USA",
+  "cities": {
+    "New York City": [
+      {"name": "Manhattan", "description": "The city's bustling heart with Times Square, Central Park, and iconic skyscrapers", "type": "culture"},
+      {"name": "Brooklyn", "description": "Trendy borough with DUMBO views, Williamsburg nightlife, and artisanal food scene", "type": "trendy"},
+      {"name": "Queens", "description": "Diverse area with Flushing's Asian cuisine, museums, and the US Open tennis", "type": "food"},
+      {"name": "Harlem", "description": "Historic African-American cultural center with jazz heritage and soul food", "type": "culture"},
+      {"name": "Greenwich Village", "description": "Bohemian neighborhood with Washington Square Park, jazz clubs, and NYU", "type": "culture"},
+      {"name": "SoHo", "description": "Cast-iron architecture district with upscale boutiques, galleries, and loft spaces", "type": "shopping"},
+      {"name": "Lower East Side", "description": "Former immigrant neighborhood with Tenement Museum, delis, and nightlife", "type": "historic"},
+      {"name": "Chelsea", "description": "Art gallery district with High Line park, Chelsea Market, and the Whitney Museum", "type": "culture"},
+      {"name": "Upper East Side", "description": "Affluent area with Museum Mile, Central Park access, and luxury shopping", "type": "shopping"},
+      {"name": "Williamsburg", "description": "Hipster capital with waterfront views, craft breweries, and Bedford Avenue shops", "type": "nightlife"}
+    ],
+    "Los Angeles": [
+      {"name": "Hollywood", "description": "Entertainment capital with Walk of Fame, TCL Chinese Theatre, and studio tours", "type": "culture"},
+      {"name": "Santa Monica", "description": "Coastal city with Third Street Promenade, pier, and beachfront bike path", "type": "beach"},
+      {"name": "Venice", "description": "Bohemian beach neighborhood with Muscle Beach, canals, and Boardwalk performers", "type": "beach"},
+      {"name": "Downtown LA", "description": "Urban revival with Arts District, Grand Central Market, and historic architecture", "type": "trendy"},
+      {"name": "Beverly Hills", "description": "Luxury enclave with Rodeo Drive shopping, celebrity homes, and palm-lined streets", "type": "shopping"},
+      {"name": "Silver Lake", "description": "Hipster neighborhood with reservoir, indie music venues, and Sunset Junction cafes", "type": "trendy"},
+      {"name": "West Hollywood", "description": "LGBTQ+ hub with Design District, nightlife on Sunset Strip, and dining scene", "type": "nightlife"},
+      {"name": "Pasadena", "description": "Elegant suburb with Rose Bowl, Colorado Boulevard shopping, and historic homes", "type": "residential"}
+    ],
+    "San Francisco": [
+      {"name": "Mission District", "description": "Latinx culture with colorful murals, taquerias, and Valencia Street boutiques", "type": "culture"},
+      {"name": "Haight-Ashbury", "description": "Hippie history with vintage shops, Victorian houses, and Golden Gate Park access", "type": "historic"},
+      {"name": "Fisherman's Wharf", "description": "Tourist waterfront with Pier 39, sea lions, sourdough bread, and Alcatraz ferries", "type": "waterfront"},
+      {"name": "Nob Hill", "description": "Prestigious hilltop with Grace Cathedral, cable cars, and luxury hotels", "type": "historic"},
+      {"name": "Castro", "description": "Historic LGBTQ+ neighborhood with rainbow flags, Harvey Milk history, and vibrant nightlife", "type": "culture"},
+      {"name": "Chinatown", "description": "Oldest Chinatown in North America with temples, herbal shops, and dim sum", "type": "culture"},
+      {"name": "SOMA", "description": "Tech hub with museums, startups, nightlife, and Yerba Buena Gardens", "type": "modern"},
+      {"name": "North Beach", "description": "Little Italy with City Lights Bookstore, cafes, and Beat Generation history", "type": "historic"}
+    ]
+  }
+}

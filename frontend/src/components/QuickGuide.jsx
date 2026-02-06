@@ -2,27 +2,25 @@ import React from 'react';
 
 export default function QuickGuide({ guide, images, source, source_url }) {
   if (!guide) return null;
-
+  
   return (
     <div className="quick-guide">
-      <h2>Quick guide</h2>
-      <p>{guide}</p>
-      {Array.isArray(images) && images.length > 0 && (
-        <div className="quick-guide-images">
-          {images.slice(0, 8).map((img, i) => (
-            <figure key={`${img.id || i}`} className="quick-thumb">
-              <a href={img.source_url || img.url} target="_blank" rel="noreferrer">
-                <img src={img.url} alt={img.attribution || `Image ${i + 1}`} loading="lazy" style={{ maxWidth: '300px', height: 'auto' }} />
-              </a>
-              {img.attribution && (
-                <figcaption className="quick-thumb-attribution">{img.attribution}</figcaption>
-              )}
-            </figure>
-          ))}
+      <div className="quick-guide-content">
+        {guide}
+      </div>
+      {source && (
+        <div className="quick-source">
+          Source: {source_url ? (
+            <a href={source_url} target="_blank" rel="noopener noreferrer">{source}</a>
+          ) : source}
         </div>
       )}
-      {source && (
-        <div className="quick-source">Source: {source}{source_url ? (<a href={source_url} target="_blank" rel="noreferrer"> ↗</a>) : null}</div>
+      {images && images.length > 0 && (
+        <div className="quick-images">
+          {images.map((img, i) => (
+            <img key={i} src={img.url || img} alt="" className="quick-image" />
+          ))}
+        </div>
       )}
     </div>
   );

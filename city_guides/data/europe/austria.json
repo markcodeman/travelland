@@ -1,0 +1,22 @@
+{
+  "country": "Austria",
+  "cities": {
+    "Vienna": [
+      {"name": "Innere Stadt", "description": "Historic center with Stephansdom, Hofburg Palace, Ringstrasse, and luxury shopping", "type": "historic"},
+      {"name": "Leopoldstadt", "description": "Prater district with Ferris wheel, Karmelitermarkt, and Danube Canal", "type": "culture"},
+      {"name": "Neubau", "description": "Creative 7th district with MuseumsQuartier, independent boutiques, and cafes", "type": "culture"},
+      {"name": "Mariahilf", "description": "Shopping district with Mariahilfer Straße, Naschmarkt, and theater scene", "type": "shopping"},
+      {"name": "Alsergrund", "description": "Academic 9th district with Sigmund Freud Museum and university buildings", "type": "culture"},
+      {"name": "Wieden", "description": "Residential 4th district with Belvedere Palace and Karlsplatz", "type": "residential"},
+      {"name": "Hietzing", "description": "Elegant 13th district with Schönbrunn Palace, zoo, and villas", "type": "residential"},
+      {"name": "Döbling", "description": "Wine district with Heurigen taverns, vineyards, and forested hills", "type": "food"},
+      {"name": "Favoriten", "description": "Multicultural 10th district with thermal spa and diverse restaurants", "type": "food"}
+    ],
+    "Salzburg": [
+      {"name": "Altstadt", "description": "UNESCO baroque old town with Mozart's birthplace, cathedral, and fortress", "type": "historic"},
+      {"name": "Neustadt", "description": "New town with Mirabell Gardens, shopping, and business district", "type": "shopping"},
+      {"name": "Mülln", "description": "Traditional quarter with Augustinian beer hall and riverside views", "type": "food"},
+      {"name": "Nonntal", "description": "Residential area with monastery and Hellbrunn Palace access", "type": "residential"}
+    ]
+  }
+}

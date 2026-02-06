@@ -95,6 +95,8 @@ node_modules/
 # Project specific
 *.json
 !package.json
+!frontend/package-lock.json
+!city_guides/data/*/*.json
 mcp_config.json
 last_search_response.json
 city_guides/.venv/

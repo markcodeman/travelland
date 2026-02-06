@@ -1,0 +1,24 @@
+{
+  "country": "Netherlands",
+  "cities": {
+    "Amsterdam": [
+      {"name": "Jordaan", "description": "Charming 17th-century canals with art galleries, brown cafés, and Anne Frank House", "type": "historic"},
+      {"name": "De Pijp", "description": "Trendy multicultural district with Albert Cuyp market, ethnic restaurants, and nightlife", "type": "trendy"},
+      {"name": "Oud-West", "description": "Upscale residential area with De Hallen food hall, Vondelpark, and boutique shopping", "type": "trendy"},
+      {"name": "Grachtengordel", "description": "UNESCO canal ring with historic mansions, houseboats, and 9 Streets shopping", "type": "historic"},
+      {"name": "De Wallen", "description": "Red Light District with Oude Kerk, Chinatown, and historic harbor", "type": "historic"},
+      {"name": "Plantage", "description": "Cultural district with Artis Zoo, Hortus Botanicus, and Jewish Cultural Quarter", "type": "culture"},
+      {"name": "NDSM Wharf", "description": "Former shipyard turned creative hub with street art, Pllek beach bar, and festivals", "type": "trendy"},
+      {"name": "Oost", "description": "Eastern docklands with Tropenmuseum, Javastraat ethnic eateries, and waterfront", "type": "culture"},
+      {"name": "Westerpark", "description": "Green neighborhood with Westergas creative complex, cafes, and Sunday market", "type": "trendy"},
+      {"name": "Zuid", "description": "Upscale business district with Concertgebouw, Museumplein, and luxury shopping", "type": "shopping"}
+    ],
+    "Rotterdam": [
+      {"name": "Centrum", "description": "Rebuilt city center with Cube Houses, Markthal, and modern architecture", "type": "modern"},
+      {"name": "Delfshaven", "description": "Historic harbor with Pilgrim history, canals, and traditional Dutch houses", "type": "historic"},
+      {"name": "Witte de Withstraat", "description": "Art quarter with galleries, bars, restaurants, and nightlife", "type": "nightlife"},
+      {"name": "Kop van Zuid", "description": "Waterfront revitalization with Hotel New York, Luxor Theater, and cafes", "type": "waterfront"},
+      {"name": "Katendrecht", "description": "Former sailor quarter with Fenix Food Factory, breweries, and maritime vibe", "type": "trendy"}
+    ]
+  }
+}

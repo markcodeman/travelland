@@ -10,7 +10,6 @@ Design:
 """
 
 from typing import Dict, Any
-import asyncio
 import statistics
 
 # We'll import redis_client lazily from app to avoid circular import at module import time

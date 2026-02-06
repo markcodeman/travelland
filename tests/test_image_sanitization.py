@@ -1,4 +1,3 @@
-import pytest
 from city_guides.src.synthesis_enhancer import SynthesisEnhancer
 import city_guides.src.app as app
 

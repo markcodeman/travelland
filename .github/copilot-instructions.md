@@ -43,6 +43,27 @@ cd tools && bash restart_and_tail.sh
 
 ## Project Conventions
 
+### Coding Style
+
+**Python:**
+- **Async-first:** All I/O operations use `async/await`
+- **Type hints:** Use `typing` for function signatures
+- **Error handling:** Explicit try/except with logging, never silent failures
+- **No hardcoding:** All data dynamic via APIs; seed data only in `seeded_cities.json`
+- **Normalization:** Preserve spaces in city names ("Hong Kong" not "HongKong")
+- **Imports:** Group by stdlib, third-party, local; absolute imports preferred
+
+**JavaScript/React:**
+- **Hooks:** Functional components with `useState`, `useEffect`, `useCallback`
+- **State updates:** Use functional updates when preserving existing state
+  ```js
+  setResults(prev => ({...prev, newData}))
+  ```
+- **API calls:** Centralized in `fetchAPI` utility with error handling
+- **Console logging:** Use for debugging but clean up before production
+- **File paths:** Always use absolute paths from filesystem root
+- **Emojis:** Verify Unicode renders correctly (e.g., 🏛️ not corrupted)
+
 ### File Structure
 - `city_guides/src/`: Backend code
 - `frontend/src/`: React components
@@ -86,5 +107,77 @@ cd tools && bash restart_and_tail.sh
 - `frontend/src/App.jsx`: Main React component, state management, API calls
 - `city_guides/providers/`: Individual data provider implementations
 - `tools/restart_and_tail.sh`: Service startup script
-- `frontend/vite.config.js`: Dev server proxy configuration</content>
+- `frontend/vite.config.js`: Dev server proxy configuration
+
+## Travel App Vision
+
+**TravelLand** is an AI-powered city exploration platform that helps travelers:
+- Discover authentic neighborhoods, venues, and hidden gems in any city
+- Get personalized recommendations from AI travel assistant "Marco"
+- Explore smart categories with semantic emoji icons (🏭 Industrial, 🎓 University, 🎭 Art)
+- Access seeded fun facts for popular destinations (e.g., "Star Ferry since 1888" for Hong Kong)
+- Navigate with neighborhood guides and venue cards
+
+Core philosophy: **Dynamic data over hardcoding** — real facts or nothing, no fake generic content.
+
+## Freemium Budget Constraints
+
+### API Limits (Free Tiers)
+| Provider | Limit | Usage |
+|----------|-------|-------|
+| Wikipedia | 500 req/hour | City summaries, full content |
+| OpenTripMap | 5K req/day | Venues, attractions |
+| GeoNames | 1K req/hour | Geocoding, city lookups |
+| Overpass | Fair use | Neighborhoods, OSM data |
+| Mapillary | 10K req/month | Street imagery |
+| Render | 750 hrs/month | Hosting (sleeps after inactivity) |
+
+### Optimization Strategies
+- Aggressive caching (Redis/memory, 30s TTL for dev)
+- Batch requests where possible
+- Lazy loading for images
+- Static export for frontend
+
+## IDE Configuration
+
+### VS Code
+- Extensions: Python, ESLint, Prettier
+- Settings: Format on save, 2-space indent
+
+### Windsurf
+- Cascade integration for AI-assisted coding
+- Follows `.cursorrules` conventions
+
+### CLine
+- MCP tools for Playwright testing
+- Command palette integration
+
+### Universal
+- **Line endings:** LF (Unix)
+- **Encoding:** UTF-8 (critical for emoji support)
+- **EditorConfig:** 2 spaces, no trailing whitespace
+
+## Troubleshooting
+
+### Server won't start
+```bash
+pkill -f hypercorn
+./dev.sh
+```
+
+### Categories vanishing
+Check `App.jsx` - must use `setResults(prev => ({...prev, ...}))`
+
+### Emojis not rendering
+Check `simple_categories.py` - Unicode must not be corrupted
+
+### Neighborhoods timeout
+Check `app.py` - timeout added, verify Overpass query simplified
+
+### Build fails on Render
+- Verify `render.yaml` has `mkdir -p city_guides/static`
+- Check paths: run from `frontend/` for npm, copy to `../city_guides/static/`
+
+### Redis not running
+Set `DISABLE_CACHE=true` in environment</content>
 <parameter name="filePath">/home/markm/TravelLand/.github/copilot-instructions.md

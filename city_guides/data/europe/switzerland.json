@@ -1,0 +1,25 @@
+{
+  "country": "Switzerland",
+  "cities": {
+    "Zurich": [
+      {"name": "Altstadt", "description": "Medieval old town with Lindenhof, Grossmünster, and Niederdorf shopping", "type": "historic"},
+      {"name": "Langstrasse", "description": "Multicultural district with nightlife, ethnic restaurants, and vibrant street life", "type": "nightlife"},
+      {"name": "Seefeld", "description": "Upscale lakefront with opera house, museums, and lakeside promenade", "type": "culture"},
+      {"name": "Kreis 5", "description": "Industrial-chic with Viadukt arches, trendy bars, and creative spaces", "type": "trendy"},
+      {"name": "Enge", "description": "Residential area with Bahnhofstrasse extension and lakeside parks", "type": "residential"}
+    ],
+    "Geneva": [
+      {"name": "Vieille Ville", "description": "Historic old town with St. Pierre Cathedral, Maison Tavel, and narrow streets", "type": "historic"},
+      {"name": "Carouge", "description": "Mediterranean-style suburb with Sardinian architecture, cafes, and markets", "type": "trendy"},
+      {"name": "Eaux-Vives", "description": "Lakefront district with Jet d'Eau, parks, and luxury shopping", "type": "waterfront"},
+      {"name": "Plainpalais", "description": "Student area with university, flea market, and skate park", "type": "culture"}
+    ],
+    "Lucerne": [
+      {"name": "Altstadt", "description": "Preserved medieval center with Chapel Bridge, lake views, and frescoed buildings", "type": "historic"}
+    ],
+    "Basel": [
+      {"name": "Grossbasel", "description": "Historic center with cathedral, market square, and Rhine views", "type": "historic"},
+      {"name": "Kleinbasel", "description": "North bank with St. Alban quarter, museums, and chemical industry heritage", "type": "culture"}
+    ]
+  }
+}

@@ -1,5 +1,4 @@
 """Minimal local MCP-like server for testing Playwright integration (Quart version)."""
-import asyncio
 from quart import Quart, jsonify, request
 try:
     from playwright.async_api import async_playwright

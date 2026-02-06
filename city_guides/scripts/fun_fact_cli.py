@@ -40,7 +40,7 @@ def show_candidates(limit=10):
         
         print(f"\n{i}. {city}")
         print(f"   Attempts: {attempts} | Quality: {quality:.2f} | Priority: {priority:.2f}")
-        print(f"   Recent facts:")
+        print("   Recent facts:")
         for fact in candidate['sample_facts']:
             print(f"     - {fact[:80]}...")
 

@@ -1,6 +1,5 @@
 import asyncio
 
-import pytest
 
 
 def test_enrich_neighborhood_with_mocked_providers(monkeypatch):

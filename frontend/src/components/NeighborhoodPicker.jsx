@@ -1,17 +1,56 @@
-import React from 'react';
+import { pinyin } from 'pinyin-pro';
 import './NeighborhoodPicker.css';
 
 const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, loading = false }) => {
+  // Override translations for better names (pinyin is fallback)
+  const chineseTranslations = {
+    // Shanghai landmarks with better English names
+    '外滩': 'The Bund',
+    '南京路': 'Nanjing Road',
+    '陆家嘴': 'Lujiazui',
+    '豫园': 'Yu Garden',
+    '静安寺': "Jing'an Temple",
+    '新天地': 'Xintiandi',
+    '田子坊': 'Tianzifang',
+    '浦东': 'Pudong',
+    '浦西': 'Puxi',
+    // Common district suffixes
+    '街道': 'District',
+    '区': 'District',
+    '镇': 'Town',
+    '乡': 'Township',
+    '村': 'Village',
+  };
+
   const formatBilingualName = (name) => {
-    // Check if name contains Korean characters
+    // Check if name contains Chinese characters
+    const hasChinese = /[\u4e00-\u9fff]/.test(name);
     const hasKorean = /[가-힣]/.test(name);
     
-    if (hasKorean) {
+    if (hasChinese) {
+      // First apply specific translations for landmarks
+      let displayName = name;
+      for (const [cn, en] of Object.entries(chineseTranslations)) {
+        if (name.includes(cn)) {
+          displayName = displayName.replace(cn, `${cn} (${en})`);
+        }
+      }
+      
+      // If no specific translation was applied, convert to pinyin
+      if (displayName === name) {
+        const pinyinName = pinyin(name, { toneType: 'none', type: 'string', separator: ' ' });
+        // Capitalize each word
+        const capitalized = pinyinName.replace(/\b\w/g, c => c.toUpperCase());
+        displayName = `${name} (${capitalized})`;
+      }
+      
+      return displayName;
+    } else if (hasKorean) {
       // If it's Korean, try to extract English part if available, or just show Korean
       const englishMatch = name.match(/\(([^)]+)\)/);
       if (englishMatch) {
         // Format: Korean (English)
-        const koreanPart = name.replace(/\s*\([^)]+\)/, '').trim();
+        const koreanPart = name.replace(/\s*\([^)]*\)/, '').trim();
         return `${koreanPart} (${englishMatch[1]})`;
       }
       // Just Korean, no English part available
@@ -22,77 +61,6 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
       return name;
     }
   };
-
-  if (loading) {
-    return (
-      <div className="neighborhood-picker-overlay">
-        <div className="neighborhood-picker">
-          <div className="picker-header">
-            <h3>🎯 Finding Best Neighborhoods</h3>
-            <p className="picker-subtitle">
-              Discovering the perfect spots for {category} in {city}...
-            </p>
-          </div>
-          
-          <div className="neighborhoods-loading" style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            padding: '40px',
-            flexDirection: 'column',
-            gap: '16px'
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              border: '4px solid #f3f3f3',
-              borderTop: '4px solid #667eea',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }} />
-            <p style={{ color: '#666', fontSize: '16px', margin: 0 }}>
-              Scanning {city}'s neighborhoods...
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!neighborhoods || neighborhoods.length === 0) {
-    return (
-      <div className="neighborhood-picker-overlay">
-        <div className="neighborhood-picker">
-          <div className="picker-header">
-            <h3>🎯 Choose Area</h3>
-            <p className="picker-subtitle">
-              Where in {city} would you like to explore {category}?
-            </p>
-          </div>
-          
-          <div style={{ padding: '20px', textAlign: 'center' }}>
-            <p style={{ color: '#666', marginBottom: '16px' }}>
-              No specific neighborhoods found for {category} in {city}.
-            </p>
-            <button 
-              onClick={() => onSkip && onSkip()}
-              style={{
-                padding: '12px 24px',
-                background: '#667eea',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '16px'
-              }}
-            >
-              Search all of {city} →
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const getCategoryEmoji = (type, name) => {
     const emojiMap = {
@@ -151,6 +119,93 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
     return colorMap[type] || colorMap['default'];
   };
 
+  if (loading) {
+    return (
+      <div className="neighborhood-picker-overlay">
+        <div className="neighborhood-picker">
+          <div className="picker-header">
+            <h3>🎯 Finding Best Neighborhoods</h3>
+            <p className="picker-subtitle">
+              Discovering the perfect spots for {category} in {city}...
+            </p>
+          </div>
+          
+          <div className="neighborhoods-loading" style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            padding: '40px',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              border: '4px solid #f3f3f3',
+              borderTop: '4px solid #667eea',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+            <p style={{ color: '#666', fontSize: '16px', margin: 0 }}>
+              Scanning {city}'s neighborhoods...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!neighborhoods || neighborhoods.length === 0) {
+    // Generate generic directional neighborhoods instead of showing empty message
+    const genericNeighborhoods = [
+      { name: `${city} Centre`, description: `Downtown area of ${city}`, type: 'culture' },
+      { name: `${city} North`, description: `Northern area of ${city}`, type: 'residential' },
+      { name: `${city} South`, description: `Southern area of ${city}`, type: 'residential' },
+      { name: `${city} East`, description: `Eastern area of ${city}`, type: 'residential' },
+      { name: `${city} West`, description: `Western area of ${city}`, type: 'residential' },
+      { name: `${city} Old Town`, description: `Historic center of ${city}`, type: 'historic' },
+    ];
+    
+    return (
+      <div className="neighborhood-picker-overlay">
+        <div className="neighborhood-picker">
+          <div className="picker-header">
+            <h3>🎯 Choose Area</h3>
+            <p className="picker-subtitle">
+              Where in {city} would you like to explore {category}?
+            </p>
+          </div>
+          
+          <div className="neighborhoods-grid">
+            {genericNeighborhoods.map((hood, index) => (
+              <button
+                key={index}
+                className="neighborhood-card"
+                onClick={() => onSelect(hood.name)}
+                style={{ '--card-color': getCategoryColor(hood.type) }}
+              >
+                <div className="neighborhood-emoji">
+                  {getCategoryEmoji(hood.type, hood.name)}
+                </div>
+                <div className="neighborhood-info">
+                  <h4>{hood.name}</h4>
+                  <p>{hood.description}</p>
+                </div>
+                <div className="neighborhood-arrow">→</div>
+              </button>
+            ))}
+          </div>
+
+          <div className="picker-footer">
+            <button className="skip-button" onClick={onSkip}>
+              Search all of {city} anyway →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="neighborhood-picker-overlay">
       <div className="neighborhood-picker">
@@ -162,23 +217,29 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
         </div>
 
         <div className="neighborhoods-grid">
-          {neighborhoods.map((hood, index) => (
-            <button
-              key={index}
-              className="neighborhood-card"
-              onClick={() => onSelect(hood.name)}
-              style={{ '--card-color': getCategoryColor(hood.type) }}
-            >
-              <div className="neighborhood-emoji">
-                {getCategoryEmoji(hood.type, hood.name)}
-              </div>
-              <div className="neighborhood-info">
-                <h4>{formatBilingualName(hood.name)}</h4>
-                <p>{hood.description}</p>
-              </div>
-              <div className="neighborhood-arrow">→</div>
-            </button>
-          ))}
+          {neighborhoods.map((hood, index) => {
+            // Normalize: handle both string[] and object[] formats
+            const name = typeof hood === 'string' ? hood : hood.name;
+            const description = typeof hood === 'string' ? '' : (hood.description || '');
+            const type = typeof hood === 'string' ? 'culture' : (hood.type || 'culture');
+            return (
+              <button
+                key={index}
+                className="neighborhood-card"
+                onClick={() => onSelect(name)}
+                style={{ '--card-color': getCategoryColor(type) }}
+              >
+                <div className="neighborhood-emoji">
+                  {getCategoryEmoji(type, name)}
+                </div>
+                <div className="neighborhood-info">
+                  <h4>{formatBilingualName(name)}</h4>
+                  <p>{description}</p>
+                </div>
+                <div className="neighborhood-arrow">→</div>
+              </button>
+            );
+          })}
         </div>
 
         <div className="picker-footer">

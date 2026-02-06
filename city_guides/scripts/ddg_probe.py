@@ -9,7 +9,6 @@ Installs:
 
 Returns JSON array of results with title, snippet, href.
 """
-import sys
 import json
 import argparse
 import requests

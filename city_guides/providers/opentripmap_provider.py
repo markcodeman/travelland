@@ -1,10 +1,8 @@
 import os
-import time
 import math
 import aiohttp
 from typing import List, Dict
 import asyncio
-import aiohttp
 
 from city_guides.providers.overpass_provider import geocode_city
 
@@ -327,7 +325,7 @@ async def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, 
 async def async_discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, session: aiohttp.ClientSession = None) -> List[Dict]:
     print(f"[DEBUG opentripmap discover_pois] Called with city={city}, kinds={kinds}, API key present: {bool(OPENTRIPMAP_KEY)}")
     if not OPENTRIPMAP_KEY:
-        print(f"[DEBUG opentripmap discover_pois] No API key, returning empty")
+        print("[DEBUG opentripmap discover_pois] No API key, returning empty")
         return []
     # Accept either a bbox tuple/list (west, south, east, north) or a city string
     if isinstance(city, (list, tuple)):
@@ -337,7 +335,7 @@ async def async_discover_pois(city: str, kinds: str = "restaurants", limit: int 
     # Detailed bbox debug (requested)
     try:
         west, south, east, north = bbox
-        print(f"[DEBUG] Opentripmap search:")
+        print("[DEBUG] Opentripmap search:")
         print(f"  BBox: {west:.4f}, {south:.4f} → {east:.4f}, {north:.4f}")
         print(f"  Width: {east-west:.4f}° longitude")
         print(f"  Height: {north-south:.4f}° latitude")
