@@ -367,6 +367,20 @@ async def api_chat_rag():
         context_text = "\n\n".join(context_snippets)
 
         # Compose Groq prompt (system + user)
+        # Get neighborhood from query if present (e.g., "Tell me about X in Neighborhood, City")
+        neighborhood_from_query = None
+        if city and ',' in query:
+            # Try to extract neighborhood from patterns like "in L'Ariane, Nice" or "L'Ariane, Nice"
+            patterns = [
+                rf'in\s+([^,]+),\s*{re.escape(city)}',
+                rf'([^,]+),\s*{re.escape(city)}',
+            ]
+            for pattern in patterns:
+                match = re.search(pattern, query, re.IGNORECASE)
+                if match:
+                    neighborhood_from_query = match.group(1).strip()
+                    break
+        
         system_prompt = (
             "You are Marco, a travel AI assistant. Given a user query and web search snippets, provide helpful, accurate travel information. "
             "IMPORTANT RULES: "
@@ -376,13 +390,26 @@ async def api_chat_rag():
             "Example: User asks 'do they do tours?' after you mentioned campus and gardens → Ask 'Do you mean the university campus or the botanical gardens?' "
             "DON'T ask clarifying questions when user makes clear requests like 'Tell me about historic sites in Luminy' - just answer!"
             "4. STAY ON TOPIC - if user asks about tours of a specific place, answer about THAT place, not generic city tours. "
-            "5. Provide specific Google Maps links in format: [Place Name](https://www.google.com/maps/search/?api=1&query=Place+Name+City). "
-            "6. Always mention full names of places so the frontend can auto-link them. "
-            "7. Never say 'I don't have a link' - instead provide the relevant Maps search link. "
-            "8. Never mention your sources or that you used web search. "
-            "9. GEOGRAPHIC ACCURACY: Verify if an area is coastal or inland before mentioning beaches. Never claim inland areas have beaches."
+            "5. When user specifies a NEIGHBORHOOD (e.g., 'in L'Ariane, Nice'), focus ONLY on that neighborhood, not the whole city. "
+            "6. If no relevant info exists for the specific neighborhood, say so directly - don't give generic city info. "
+            "7. Provide specific Google Maps links using EXACT format: [Place Name](https://www.google.com/maps/search/?api=1&query=Place+Name+City). "
+            "   - The link TEXT goes in [brackets], the URL goes in (parentheses) "
+            "   - Keep the URL short: only place name + city, no full sentences "
+            "   - Example: [Castle of Nice](https://www.google.com/maps/search/?api=1&query=Castle+of+Nice+Nice) "
+            "8. Always mention full names of places so the frontend can auto-link them. "
+            "9. Never say 'I don't have a link' - instead provide the relevant Maps search link. "
+            "10. Never mention your sources or that you used web search. "
+            "11. GEOGRAPHIC ACCURACY: Verify if an area is coastal or inland before mentioning beaches. Never claim inland areas have beaches."
         )
-        location_fragment = f" in {city}" if city else ""
+        
+        # Build location context with neighborhood if available
+        location_parts = []
+        if neighborhood_from_query:
+            location_parts.append(neighborhood_from_query)
+        if city:
+            location_parts.append(city)
+        location_fragment = f" in {', '.join(location_parts)}" if location_parts else ""
+        
         user_prompt = f"User query: {query}{location_fragment}\n\nRelevant web snippets:\n{context_text}"
 
         # Build messages array with conversation history if provided
