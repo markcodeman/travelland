@@ -1,6 +1,5 @@
-import React from 'react';
-import './NeighborhoodPicker.css';
 import { pinyin } from 'pinyin-pro';
+import './NeighborhoodPicker.css';
 
 const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, loading = false }) => {
   // Override translations for better names (pinyin is fallback)
@@ -218,23 +217,29 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
         </div>
 
         <div className="neighborhoods-grid">
-          {neighborhoods.map((hood, index) => (
-            <button
-              key={index}
-              className="neighborhood-card"
-              onClick={() => onSelect(hood.name)}
-              style={{ '--card-color': getCategoryColor(hood.type) }}
-            >
-              <div className="neighborhood-emoji">
-                {getCategoryEmoji(hood.type, hood.name)}
-              </div>
-              <div className="neighborhood-info">
-                <h4>{formatBilingualName(hood.name)}</h4>
-                <p>{hood.description}</p>
-              </div>
-              <div className="neighborhood-arrow">→</div>
-            </button>
-          ))}
+          {neighborhoods.map((hood, index) => {
+            // Normalize: handle both string[] and object[] formats
+            const name = typeof hood === 'string' ? hood : hood.name;
+            const description = typeof hood === 'string' ? '' : (hood.description || '');
+            const type = typeof hood === 'string' ? 'culture' : (hood.type || 'culture');
+            return (
+              <button
+                key={index}
+                className="neighborhood-card"
+                onClick={() => onSelect(name)}
+                style={{ '--card-color': getCategoryColor(type) }}
+              >
+                <div className="neighborhood-emoji">
+                  {getCategoryEmoji(type, name)}
+                </div>
+                <div className="neighborhood-info">
+                  <h4>{formatBilingualName(name)}</h4>
+                  <p>{description}</p>
+                </div>
+                <div className="neighborhood-arrow">→</div>
+              </button>
+            );
+          })}
         </div>
 
         <div className="picker-footer">
