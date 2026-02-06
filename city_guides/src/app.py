@@ -914,8 +914,17 @@ async def api_countries():
 async def api_neighborhoods_country(country_code):
     """Get neighborhoods for all cities in a country from seed data"""
     try:
-        # Load country seed file
-        data_path = Path(__file__).parent.parent / 'data' / f'{country_code.lower()}.json'
+        # Map country codes to full names for seed files
+        country_map = {
+            'fr': 'france',
+            'es': 'spain',
+            'it': 'italy',
+            'de': 'germany',
+            'gb': 'uk',
+            'us': 'usa',
+        }
+        file_name = country_map.get(country_code.lower(), country_code.lower())
+        data_path = Path(__file__).parent.parent / 'data' / f'{file_name}.json'
         if data_path.exists():
             with open(data_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
