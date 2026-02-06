@@ -63,11 +63,26 @@ CURATED_NEIGHBORHOODS = {
         {"name": "Golden Gai", "vibe": "micro bars and intimate nightlife", "hidden_gems": ["Albatross bar", "Champion bar"], "type": "area"},
     ],
     "Paris": [
-        {"name": "Le Marais", "vibe": "historic Jewish quarter, LGBTQ+ friendly", "hidden_gems": ["Place des Vosges arcades", "Rue des Rosiers falafel"], "type": "district"},
-        {"name": "Montmartre", "vibe": "artist hill with village atmosphere", "hidden_gems": ["Vineyards of Clos Montmartre", "Place du Tertre artists"], "type": "district"},
-        {"name": "Canal Saint-Martin", "vibe": "hipster cafes and evening picnics", "hidden_gems": ["Hotel du Nord bistro", "Lock bridges at sunset"], "type": "area"},
-        {"name": "Belleville", "vibe": "multicultural and artistic, authentic Paris", "hidden_gems": ["Parc de Belleville view", "Chinese quarter dim sum"], "type": "district"},
-        {"name": "Saint-Germain-des-Prés", "vibe": "literary history and chic boutiques", "hidden_gems": ["Deux Magots cafe", "Luxembourg Gardens"], "type": "district"},
+        {"name": "1er Arrondissement", "vibe": "historic heart with Louvre and Palais Royal", "hidden_gems": ["Palais Royal gardens", "Louvre at night"], "type": "historic"},
+        {"name": "2e Arrondissement", "vibe": "historic stock exchange district with passages", "hidden_gems": ["Galerie Vivienne", "Passage des Panoramas"], "type": "historic"},
+        {"name": "3e Arrondissement (Le Marais)", "vibe": "historic Jewish quarter, LGBTQ+ friendly", "hidden_gems": ["Place des Vosges arcades", "Rue des Rosiers falafel"], "type": "historic"},
+        {"name": "4e Arrondissement (Le Marais)", "vibe": "oldest area with Notre-Dame and gay bars", "hidden_gems": ["Île Saint-Louis", "Hôtel de Ville square"], "type": "historic"},
+        {"name": "5e Arrondissement (Latin Quarter)", "vibe": "student area with Sorbonne and Roman ruins", "hidden_gems": ["Pantheron", "Jardin des Plantes"], "type": "culture"},
+        {"name": "6e Arrondissement (Saint-Germain)", "vibe": "literary history and chic boutiques", "hidden_gems": ["Café de Flore", "Luxembourg Gardens"], "type": "culture"},
+        {"name": "7e Arrondissement", "vibe": "elegant district with Eiffel Tower", "hidden_gems": ["Rue Cler market", "Musée d'Orsay"], "type": "culture"},
+        {"name": "8e Arrondissement", "vibe": "Champs-Élysées and luxury shopping", "hidden_gems": ["Parc Monceau", "Petit Palais"], "type": "shopping"},
+        {"name": "9e Arrondissement", "vibe": "Opéra and Grands Boulevards", "hidden_gems": ["Palais Garnier", "Galeries Lafayette rooftop"], "type": "culture"},
+        {"name": "10e Arrondissement", "vibe": "Canal Saint-Martin hipster scene", "hidden_gems": ["Canal Saint-Martin locks", "Gare du Nord area"], "type": "culture"},
+        {"name": "11e Arrondissement", "vibe": "trendy nightlife and food scene", "hidden_gems": ["Oberkampf bars", "Belleville border cafes"], "type": "nightlife"},
+        {"name": "12e Arrondissement", "vibe": "Bercy and Bois de Vincennes", "hidden_gems": ["Coulée verte", "Marché d'Aligre"], "type": "residential"},
+        {"name": "13e Arrondissement", "vibe": "Chinatown and modern architecture", "hidden_gems": ["Bibliothèque François Mitterrand", "Butte-aux-Cailles"], "type": "food"},
+        {"name": "14e Arrondissement", "vibe": "Montparnasse and catacombs", "hidden_gems": ["Denfert-Rochereau", "Fondation Cartier"], "type": "culture"},
+        {"name": "15e Arrondissement", "vibe": "family-friendly residential area", "hidden_gems": ["Parc André Citroën", "Île aux Cygnes"], "type": "residential"},
+        {"name": "16e Arrondissement", "vibe": "upscale with Trocadéro views", "hidden_gems": ["Musée Marmottan", "Boileau village"], "type": "residential"},
+        {"name": "17e Arrondissement", "vibe": "quiet Batignolles village vibe", "hidden_gems": ["Square des Batignolles", "Rue de Lévis market"], "type": "residential"},
+        {"name": "18e Arrondissement (Montmartre)", "vibe": "artist hill with village atmosphere", "hidden_gems": ["Vineyards of Clos Montmartre", "Place du Tertre artists"], "type": "culture"},
+        {"name": "19e Arrondissement", "vibe": "Belleville and Buttes-Chaumont park", "hidden_gems": ["Parc des Buttes-Chaumont", "Bassin de la Villette"], "type": "nature"},
+        {"name": "20e Arrondissement", "vibe": "Père Lachaise and local vibe", "hidden_gems": ["Père Lachaise Cemetery", "Rue de Bagnolet"], "type": "historic"},
     ],
     "London": [
         {"name": "Shoreditch", "vibe": "street art and hipster nightlife", "hidden_gems": ["Brick Lane curry", "Columbia Road flower market"], "type": "neighborhood"},
@@ -575,12 +590,13 @@ async def async_get_neighborhoods(city: str | None = None, lat: float | None = N
     Prioritizes curated neighborhoods for major tourist cities, then supplements with OSM data.
     """
     results = []
-    city_normalized = _norm_name(city or "")
+    city_normalized = _norm_name(city or "").split()[0]  # Extract first word (city name before comma/country)
     
     # Add curated neighborhoods for major tourist cities (with highest priority)
     curated_added = False
     for curated_city, neighborhoods in CURATED_NEIGHBORHOODS.items():
-        if _norm_name(curated_city) == city_normalized:
+        # Match against first word of normalized city name (handles "Paris, France" -> "paris")
+        if _norm_name(curated_city).split()[0] == city_normalized:
             for nb in neighborhoods:
                 results.append({
                     'id': f"curated/{nb['name']}",
