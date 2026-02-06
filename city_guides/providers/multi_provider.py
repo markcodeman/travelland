@@ -197,8 +197,8 @@ def _normalize_osm_entry(e: Dict) -> Dict:
     if not name:
         name = "Unknown"
     
-    # Filter out garbage names with OSM artifact patterns
-    garbage_patterns = ["information--", "object--", "warning--", "traffic--", "guidepost--", "milestone--"]
+    # Filter out garbage names with OSM artifact patterns (expanded list)
+    garbage_patterns = ["information--", "object--", "warning--", "traffic--", "guidepost--", "milestone--", "marking--", "sign--", "barrier--", "bench--", "waste--", "tower--", "bridge--", "tunnel--", "fence--", "gate--", " hydrant--", "pole--", "street-lamp--", " manhole--", "drain--", "utility--", "cable--", "pipeline--", "power--"]
     if any(pattern in name.lower() for pattern in garbage_patterns):
         name = "Unknown"
     
@@ -233,8 +233,8 @@ def _normalize_generic_entry(e: Dict) -> Dict:
     if not name:
         name = "Unknown"
     
-    # Filter out garbage names with OSM artifact patterns
-    garbage_patterns = ["information--", "object--", "warning--", "traffic--", "guidepost--", "milestone--"]
+    # Filter out garbage names with OSM artifact patterns (expanded list)
+    garbage_patterns = ["information--", "object--", "warning--", "traffic--", "guidepost--", "milestone--", "marking--", "sign--", "barrier--", "bench--", "waste--", "tower--", "bridge--", "tunnel--", "fence--", "gate--", " hydrant--", "pole--", "street-lamp--", " manhole--", "drain--", "utility--", "cable--", "pipeline--", "power--"]
     if any(pattern in name.lower() for pattern in garbage_patterns):
         name = "Unknown"
     
