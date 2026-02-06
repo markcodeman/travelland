@@ -9,16 +9,19 @@ from pathlib import Path
 # Add parent directory to path for imports (must be first)
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from quart import Quart, request, jsonify
-from quart_cors import cors
+# Standard library imports
 import os
 import asyncio
-import aiohttp
-from aiohttp import ClientTimeout
 import json
 import hashlib
 import re
 import time
+
+# Third-party imports
+from quart import Quart, request, jsonify
+from quart_cors import cors
+import aiohttp
+from aiohttp import ClientTimeout
 from redis import asyncio as aioredis
 
 # Load environment variables from .env file
@@ -70,7 +73,6 @@ from city_guides.src.data.seeded_facts import get_city_fun_facts
 from city_guides.src.utils.seasonal import get_seasonal_destinations
 
 # Use relative paths for deployment portability
-from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 STATIC_FOLDER = PROJECT_ROOT / "city_guides" / "static"
 TEMPLATE_FOLDER = PROJECT_ROOT / "city_guides" / "templates"
