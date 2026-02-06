@@ -197,6 +197,11 @@ def _normalize_osm_entry(e: Dict) -> Dict:
     if not name:
         name = "Unknown"
     
+    # Filter out garbage names with OSM artifact patterns
+    garbage_patterns = ["information--", "object--", "warning--", "traffic--", "guidepost--", "milestone--"]
+    if any(pattern in name.lower() for pattern in garbage_patterns):
+        name = "Unknown"
+    
     return {
         "id": e.get("osm_id") or e.get("id") or "",
         "name": name,
@@ -214,14 +219,33 @@ def _normalize_osm_entry(e: Dict) -> Dict:
 
 def _normalize_generic_entry(e: Dict) -> Dict:
     """Handle entries from web or other mixed sources."""
+    tags_str = e.get("tags", "")
+    
+    # Extract name: try direct name field first, then parse from tags string
+    name = e.get("name")
+    if not name and tags_str:
+        # Parse tags string format: "key1=value1, key2=value2"
+        for tag_pair in tags_str.split(","):
+            tag_pair = tag_pair.strip()
+            if tag_pair.startswith("name="):
+                name = tag_pair[5:]  # Everything after "name="
+                break
+    if not name:
+        name = "Unknown"
+    
+    # Filter out garbage names with OSM artifact patterns
+    garbage_patterns = ["information--", "object--", "warning--", "traffic--", "guidepost--", "milestone--"]
+    if any(pattern in name.lower() for pattern in garbage_patterns):
+        name = "Unknown"
+    
     return {
         "id": e.get("id") or e.get("osm_id") or e.get("place_id") or "",
-        "name": e.get("name") or "Unknown",
+        "name": name,
         "lat": float(e.get("lat") or e.get("latitude") or 0),
         "lon": float(e.get("lon") or e.get("longitude") or 0),
         "address": e.get("address", ""),
         "osm_url": e.get("osm_url", ""),
-        "tags": e.get("tags", ""),
+        "tags": tags_str,
         "website": e.get("website", ""),
         "description": e.get("description", ""),
         "amenity": e.get("amenity", "restaurant"),
