@@ -199,7 +199,7 @@ def _normalize_osm_entry(e: Dict) -> Dict:
     
     # Filter out garbage names with OSM artifact patterns - any name containing -- is likely OSM garbage data
     if "--" in name.lower():
-        name = "Unknown"
+        return None  # Skip garbage venues entirely instead of returning Unknown
     
     return {
         "id": e.get("osm_id") or e.get("id") or "",
@@ -234,7 +234,7 @@ def _normalize_generic_entry(e: Dict) -> Dict:
     
     # Filter out garbage names with OSM artifact patterns - any name containing -- is likely OSM garbage data
     if "--" in name.lower():
-        name = "Unknown"
+        return None  # Skip garbage venues entirely instead of returning Unknown
     
     return {
         "id": e.get("id") or e.get("osm_id") or e.get("place_id") or "",
@@ -341,6 +341,9 @@ def discover_pois(
                 norm = _normalize_osm_entry(e)
             else:
                 norm = _normalize_generic_entry(e)
+            # Skip if normalization returned None (garbage venue filtered)
+            if norm is None:
+                continue
             print(f"[DEBUG] Normalized entry: {norm}")
             # Skip duplicates by ID
             if norm["id"] and norm["id"] not in seen_ids:
@@ -533,6 +536,9 @@ async def async_discover_pois(
                 norm = _normalize_osm_entry(e)
             else:
                 norm = _normalize_generic_entry(e)
+            # Skip if normalization returned None (garbage venue filtered)
+            if norm is None:
+                continue
             if norm["id"] and norm["id"] not in seen_ids:
                 seen_ids.add(norm["id"])
                 normalized.append(norm)
