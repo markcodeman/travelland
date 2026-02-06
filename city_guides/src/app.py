@@ -1237,8 +1237,8 @@ async def get_fun_fact():
 @app.route('/api/smart-neighborhoods', methods=['GET'])
 async def api_smart_neighborhoods():
     """
-    Get smart neighborhood suggestions for ANY city using dynamic API calls.
-    No hardcoded lists - works for all cities globally.
+    Get smart neighborhood suggestions for ANY city.
+    First checks seed files, then falls back to Overpass API.
     Query params: city, category (optional)
     Returns: { is_large_city: bool, neighborhoods: [] }
     """
@@ -1257,7 +1257,37 @@ async def api_smart_neighborhoods():
                 app.logger.info(f"Cache hit for smart neighborhoods: {city}")
                 return jsonify(json.loads(cached_data))
 
-        # Get coordinates for the city
+        # FIRST: Check seed files for known cities (e.g., france.json)
+        seed_neighborhoods = []
+        try:
+            # Try to load from country seed files
+            seed_path = Path(__file__).parent.parent / 'data' / 'france.json'
+            if seed_path.exists():
+                with open(seed_path, 'r', encoding='utf-8') as f:
+                    seed_data = json.load(f)
+                # Check if city exists in seed file (case-insensitive)
+                cities = seed_data.get('cities', {})
+                city_key = next((k for k in cities.keys() if k.lower() == city.lower()), None)
+                if city_key:
+                    seed_neighborhoods = [n['name'] for n in cities[city_key]]
+                    app.logger.info(f"Found {len(seed_neighborhoods)} neighborhoods in seed file for {city}")
+        except Exception as e:
+            app.logger.debug(f"Could not load seed file for {city}: {e}")
+
+        # If we have seed data, use it
+        if seed_neighborhoods:
+            response = {
+                'is_large_city': True,
+                'neighborhoods': seed_neighborhoods,
+                'city': city,
+                'category': category,
+                'source': 'seed'
+            }
+            if redis_client:
+                await redis_client.setex(cache_key, 3600, json.dumps(response))
+            return jsonify(response)
+
+        # FALLBACK: Get coordinates and fetch from Overpass API
         try:
             geo = await asyncio.wait_for(geocode_city(city), timeout=5.0)
         except asyncio.TimeoutError:
@@ -1278,7 +1308,8 @@ async def api_smart_neighborhoods():
             'is_large_city': len(neighborhoods) >= 3,
             'neighborhoods': neighborhoods,
             'city': city,
-            'category': category
+            'category': category,
+            'source': 'overpass'
         }
 
         # Cache the response
