@@ -127,25 +127,23 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     const lowerText = text.toLowerCase();
     let quickResponse = null;
     
-    // Detect a category match and prefer fetching real venues instead of immediately showing a canned reply
+    // Detect a category match - ONLY for explicit venue-seeking queries
+    // Topic queries like "heritage", "maritime", "history" should fall through to RAG
     let matchedCategory = null;
     if (lowerText.includes('cafe') || lowerText.includes('coffee') || lowerText.includes('espresso')) {
       matchedCategory = 'cafes';
     } else if (lowerText.includes('restaurant') || lowerText.includes('food') || lowerText.includes('dining') || lowerText.includes('eat')) {
       matchedCategory = 'restaurants';
-    } else if (lowerText.includes('museum') || lowerText.includes('art') || lowerText.includes('gallery') || lowerText.includes('exhibition')) {
+    } else if (lowerText.includes('museum') || lowerText.includes('art gallery') || lowerText.includes('exhibition')) {
       matchedCategory = 'museums';
-    } else if (lowerText.includes('landmark') || lowerText.includes('monument') || lowerText.includes('architecture') || lowerText.includes('design') || lowerText.includes('building') || lowerText.includes('sightseeing') || lowerText.includes('heritage') || lowerText.includes('maritime') || lowerText.includes('history') || lowerText.includes('historic')) {
-      matchedCategory = 'landmarks';
-    } else if (lowerText.includes('shop') || lowerText.includes('store') || lowerText.includes('boutique') || lowerText.includes('market') || lowerText.includes('shopping')) {
-      matchedCategory = 'shopping';
-    } else if (lowerText.includes('nightlife') || lowerText.includes('bar') || lowerText.includes('club') || lowerText.includes('pub') || lowerText.includes('drink')) {
+    } else if (lowerText.includes('nightlife') || lowerText.includes('bar') || lowerText.includes('club') || lowerText.includes('pub')) {
       matchedCategory = 'nightlife';
-    } else if (lowerText.includes('park') || lowerText.includes('garden') || lowerText.includes('nature') || lowerText.includes('outdoor')) {
+    } else if (lowerText.includes('park') || lowerText.includes('garden') || lowerText.includes('nature')) {
       matchedCategory = 'parks';
-    } else if (lowerText.includes('hotel') || lowerText.includes('stay') || lowerText.includes('accommodation') || lowerText.includes('sleep')) {
+    } else if (lowerText.includes('hotel') || lowerText.includes('stay') || lowerText.includes('accommodation')) {
       matchedCategory = 'hotels';
     }
+    // Note: heritage, maritime, history, architecture, etc. are NOT here - they go to RAG
 
     if (matchedCategory) {
       // Use a neutral, city-aware quick message while we fetch venues
