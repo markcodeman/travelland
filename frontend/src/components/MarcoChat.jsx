@@ -75,7 +75,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     if (lower.includes('coffee') || lower.includes('cafe')) return `Finding the best cafés in ${city}...`;
     if (lower.includes('restaurant') || lower.includes('food')) return `Searching for top dining spots in ${city}...`;
     if (lower.includes('museum') || lower.includes('art')) return `Looking up cultural highlights in ${city}...`;
-    if (lower.includes('architecture') || lower.includes('design') || lower.includes('landmark')) return `Finding iconic architecture and design in ${city}...`;
+    if (lower.includes('architecture') || lower.includes('design') || lower.includes('landmark') || lower.includes('heritage') || lower.includes('maritime') || lower.includes('history')) return `Finding iconic architecture and heritage in ${city}...`;
     if (lower.includes('park') || lower.includes('garden')) return `Searching for parks and outdoor spaces in ${city}...`;
     if (lower.includes('hotel') || lower.includes('stay')) return `Finding accommodations in ${city}...`;
     return thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
@@ -135,7 +135,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       matchedCategory = 'restaurants';
     } else if (lowerText.includes('museum') || lowerText.includes('art') || lowerText.includes('gallery') || lowerText.includes('exhibition')) {
       matchedCategory = 'museums';
-    } else if (lowerText.includes('landmark') || lowerText.includes('monument') || lowerText.includes('architecture') || lowerText.includes('design') || lowerText.includes('building') || lowerText.includes('sightseeing')) {
+    } else if (lowerText.includes('landmark') || lowerText.includes('monument') || lowerText.includes('architecture') || lowerText.includes('design') || lowerText.includes('building') || lowerText.includes('sightseeing') || lowerText.includes('heritage') || lowerText.includes('maritime') || lowerText.includes('history') || lowerText.includes('historic')) {
       matchedCategory = 'landmarks';
     } else if (lowerText.includes('shop') || lowerText.includes('store') || lowerText.includes('boutique') || lowerText.includes('market') || lowerText.includes('shopping')) {
       matchedCategory = 'shopping';
