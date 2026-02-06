@@ -13,6 +13,7 @@ You can ONLY modify files matching these patterns:
 
 - `NeighborhoodPicker.jsx` - Main component
 - `NeighborhoodPicker.css` - Component styles
+- `city_guides/data/*.json` - Neighborhood seed data (descriptions, etc.)
 - Any file with `neighborhood` in the filename
 - Documentation files with `neighborhood` in name
 

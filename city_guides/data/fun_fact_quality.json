@@ -37,18 +37,21 @@
     "last_attempt": 1770233765.9760394
   },
   "barranquilla": {
-    "attempts": 1,
+    "attempts": 2,
     "facts": [
-      "Weblio\u4f8b\u6587\u8f9e\u66f8\u3067\u306e\u300c\u8208\u5473\u6df1\u3044\u300d\u306b\u985e\u4f3c\u3057\u305f\u4f8b\u6587 \u8208\u5473\u6df1\u3044 1 \u8208\u5473\u6df1\u3044\u306d\u3047 \u4f8b\u6587 Wow, interesting ~ 2 \u5f37\u70c8\u306a \u8208\u5473 \u4f8b\u6587 a lively interest 3 \u8208\u5473 \u306e\u3042\u308b \u305d\u3076\u308a"
+      "Weblio\u4f8b\u6587\u8f9e\u66f8\u3067\u306e\u300c\u8208\u5473\u6df1\u3044\u300d\u306b\u985e\u4f3c\u3057\u305f\u4f8b\u6587 \u8208\u5473\u6df1\u3044 1 \u8208\u5473\u6df1\u3044\u306d\u3047 \u4f8b\u6587 Wow, interesting ~ 2 \u5f37\u70c8\u306a \u8208\u5473 \u4f8b\u6587 a lively interest 3 \u8208\u5473 \u306e\u3042\u308b \u305d\u3076\u308a",
+      "It is located near the Caribbean Sea and is the largest city and third port in the Caribbean coast region; as of 2018, it had a population of 1,206,319, making ..."
     ],
     "sources": [
+      "dynamic",
       "dynamic"
     ],
     "quality_scores": [
-      0.5
+      0.5,
+      0.8999999999999999
     ],
-    "avg_quality": 0.5,
-    "last_attempt": 1770233892.6587257
+    "avg_quality": 0.7,
+    "last_attempt": 1770403272.8703277
   },
   "ruse": {
     "attempts": 2,
