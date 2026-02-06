@@ -3,7 +3,8 @@
 
 import asyncio
 import sys
-sys.path.insert(0, '/home/markm/TravelLand')
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from city_guides.src.persistence import _search_impl
 

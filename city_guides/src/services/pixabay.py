@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 class PixabayService:
     def __init__(self):
         # Load environment variables from .env file if they exist
-        env_file = Path("/home/markm/TravelLand/.env")
+        # Check multiple locations relative to this file
+        env_file = Path(__file__).parent.parent.parent / ".env"
         if env_file.exists():
             with open(env_file) as f:
                 for line in f:
