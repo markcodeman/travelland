@@ -183,15 +183,28 @@ def _haversine_meters(lat1, lon1, lat2, lon2):
 
 def _normalize_osm_entry(e: Dict) -> Dict:
     # e expected from overpass_provider.discover_restaurants
+    tags_str = e.get("tags", "")
+    
+    # Extract name: try direct name field first, then parse from tags string
+    name = e.get("name")
+    if not name and tags_str:
+        # Parse tags string format: "key1=value1, key2=value2"
+        for tag_pair in tags_str.split(","):
+            tag_pair = tag_pair.strip()
+            if tag_pair.startswith("name="):
+                name = tag_pair[5:]  # Everything after "name="
+                break
+    if not name:
+        name = "Unknown"
+    
     return {
         "id": e.get("osm_id") or e.get("id") or "",
-        "name": e.get("name")
-        or (e.get("tags", "").split("=")[-1] if e.get("tags") else "Unknown"),
+        "name": name,
         "lat": float(e.get("lat") or e.get("latitude") or 0),
         "lon": float(e.get("lon") or e.get("longitude") or 0),
         "address": e.get("address", ""),
         "osm_url": e.get("osm_url", ""),
-        "tags": e.get("tags", ""),
+        "tags": tags_str,
         "website": e.get("website", ""),
         "amenity": e.get("amenity", ""),
         "provider": e.get("provider") or "osm",
