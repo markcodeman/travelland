@@ -6,8 +6,6 @@ services:
     plan: free
     buildCommand: |
       pip install --no-cache-dir -r requirements.txt && \
-      mkdir -p city_guides/static && \
-      mkdir -p ../city_guides/static && \
       cd frontend && \
       npm ci && \
       npm run build && \
