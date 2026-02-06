@@ -1,6 +1,5 @@
 from dotenv import load_dotenv, find_dotenv
 import os
-import json
 import sys
 
 path = find_dotenv()
@@ -24,6 +23,5 @@ if path:
 
 load_dotenv(path)
 print('Note: Google Places checks are disabled by project policy. Use `python scripts/seed_osm.py` to seed OSM cache for offline testing. Exiting.')
-import sys
 sys.exit(0)
 

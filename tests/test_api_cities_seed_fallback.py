@@ -1,6 +1,3 @@
-import os
-import asyncio
-import json
 import pytest
 from city_guides.src.app import app as quart_app
 

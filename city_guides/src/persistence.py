@@ -10,7 +10,7 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 from urllib.parse import urlparse
 
 # Import SynthesisEnhancer lazily to break circular dependency
@@ -489,19 +489,19 @@ def enrich_venue_data(venue: Dict, city: str = "") -> Dict:
         elif any(word in venue_name_lower for word in ['menuiserie', 'atelier', 'workshop']):
             description_parts.append(f"Converted workshop {type_clean.lower()}")
         elif any(word in venue_name_lower for word in ['bistrot', 'bistro']):
-            description_parts.append(f"Traditional bistro")
+            description_parts.append("Traditional bistro")
         elif any(word in venue_name_lower for word in ['brasserie']):
-            description_parts.append(f"Classic brasserie")
+            description_parts.append("Classic brasserie")
         elif is_actual_bar and any(word in venue_name_lower for word in ['wine', 'vin']):
-            description_parts.append(f"Wine bar")
+            description_parts.append("Wine bar")
         elif is_actual_bar and any(word in venue_name_lower for word in ['belushi', 'sportsbar', 'sports bar']):
-            description_parts.append(f"Sports bar with American atmosphere")
+            description_parts.append("Sports bar with American atmosphere")
         elif 'juice bar' in venue_name_lower or 'juice' in venue_name_lower:
-            description_parts.append(f"Juice bar")
+            description_parts.append("Juice bar")
         elif 'sushi bar' in venue_name_lower:
-            description_parts.append(f"Sushi bar")
+            description_parts.append("Sushi bar")
         elif 'raw bar' in venue_name_lower:
-            description_parts.append(f"Raw bar")
+            description_parts.append("Raw bar")
         elif is_actual_bar and 'bar' in venue_name_lower:
             # Generic bar without wine/sports specifier
             description_parts.append(type_clean)
@@ -628,7 +628,7 @@ def _compute_open_now(lat, lon, opening_hours_str):
             if tz_env:
                 tzname = tz_env
 
-    from datetime import datetime, time, timedelta
+    from datetime import datetime, time
 
     try:
         from zoneinfo import ZoneInfo
@@ -1758,7 +1758,7 @@ def _search_impl(payload):
             print(f"[SEARCH DEBUG] Venue search error: {e}")
             result["debug_info"]["venue_search_error"] = str(e)
     else:
-        print(f"[SEARCH DEBUG] No category specified, skipping venue search - will return city guide only")
+        print("[SEARCH DEBUG] No category specified, skipping venue search - will return city guide only")
     
     # Generate quick guide using Wikipedia for CITY-level searches only
     # Neighborhood searches should use the existing /generate_quick_guide endpoint

@@ -1,7 +1,5 @@
-import threading
 import logging
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import asyncio
 import math
 import re
@@ -11,7 +9,6 @@ import os
 
 
 # Robust import for overpass_provider, always using absolute import
-import logging
 overpass_provider = None
 try:
     # Try direct import first
@@ -290,7 +287,7 @@ def discover_pois(
     
     # Run all async providers in a single event loop
     try:
-        print(f"[DEBUG] About to call asyncio.run(_gather_providers())")
+        print("[DEBUG] About to call asyncio.run(_gather_providers())")
         provider_results = asyncio.run(_gather_providers())
         print(f"[DEBUG] Got {len(provider_results) if provider_results else 0} results from providers")
         if provider_results:

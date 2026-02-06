@@ -16,7 +16,6 @@ This script imports `get_cost_estimates` from the app to ensure caching is writt
 """
 import argparse
 import time
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]

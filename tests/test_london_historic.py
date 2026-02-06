@@ -73,7 +73,7 @@ async def test_london_historic():
         # Check if name would display as individual letters (if tags is a string)
         if isinstance(tags, str):
             print(f"❌ Venue '{name}' has tags as string: '{tags}'")
-            print(f"   This would cause UI bug - letters displayed individually!")
+            print("   This would cause UI bug - letters displayed individually!")
         else:
             print(f"✅ Venue '{name}' has proper tags type: {type(tags).__name__}")
     

@@ -9,18 +9,17 @@ from pathlib import Path
 # Add parent directory to path for imports (must be first)
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from quart import Quart, request, jsonify, render_template
+from quart import Quart, request, jsonify
 from quart_cors import cors
 import os
 import asyncio
 import aiohttp
+from aiohttp import ClientTimeout
 import json
 import hashlib
 import re
 import time
-import requests
 from redis import asyncio as aioredis
-import logging
 
 # Load environment variables from .env file
 try:
@@ -41,8 +40,7 @@ except Exception:
 from city_guides.src.services.location import (
     city_mappings,
     region_mappings,
-    levenshtein_distance,
-    find_best_match
+    levenshtein_distance
 )
 from city_guides.src.services.learning import (
     _location_weights,
@@ -57,42 +55,19 @@ from city_guides.src.dynamic_neighborhoods import get_neighborhoods_for_city
 from city_guides.src.persistence import (
     build_search_cache_key,
     ensure_bbox,
-    format_venue,
-    determine_budget,
-    determine_price_range,
-    generate_description,
-    format_venue_for_display,
-    _humanize_opening_hours,
-    _compute_open_now,
-    calculate_search_radius,
-    get_country_for_city,
-    get_provider_links,
-    shorten_place,
-    get_currency_for_country,
-    get_currency_name,
     get_cost_estimates,
-    fetch_safety_section,
-    fetch_us_state_advisory,
-    get_weather,
-    _fetch_image_from_website,
     _is_relevant_wikimedia_image,
     _persist_quick_guide
 )
-from city_guides.src.validation import validate_neighborhood
-from city_guides.src.enrichment import get_neighborhood_enrichment
 from city_guides.providers import multi_provider
-from city_guides.providers.geocoding import geocode_city, reverse_geocode
-from city_guides.providers.overpass_provider import async_geocode_city
+from city_guides.providers.geocoding import geocode_city
 from city_guides.providers.utils import get_session
-from city_guides.src.semantic import semantic
 # metrics helper (Redis-backed counters and latency samples)
 from city_guides.src.metrics import increment, observe_latency, get_metrics as get_metrics_dict
-from city_guides.src.geo_enrichment import enrich_neighborhood
-from city_guides.src.synthesis_enhancer import SynthesisEnhancer
-from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
 from city_guides.src.marco_response_enhancer import should_call_groq, analyze_user_intent
 from city_guides.src.neighborhood_disambiguator import NeighborhoodDisambiguator
 from city_guides.src.data.seeded_facts import get_city_fun_facts
+from city_guides.src.utils.seasonal import get_seasonal_destinations
 
 # Use relative paths for deployment portability
 from pathlib import Path
@@ -107,14 +82,8 @@ app = Quart(__name__, static_folder=str(STATIC_FOLDER), static_url_path='', temp
 cors(app, allow_origin=["http://localhost:5174", "https://travelland-w0ny.onrender.com"], allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
 # Cleanup Pixabay service on app shutdown
-@app.before_serving
-async def startup():
-    """Initialize services on startup"""
-    pass
-
-@app.after_serving
-async def shutdown():
-    """Clean up services on shutdown"""
+async def cleanup_pixabay():
+    """Clean up Pixabay service on shutdown"""
     await pixabay_service.close()
 
 # Global async clients
@@ -124,23 +93,21 @@ redis_client: aioredis.Redis | None = None
 # Track active long-running searches (search_id -> metadata)
 active_searches = {}
 
-# Import configuration
-from city_guides.src.config import (
-    CACHE_TTL_TELEPORT,
-    CACHE_TTL_RAG,
-    CACHE_TTL_NEIGHBORHOOD,
-    CACHE_TTL_SEARCH,
-    DDGS_TIMEOUT,
-    GROQ_TIMEOUT,
-    GEOCODING_TIMEOUT,
-    DDGS_CONCURRENCY,
-    PREWARM_RAG_CONCURRENCY,
-    DISABLE_PREWARM,
-    VERBOSE_OPEN_HOURS,
-    DEFAULT_PREWARM_CITIES,
-    DEFAULT_PREWARM_QUERIES,
-    POPULAR_CITIES
-)
+# Configuration constants
+CACHE_TTL_NEIGHBORHOOD = int(os.getenv("CACHE_TTL_NEIGHBORHOOD", "3600"))  # 1 hour
+CACHE_TTL_RAG = int(os.getenv("CACHE_TTL_RAG", "1800"))  # 30 minutes
+CACHE_TTL_SEARCH = int(os.getenv("CACHE_TTL_SEARCH", "1800"))  # 30 minutes
+CACHE_TTL_TELEPORT = int(os.getenv("CACHE_TTL_TELEPORT", "86400"))  # 24 hours
+DDGS_CONCURRENCY = int(os.getenv("DDGS_CONCURRENCY", "5"))
+DDGS_TIMEOUT = int(os.getenv("DDGS_TIMEOUT", "5"))
+DEFAULT_PREWARM_CITIES = os.getenv("DEFAULT_PREWARM_CITIES", "").split(",") if os.getenv("DEFAULT_PREWARM_CITIES") else []
+DEFAULT_PREWARM_QUERIES = os.getenv("DEFAULT_PREWARM_QUERIES", "").split(",") if os.getenv("DEFAULT_PREWARM_QUERIES") else []
+DISABLE_PREWARM = os.getenv("DISABLE_PREWARM", "false").lower() == "true"
+GEOCODING_TIMEOUT = int(os.getenv("GEOCODING_TIMEOUT", "10"))
+GROQ_TIMEOUT = int(os.getenv("GROQ_TIMEOUT", "30"))
+POPULAR_CITIES = os.getenv("POPULAR_CITIES", "").split(",") if os.getenv("POPULAR_CITIES") else []
+PREWARM_RAG_CONCURRENCY = int(os.getenv("PREWARM_RAG_CONCURRENCY", "3"))
+VERBOSE_OPEN_HOURS = os.getenv("VERBOSE_OPEN_HOURS", "false").lower() == "true"
 # Constants
 PREWARM_TTL = CACHE_TTL_SEARCH
 PREWARM_RAG_TOP_N = int(os.getenv('PREWARM_RAG_TOP_N', '50'))
@@ -183,6 +150,8 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
                     yield normalized
 
     async def _fetch_for_title(title: str, country: str | None = None):
+        if not fetch_wikipedia_summary:
+            return None
         slug = title.replace(' ', '_')
         summary = await fetch_wikipedia_summary(title, lang="en", city=city, country=country)
         if summary:
@@ -210,7 +179,7 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
                     "namespace": 0,
                     "format": "json",
                 }
-                async with session.get("https://en.wikipedia.org/w/api.php", params=params, timeout=6) as resp:
+                async with session.get("https://en.wikipedia.org/w/api.php", params=params, timeout=ClientTimeout(total=6)) as resp:
                     if resp.status != 200:
                         continue
                     data = await resp.json()
@@ -228,19 +197,20 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
     return None
 
 # DDGS provider import is optional at module import time (tests may not have ddgs installed)
+from typing import Callable, Awaitable, Any
+
+ddgs_search: Callable[..., Awaitable[list[dict[str, Any]]]]
 try:
     from city_guides.providers.ddgs_provider import ddgs_search as _ddgs_provider_search
-
-    async def ddgs_search(*args, **kwargs):
-        return await _ddgs_provider_search(*args, **kwargs)
-
+    # Use the provider's async function directly
+    ddgs_search = _ddgs_provider_search  # type: ignore[assignment]
     app.logger.info('DDGS provider enabled for neighborhood search')
 except Exception as ddgs_import_err:
-
-    async def ddgs_search(*args, **kwargs):
+    async def _ddgs_stub(*args: Any, **kwargs: Any) -> list[dict[str, Any]]:
         app.logger.warning('DDGS provider unavailable (%s); returning empty results', ddgs_import_err)
         return []
 
+    ddgs_search = _ddgs_stub  # type: ignore[assignment]
     app.logger.debug('DDGS provider not available at module import time; falling back to empty search results')
 
 from city_guides.groq.traveland_rag import recommender, TravelLandRecommender
@@ -309,8 +279,8 @@ async def api_chat_rag():
                 # Continue to normal flow if seeded data not available
         
         # Compute a cache key for this query+city and try Redis cache to avoid repeating long work
+        cache_key = None
         try:
-            cache_key = None
             if redis_client:
                 ck_input = f"{query}|{city}|{state}|{country}|{lat}|{lon}"
                 cache_key = "rag:" + hashlib.sha256(ck_input.encode('utf-8')).hexdigest()
@@ -523,7 +493,7 @@ async def startup():
         redis_client = aioredis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
         await redis_client.ping()  # type: ignore
         app.logger.info("✅ Redis connected")
-        if DEFAULT_PREWARM_CITIES and PREWARM_QUERIES:
+        if DEFAULT_PREWARM_CITIES and DEFAULT_PREWARM_QUERIES:
             asyncio.create_task(prewarm_popular_searches())
         # start background prewarm of neighborhood lists for popular cities
         try:
@@ -551,6 +521,12 @@ async def startup():
 @app.after_serving
 async def shutdown():
     global aiohttp_session, redis_client
+    # Cleanup Pixabay service
+    try:
+        await cleanup_pixabay()
+    except Exception:
+        pass
+    # Cleanup aiohttp and redis
     if aiohttp_session:
         await aiohttp_session.close()
     if redis_client:
@@ -694,7 +670,7 @@ async def get_neighborhoods():
     # store in redis
     if redis_client:
         try:
-            await redis_client.set(cache_key, json.dumps(data), ex=NEIGHBORHOOD_CACHE_TTL)
+            await redis_client.set(cache_key, json.dumps(data), ex=CACHE_TTL_NEIGHBORHOOD)
         except Exception:
             app.logger.exception("redis set failed for neighborhoods")
 
@@ -726,38 +702,68 @@ async def reverse_lookup():
     raw_nominatim = None
 
     # Prefer structured Geoapify response when available (gives country_code/state/city)
+    geoapify_reverse_geocode_raw = None
+    async_reverse_geocode = None
     try:
-        from city_guides.providers.overpass_provider import geoapify_reverse_geocode_raw, async_reverse_geocode
-        props = await geoapify_reverse_geocode_raw(float(lat), float(lon), session=aiohttp_session)
-        if props:
-            raw_geoapify = props
-            app.logger.debug('geoapify_reverse_geocode_raw returned properties: %s', {k: props.get(k) for k in ['country_code','country','state','city']})
-            addr = props.get('formatted') or props.get('address_line') or ''
-            # Geoapify provides ISO country code as 'country_code' (lowercase) so normalize to upper
-            cc = props.get('country_code') or props.get('countryCode')
-            if cc:
-                country_code = cc.upper()
-            # Try to get state and city from structured properties
-            state_name = props.get('state') or props.get('state_district') or state_name
-            city_name = props.get('city') or props.get('town') or props.get('village') or city_name
-            country_name = props.get('country') or country_name
+        import importlib
+        mod = importlib.import_module('city_guides.providers.overpass_provider')
+        geoapify_reverse_geocode_raw = getattr(mod, 'geoapify_reverse_geocode_raw', None)
+        async_reverse_geocode = getattr(mod, 'async_reverse_geocode', None)
+        if geoapify_reverse_geocode_raw and callable(geoapify_reverse_geocode_raw):
+            result = geoapify_reverse_geocode_raw(float(lat), float(lon), session=aiohttp_session)
+            # Check if result is a coroutine before awaiting
+            if asyncio.iscoroutine(result):
+                props = await result
+            else:
+                props = result
+            if props and isinstance(props, dict):
+                raw_geoapify = props
+                app.logger.debug('geoapify_reverse_geocode_raw returned properties: %s', {k: props.get(k) for k in ['country_code','country','state','city']})
+                addr = props.get('formatted') or props.get('address_line') or ''
+                # Geoapify provides ISO country code as 'country_code' (lowercase) so normalize to upper
+                cc = props.get('country_code') or props.get('countryCode')
+                if cc:
+                    country_code = cc.upper()
+                # Try to get state and city from structured properties
+                state_name = props.get('state') or props.get('state_district') or state_name
+                city_name = props.get('city') or props.get('town') or props.get('village') or city_name
+                country_name = props.get('country') or country_name
+            else:
+                app.logger.debug('geoapify_reverse_geocode_raw returned no properties')
         else:
-            app.logger.debug('geoapify_reverse_geocode_raw returned no properties')
+            app.logger.debug('geoapify reverse geocode function not available')
+    except (ImportError, AttributeError):
+        app.logger.debug('geoapify_reverse_geocode_raw not available in overpass_provider')
     except Exception:
-        app.logger.exception('geoapify_reverse_geocode_raw failed or not available')
+        app.logger.exception('geoapify reverse geocode lookup failed')
 
     # Fallback to older Nominatim-based reverse geocode (formatted string parsing)
     if not addr:
         try:
-            from city_guides.providers.overpass_provider import async_reverse_geocode
-            addr = await async_reverse_geocode(float(lat), float(lon), session=aiohttp_session)
-            raw_nominatim = addr
-            app.logger.debug('async_reverse_geocode returned: %s', addr)
+            # async_reverse_geocode may have been loaded above via importlib
+            if not callable(async_reverse_geocode):
+                import importlib
+                mod = importlib.import_module('city_guides.providers.overpass_provider')
+                async_reverse_geocode = getattr(mod, 'async_reverse_geocode', None)
+            if callable(async_reverse_geocode):
+                result = async_reverse_geocode(float(lat), float(lon), session=aiohttp_session)
+                # Check if result is a coroutine before awaiting
+                if asyncio.iscoroutine(result):
+                    addr = await result
+                else:
+                    addr = result
+                raw_nominatim = addr
+                app.logger.debug('async_reverse_geocode returned: %s', addr)
+            else:
+                app.logger.debug('async_reverse_geocode not available')
+        except (ImportError, AttributeError):
+            app.logger.debug('async_reverse_geocode not available in overpass_provider')
+            addr = None
         except Exception:
             app.logger.exception('async_reverse_geocode failed')
             addr = None
 
-        if addr:
+        if addr and isinstance(addr, str):
             parts = [p.strip() for p in addr.split(',') if p.strip()]
             if parts:
                 country_name = parts[-1]
@@ -852,17 +858,32 @@ async def smoke():
     try:
         # Reverse lookup
         try:
-            from city_guides.providers.overpass_provider import geoapify_reverse_geocode_raw, async_reverse_geocode
-            props = await geoapify_reverse_geocode_raw(lat, lon, session=aiohttp_session)
-            if not props:
-                props = None
-                addr = await async_reverse_geocode(lat, lon, session=aiohttp_session)
-            else:
-                addr = props.get('formatted') or ''
-        except Exception:
-            addr = await async_reverse_geocode(lat, lon, session=aiohttp_session)
+            import importlib
+            mod = importlib.import_module('city_guides.providers.overpass_provider')
+            geoapify_reverse_geocode_raw = getattr(mod, 'geoapify_reverse_geocode_raw', None)
+            async_reverse_geocode = getattr(mod, 'async_reverse_geocode', None)
+            
+            addr = None
             props = None
-        out['details']['reverse'] = {'display_name': addr, 'props': bool(props)}
+            if geoapify_reverse_geocode_raw and callable(geoapify_reverse_geocode_raw):
+                result = geoapify_reverse_geocode_raw(lat, lon, session=aiohttp_session)
+                if asyncio.iscoroutine(result):
+                    props = await result
+                else:
+                    props = result
+                if props and isinstance(props, dict):
+                    addr = props.get('formatted') or ''
+            
+            if not addr and async_reverse_geocode and callable(async_reverse_geocode):
+                result = async_reverse_geocode(lat, lon, session=aiohttp_session)
+                if asyncio.iscoroutine(result):
+                    addr = await result
+                else:
+                    addr = result
+        except Exception:
+            addr = None
+            props = None
+        out['details']['reverse'] = {'display_name': addr or '', 'props': bool(props)}
 
         # Neighborhoods
         try:
@@ -873,7 +894,7 @@ async def smoke():
             out['details']['neighborhoods_count'] = 0
 
         # If reverse lookup or neighborhoods returned anything, consider smoke OK
-        if (addr and addr.strip()) or out['details'].get('neighborhoods_count', 0) > 0:
+        if (addr and isinstance(addr, str) and addr.strip()) or out['details'].get('neighborhoods_count', 0) > 0:
             out['ok'] = True
     except Exception as e:
         out['details']['exception'] = str(e)
@@ -885,7 +906,7 @@ async def api_countries():
     try:
         countries = await _get_countries()
         return jsonify(countries)
-    except Exception as e:
+    except Exception:
         app.logger.exception('Failed to get countries')
         return jsonify([])
 
@@ -900,7 +921,7 @@ async def api_neighborhoods_country(country_code):
                 data = json.load(f)
             return jsonify(data.get('cities', {}))
         return jsonify({})
-    except Exception as e:
+    except Exception:
         app.logger.exception('Failed to load neighborhoods for %s', country_code)
         return jsonify({})
 
@@ -930,7 +951,7 @@ async def api_states():
                 "username": geonames_user
             }
             
-            async with session.get(country_url, params=country_params, timeout=10) as resp:
+            async with session.get(country_url, params=country_params, timeout=ClientTimeout(total=10)) as resp:
                 if resp.status != 200:
                     return jsonify([])
                 
@@ -959,7 +980,7 @@ async def api_states():
                     "username": geonames_user
                 }
                 
-                async with session.get(children_url, params=children_params, timeout=10) as children_resp:
+                async with session.get(children_url, params=children_params, timeout=ClientTimeout(total=10)) as children_resp:
                     if children_resp.status != 200:
                         return jsonify([])
                     
@@ -977,7 +998,7 @@ async def api_states():
                     
                     return jsonify(states)
                     
-    except Exception as e:
+    except Exception:
         app.logger.exception('Failed to fetch states from GeoNames')
         return jsonify([])
 
@@ -1042,7 +1063,7 @@ async def api_cities():
                 "username": geonames_user
             }
             
-            async with session.get(cities_url, params=cities_params, timeout=10) as resp:
+            async with session.get(cities_url, params=cities_params, timeout=ClientTimeout(total=10)) as resp:
                 if resp.status != 200:
                     app.logger.warning('GeoNames returned status %d for %s/%s; trying seeded fallback', resp.status, country_code, state_code)
                     # try seeded fallback
@@ -1109,7 +1130,7 @@ async def api_cities():
                 
                 return jsonify(cities)
                 
-    except Exception as e:
+    except Exception:
         app.logger.exception('Failed to fetch cities from GeoNames')
         return jsonify([])
 
@@ -1125,28 +1146,29 @@ async def api_neighborhoods():
     # Call the existing neighborhoods endpoint
     try:
         # Use the existing /neighborhoods endpoint
-        async with aiohttp_session.get(f"http://localhost:5010/neighborhoods?city={city_name}&lang=en") as resp:
-            if resp.status == 200:
-                data = await resp.json()
-                # Transform the data to match expected format
-                if 'neighborhoods' in data:
-                    neighborhoods = data['neighborhoods']
-                    # Convert to simple format expected by frontend
-                    simple_neighborhoods = []
-                    for n in neighborhoods:
-                        simple_neighborhoods.append({
-                            'id': n.get('id', n.get('name', '')),
-                            'name': n.get('name', ''),
-                            'slug': n.get('slug', ''),
-                            'center': n.get('center', {}),
-                            'bbox': n.get('bbox', [])
-                        })
-                    return jsonify(simple_neighborhoods)
+        async with get_session() as session:
+            async with session.get(f"http://localhost:5010/neighborhoods?city={city_name}&lang=en") as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    # Transform the data to match expected format
+                    if 'neighborhoods' in data:
+                        neighborhoods = data['neighborhoods']
+                        # Convert to simple format expected by frontend
+                        simple_neighborhoods = []
+                        for n in neighborhoods:
+                            simple_neighborhoods.append({
+                                'id': n.get('id', n.get('name', '')),
+                                'name': n.get('name', ''),
+                                'slug': n.get('slug', ''),
+                                'center': n.get('center', {}),
+                                'bbox': n.get('bbox', [])
+                            })
+                        return jsonify(simple_neighborhoods)
+                    else:
+                        return jsonify([])
                 else:
                     return jsonify([])
-            else:
-                return jsonify([])
-    except Exception as e:
+    except Exception:
         app.logger.exception('Failed to fetch neighborhoods')
         return jsonify([])
 
@@ -1183,7 +1205,7 @@ async def get_fun_fact():
                 # Try DDGS for fun facts first
                 try:
                     from city_guides.providers.ddgs_provider import ddgs_search
-                    ddgs_results = await ddgs_search(f"interesting facts about {city}", max_results=5, timeout=float(os.getenv('DDGS_TIMEOUT','5')))
+                    ddgs_results = await ddgs_search(f"interesting facts about {city}", max_results=5, timeout=int(os.getenv('DDGS_TIMEOUT','5')))
                     fun_facts_from_ddgs = []
                     for r in ddgs_results:
                         body = r.get('body', '')
@@ -1349,14 +1371,14 @@ async def geocode():
         
         return jsonify(result)
         
-    except Exception as e:
+    except Exception:
         app.logger.exception('Geocoding failed')
         return jsonify({'error': 'geocode_failed'}), 500
 
 @app.route("/search", methods=["POST"])
 async def search():
     """Search for venues and places in a city"""
-    print(f"[SEARCH ROUTE] Search request received")
+    print("[SEARCH ROUTE] Search request received")
     payload = await request.get_json(silent=True) or {}
     print(f"[SEARCH ROUTE] Payload: {payload}")
     
@@ -1546,7 +1568,8 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
                         try:
                             from city_guides.src.geo_enrichment import enrich_neighborhood, build_enriched_quick_guide
                             enrichment = await enrich_neighborhood(city, neighborhood, session=aiohttp_session)
-                            if enrichment and (enrichment.get('text') or (enrichment.get('pois') and len(enrichment.get('pois'))>0)):
+                            pois = enrichment.get('pois') if enrichment else None
+                            if enrichment and (enrichment.get('text') or (pois is not None and len(pois) > 0)):
                                 resp['quick_guide'] = build_enriched_quick_guide(neighborhood, city, enrichment)
                                 resp['source'] = 'geo-enriched'
                                 resp['confidence'] = 'medium'
@@ -1656,7 +1679,7 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
                     'source_url': None,
                     'confidence': 'low'
                 })
-    except Exception as e:
+    except Exception:
         app.logger.exception("Failed to validate city/neighborhood combination")
 
     # SKIP Wikipedia for neighborhoods - go directly to synthesis
@@ -1754,6 +1777,9 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
     synthesized = None
     source = None
     source_url = None
+    # DDGS helper containers (initialized to avoid possibly-unbound warnings)
+    ddgs_results = []
+    ddgs_original = ''
 
     # Go directly to DDGS-derived synthesis for neighborhoods
     if not synthesized:
@@ -1790,7 +1816,7 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
                         app.logger.debug('DDGS provider not available at runtime; skipping query %s', q)
                         return []
                     try:
-                        res = await ddgs_search(q, engine="google", max_results=3, timeout=float(os.getenv('DDGS_TIMEOUT','5')))
+                        res = await ddgs_search(q, engine="google", max_results=3, timeout=int(os.getenv('DDGS_TIMEOUT','5')))
                         app.logger.info('DDGS: query="%s" got %d results', q, len(res) if res else 0)
                         if res:
                             for i, r in enumerate(res[:3]):  # Log first 3 results
@@ -2032,7 +2058,7 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
             else:
                 for q in ddgs_queries:
                     try:
-                        results = await ddgs_search(q, engine="google", max_results=3, timeout=float(os.getenv('DDGS_TIMEOUT','5')))
+                        results = await ddgs_search(q, engine="google", max_results=3, timeout=int(os.getenv('DDGS_TIMEOUT','5')))
                         for r in results:
                             body = (r.get('body') or '') or (r.get('title') or '')
                             text = re.sub(r'\s+', ' ', (body or '')).strip()
@@ -2119,7 +2145,8 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
     wikipedia_enhancement = ""
     try:
         from city_guides.providers.wikipedia_neighborhood_provider import wikipedia_neighborhood_provider
-        wiki_data = await wikipedia_neighborhood_provider.get_neighborhood_data(city, neighborhood, aiohttp_session)
+        async with get_session(aiohttp_session) as session:
+            wiki_data = await wikipedia_neighborhood_provider.get_neighborhood_data(city, neighborhood, session)
         if wiki_data:
             wiki_info = wikipedia_neighborhood_provider.extract_neighborhood_info(wiki_data)
             
@@ -2235,7 +2262,8 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
             try:
                 from city_guides.src.geo_enrichment import enrich_neighborhood, build_enriched_quick_guide
                 enrichment = await enrich_neighborhood(city, neighborhood, session=aiohttp_session)
-                if enrichment and (enrichment.get('text') or (enrichment.get('pois') and len(enrichment.get('pois')) > 0)):
+                pois = enrichment.get('pois') if enrichment else None
+                if enrichment and (enrichment.get('text') or (pois is not None and len(pois) > 0)):
                     synthesized = build_enriched_quick_guide(neighborhood, city, enrichment)
                     source = 'geo-enriched'
                     confidence = 'medium'
@@ -2259,27 +2287,28 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
         pixabay_key = os.getenv("PIXABAY_KEY")
         if pixabay_key:
             search_query = f"{neighborhood} {city}" if neighborhood else city
-            async with aiohttp_session.get(
-                "https://pixabay.com/api/",
-                params={
-                    "key": pixabay_key,
-                    "q": search_query,
-                    "per_page": 3,
-                    "image_type": "photo",
-                    "orientation": "horizontal"
-                }
-            ) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    for hit in data.get("hits", []):
-                        mapillary_images.append({
-                            "id": hit["id"],
-                            "url": hit["webformatURL"],
-                            "provider": "pixabay",
-                            "attribution": f"Photo by {hit['user']} on Pixabay",
-                            "source_url": hit["pageURL"]
-                        })
-                        app.logger.info(f"Added Pixabay image: {hit['pageURL']}")
+            async with get_session() as session:
+                async with session.get(
+                    "https://pixabay.com/api/",
+                    params={
+                        "key": pixabay_key,
+                        "q": search_query,
+                        "per_page": 3,
+                        "image_type": "photo",
+                        "orientation": "horizontal"
+                    }
+                ) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        for hit in data.get("hits", []):
+                            mapillary_images.append({
+                                "id": hit["id"],
+                                "url": hit["webformatURL"],
+                                "provider": "pixabay",
+                                "attribution": f"Photo by {hit['user']} on Pixabay",
+                                "source_url": hit["pageURL"]
+                            })
+                            app.logger.info(f"Added Pixabay image: {hit['pageURL']}")
     except Exception as e:
         app.logger.debug(f"Pixabay fetch failed: {e}")
     
@@ -2362,11 +2391,16 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
                 # include any attributions found in the quick_guide text as metadata (deduped)
                 for a in image_attributions:
                     if not any((a.get('url') and a.get('url') == m.get('source_url')) for m in mapillary_images):
+                        try:
+                            from city_guides.src.synthesis_enhancer import SynthesisEnhancer as _SE
+                            attr = _SE.create_attribution(a.get('provider'), a.get('url'))
+                        except Exception:
+                            attr = ''
                         mapillary_images.append({
                             'id': None,
                             'url': a.get('url'),
                             'provider': a.get('provider'),
-                            'attribution': SynthesisEnhancer.create_attribution(a.get('provider'), a.get('url')),
+                            'attribution': attr,
                             'source_url': a.get('url')
                         })
             except Exception:
@@ -2458,25 +2492,26 @@ async def get_weather_async(lat, lon):
         }
         # coerce boolean params to strings
         coerced = {k: (str(v).lower() if isinstance(v, bool) else v) for k, v in params.items()}
-        async with aiohttp_session.get(url, params=coerced, timeout=aiohttp.ClientTimeout(total=10)) as resp:  # type: ignore
-            if resp.status != 200:
-                print(f"[DEBUG app.py] get_weather_async HTTP error: {resp.status}")
-            resp.raise_for_status()
-            data = await resp.json()
-            # return a compact payload containing current weather and today's daily fields
-            return {
-                'current_weather': data.get('current_weather'),
-                'daily': data.get('daily'),
-                'timezone': data.get('timezone'),
-                'timezone_abbreviation': data.get('timezone_abbreviation'),
-                'utc_offset_seconds': data.get('utc_offset_seconds')
-            }
+        async with get_session() as session:
+            async with session.get(url, params=coerced, timeout=ClientTimeout(total=10)) as resp:  # type: ignore
+                if resp.status != 200:
+                    print(f"[DEBUG app.py] get_weather_async HTTP error: {resp.status}")
+                resp.raise_for_status()
+                data = await resp.json()
+                # return a compact payload containing current weather and today's daily fields
+                return {
+                    'current_weather': data.get('current_weather'),
+                    'daily': data.get('daily'),
+                    'timezone': data.get('timezone'),
+                    'timezone_abbreviation': data.get('timezone_abbreviation'),
+                    'utc_offset_seconds': data.get('utc_offset_seconds')
+                }
     except Exception as e:
         print(f"[DEBUG app.py] get_weather_async Exception: {e}")
         return None
 
 async def prewarm_popular_searches():
-    if not redis_client or not DEFAULT_PREWARM_CITIES or not PREWARM_QUERIES:
+    if not redis_client or not DEFAULT_PREWARM_CITIES or not DEFAULT_PREWARM_QUERIES:
         return
     sem = asyncio.Semaphore(2)
     async def limited(city, query):
@@ -2487,13 +2522,13 @@ async def prewarm_popular_searches():
             except Exception:
                 pass
 
-    tasks = [limited(city, query) for city in DEFAULT_PREWARM_CITIES for query in PREWARM_QUERIES]
+    tasks = [limited(city, query) for city in DEFAULT_PREWARM_CITIES for query in DEFAULT_PREWARM_QUERIES]
     if tasks:
         app.logger.info("Starting prewarm for %d popular searches", len(tasks))
         await asyncio.gather(*tasks)
 
 
-async def prewarm_rag_responses(top_n: int = None):
+async def prewarm_rag_responses(top_n: int | None = None):
     """Prewarm RAG responses for top N seeded cities using configured PREWARM_QUERIES.
     Stores responses in Redis with TTL `RAG_CACHE_TTL` (defaults to 6h via env).
     Best-effort and rate-limited to avoid overloading the Groq API.
@@ -2514,7 +2549,7 @@ async def prewarm_rag_responses(top_n: int = None):
         top_n = int(top_n or PREWARM_RAG_TOP_N)
         # Choose top N by population (descending)
         cities = sorted(cities, key=lambda c: int(c.get('population', 0) or 0), reverse=True)[:top_n]
-        queries = PREWARM_QUERIES or ["Top food"]
+        queries = DEFAULT_PREWARM_QUERIES or ["Top food"]
         sem = asyncio.Semaphore(int(os.getenv('PREWARM_RAG_CONCURRENCY', '4')))
 
         async def _warm_city(city_entry):
@@ -2528,20 +2563,26 @@ async def prewarm_rag_responses(top_n: int = None):
                         ck_input = f"{q}|{city_name}|{''}|{city_entry.get('countryCode') or ''}|{lat or ''}|{lon or ''}"
                         ck = "rag:" + hashlib.sha256(ck_input.encode('utf-8')).hexdigest()
                         try:
-                            existing = await redis_client.get(ck)
-                            if existing:
-                                await redis_client.expire(ck, int(os.getenv('RAG_CACHE_TTL', 60 * 60 * 6)))
-                                continue
+                            existing = None
+                            if redis_client:
+                                try:
+                                    existing = await redis_client.get(ck)
+                                    if existing:
+                                        await redis_client.expire(ck, int(os.getenv('RAG_CACHE_TTL', 60 * 60 * 6)))
+                                        continue
+                                except Exception:
+                                    pass
                         except Exception:
                             pass
                         # Call our internal endpoint to generate answer
                         payload = {"query": q, "engine": "google", "max_results": 3, "city": city_name}
                         try:
-                            async with aiohttp_session.post(f"http://localhost:5010/api/chat/rag", json=payload, timeout=15) as resp:
-                                if resp.status != 200:
-                                    app.logger.debug('Prewarm RAG failed for %s/%s: status %s', city_name, q, resp.status)
-                                    continue
-                                data = await resp.json()
+                            async with get_session(aiohttp_session) as session:
+                                async with session.post("http://localhost:5010/api/chat/rag", json=payload, timeout=ClientTimeout(total=15)) as resp:
+                                    if resp.status != 200:
+                                        app.logger.debug('Prewarm RAG failed for %s/%s: status %s', city_name, q, resp.status)
+                                        continue
+                                    data = await resp.json()
                         except Exception as exc:
                             app.logger.debug('Prewarm RAG http failed for %s/%s: %s', city_name, q, exc)
                             continue
@@ -2549,8 +2590,9 @@ async def prewarm_rag_responses(top_n: int = None):
                         if data and isinstance(data, dict):
                             ttl = int(os.getenv('RAG_CACHE_TTL', 60 * 60 * 6))
                             try:
-                                await redis_client.setex(ck, ttl, json.dumps(data))
-                                app.logger.info('Prewarmed RAG for %s / %s', city_name, q)
+                                if redis_client:
+                                    await redis_client.setex(ck, ttl, json.dumps(data))
+                                    app.logger.info('Prewarmed RAG for %s / %s', city_name, q)
                             except Exception as exc:
                                 app.logger.debug('Failed to set RAG cache for %s/%s: %s', city_name, q, exc)
                     except Exception as exc:
@@ -2573,6 +2615,7 @@ async def prewarm_search_cache_entry(city: str, q: str):
     except Exception:
         pass
     try:
+        from .persistence import _search_impl
         result = await asyncio.to_thread(_search_impl, {"city": city, "q": q})
         if result:
             await redis_client.set(cache_key, json.dumps(result), ex=PREWARM_TTL)
@@ -2589,7 +2632,7 @@ async def prewarm_neighborhood(city: str, lang: str = "en"):
     try:
         existing = await redis_client.get(cache_key)
         if existing:
-            await redis_client.expire(cache_key, NEIGHBORHOOD_CACHE_TTL)
+            await redis_client.expire(cache_key, CACHE_TTL_NEIGHBORHOOD)
             return
     except Exception:
         pass
@@ -2600,7 +2643,7 @@ async def prewarm_neighborhood(city: str, lang: str = "en"):
         except Exception:
             neighborhoods = []
         if neighborhoods:
-            await redis_client.set(cache_key, json.dumps(neighborhoods), ex=NEIGHBORHOOD_CACHE_TTL)
+            await redis_client.set(cache_key, json.dumps(neighborhoods), ex=CACHE_TTL_NEIGHBORHOOD)
             app.logger.info("Prewarmed neighborhoods for %s (%d items)", city, len(neighborhoods))
     except Exception as exc:
         app.logger.debug("Neighborhood prewarm failed for %s: %s", city, exc)
@@ -2687,7 +2730,7 @@ async def _get_countries():
         try:
             url = "http://api.geonames.org/countryInfoJSON"
             params = {"username": geonames_user}
-            async with session.get(url, params=params, timeout=10) as resp:
+            async with session.get(url, params=params, timeout=ClientTimeout(total=10)) as resp:
                 if resp.status != 200:
                     return []
                 data = await resp.json()
@@ -2856,7 +2899,7 @@ async def parse_dream():
                         {"role": "system", "content": "Extract location information from travel queries. Return JSON with city, country, and optionally state/neighborhood. Be conservative - only return locations you're confident about."},
                         {"role": "user", "content": f"Extract location from: {query}"}
                     ]
-                    response = recommender.call_groq_chat(messages, timeout=10)
+                    response = await recommender.call_groq_chat(messages, timeout=10)
                     if response:
                         import json
                         parsed = json.loads(response["choices"][0]["message"]["content"])
@@ -2977,7 +3020,7 @@ async def location_suggestions():
         
         return jsonify({'suggestions': suggestions})
         
-    except Exception as e:
+    except Exception:
         app.logger.exception('Location suggestions failed')
         return jsonify({'error': 'suggestions_failed'}), 500
 
@@ -3021,7 +3064,7 @@ async def geonames_search():
                 "style": "FULL"
             }
             
-            async with session.get("http://api.geonames.org/searchJSON", params=params, timeout=10) as response:
+            async with session.get("http://api.geonames.org/searchJSON", params=params, timeout=ClientTimeout(total=10)) as response:
                 if response.status != 200:
                     app.logger.error(f"GeoNames API error: {response.status}")
                     return jsonify({'suggestions': []})
@@ -3087,7 +3130,7 @@ async def geonames_search():
                                 'BW': '🇧🇼', 'NA': '🇳🇦', 'SZ': '🇸🇿', 'LS': '🇱🇸', 'LR': '🇱🇷',
                                 'SL': '🇸🇱', 'GN': '🇬🇳', 'GW': '🇬🇼', 'CV': '🇨🇻', 'ST': '🇸🇹',
                                 'ER': '🇪🇷', 'DJ': '🇩🇯', 'SO': '🇸🇴', 'ET': '🇪🇹', 'SS': '🇸🇸',
-                                'TD': '🇹🇩', 'CF': '🇨🇫', 'CM': '🇨🇲', 'GA': '🇬🇦', 'GQ': '🇬🇶',
+                                'TD': '🇹🇩', 'CF': '🇨🇫',
                                 'SA': '🇸🇦', 'IQ': '🇮🇶', 'IR': '🇮🇷', 'AF': '🇦🇫', 'PK': '🇵🇰',
                                 'BD': '🇧🇩', 'LK': '🇱🇰', 'MM': '🇲🇲', 'TH': '🇹🇭', 'KH': '🇰🇭',
                                 'LA': '🇱🇦', 'VN': '🇻🇳', 'PH': '🇵🇭', 'MY': '🇲🇾', 'SG': '🇸🇬',
@@ -3163,7 +3206,7 @@ async def unsplash_search():
         
         async with get_session() as session:
             async with session.get(
-                f"https://api.unsplash.com/search/photos",
+                "https://api.unsplash.com/search/photos",
                 params=params,
                 headers=headers,
                 timeout=aiohttp.ClientTimeout(total=10)
@@ -3197,8 +3240,8 @@ async def unsplash_search():
         
     except Exception as e:
         app.logger.exception(f'Unsplash proxy failed: {e}')
-        app.logger.error(f'Query was: {query}')
-        app.logger.error(f'Unsplash key configured: {bool(os.getenv("UNSPLASH_KEY"))}')
+        app.logger.error('Query was: %s', locals().get('query'))
+        app.logger.error('Unsplash key configured: %s', bool(os.getenv('UNSPLASH_KEY')))
         return jsonify({'error': 'unsplash_search_failed'}), 500
 
 @app.route('/api/pixabay-search', methods=['POST'])
@@ -3273,7 +3316,7 @@ async def log_suggestion_success():
         
         return jsonify({'success': True})
         
-    except Exception as e:
+    except Exception:
         app.logger.exception('Failed to log suggestion success')
         return jsonify({'error': 'logging_failed'}), 500
 

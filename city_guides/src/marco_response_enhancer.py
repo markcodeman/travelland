@@ -5,10 +5,8 @@ This module provides enhanced response generation for Marco Chat to avoid
 generic fallbacks and provide more specific, helpful responses.
 """
 
-import re
-import logging
-from typing import List, Dict, Any, Optional
-from .venue_quality import calculate_venue_quality_score, filter_high_quality_venues
+from typing import List, Dict, Any
+from .venue_quality import filter_high_quality_venues
 
 
 class MarcoResponseEnhancer:

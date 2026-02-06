@@ -16,7 +16,6 @@ import os
 import json
 import hashlib
 from pathlib import Path
-from urllib.parse import urlencode
 import asyncio
 import re
 
@@ -38,7 +37,6 @@ def normalize_city_name(city: Optional[str]) -> Optional[str]:
 
 # Ensure city_guides is importable for submodule imports
 import sys
-from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
@@ -1280,11 +1278,11 @@ async def discover_restaurants(
             bbox = await geocode_city(city, session=session)
             print(f"[OVERPASS DEBUG] Geocoded city to bbox={bbox}")
         else:
-            print(f"[DEBUG discover_restaurants] No city, neighborhood, or bbox, returning empty")
+            print("[DEBUG discover_restaurants] No city, neighborhood, or bbox, returning empty")
             return []
     # Validate bbox is a tuple/list of 4 numbers
     if not (isinstance(bbox, (tuple, list)) and len(bbox) == 4 and all(isinstance(x, (int, float)) for x in bbox)):
-        print(f"[OVERPASS DEBUG] Invalid bbox format, returning empty")
+        print("[OVERPASS DEBUG] Invalid bbox format, returning empty")
         return []
     
     # bbox format: (west, south, east, north) - unpack and convert to Overpass format
@@ -1363,7 +1361,6 @@ async def discover_restaurants(
             j = None
     else:
         import subprocess
-        import shlex
         j = None
         # Try subprocess/curl as primary
         for base_url in OVERPASS_URLS:
@@ -1449,7 +1446,7 @@ async def discover_restaurants(
                 j = expired_cache
             elif filter_bbox is not None:
                 # Try to find any cached file that covers the requested bbox
-                print(f"[Overpass] No cached data for bbox, searching all cache files...")
+                print("[Overpass] No cached data for bbox, searching all cache files...")
                 f_west, f_south, f_east, f_north = filter_bbox
                 try:
                     # Iterate through all cache files
@@ -1493,7 +1490,7 @@ async def discover_restaurants(
                                         print(f"[Overpass] Found cache covering bbox ({cache_south:.2f},{cache_west:.2f},{cache_north:.2f},{cache_east:.2f}), age {age/3600:.1f}h")
                                         j = cached_data
                                         break
-                        except Exception as e:
+                        except Exception:
                             continue
                     if j is None:
                         print(f"[Overpass] No suitable cached data found covering bbox={filter_bbox}")
@@ -1503,7 +1500,7 @@ async def discover_restaurants(
                 return []
 
     if j is None:
-        print(f"[DEBUG discover_restaurants] No JSON response after all attempts, returning empty")
+        print("[DEBUG discover_restaurants] No JSON response after all attempts, returning empty")
         return []
     elements = j.get("elements", [])
     print(f"[DEBUG discover_restaurants] Got {len(elements)} elements from Overpass")
@@ -1978,7 +1975,7 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
             if result_data:
                 break
         if not result_data:
-            print(f"[async_discover_pois] No Overpass data returned for around() query")
+            print("[async_discover_pois] No Overpass data returned for around() query")
             if own_session:
                 try:
                     await session.close()
@@ -2330,7 +2327,7 @@ def process_venue_results(elements, limit=50):
                 'osm_url': f"https://www.openstreetmap.org/{element.get('type')}/{element.get('id')}",
             }
             venues.append(venue)
-        except Exception as e:
+        except Exception:
             continue
 
     # Sort by quality score and limit results

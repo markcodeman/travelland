@@ -4,7 +4,6 @@ Test script to verify Japantown coffee/tea venue functionality.
 """
 
 import sys
-import os
 from pathlib import Path
 
 # Add the city_guides directory to the Python path

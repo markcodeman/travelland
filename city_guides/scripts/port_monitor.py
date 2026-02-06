@@ -8,7 +8,6 @@ Polls the given HTTP ports on localhost and logs timestamped status to stdout an
 import argparse
 import time
 import socket
-import sys
 import subprocess
 from datetime import datetime
 import urllib.request
@@ -201,7 +200,6 @@ def restart_backend(logfile_handle=None):
     now = datetime.utcnow().isoformat() + 'Z'
     import subprocess
     # attempt to find PIDs running city_guides.app or hypercorn
-    import subprocess
     # find existing backend processes
     try:
         out = subprocess.check_output("pgrep -f 'city_guides.app|hypercorn|python .*city_guides.app' || true", shell=True, text=True).strip()
@@ -278,12 +276,14 @@ def send_notification(message: str, methods=None, webhook_url: str | None = None
                 continue
             if m == 'desktop':
                 # use notify-send if present
-                import shutil, subprocess
+                import shutil
+                import subprocess
                 if shutil.which('notify-send'):
                     subprocess.Popen(["notify-send", "Port Monitor", message])
             if m == 'webhook' and webhook_url:
                 try:
-                    import json, urllib.request
+                    import json
+                    import urllib.request
                     req = urllib.request.Request(webhook_url, data=json.dumps({'text': message}).encode('utf-8'), headers={'Content-Type': 'application/json'})
                     urllib.request.urlopen(req, timeout=5)
                 except Exception:

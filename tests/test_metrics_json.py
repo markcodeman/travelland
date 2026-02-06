@@ -1,5 +1,4 @@
 import pytest
-import json
 from city_guides.src import app as quart_app_module
 
 

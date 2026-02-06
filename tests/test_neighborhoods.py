@@ -1,10 +1,9 @@
 import asyncio
-import aiohttp
 import sys
 
 sys.path.insert(0, '/home/markcodeman/CascadeProjects/travelland/city_guides')
 
-from city_guides.providers.geocoding import geocode_city
+from city_guides.src.app import geocode_city
 from city_guides.src.dynamic_neighborhoods import get_neighborhoods_for_city
 
 async def test_marseille_neighborhoods():

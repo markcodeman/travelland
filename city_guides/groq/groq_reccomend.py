@@ -93,7 +93,7 @@ def recommend_with_groq(user_context: Dict, candidates: List[Dict]) -> List[Dict
                 r["_metadata"] = id_to_cand[vid]
             out.append(r)
         return out
-    except Exception as e:
+    except Exception:
         # If parse fails, don't crash — fallback to simple ranking (e.g., by distance or return empty)
         return []
 

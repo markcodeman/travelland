@@ -1,5 +1,4 @@
 import asyncio
-import os
 
 # Ensure environment loads the .env file used by semantic.py at import time
 # semantic.py already loads .env from project paths

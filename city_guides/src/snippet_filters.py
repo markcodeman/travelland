@@ -1,4 +1,4 @@
-import re
+from urllib.parse import urlparse
 
 
 def looks_like_ddgs_disambiguation_text(txt: str) -> bool:
@@ -49,7 +49,6 @@ def looks_like_ddgs_disambiguation_text(txt: str) -> bool:
 
 
 # --- DDGS domain blocklist helpers ---
-from urllib.parse import urlparse
 
 
 def _get_domain(href: str) -> str:
@@ -96,11 +95,3 @@ def filter_ddgs_results(results: list, blocked_domains: list) -> tuple:
         else:
             allowed.append(r)
     return allowed, blocked
-    if low.count(',') >= 3 and len(low) < 200:
-        parts = [p.strip() for p in low.split(',')]
-        short_parts = [p for p in parts if len(p) < 80]
-        if len(short_parts) >= 3:
-            return True
-    if 'rating' in low and any(c.isdigit() for c in low):
-        return True
-    return False

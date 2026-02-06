@@ -1,7 +1,4 @@
-import sys
-import os
 import requests
-import json
 
 
 def test_api_search():

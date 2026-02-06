@@ -3,15 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/marcos.png" />
     <title>TravelLand Frontend</title>
-    <!-- Ensure React Fast Refresh preamble is available early for dev (Vite/react-refresh expects this) -->
-    <script type="module">
-      import { injectIntoGlobalHook } from "/@react-refresh";
-      // inject refresh hook and provide noop defaults so modules see the expected globals
-      injectIntoGlobalHook(window);
-      window.$RefreshReg$ = () => {};
-      window.$RefreshSig$ = () => (type) => type;
-    </script>
   </head>
   <body>
     <div id="root"></div>

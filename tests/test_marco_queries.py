@@ -7,9 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from city_guides.src.semantic import (
-    build_focused_marco_prompt,
     build_mandatory_venues_prompt,
-    create_rich_venue_context,
 )
 
 import json

@@ -40,7 +40,6 @@ except Exception as e:
 
 # Import RAG recommender
 try:
-    from city_guides.groq.traveland_rag import recommend_venues_rag, recommend_neighborhoods_rag
     RAG_AVAILABLE = True
 except Exception as e:
     RAG_AVAILABLE = False
@@ -755,7 +754,7 @@ def create_rich_venue_context(venues, query, limit=6):
     
     context = f"I found {len(venue_details)} places matching your interests:\n\n"
     context += "\n\n".join(venue_details)
-    context += f"\n\nBased on local data, these spots should match what you're looking for!"
+    context += "\n\nBased on local data, these spots should match what you're looking for!"
     
     return context
 
@@ -1802,7 +1801,7 @@ async def search_and_reason(
                 logging.debug(f"[Marco DEBUG] Wikipedia summary NOT found for: {query_title} or fallback neighborhood")
             # Always include debug logs in the response for debugging
             if wiki_debug_logs:
-                summary_parts.append(f"**Wikipedia Debug Logs:**\n" + "\n".join(wiki_debug_logs))
+                summary_parts.append("**Wikipedia Debug Logs:**\n" + "\n".join(wiki_debug_logs))
             # Sections: try query title, then fallback
             wiki_sections = await fetch_wikipedia_full(query_title)
             if not wiki_sections and neighborhoods and len(neighborhoods) > 0:

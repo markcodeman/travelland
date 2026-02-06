@@ -3,8 +3,7 @@ Dynamic neighborhood fetcher using Overpass API
 No hardcoded lists - works for ANY city globally
 """
 import aiohttp
-import asyncio
-from typing import List, Dict, Optional
+from typing import List, Dict
 import logging
 
 logger = logging.getLogger(__name__)
@@ -107,7 +106,7 @@ async def fetch_neighborhoods_dynamic(city: str, lat: float, lon: float, radius:
         
         # Add wikidata description if available
         if 'wikipedia' in tags:
-            description += f" - See Wikipedia for more info"
+            description += " - See Wikipedia for more info"
         
         neighborhoods.append({
             'name': name,
@@ -177,7 +176,7 @@ async def get_neighborhoods_for_city(city: str, lat: float, lon: float) -> List[
     Optimized for speed with early returns
     """
     if city.lower() == "marseille":
-        logger.info(f"Using seed data from JSON file for Marseille")
+        logger.info("Using seed data from JSON file for Marseille")
         try:
             import json
             import os

@@ -2,7 +2,6 @@
 
 # Use absolute imports if needed, though no imports to update here
 # No external imports requiring adjustment in this file
-from datetime import datetime
 
 # Seasonal recommendations (current month)
 def get_seasonal_destinations(month, hemisphere='northern'):

@@ -12,8 +12,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 def test_semantic_search_max_results():
     """Test that semantic.search_and_reason uses max_results=5"""
-    import semantic
-    from providers import search_provider
 
     # Check the default max_results in semantic.py
     print("✓ Testing semantic.py max_results configuration...")

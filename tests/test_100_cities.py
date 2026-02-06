@@ -38,7 +38,7 @@ async def test_city(session, city):
     """Test a single city"""
     try:
         async with session.get(
-            f'http://localhost:5010/api/smart-neighborhoods',
+            'http://localhost:5010/api/smart-neighborhoods',
             params={'city': city, 'category': 'Food'},
             timeout=aiohttp.ClientTimeout(total=10)
         ) as response:
@@ -83,7 +83,7 @@ async def main():
     # Save full results
     with open('/tmp/city_test_results.json', 'w') as f:
         json.dump(results, f, indent=2)
-    print(f"Full results saved to /tmp/city_test_results.json")
+    print("Full results saved to /tmp/city_test_results.json")
 
 if __name__ == '__main__':
     asyncio.run(main())

@@ -4,10 +4,7 @@ Provides stronger snippet extraction, language normalization, and safer trimming
 """
 
 import re
-import json
-from typing import List, Dict, Optional, Tuple
-from datetime import datetime
-import hashlib
+from typing import List, Optional, Tuple
 
 # Import persistence functions lazily to break circular import
 _persistence_loaded = False
@@ -375,3 +372,17 @@ class SynthesisEnhancer:
 
         # Final safe trim
         return SynthesisEnhancer.safe_trim(base, max_length)
+
+    @staticmethod
+    def create_attribution(provider: Optional[str] = None, url: Optional[str] = None) -> str:
+        """
+        Create attribution string for sources
+        """
+        if provider and url:
+            return f"Source: {provider} ({url})"
+        elif provider:
+            return f"Source: {provider}"
+        elif url:
+            return f"Source: {url}"
+        else:
+            return "Source: OpenStreetMap"

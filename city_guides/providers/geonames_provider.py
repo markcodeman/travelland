@@ -1,6 +1,5 @@
 import os
 import aiohttp
-import asyncio
 import re
 
 from .utils import get_session

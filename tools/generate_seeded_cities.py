@@ -22,7 +22,6 @@ import os
 import sys
 import json
 import argparse
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode

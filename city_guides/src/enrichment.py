@@ -3,11 +3,8 @@ Neighborhood enrichment module for TravelLand
 Handles geo-enrichment and quick guide building
 """
 
-import asyncio
-from typing import Dict, List, Optional, Any
-from quart import request, jsonify
+from typing import Dict, Optional
 from city_guides.providers import multi_provider
-from city_guides.providers.utils import get_session
 try:
     from city_guides.src.geo_enrichment import enrich_neighborhood as geo_enrich_neighborhood
 except ImportError:
