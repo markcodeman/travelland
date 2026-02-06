@@ -517,7 +517,6 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                           📍 Search on Google Maps
                         </a>
                       </div>
-                      <div style={{ color: '#666' }}>Tip: try toggling <strong>Local Gems Only</strong> or selecting a nearby neighborhood for better local results.</div>
                     </div>
                   ) : (
                     <>
@@ -588,7 +587,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                         if (items.length === 0) {
                           return (
                             <div style={{marginTop: 12, color: '#666'}}>
-                              Tip: try toggling <strong>Local Gems Only</strong> or selecting a nearby neighborhood for better local results.
+                              <strong>No venues found in this area.</strong>
                             </div>
                           );
                         }
