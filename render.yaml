@@ -17,8 +17,8 @@ services:
       - key: NODE_VERSION
         value: "18"
     startCommand: |
-      # run Hypercorn and bind to the PORT Render provides
-      bash -lc "cd /opt/render/project/src || true; export PYTHONPATH=/opt/render/project/src:$PYTHONPATH; hypercorn city_guides.src.app:app --bind 0.0.0.0:$PORT"
+      # run Hypercorn from venv and bind to the PORT Render provides
+      bash -lc "cd /opt/render/project/src && export PYTHONPATH=/opt/render/project/src:$PYTHONPATH && /opt/render/.venv/bin/hypercorn city_guides.src.app:app --bind 0.0.0.0:$PORT"
     # Environment variables are configured in the Render dashboard; keep secrets out of the manifest
     healthCheckPath: /health
     services:
