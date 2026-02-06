@@ -606,63 +606,89 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                               if (/(coffee|cafe|espresso|latte|tea)/i.test(lower)) {
                                 emoji = '☕';
                                 tags = 'amenity=cafe,cuisine=coffee';
-                                category = 'cafe';
+                                category = 'Cafe';
                               }
                               else if (/(museum|museu|gallery|historic|cathedral|monument)/i.test(lower)) {
                                 emoji = '🏛️';
                                 tags = 'tourism=museum';
-                                category = 'museum';
+                                category = 'Museum';
                               }
                               else if (/(park|parc|garden|jardins|outdoor)/i.test(lower)) {
                                 emoji = '🌳';
                                 tags = 'leisure=park';
-                                category = 'park';
+                                category = 'Park';
                               }
                               else if (/(bar|pub|cocktail|wine|beer)/i.test(lower)) {
                                 emoji = '🍸';
                                 tags = 'amenity=bar';
-                                category = 'bar';
+                                category = 'Bar';
                               }
                               else if (/(restaurant|food|dining)/i.test(lower)) {
                                 emoji = '🍽️';
                                 tags = 'amenity=restaurant';
-                                category = 'restaurant';
+                                category = 'Restaurant';
                               }
                               else if (/(hotel|accommodation)/i.test(lower)) {
                                 emoji = '🏨';
                                 tags = 'tourism=hotel';
-                                category = 'hotel';
+                                category = 'Hotel';
                               }
                               else if (/(shop|store|mall)/i.test(lower)) {
                                 emoji = '🛍️';
                                 tags = 'shop=retail';
-                                category = 'shop';
+                                category = 'Shop';
                               }
                               else if (/(architecture|design|building|modernisme|gaudi|sagrada)/i.test(lower)) {
-                                emoji = '�️';
+                                emoji = '🏛️';
                                 tags = 'tourism=attraction,architectural';
-                                category = 'architecture';
+                                category = 'Architecture';
                               }
                               
                               // Generate a Google Maps search URL using name and city
                               const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + (city ? ' ' + city : ''))}`;
+                              
+                              // Properly capitalize the category label
+                              const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+                              const categoryLabel = category ? capitalize(category) : 'Place';
+                              
                               return (
                                 <div key={idx} style={{
-                                  background: 'white',
-                                  borderRadius: '8px',
-                                  padding: '12px 16px',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  background: 'linear-gradient(135deg, #fff 0%, #f8f9fa 100%)',
+                                  borderRadius: '12px',
+                                  padding: '16px 20px',
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
                                   display: 'flex',
                                   justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  marginBottom: '8px'
+                                  alignItems: 'flex-start',
+                                  marginBottom: '12px',
+                                  border: '1px solid #e9ecef',
+                                  transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                                 }}>
-                                  <div>
-                                    <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600' }}>
-                                      {emoji} {name}
-                                    </h4>
+                                  <div style={{ flex: 1, marginRight: '16px' }}>
+                                    <div style={{ 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      marginBottom: '6px',
+                                      gap: '8px'
+                                    }}>
+                                      <span style={{ fontSize: '20px' }}>{emoji}</span>
+                                      <h4 style={{ 
+                                        margin: 0, 
+                                        fontSize: '16px', 
+                                        fontWeight: '700',
+                                        color: '#1a1a2e',
+                                        lineHeight: 1.3
+                                      }}>
+                                        {name}
+                                      </h4>
+                                    </div>
                                     {description && (
-                                      <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                                      <p style={{ 
+                                        margin: '6px 0 0 0', 
+                                        fontSize: '13px', 
+                                        color: '#5a5a7a',
+                                        lineHeight: 1.5
+                                      }}>
                                         {description}
                                       </p>
                                     )}
@@ -674,14 +700,19 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                                     style={{
                                       background: '#4285f4',
                                       color: 'white',
-                                      padding: '8px 12px',
-                                      borderRadius: '6px',
+                                      padding: '10px 14px',
+                                      borderRadius: '8px',
                                       textDecoration: 'none',
-                                      fontSize: '14px',
-                                      fontWeight: '500'
+                                      fontSize: '13px',
+                                      fontWeight: '600',
+                                      whiteSpace: 'nowrap',
+                                      boxShadow: '0 2px 4px rgba(66,133,244,0.3)',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '6px'
                                     }}
                                   >
-                                    📍 Maps
+                                    📍 <span>Maps</span>
                                   </a>
                                 </div>
                               );
