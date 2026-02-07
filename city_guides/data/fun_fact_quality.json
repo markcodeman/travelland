@@ -43,5 +43,19 @@
     ],
     "avg_quality": 0.7,
     "last_attempt": 1770503857.8999357
+  },
+  "zaragoza": {
+    "attempts": 1,
+    "facts": [
+      "Zaragoza, traditionally known in English as Saragossa, is the capital city of the province of Zaragoza and of the autonomous community of Aragon, Spain."
+    ],
+    "sources": [
+      "dynamic"
+    ],
+    "quality_scores": [
+      0.3
+    ],
+    "avg_quality": 0.3,
+    "last_attempt": 1770504053.8163028
   }
 }

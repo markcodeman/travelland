@@ -413,5 +413,10 @@
     "remote_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Alcal%C3%A1_de_Henares_-_50913617211.jpg/3456px-Alcal%C3%A1_de_Henares_-_50913617211.jpg",
     "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=89852)",
     "generated_at": "2026-02-07T22:37:37.788549"
+  },
+  "zaragoza": {
+    "remote_url": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Zaragoza_-_Bas%C3%ADlica_del_Pilar_y_r%C3%ADo_Ebro.jpg",
+    "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=64203)",
+    "generated_at": "2026-02-07T22:40:53.752053"
   }
 }
