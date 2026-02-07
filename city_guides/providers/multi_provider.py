@@ -181,34 +181,17 @@ def _haversine_meters(lat1, lon1, lat2, lon2):
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-def _normalize_osm_entry(e: Dict) -> Dict:
+def _normalize_osm_entry(e: Dict) -> Optional[Dict]:
     # e expected from overpass_provider.discover_restaurants
-    tags_str = e.get("tags", "")
-    
-    # Extract name: try direct name field first, then parse from tags string
-    name = e.get("name")
-    if not name and tags_str:
-        # Parse tags string format: "key1=value1, key2=value2"
-        for tag_pair in tags_str.split(","):
-            tag_pair = tag_pair.strip()
-            if tag_pair.startswith("name="):
-                name = tag_pair[5:]  # Everything after "name="
-                break
-    if not name:
-        name = "Unknown"
-    
-    # Filter out garbage names with OSM artifact patterns - any name containing -- is likely OSM garbage data
-    if "--" in name.lower():
-        return None  # Skip garbage venues entirely instead of returning Unknown
-    
     return {
         "id": e.get("osm_id") or e.get("id") or "",
-        "name": name,
+        "name": e.get("name")
+        or (e.get("tags", "").split("=")[-1] if e.get("tags") else "Unknown"),
         "lat": float(e.get("lat") or e.get("latitude") or 0),
         "lon": float(e.get("lon") or e.get("longitude") or 0),
         "address": e.get("address", ""),
         "osm_url": e.get("osm_url", ""),
-        "tags": tags_str,
+        "tags": e.get("tags", ""),
         "website": e.get("website", ""),
         "amenity": e.get("amenity", ""),
         "provider": e.get("provider") or "osm",
@@ -216,34 +199,16 @@ def _normalize_osm_entry(e: Dict) -> Dict:
     }
 
 
-def _normalize_generic_entry(e: Dict) -> Dict:
+def _normalize_generic_entry(e: Dict) -> Optional[Dict]:
     """Handle entries from web or other mixed sources."""
-    tags_str = e.get("tags", "")
-    
-    # Extract name: try direct name field first, then parse from tags string
-    name = e.get("name")
-    if not name and tags_str:
-        # Parse tags string format: "key1=value1, key2=value2"
-        for tag_pair in tags_str.split(","):
-            tag_pair = tag_pair.strip()
-            if tag_pair.startswith("name="):
-                name = tag_pair[5:]  # Everything after "name="
-                break
-    if not name:
-        name = "Unknown"
-    
-    # Filter out garbage names with OSM artifact patterns - any name containing -- is likely OSM garbage data
-    if "--" in name.lower():
-        return None  # Skip garbage venues entirely instead of returning Unknown
-    
     return {
         "id": e.get("id") or e.get("osm_id") or e.get("place_id") or "",
-        "name": name,
+        "name": e.get("name") or "Unknown",
         "lat": float(e.get("lat") or e.get("latitude") or 0),
         "lon": float(e.get("lon") or e.get("longitude") or 0),
         "address": e.get("address", ""),
         "osm_url": e.get("osm_url", ""),
-        "tags": tags_str,
+        "tags": e.get("tags", ""),
         "website": e.get("website", ""),
         "description": e.get("description", ""),
         "amenity": e.get("amenity", "restaurant"),
@@ -341,12 +306,9 @@ def discover_pois(
                 norm = _normalize_osm_entry(e)
             else:
                 norm = _normalize_generic_entry(e)
-            # Skip if normalization returned None (garbage venue filtered)
-            if norm is None:
-                continue
             print(f"[DEBUG] Normalized entry: {norm}")
             # Skip duplicates by ID
-            if norm["id"] and norm["id"] not in seen_ids:
+            if norm and norm["id"] and norm["id"] not in seen_ids:
                 seen_ids.add(norm["id"])
                 normalized.append(norm)
         except Exception as e:
@@ -389,6 +351,7 @@ async def async_discover_pois(
     """Async version of discover_pois. It will call async provider functions
     when available, otherwise offload sync providers to a thread.
     """
+    print(f"[CRITICAL] async_discover_pois called: city={city}, poi_type={poi_type}, overpass_provider={'AVAILABLE' if overpass_provider else 'NONE'}")
     results = []
 
     max_per_provider = max(int(limit) * 10, 200)
@@ -476,7 +439,8 @@ async def async_discover_pois(
         geoapify_bbox = bbox
         if geoapify_bbox is None and city:
             try:
-                geoapify_bbox = await overpass_provider.async_geocode_city(city, session=session)
+                if overpass_provider is not None and hasattr(overpass_provider, "async_geocode_city"):
+                    geoapify_bbox = await overpass_provider.async_geocode_city(city, session=session)
             except Exception:
                 pass
         if geoapify_bbox:
@@ -496,7 +460,8 @@ async def async_discover_pois(
             mapillary_bbox = bbox
             if mapillary_bbox is None and city:
                 try:
-                    mapillary_bbox = await overpass_provider.async_geocode_city(city, session=session)
+                    if overpass_provider is not None and hasattr(overpass_provider, "async_geocode_city"):
+                        mapillary_bbox = await overpass_provider.async_geocode_city(city, session=session)
                 except Exception:
                     pass
             if mapillary_bbox:
@@ -524,7 +489,7 @@ async def async_discover_pois(
         except Exception as e:
             logging.warning(f"Error awaiting provider result {idx}: {e}")
             continue
-        if res:
+        if res and isinstance(res, list):
             results.extend(res)
 
     # Normalize and dedupe
@@ -536,10 +501,7 @@ async def async_discover_pois(
                 norm = _normalize_osm_entry(e)
             else:
                 norm = _normalize_generic_entry(e)
-            # Skip if normalization returned None (garbage venue filtered)
-            if norm is None:
-                continue
-            if norm["id"] and norm["id"] not in seen_ids:
+            if norm and norm.get("id") and norm["id"] not in seen_ids:
                 seen_ids.add(norm["id"])
                 normalized.append(norm)
         except Exception as e:
@@ -689,10 +651,16 @@ async def async_get_neighborhoods(city: str | None = None, lat: float | None = N
     # Get from GeoNames if lat/lon provided
     if geonames_provider is not None and lat is not None and lon is not None:
         try:
-            geonames_results = await asyncio.wait_for(
-                geonames_provider.async_get_neighborhoods_geonames(city=city, lat=lat, lon=lon, max_rows=100, lang=lang, session=session),
-                timeout=10.0
-            )
+            if session is not None:
+                geonames_results = await asyncio.wait_for(
+                    geonames_provider.async_get_neighborhoods_geonames(city=city, lat=lat, lon=lon, max_rows=100, session=session),
+                    timeout=10.0
+                )
+            else:
+                geonames_results = await asyncio.wait_for(
+                    geonames_provider.async_get_neighborhoods_geonames(city=city, lat=lat, lon=lon, max_rows=100),
+                    timeout=10.0
+                )
             if geonames_results:
                 # Convert GeoNames format to match OSM format
                 for item in geonames_results:

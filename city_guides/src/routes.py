@@ -116,6 +116,18 @@ def register_routes(app):
             # Use the search implementation from persistence
             result = await asyncio.to_thread(_search_impl, payload)
             
+            # Add categories to the search result
+            if isinstance(result, dict):
+                try:
+                    from city_guides.src.simple_categories import get_dynamic_categories
+                    categories = await get_dynamic_categories(city, "", "")
+                    result['categories'] = categories
+                except Exception as e:
+                    import traceback
+                    print(f'[SEARCH] Failed to get categories for {city}: {e}')
+                    print(traceback.format_exc())
+                    result['categories'] = []
+            
             redis = getattr(app, "redis_client", None)
             prewarm_ttl = app.config.get("PREWARM_TTL")
             if should_cache and redis:

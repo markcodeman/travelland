@@ -383,5 +383,40 @@
     "remote_url": "https://upload.wikimedia.org/wikipedia/commons/c/cf/Antigua_Aduana_de_Barranquilla.jpg",
     "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=452374)",
     "generated_at": "2026-02-06T18:41:12.980497"
+  },
+  "tbilisi, georgia": {
+    "remote_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/View_of_Tbilisi_from_Tabori_Church_2023-10-08-2.jpg/3840px-View_of_Tbilisi_from_Tabori_Church_2023-10-08-2.jpg",
+    "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=42298)",
+    "generated_at": "2026-02-07T21:39:47.257689"
+  },
+  "sofia, bulgaria": {
+    "remote_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Russian_church_%2837591925970%29.jpg/3641px-Russian_church_%2837591925970%29.jpg",
+    "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=57644)",
+    "generated_at": "2026-02-07T21:40:24.817392"
+  },
+  "zagreb, croatia": {
+    "remote_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Zagreb_%2829255640143%29.jpg/3840px-Zagreb_%2829255640143%29.jpg",
+    "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=55906)",
+    "generated_at": "2026-02-07T21:41:05.767146"
+  },
+  "skopje, north macedonia": {
+    "remote_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Skopje_view_from_Kale_3.jpg/3840px-Skopje_view_from_Kale_3.jpg",
+    "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=29618)",
+    "generated_at": "2026-02-07T21:41:50.480132"
+  },
+  "valencia, spain": {
+    "remote_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Malvarrosa_Beach%2C_Valencia%2C_Spain_%2829812271043%29.jpg/3264px-Malvarrosa_Beach%2C_Valencia%2C_Spain_%2829812271043%29.jpg",
+    "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=63861)",
+    "generated_at": "2026-02-07T21:45:28.140263"
+  },
+  "alcalá de henares": {
+    "remote_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Alcal%C3%A1_de_Henares_-_50913617211.jpg/3456px-Alcal%C3%A1_de_Henares_-_50913617211.jpg",
+    "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=89852)",
+    "generated_at": "2026-02-07T22:37:37.788549"
+  },
+  "zaragoza": {
+    "remote_url": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Zaragoza_-_Bas%C3%ADlica_del_Pilar_y_r%C3%ADo_Ebro.jpg",
+    "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=64203)",
+    "generated_at": "2026-02-07T22:40:53.752053"
   }
 }

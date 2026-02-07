@@ -49,7 +49,10 @@ def get_geoapify_key() -> Optional[str]:
     return os.getenv("GEOAPIFY_API_KEY")
 
 async def geoapify_geocode_city(city: str, session: Optional[aiohttp.ClientSession] = None):
-    city = normalize_city_name(city)
+    normalized = normalize_city_name(city)
+    if normalized is None:
+        return None
+    city = normalized
     api_key = get_geoapify_key()
     if not api_key:
         return None
@@ -1263,7 +1266,11 @@ async def discover_restaurants(
         neighborhood: Neighborhood name to geocode (e.g., "Soho, London")
     """
     orig_city = city
-    city = normalize_city_name(city)
+    if city:
+        normalized = normalize_city_name(city)
+        city = normalized if normalized else city
+    else:
+        city = None
     print(f"[OVERPASS DEBUG] discover_restaurants called with city={city} (original: {orig_city}), bbox={bbox}, neighborhood={neighborhood}, limit={limit}")
     
     # Store original bbox for filtering later
@@ -1771,24 +1778,12 @@ async def discover_pois(city: Optional[str] = None, poi_type: str = "restaurant"
     # Geoapify - always call with specific kinds if available, otherwise use defaults
     tasks.append(geoapify_discover_pois(bbox, kinds=geoapify_kinds, poi_type=poi_type, limit=limit, session=session))
 
-    # Opentripmap
+    # Opentripmap - use the standalone async function instead
     if opentripmap_kinds:
         try:
-            import importlib
-            otm_provider = None
-            try:
-                from city_guides import opentripmap_provider as otm_provider
-            except ImportError:
-                # Try relative import if running as script
-                try:
-                    otm_provider = importlib.import_module("opentripmap_provider")
-                except Exception:
-                    otm_provider = None
-            if otm_provider:
-                tasks.append(otm_provider.discover_pois(city, kinds=opentripmap_kinds, limit=limit, session=session))
+            tasks.append(opentripmap_discover_pois(bbox, kinds=opentripmap_kinds, limit=limit, session=session))
         except Exception as e:
             print(f"[DEBUG] Could not add opentripmap: {e}")
-            pass
 
     # Add Wikivoyage summary as a POI if available
     async def fetch_wikivoyage_poi(city_name, session=None):
@@ -1796,10 +1791,11 @@ async def discover_pois(city: Optional[str] = None, poi_type: str = "restaurant"
             import importlib
             fetch_wikivoyage_summary = None
             try:
-                from .london_provider import fetch_wikivoyage_summary
+                from . import geonames_provider
+                fetch_wikivoyage_summary = getattr(geonames_provider, "fetch_wikivoyage_summary", None)
             except ImportError:
                 try:
-                    mod = importlib.import_module("providers.london_provider")
+                    mod = importlib.import_module("city_guides.providers.geonames_provider")
                     fetch_wikivoyage_summary = getattr(mod, "fetch_wikivoyage_summary", None)
                 except Exception:
                     fetch_wikivoyage_summary = None
@@ -1850,10 +1846,10 @@ async def discover_pois(city: Optional[str] = None, poi_type: str = "restaurant"
             import importlib
             mapillary_provider = None
             try:
-                import city_guides.mapillary_provider as mapillary_provider
+                from . import mapillary_provider
             except ImportError:
                 try:
-                    mapillary_provider = importlib.import_module("mapillary_provider")
+                    mapillary_provider = importlib.import_module("city_guides.providers.mapillary_provider")
                 except Exception:
                     mapillary_provider = None
             if mapillary_provider:
@@ -1928,15 +1924,20 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
 
         # Map poi_type to category filters
         category_filters = {
-            "restaurant": '["amenity"~"restaurant|fast_food|cafe|bar|pub|food_court"]',
+            "restaurant": '["amenity"~"restaurant|fast_food"]',
             "bar": '["amenity"~"bar|pub|nightclub|biergarten"]',
+            "cafe": '["amenity"~"cafe|coffee_shop"]',
             "coffee": '["amenity"~"cafe|coffee_shop"]',
+            "hotel": '["tourism"~"hotel|guest_house"]["amenity"~"hotel|hostel|guest_house"]',
             "historic": '["historic"]',
             "museum": '["tourism"~"museum|gallery"]["amenity"~"museum"]',
             "park": '["leisure"~"park|garden"]',
             "market": '["amenity"~"marketplace"]',
             "shopping": '["shop"]["amenity"~"marketplace|shopping_center"]',
             "transport": '["amenity"~"bus_station|ferry_terminal"]["railway"~"station"]',
+            "nightlife": '["amenity"~"bar|pub|nightclub|biergarten|stripclub"]',
+            "entertainment": '["amenity"~"theatre|cinema|arts_centre|community_centre"]',
+            "amenity": '["amenity"~"theatre|cinema|arts_centre|community_centre|events_venue"]',
         }
 
         base_filter = category_filters.get(poi_type, '["amenity"~"restaurant|fast_food|cafe|bar|pub|food_court"]')

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // Use Vite proxy: API_BASE should be empty string for local dev
 const API_BASE = '';
@@ -347,14 +347,14 @@ const LocationSelector = ({
         let cityData = [];
         let coordData = [];
         try {
-          const resp = await fetch(`/neighborhoods?city=${encodeURIComponent(cityName)}&lang=en`);
+          const resp = await fetch(`/api/neighborhoods?city=${encodeURIComponent(cityName)}&lang=en`);
           const data = await resp.json();
           if (data?.neighborhoods?.length > 0) {
             cityData = data.neighborhoods.map((n, index) => ({ key: index, id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id })).filter(n => n.name);
           }
         } catch {}
         try {
-          const resp = await fetch(`/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
+          const resp = await fetch(`/api/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
           const data = await resp.json();
           if (data?.neighborhoods?.length > 0) {
             coordData = data.neighborhoods.map((n, index) => ({ key: index, id: n.id || n.name || n.label, name: n.name || n.display_name || n.label || n.id })).filter(n => n.name);

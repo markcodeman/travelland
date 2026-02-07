@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import './styles/app.css';
-import WeatherDisplay from './components/WeatherDisplay';
-import Header from './components/Header';
-import MarcoChat from './components/MarcoChat';
-import SimpleLocationSelector from './components/SimpleLocationSelector';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CitySuggestions from './components/CitySuggestions';
-import NeighborhoodPicker from './components/NeighborhoodPicker';
-import HeroImage from './components/HeroImage';
-import SearchResults from './components/SearchResults';
 import FunFact from './components/FunFact';
+import Header from './components/Header';
+import HeroImage from './components/HeroImage';
+import MarcoChat from './components/MarcoChat';
+import NeighborhoodPicker from './components/NeighborhoodPicker';
+import SearchResults from './components/SearchResults';
+import SimpleLocationSelector from './components/SimpleLocationSelector';
+import WeatherDisplay from './components/WeatherDisplay';
 import { getHeroImage, getHeroImageMeta } from './services/imageService';
+import './styles/app.css';
 
 // Constants moved outside component to avoid recreation
 const CITY_LIST = ['Rio de Janeiro', 'London', 'New York', 'Lisbon'];
@@ -270,13 +270,13 @@ function App() {
       let cityData = [];
       let coordData = [];
       try {
-        const data = await fetchAPI(`/neighborhoods?city=${encodeURIComponent(cityName)}&lang=en`);
+        const data = await fetchAPI(`/api/neighborhoods?city=${encodeURIComponent(cityName)}&lang=en`);
         if (data?.neighborhoods?.length > 0) {
           cityData = data.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
         }
       } catch {}
       try {
-        const data = await fetchAPI(`/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
+        const data = await fetchAPI(`/api/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
         if (data?.neighborhoods?.length > 0) {
           coordData = data.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
         }
@@ -288,7 +288,7 @@ function App() {
 
     try {
       // First try fetching by city name
-      const data = await fetchAPI(`/neighborhoods?city=${encodeURIComponent(cityName)}&lang=en`);
+      const data = await fetchAPI(`/api/neighborhoods?city=${encodeURIComponent(cityName)}&lang=en`);
       if (data?.neighborhoods?.length > 0) {
         const names = data.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
         const uniqueNames = Array.from(new Set(names));
@@ -297,7 +297,7 @@ function App() {
       }
       // If city-based fetch failed or returned no results, try geocoding to get coordinates
       try {
-        const geoData = await fetchAPI('/geocode', {
+        const geoData = await fetchAPI('/api/geocode', {
           method: 'POST',
           body: JSON.stringify({ city: cityName })
         });
@@ -305,7 +305,7 @@ function App() {
         const lon = geoData?.lon ?? geoData?.longitude ?? geoData?.lng;
         if (lat && lon) {
           // Try fetching by coordinates
-          const coordData = await fetchAPI(`/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
+          const coordData = await fetchAPI(`/api/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
           if (coordData?.neighborhoods?.length > 0) {
             const names = coordData.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
             const uniqueNames = Array.from(new Set(names));
@@ -378,7 +378,7 @@ function App() {
   // Consolidated quick guide fetch
   const fetchQuickGuide = useCallback(async (searchParams) => {
     try {
-      return await fetchAPI('/search', {
+      return await fetchAPI('/api/search', {
         method: 'POST',
         body: JSON.stringify(searchParams)
       });
@@ -400,7 +400,7 @@ function App() {
       setCityGuideLoading(true);
       try {
         const data = await fetchQuickGuide({ query: location.city, state: location.state, country: location.country, intent: location.intent });
-        if (mounted && data?.quick_guide) {
+        if (mounted && data) {
           setResults(data);
         }
       } finally {
@@ -422,7 +422,7 @@ function App() {
       
       try {
         setGenerating(true);
-        const data = await fetchAPI('/generate_quick_guide', {
+        const data = await fetchAPI('/api/generate_quick_guide', {
           method: 'POST',
           body: JSON.stringify({ city: location.city, neighborhood: location.neighborhood })
         });
@@ -460,7 +460,7 @@ function App() {
 
     try {
       // Geocode first
-      const geoData = await fetchAPI('/geocode', {
+      const geoData = await fetchAPI('/api/geocode', {
         method: 'POST',
         body: JSON.stringify({ city: cityName, neighborhood: neighborhoodName })
       });
@@ -479,7 +479,7 @@ function App() {
       }
 
       // Fetch weather with coordinates
-      const weatherData = await fetchAPI('/weather', {
+      const weatherData = await fetchAPI('/api/weather', {
         method: 'POST',
         body: JSON.stringify({ lat: Number(lat), lon: Number(lon) })
       });
@@ -520,7 +520,7 @@ function App() {
     try {
       // Parallel API calls for better performance
       const [geoData, quickGuideData] = await Promise.all([
-        fetchAPI('/geocode', {
+        fetchAPI('/api/geocode', {
           method: 'POST',
           body: JSON.stringify({ city: searchCity, neighborhood: '', country: location.country })
         }).catch(() => null),
@@ -604,7 +604,7 @@ function App() {
         // Start synthesis in background only when we have real guide text
         if (quickGuideData.quick_guide && !looksLikeMisalignedGuide(quickGuideData.quick_guide, location.city) || quickGuideData.summary) {
           setSynthLoading(true);
-          fetchAPI('/synthesize', {
+          fetchAPI('/api/synthesize', {
             method: 'POST',
             body: JSON.stringify({ search_result: quickGuideData })
           })
@@ -742,7 +742,7 @@ function App() {
     
     setGenerating(true);
     try {
-      const data = await fetchAPI('/generate_quick_guide', {
+      const data = await fetchAPI('/api/generate_quick_guide', {
         method: 'POST',
         body: JSON.stringify({ city: location.city, neighborhood: location.neighborhood })
       });

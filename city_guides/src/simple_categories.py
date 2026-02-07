@@ -1120,12 +1120,12 @@ async def extract_distinctive_categories(city: str, state: str = "", country: st
                 'category': 'University & Academia',
                 'confidence': 0.85
             },
-            # Castle & Fortifications
+            # Castles & Fortifications - routes to RAG for intelligent architecture answers
             {
-                'triggers': ['castle', 'fortress', 'walled city', 'medieval fort', 'citadel'],
+                'triggers': ['castle', 'fortress', 'fortification', 'walled city', 'medieval fort', 'citadel'],
                 'category': 'Castles & Fortifications',
                 'confidence': 0.90
-            }
+            },
         ]
         
         # Check each distinctive feature

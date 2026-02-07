@@ -12,6 +12,18 @@
     "priority": 3.0
   },
   {
+    "city": "jinja",
+    "attempts": 3,
+    "avg_quality": 0.16666666666666666,
+    "last_attempt": 1770410979.27467,
+    "sample_facts": [
+      "Weblio\u4f8b\u6587\u8f9e\u66f8\u3067\u306e\u300c\u8208\u5473\u6df1\u3044\u300d\u306b\u985e\u4f3c\u3057\u305f\u4f8b\u6587 \u8208\u5473\u6df1\u3044 1 \u8208\u5473\u6df1\u3044\u306d\u3047 \u4f8b\u6587 Wow, interesting ~ 2 \u5f37\u70c8\u306a \u8208\u5473 \u4f8b\u6587 a lively interest 3 \u8208\u5473 \u306e\u3042\u308b \u305d\u3076\u308a",
+      "Explore Jinja and discover what makes it special!",
+      "Explore Jinja and discover what makes it special!"
+    ],
+    "priority": 3.0
+  },
+  {
     "city": "testcity1",
     "attempts": 3,
     "avg_quality": 0.19999999999999998,
