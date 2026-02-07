@@ -233,10 +233,10 @@ async def api_chat_rag():
         engine = data.get("engine", "google")
         # Default to a small number of web snippets to improve latency and prompt size
         try:
-            requested_max = int(data.get("max_results", 3))
+            requested_max = int(data.get('max_results', 8))
         except Exception:
-            requested_max = 3
-        DEFAULT_DDGS_MAX = int(os.getenv('DDGS_MAX_RESULTS', '3'))
+            requested_max = 8
+        DEFAULT_DDGS_MAX = int(os.getenv('DDGS_MAX_RESULTS', '8'))
         max_results = min(requested_max, DEFAULT_DDGS_MAX)
         DEFAULT_DDGS_TIMEOUT = float(os.getenv('DDGS_TIMEOUT', '5'))
         city = data.get("city", "")

@@ -1473,12 +1473,24 @@ def _search_impl(payload):
                 "food": "restaurant",
                 "restaurants": "restaurant",
                 "dining": "restaurant",
+                "cafe": "cafe",
+                "cafes": "cafe",
+                "coffee": "cafe",
+                "coffee shop": "cafe",
+                "espresso": "cafe",
                 "hotel": "hotel",
                 "hotels": "hotel",
                 "accommodation": "hotel",
                 "attractions": "tourism",
                 "attraction": "tourism",
                 "sights": "tourism",
+                "landmark": "tourism",
+                "landmarks": "tourism",
+                "monument": "tourism",
+                "monuments": "tourism",
+                "architecture": "tourism",
+                "design": "tourism",
+                "building": "tourism",
                 "historic": "historic",
                 "historic sites": "historic",
                 "historical": "historic",
@@ -1486,6 +1498,9 @@ def _search_impl(payload):
                 "art": "museum",
                 "museum": "museum",
                 "museums": "museum",
+                "gallery": "museum",
+                "galleries": "museum",
+                "exhibition": "museum",
                 "nature": "park",
                 "park": "park",
                 "parks": "park",
@@ -1493,7 +1508,16 @@ def _search_impl(payload):
                 "gardens": "park",
                 "shopping": "shop",
                 "shops": "shop",
+                "store": "shop",
+                "boutique": "shop",
+                "mall": "shop",
                 "nightlife": "bar",
+                "bar": "bar",
+                "bars": "bar",
+                "pub": "bar",
+                "pubs": "bar",
+                "club": "bar",
+                "clubs": "bar",
                 "entertainment": "amenity",
                 "public transport": "amenity",
                 "transport": "amenity",
@@ -1727,16 +1751,19 @@ def _search_impl(payload):
                     from venue_quality import MINIMUM_QUALITY_SCORE
 
                 threshold = MINIMUM_QUALITY_SCORE
-                # If a neighborhood is specified, be slightly more permissive
+                # Lower threshold significantly for city-level searches to get more venues
+                threshold = min(threshold, 0.5)  # Cap at 0.5 to allow more venues through
+                # If a neighborhood is specified, be even more permissive
                 if neighborhood:
-                    threshold = min(threshold, 0.6)  # lower to 0.6 for neighborhood-level searches
+                    threshold = min(threshold, 0.4)  # lower to 0.4 for neighborhood-level searches
 
                 # Filter using the selected threshold
                 high_quality_venues = filter_high_quality_venues(result["venues"], min_score=threshold)
                 result["debug_info"]["quality_filtered"] = len(result["venues"]) - len(high_quality_venues)
+                result["debug_info"]["quality_threshold"] = threshold
 
-                # Fallback: if too few venues remain, include top-scoring remaining venues until we reach MIN_VENUES
-                MIN_VENUES = 5
+                # Fallback: if too few venues remain, include top-scoring remaining venues until we reach the requested limit
+                MIN_VENUES = min(limit, 15)  # Use requested limit or at least try to get 15
                 fallback_included = False
                 if len(high_quality_venues) < MIN_VENUES:
                     # Ensure quality scores exist for all venues

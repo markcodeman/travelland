@@ -183,15 +183,32 @@ def _haversine_meters(lat1, lon1, lat2, lon2):
 
 def _normalize_osm_entry(e: Dict) -> Dict:
     # e expected from overpass_provider.discover_restaurants
+    tags_str = e.get("tags", "")
+    
+    # Extract name: try direct name field first, then parse from tags string
+    name = e.get("name")
+    if not name and tags_str:
+        # Parse tags string format: "key1=value1, key2=value2"
+        for tag_pair in tags_str.split(","):
+            tag_pair = tag_pair.strip()
+            if tag_pair.startswith("name="):
+                name = tag_pair[5:]  # Everything after "name="
+                break
+    if not name:
+        name = "Unknown"
+    
+    # Filter out garbage names with OSM artifact patterns - any name containing -- is likely OSM garbage data
+    if "--" in name.lower():
+        return None  # Skip garbage venues entirely instead of returning Unknown
+    
     return {
         "id": e.get("osm_id") or e.get("id") or "",
-        "name": e.get("name")
-        or (e.get("tags", "").split("=")[-1] if e.get("tags") else "Unknown"),
+        "name": name,
         "lat": float(e.get("lat") or e.get("latitude") or 0),
         "lon": float(e.get("lon") or e.get("longitude") or 0),
         "address": e.get("address", ""),
         "osm_url": e.get("osm_url", ""),
-        "tags": e.get("tags", ""),
+        "tags": tags_str,
         "website": e.get("website", ""),
         "amenity": e.get("amenity", ""),
         "provider": e.get("provider") or "osm",
@@ -201,14 +218,32 @@ def _normalize_osm_entry(e: Dict) -> Dict:
 
 def _normalize_generic_entry(e: Dict) -> Dict:
     """Handle entries from web or other mixed sources."""
+    tags_str = e.get("tags", "")
+    
+    # Extract name: try direct name field first, then parse from tags string
+    name = e.get("name")
+    if not name and tags_str:
+        # Parse tags string format: "key1=value1, key2=value2"
+        for tag_pair in tags_str.split(","):
+            tag_pair = tag_pair.strip()
+            if tag_pair.startswith("name="):
+                name = tag_pair[5:]  # Everything after "name="
+                break
+    if not name:
+        name = "Unknown"
+    
+    # Filter out garbage names with OSM artifact patterns - any name containing -- is likely OSM garbage data
+    if "--" in name.lower():
+        return None  # Skip garbage venues entirely instead of returning Unknown
+    
     return {
         "id": e.get("id") or e.get("osm_id") or e.get("place_id") or "",
-        "name": e.get("name") or "Unknown",
+        "name": name,
         "lat": float(e.get("lat") or e.get("latitude") or 0),
         "lon": float(e.get("lon") or e.get("longitude") or 0),
         "address": e.get("address", ""),
         "osm_url": e.get("osm_url", ""),
-        "tags": e.get("tags", ""),
+        "tags": tags_str,
         "website": e.get("website", ""),
         "description": e.get("description", ""),
         "amenity": e.get("amenity", "restaurant"),
@@ -306,6 +341,9 @@ def discover_pois(
                 norm = _normalize_osm_entry(e)
             else:
                 norm = _normalize_generic_entry(e)
+            # Skip if normalization returned None (garbage venue filtered)
+            if norm is None:
+                continue
             print(f"[DEBUG] Normalized entry: {norm}")
             # Skip duplicates by ID
             if norm["id"] and norm["id"] not in seen_ids:
@@ -498,6 +536,9 @@ async def async_discover_pois(
                 norm = _normalize_osm_entry(e)
             else:
                 norm = _normalize_generic_entry(e)
+            # Skip if normalization returned None (garbage venue filtered)
+            if norm is None:
+                continue
             if norm["id"] and norm["id"] not in seen_ids:
                 seen_ids.add(norm["id"])
                 normalized.append(norm)

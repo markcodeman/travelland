@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, Fragment, useCallback } from 'react';
-import ReactMarkdown from 'react-markdown';
 import { Popover, Transition } from '@headlessui/react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import './MarcoChat.css';
 
 export default function MarcoChat({ city, neighborhood, venues, category, initialInput, onClose, results, wikivoyage }) {
@@ -44,8 +44,8 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       "🎨 Looking up art and cultural spots in {city} — stand by..."
     ],
     landmarks: [
-      "🗺️ I can list iconic landmarks and viewpoints in {city} — fetching...",
-      "📸 Finding the best photo-worthy landmarks in {city} — one moment..."
+      "🏛️ I can find iconic landmarks and architecture in {city} — fetching...",
+      "📸 Finding the best sights and monuments in {city} — one moment..."
     ],
     shopping: [
       "🛍️ Searching for shopping districts and unique stores in {city}...",
@@ -54,12 +54,68 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     nightlife: [
       "🌙 Searching for bars and nightlife spots in {city} — fetching live results...",
       "🌙 Looking up late-night options and cocktail bars in {city} — one moment..."
+    ],
+    parks: [
+      "🌳 Finding beautiful parks and gardens in {city}...",
+      "� Looking up green spaces and outdoor spots in {city} — stand by..."
+    ],
+    entertainment: [
+      "🎭 Searching for theaters and live performance venues in {city}...",
+      "🎭 Finding the best shows and entertainment spots in {city} — one moment..."
+    ],
+    hotels: [
+      "🏨 Searching for accommodations in {city}...",
+      "🏨 Finding great places to stay in {city} — one moment..."
     ]
   };
 
   useEffect(() => {
     if (sessionId) localStorage.setItem('marco_session_id', sessionId);
   }, [sessionId]);
+
+  // Context-aware loading messages
+  const getContextualLoadingMessage = (query) => {
+    const lower = query.toLowerCase();
+    if (lower.includes('coffee') || lower.includes('cafe')) return `Finding the best cafés in ${city}...`;
+    if (lower.includes('restaurant') || lower.includes('food')) return `Searching for top dining spots in ${city}...`;
+    if (lower.includes('museum') || lower.includes('art')) return `Looking up cultural highlights in ${city}...`;
+    if (lower.includes('architecture') || lower.includes('design') || lower.includes('landmark') || lower.includes('heritage') || lower.includes('maritime') || lower.includes('history')) return `Finding iconic architecture and heritage in ${city}...`;
+    if (lower.includes('park') || lower.includes('garden')) return `Searching for parks and outdoor spaces in ${city}...`;
+    if (lower.includes('hotel') || lower.includes('stay')) return `Finding accommodations in ${city}...`;
+    return thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
+  };
+
+  // Generate smart suggestions based on conversation context
+  const generateSuggestions = (lastMessage) => {
+    if (!city) return [];
+    
+    const baseSuggestions = [
+      `Best ${category || 'places'} in ${city}`,
+      'Hidden local gems',
+      'How to get around',
+      'What to avoid'
+    ];
+    
+    if (neighborhood) {
+      baseSuggestions.push(`More about ${neighborhood}`);
+    }
+    
+    // Add context-aware suggestions based on last message
+    if (lastMessage?.text) {
+      const text = lastMessage.text.toLowerCase();
+      if (text.includes('cafe') || text.includes('coffee')) {
+        return ['☕ Best coffee', '🥐 Great pastries', '💻 Work-friendly spots', ...baseSuggestions];
+      }
+      if (text.includes('restaurant') || text.includes('food')) {
+        return ['🍽️ Local specialties', '💰 Budget options', '🌱 Vegetarian', ...baseSuggestions];
+      }
+      if (text.includes('museum') || text.includes('art') || text.includes('gallery') || text.includes('architecture') || text.includes('design')) {
+        return ['🏛️ Must-see museums', '🎨 Architecture tours', '🎭 Art walks', ...baseSuggestions];
+      }
+    }
+    
+    return baseSuggestions;
+  };
 
   const sendMessage = useCallback(async (text, query = null) => {
     if (!text || !text.trim()) return;
@@ -68,33 +124,36 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     setInput('');
     setLoading(true);
 
-    // Start with an engaging loading message
-    const initialMessage = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
-    setLoadingMessage(initialMessage);
+    // Use contextual loading message
+    setLoadingMessage(getContextualLoadingMessage(text));
 
     // Add a quick response for common queries after a short delay
     const lowerText = text.toLowerCase();
     let quickResponse = null;
     
-    // Detect a category match and prefer fetching real venues instead of immediately showing a canned reply
+    // Detect a category match - ONLY for explicit venue-seeking queries
+    // Topic queries like "heritage", "maritime", "history" should fall through to RAG
     let matchedCategory = null;
-    if (lowerText.includes('cafe') || lowerText.includes('coffee')) {
+    if (lowerText.includes('cafe') || lowerText.includes('coffee') || lowerText.includes('espresso')) {
       matchedCategory = 'cafes';
-    } else if (lowerText.includes('restaurant') || lowerText.includes('food') || lowerText.includes('dining')) {
+    } else if (lowerText.includes('restaurant') || lowerText.includes('food') || lowerText.includes('dining') || lowerText.includes('eat')) {
       matchedCategory = 'restaurants';
-    } else if (lowerText.includes('museum') || lowerText.includes('art') || lowerText.includes('gallery')) {
+    } else if (lowerText.includes('museum') || lowerText.includes('art gallery') || lowerText.includes('exhibition')) {
       matchedCategory = 'museums';
-    } else if (lowerText.includes('landmark') || lowerText.includes('eiffel') || lowerText.includes('monument')) {
-      matchedCategory = 'landmarks';
-    } else if (lowerText.includes('shop') || lowerText.includes('store') || lowerText.includes('boutique')) {
-      matchedCategory = 'shopping';
-    } else if (lowerText.includes('nightlife') || lowerText.includes('bar') || lowerText.includes('club')) {
+    } else if (lowerText.includes('nightlife') || lowerText.includes('bar') || lowerText.includes('club') || lowerText.includes('pub')) {
       matchedCategory = 'nightlife';
+    } else if (lowerText.includes('park') || lowerText.includes('garden') || lowerText.includes('nature')) {
+      matchedCategory = 'parks';
+    } else if (lowerText.includes('hotel') || lowerText.includes('stay') || lowerText.includes('accommodation')) {
+      matchedCategory = 'hotels';
+    } else if (lowerText.includes('theatre') || lowerText.includes('theater') || lowerText.includes('show') || lowerText.includes('performance') || lowerText.includes('play') || lowerText.includes('concert')) {
+      matchedCategory = 'entertainment';
     }
+    // Note: heritage, maritime, history, architecture, etc. are NOT here - they go to RAG
 
     if (matchedCategory) {
       // Use a neutral, city-aware quick message while we fetch venues
-      const templates = quickResponses[matchedCategory] || [];
+      const templates = quickResponses[matchedCategory] || [`Searching for ${matchedCategory} in ${city}...`];
       const tmpl = templates.length ? templates[Math.floor(Math.random() * templates.length)] : `Searching for ${matchedCategory} in ${city}...`;
       const quickMsg = tmpl.replace('{city}', city || 'this city');
       setMessages(m => [...m, { role: 'assistant', text: quickMsg, isQuick: true }]);
@@ -134,8 +193,15 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
 
       const data = await response.json();
       const assistantMessage = data.answer || data.response || 'I apologize, but I encountered an issue processing your request.';
+      
+      // Generate contextual suggestions based on the response
+      const suggestions = generateSuggestions({ text: assistantMessage });
 
-      setMessages(m => [...m, { role: 'assistant', text: assistantMessage }]);
+      setMessages(m => [...m, { 
+        role: 'assistant', 
+        text: assistantMessage,
+        suggestions: suggestions.slice(0, 4) // Add top 4 suggestions
+      }]);
       
       // Update session ID if provided
       if (data.session_id) {
@@ -143,14 +209,18 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       }
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages(m => [...m, { 
+      const errorMsg = { 
         role: 'assistant', 
-        text: 'I apologize, but I\'m having trouble connecting right now. Please try again in a moment.' 
-      }]);
+        text: `I'm having trouble connecting right now. This could be a network issue or the server might be busy.`,
+        isError: true,
+        retryText: text, // Store original text for retry
+        suggestions: ['🔄 Try again', '💬 Ask something else', '📍 Show me venues']
+      };
+      setMessages(m => [...m, errorMsg]);
     } finally {
       setLoading(false);
     }
-  }, [city, neighborhood, category, sessionId, thinkingMessages, quickResponses]);
+  }, [city, neighborhood, category, sessionId, thinkingMessages, quickResponses, generateSuggestions]);
 
   // Auto-send initialInput if provided
   useEffect(() => {
@@ -169,17 +239,26 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
   useEffect(() => {
     if (city && messages.length === 0 && !hasSentInitial.current) {
       const initialMessage = {
-        id: 'initial',
-        type: 'assistant',
-        content: `I found great info about ${city}! What interests you? ☕ Coffee & tea, 🚌 Transport, 💎 Hidden gems`
+        role: 'assistant',
+        text: `I found great info about ${city}! What interests you?`,
+        suggestions: ['☕ Coffee & tea', '🚌 Transport', '💎 Hidden gems', '🍽️ Local food']
       };
       setMessages([initialMessage]);
       hasSentInitial.current = true;
     }
-  }, [city, messages.length]); // Include category in dependencies
+  }, [city, messages.length]);
 
   const fetchVenuesForCategory = async (overrideCategory = null) => {
     const useCategory = overrideCategory || category;
+    // Only fetch venues for actual venue-seeking categories
+    const venueCategories = ['cafes', 'restaurants', 'museums', 'nightlife', 'parks', 'hotels', 'shopping', 'landmarks', 'entertainment'];
+    if (!venueCategories.includes(useCategory?.toLowerCase())) {
+      console.debug('Not a venue category, skipping venue fetch:', useCategory);
+      // Fall through to RAG mode instead
+      const query = `Tell me about ${useCategory} in ${neighborhood ? neighborhood + ', ' : ''}${city}`;
+      sendMessage(query);
+      return;
+    }
     console.debug('fetchVenuesForCategory', { city, neighborhood, category: useCategory });
     try {
       const payload = {
@@ -237,8 +316,11 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
   const handleSubmit = () => {
     console.debug('handleSubmit', { category, input, loading });
     if (!input.trim() || loading) return;
-    // If there's a category and input matches the category, fetch venues instead of AI chat
-    if (category && input.trim().toLowerCase().includes(category.toLowerCase())) {
+    // Only fetch venues for actual venue-seeking categories
+    const venueCategories = ['cafes', 'restaurants', 'museums', 'nightlife', 'parks', 'hotels', 'shopping', 'landmarks', 'entertainment'];
+    const isVenueCategory = category && venueCategories.includes(category.toLowerCase());
+    // If there's a venue category and input matches the category, fetch venues instead of AI chat
+    if (isVenueCategory && input.trim().toLowerCase().includes(category.toLowerCase())) {
       console.debug('handleSubmit -> fetching venues for category', category);
       fetchVenuesForCategory();
       return;
@@ -451,7 +533,6 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                           📍 Search on Google Maps
                         </a>
                       </div>
-                      <div style={{ color: '#666' }}>Tip: try toggling <strong>Local Gems Only</strong> or selecting a nearby neighborhood for better local results.</div>
                     </div>
                   ) : (
                     <>
@@ -522,7 +603,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                         if (items.length === 0) {
                           return (
                             <div style={{marginTop: 12, color: '#666'}}>
-                              Tip: try toggling <strong>Local Gems Only</strong> or selecting a nearby neighborhood for better local results.
+                              <strong>No venues found in this area.</strong>
                             </div>
                           );
                         }
@@ -543,63 +624,94 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                               if (/(coffee|cafe|espresso|latte|tea)/i.test(lower)) {
                                 emoji = '☕';
                                 tags = 'amenity=cafe,cuisine=coffee';
-                                category = 'cafe';
+                                category = 'Cafe';
                               }
                               else if (/(museum|museu|gallery|historic|cathedral|monument)/i.test(lower)) {
                                 emoji = '🏛️';
                                 tags = 'tourism=museum';
-                                category = 'museum';
+                                category = 'Museum';
                               }
                               else if (/(park|parc|garden|jardins|outdoor)/i.test(lower)) {
                                 emoji = '🌳';
                                 tags = 'leisure=park';
-                                category = 'park';
+                                category = 'Park';
                               }
                               else if (/(bar|pub|cocktail|wine|beer)/i.test(lower)) {
                                 emoji = '🍸';
                                 tags = 'amenity=bar';
-                                category = 'bar';
+                                category = 'Bar';
                               }
                               else if (/(restaurant|food|dining)/i.test(lower)) {
                                 emoji = '🍽️';
                                 tags = 'amenity=restaurant';
-                                category = 'restaurant';
+                                category = 'Restaurant';
                               }
                               else if (/(hotel|accommodation)/i.test(lower)) {
                                 emoji = '🏨';
                                 tags = 'tourism=hotel';
-                                category = 'hotel';
+                                category = 'Hotel';
                               }
                               else if (/(shop|store|mall)/i.test(lower)) {
                                 emoji = '🛍️';
                                 tags = 'shop=retail';
-                                category = 'shop';
+                                category = 'Shop';
                               }
-                              else if (/(beach|platja)/i.test(lower)) {
-                                emoji = '🏖️';
-                                tags = 'natural=beach';
-                                category = 'beach';
+                              else if (/(architecture|design|building|modernisme|gaudi|sagrada)/i.test(lower)) {
+                                emoji = '🏛️';
+                                tags = 'tourism=attraction,architectural';
+                                category = 'Architecture';
+                              }
+                              else if (/(theatre|theater|show|performance|play|concert|venue)/i.test(lower)) {
+                                emoji = '🎭';
+                                tags = 'amenity=theatre';
+                                category = 'Theater';
                               }
                               
                               // Generate a Google Maps search URL using name and city
                               const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + (city ? ' ' + city : ''))}`;
+                              
+                              // Properly capitalize the category label
+                              const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+                              const categoryLabel = category ? capitalize(category) : 'Place';
+                              
                               return (
                                 <div key={idx} style={{
-                                  background: 'white',
-                                  borderRadius: '8px',
-                                  padding: '12px 16px',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  background: 'linear-gradient(135deg, #fff 0%, #f8f9fa 100%)',
+                                  borderRadius: '12px',
+                                  padding: '16px 20px',
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
                                   display: 'flex',
                                   justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  marginBottom: '8px'
+                                  alignItems: 'flex-start',
+                                  marginBottom: '12px',
+                                  border: '1px solid #e9ecef',
+                                  transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                                 }}>
-                                  <div>
-                                    <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600' }}>
-                                      {emoji} {name}
-                                    </h4>
+                                  <div style={{ flex: 1, marginRight: '16px' }}>
+                                    <div style={{ 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      marginBottom: '6px',
+                                      gap: '8px'
+                                    }}>
+                                      <span style={{ fontSize: '20px' }}>{emoji}</span>
+                                      <h4 style={{ 
+                                        margin: 0, 
+                                        fontSize: '16px', 
+                                        fontWeight: '700',
+                                        color: '#1a1a2e',
+                                        lineHeight: 1.3
+                                      }}>
+                                        {name}
+                                      </h4>
+                                    </div>
                                     {description && (
-                                      <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                                      <p style={{ 
+                                        margin: '6px 0 0 0', 
+                                        fontSize: '13px', 
+                                        color: '#5a5a7a',
+                                        lineHeight: 1.5
+                                      }}>
                                         {description}
                                       </p>
                                     )}
@@ -611,14 +723,19 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                                     style={{
                                       background: '#4285f4',
                                       color: 'white',
-                                      padding: '8px 12px',
-                                      borderRadius: '6px',
+                                      padding: '10px 14px',
+                                      borderRadius: '8px',
                                       textDecoration: 'none',
-                                      fontSize: '14px',
-                                      fontWeight: '500'
+                                      fontSize: '13px',
+                                      fontWeight: '600',
+                                      whiteSpace: 'nowrap',
+                                      boxShadow: '0 2px 4px rgba(66,133,244,0.3)',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '6px'
                                     }}
                                   >
-                                    📍 Maps
+                                    📍 <span>Maps</span>
                                   </a>
                                 </div>
                               );
@@ -630,7 +747,40 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
                   )}
                 </div>
               ) : (
-                msg.text
+                <div>
+                  {msg.isError ? (
+                    <div className="error-message">
+                      <div>{msg.text}</div>
+                      {msg.retryText && (
+                        <button 
+                          className="retry-btn"
+                          onClick={() => sendMessage(msg.retryText)}
+                          disabled={loading}
+                        >
+                          🔄 Try Again
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    msg.text
+                  )}
+                </div>
+              )}
+              
+              {/* Suggestion chips for quick replies */}
+              {msg.role === 'assistant' && msg.suggestions && msg.suggestions.length > 0 && (
+                <div className="suggestion-chips">
+                  {msg.suggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      className="suggestion-chip"
+                      onClick={() => sendMessage(suggestion)}
+                      disabled={loading}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           ))}
