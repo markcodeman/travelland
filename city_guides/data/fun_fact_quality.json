@@ -57,5 +57,19 @@
     ],
     "avg_quality": 0.3,
     "last_attempt": 1770504053.8163028
+  },
+  "granada": {
+    "attempts": 1,
+    "facts": [
+      "Granada is the capital city of the province of Granada, in the autonomous community of Andalusia, Spain."
+    ],
+    "sources": [
+      "dynamic"
+    ],
+    "quality_scores": [
+      0.3
+    ],
+    "avg_quality": 0.3,
+    "last_attempt": 1770507100.9411292
   }
 }
