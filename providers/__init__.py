@@ -8,6 +8,7 @@ from city_guides.providers import (
     geonames_provider,
     neighborhood_suggestions,
     image_provider,
+    neighborhood_provider,
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     'geonames_provider',
     'neighborhood_suggestions',
     'image_provider',
+    'neighborhood_provider',
 ]
