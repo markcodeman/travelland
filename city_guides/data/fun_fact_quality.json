@@ -14,18 +14,21 @@
     "last_attempt": 1770503410.1875527
   },
   "madrid": {
-    "attempts": 1,
+    "attempts": 2,
     "facts": [
-      "According to the Guinness book of world records, Madrid houses the world's oldest restaurant."
+      "According to the Guinness book of world records, Madrid houses the world's oldest restaurant.",
+      "Madrid is the capital and most populous city of Spain."
     ],
     "sources": [
+      "dynamic",
       "dynamic"
     ],
     "quality_scores": [
-      0.7
+      0.7,
+      0.4
     ],
-    "avg_quality": 0.7,
-    "last_attempt": 1770503801.173097
+    "avg_quality": 0.55,
+    "last_attempt": 1770503958.733915
   },
   "alcal\u00e1 de henares": {
     "attempts": 1,

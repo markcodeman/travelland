@@ -308,7 +308,7 @@ def discover_pois(
                 norm = _normalize_generic_entry(e)
             print(f"[DEBUG] Normalized entry: {norm}")
             # Skip duplicates by ID
-            if norm["id"] and norm["id"] not in seen_ids:
+            if norm and norm["id"] and norm["id"] not in seen_ids:
                 seen_ids.add(norm["id"])
                 normalized.append(norm)
         except Exception as e:
@@ -489,7 +489,7 @@ async def async_discover_pois(
         except Exception as e:
             logging.warning(f"Error awaiting provider result {idx}: {e}")
             continue
-        if res:
+        if res and isinstance(res, list):
             results.extend(res)
 
     # Normalize and dedupe
@@ -501,7 +501,7 @@ async def async_discover_pois(
                 norm = _normalize_osm_entry(e)
             else:
                 norm = _normalize_generic_entry(e)
-            if norm["id"] and norm["id"] not in seen_ids:
+            if norm and norm.get("id") and norm["id"] not in seen_ids:
                 seen_ids.add(norm["id"])
                 normalized.append(norm)
         except Exception as e:
