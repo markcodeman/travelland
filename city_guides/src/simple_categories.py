@@ -1120,8 +1120,12 @@ async def extract_distinctive_categories(city: str, state: str = "", country: st
                 'category': 'University & Academia',
                 'confidence': 0.85
             },
-            # Note: Removed Castles & Fortifications - we detect it but can't deliver actual castle venues
-            # Would need proper OSM castle/fortification venue support first
+            # Castles & Fortifications - routes to RAG for intelligent architecture answers
+            {
+                'triggers': ['castle', 'fortress', 'fortification', 'walled city', 'medieval fort', 'citadel'],
+                'category': 'Castles & Fortifications',
+                'confidence': 0.90
+            },
         ]
         
         # Check each distinctive feature
