@@ -6,8 +6,9 @@ Test script to verify Japantown coffee/tea venue functionality.
 import sys
 from pathlib import Path
 
-# Add the city_guides directory to the Python path
-sys.path.insert(0, str(Path(__file__).resolve().parent / "city_guides"))
+# Add project root to Python path so `providers` resolves to either the top-level shim
+# or the `city_guides/providers` package. Use parent of tests dir.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from providers.neighborhood_provider import (
     get_japantown_coffee_tea_venues,
