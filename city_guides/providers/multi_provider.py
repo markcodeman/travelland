@@ -181,7 +181,7 @@ def _haversine_meters(lat1, lon1, lat2, lon2):
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-def _normalize_osm_entry(e: Dict) -> Dict:
+def _normalize_osm_entry(e: Dict) -> Optional[Dict]:
     # e expected from overpass_provider.discover_restaurants
     return {
         "id": e.get("osm_id") or e.get("id") or "",
@@ -199,7 +199,7 @@ def _normalize_osm_entry(e: Dict) -> Dict:
     }
 
 
-def _normalize_generic_entry(e: Dict) -> Dict:
+def _normalize_generic_entry(e: Dict) -> Optional[Dict]:
     """Handle entries from web or other mixed sources."""
     return {
         "id": e.get("id") or e.get("osm_id") or e.get("place_id") or "",
@@ -351,6 +351,7 @@ async def async_discover_pois(
     """Async version of discover_pois. It will call async provider functions
     when available, otherwise offload sync providers to a thread.
     """
+    print(f"[CRITICAL] async_discover_pois called: city={city}, poi_type={poi_type}, overpass_provider={'AVAILABLE' if overpass_provider else 'NONE'}")
     results = []
 
     max_per_provider = max(int(limit) * 10, 200)
@@ -438,7 +439,8 @@ async def async_discover_pois(
         geoapify_bbox = bbox
         if geoapify_bbox is None and city:
             try:
-                geoapify_bbox = await overpass_provider.async_geocode_city(city, session=session)
+                if overpass_provider is not None and hasattr(overpass_provider, "async_geocode_city"):
+                    geoapify_bbox = await overpass_provider.async_geocode_city(city, session=session)
             except Exception:
                 pass
         if geoapify_bbox:
@@ -458,7 +460,8 @@ async def async_discover_pois(
             mapillary_bbox = bbox
             if mapillary_bbox is None and city:
                 try:
-                    mapillary_bbox = await overpass_provider.async_geocode_city(city, session=session)
+                    if overpass_provider is not None and hasattr(overpass_provider, "async_geocode_city"):
+                        mapillary_bbox = await overpass_provider.async_geocode_city(city, session=session)
                 except Exception:
                     pass
             if mapillary_bbox:
@@ -648,10 +651,16 @@ async def async_get_neighborhoods(city: str | None = None, lat: float | None = N
     # Get from GeoNames if lat/lon provided
     if geonames_provider is not None and lat is not None and lon is not None:
         try:
-            geonames_results = await asyncio.wait_for(
-                geonames_provider.async_get_neighborhoods_geonames(city=city, lat=lat, lon=lon, max_rows=100, lang=lang, session=session),
-                timeout=10.0
-            )
+            if session is not None:
+                geonames_results = await asyncio.wait_for(
+                    geonames_provider.async_get_neighborhoods_geonames(city=city, lat=lat, lon=lon, max_rows=100, session=session),
+                    timeout=10.0
+                )
+            else:
+                geonames_results = await asyncio.wait_for(
+                    geonames_provider.async_get_neighborhoods_geonames(city=city, lat=lat, lon=lon, max_rows=100),
+                    timeout=10.0
+                )
             if geonames_results:
                 # Convert GeoNames format to match OSM format
                 for item in geonames_results:

@@ -68,7 +68,7 @@ const slugifyCity = (city = '') => city.toLowerCase().replace(/[^a-z0-9]+/g, '-'
 
 const fetchCityCoordinates = async (city) => {
   try {
-    const resp = await fetch('/geocode', {
+    const resp = await fetch('/api/geocode', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ city })
@@ -402,14 +402,8 @@ const getHeroImageMeta = async (city, intent = '') => {
 };
 
 export {
-  fetchCityHeroImage,
-  fetchVenueImages,
-  fetchUnsplashPhotos,
-  fetchPixabayPhoto,
-  triggerUnsplashDownload,
-  getHeroImage,
-  getHeroImageMeta,
-  buildImageQueries,
-  DEFAULT_HERO,
-  DEFAULT_VENUE
+    DEFAULT_HERO,
+    DEFAULT_VENUE, buildImageQueries, fetchCityHeroImage, fetchPixabayPhoto, fetchUnsplashPhotos, fetchVenueImages, getHeroImage,
+    getHeroImageMeta, triggerUnsplashDownload
 };
+

@@ -37,6 +37,7 @@
     "last_attempt": 1770233765.9760394
   },
   "barranquilla": {
+<<<<<<< Updated upstream
     "attempts": 1,
     "facts": [
       "Weblio\u4f8b\u6587\u8f9e\u66f8\u3067\u306e\u300c\u8208\u5473\u6df1\u3044\u300d\u306b\u985e\u4f3c\u3057\u305f\u4f8b\u6587 \u8208\u5473\u6df1\u3044 1 \u8208\u5473\u6df1\u3044\u306d\u3047 \u4f8b\u6587 Wow, interesting ~ 2 \u5f37\u70c8\u306a \u8208\u5473 \u4f8b\u6587 a lively interest 3 \u8208\u5473 \u306e\u3042\u308b \u305d\u3076\u308a"
@@ -49,6 +50,26 @@
     ],
     "avg_quality": 0.5,
     "last_attempt": 1770233892.6587257
+=======
+    "attempts": 3,
+    "facts": [
+      "Weblio\u4f8b\u6587\u8f9e\u66f8\u3067\u306e\u300c\u8208\u5473\u6df1\u3044\u300d\u306b\u985e\u4f3c\u3057\u305f\u4f8b\u6587 \u8208\u5473\u6df1\u3044 1 \u8208\u5473\u6df1\u3044\u306d\u3047 \u4f8b\u6587 Wow, interesting ~ 2 \u5f37\u70c8\u306a \u8208\u5473 \u4f8b\u6587 a lively interest 3 \u8208\u5473 \u306e\u3042\u308b \u305d\u3076\u308a",
+      "It is located near the Caribbean Sea and is the largest city and third port in the Caribbean coast region; as of 2018, it had a population of 1,206,319, making ...",
+      "Barranquilla is the capital district of the Atl\u00e1ntico department in Colombia."
+    ],
+    "sources": [
+      "dynamic",
+      "dynamic",
+      "dynamic"
+    ],
+    "quality_scores": [
+      0.5,
+      0.8999999999999999,
+      0.3
+    ],
+    "avg_quality": 0.5666666666666667,
+    "last_attempt": 1770484641.82479
+>>>>>>> Stashed changes
   },
   "ruse": {
     "attempts": 2,
@@ -550,18 +571,21 @@
     "last_attempt": 1770233904.683393
   },
   "lyon": {
-    "attempts": 1,
+    "attempts": 2,
     "facts": [
-      "Lyon was the birthplace of cinema, invented by the Lumi\u00e8re brothers in 1895."
+      "Lyon was the birthplace of cinema, invented by the Lumi\u00e8re brothers in 1895.",
+      "The city is home to the oldest opera house in France, built in 1756."
     ],
     "sources": [
-      "hardcoded"
+      "hardcoded",
+      "seeded"
     ],
     "quality_scores": [
-      0.7
+      0.7,
+      0.8999999999999999
     ],
-    "avg_quality": 0.7,
-    "last_attempt": 1770233904.6882174
+    "avg_quality": 0.7999999999999999,
+    "last_attempt": 1770502289.5099149
   },
   "fredrikstad": {
     "attempts": 1,
@@ -1884,7 +1908,11 @@
       1.0
     ],
     "avg_quality": 0.7999999999999999,
+<<<<<<< Updated upstream
     "last_attempt": 1770411179.5250065
+=======
+    "last_attempt": 1770501623.1151679
+>>>>>>> Stashed changes
   },
   "maracay": {
     "attempts": 1,
@@ -6887,21 +6915,24 @@
     "last_attempt": 1770263798.4509223
   },
   "granada": {
-    "attempts": 2,
+    "attempts": 3,
     "facts": [
       "Granada is the capital city of the province of Granada, in the autonomous community of Andalusia, Spain.",
+      "Granada was conquered in 1492 by the Catholic Monarchs and progressively transformed into a Christian city over the course of the 16th century.",
       "Granada was conquered in 1492 by the Catholic Monarchs and progressively transformed into a Christian city over the course of the 16th century."
     ],
     "sources": [
+      "dynamic",
       "dynamic",
       "dynamic"
     ],
     "quality_scores": [
       0.3,
+      0.7,
       0.7
     ],
-    "avg_quality": 0.5,
-    "last_attempt": 1770395501.1869287
+    "avg_quality": 0.5666666666666667,
+    "last_attempt": 1770437113.120869
   },
   "rio de janeiro": {
     "attempts": 2,
@@ -7156,18 +7187,30 @@
     "last_attempt": 1770295903.9356856
   },
   "madrid": {
-    "attempts": 1,
+    "attempts": 5,
     "facts": [
-      "According to the Guinness book of world records, Madrid houses the world's oldest restaurant."
+      "According to the Guinness book of world records, Madrid houses the world's oldest restaurant.",
+      "Madrid is the capital and most populous city of Spain.",
+      "Madrid is the capital and most populous city of Spain.",
+      "Madrid is the capital and most populous city of Spain.",
+      "Madrid is the capital and most populous city of Spain."
     ],
     "sources": [
+      "dynamic",
+      "dynamic",
+      "dynamic",
+      "dynamic",
       "dynamic"
     ],
     "quality_scores": [
-      0.7
+      0.7,
+      0.4,
+      0.4,
+      0.4,
+      0.4
     ],
-    "avg_quality": 0.7,
-    "last_attempt": 1770297552.9625306
+    "avg_quality": 0.45999999999999996,
+    "last_attempt": 1770502927.7150016
   },
   "lisbon": {
     "attempts": 1,
@@ -7523,7 +7566,11 @@
     "last_attempt": 1770322791.1656868
   },
   "barcelona": {
+<<<<<<< Updated upstream
     "attempts": 10,
+=======
+    "attempts": 28,
+>>>>>>> Stashed changes
     "facts": [
       "Barcelona's Park G\u00fcell was originally a failed housing development project that Gaud\u00ed turned into a public park.",
       "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!",
@@ -7531,9 +7578,33 @@
       "Barcelona has 9 UNESCO World Heritage Sites, the most of any city in Spain.",
       "Barcelona's Park G\u00fcell was originally a failed housing development project that Gaud\u00ed turned into a public park.",
       "Barcelona's Park G\u00fcell was originally a failed housing development project that Gaud\u00ed turned into a public park.",
+<<<<<<< Updated upstream
       "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!",
       "Barcelona's Park G\u00fcell was originally a failed housing development project that Gaud\u00ed turned into a public park.",
       "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!",
+=======
+      "Barcelona's Sagrada Familia has been under construction since 1882 and is still not completed!",
+      "Barcelona's Sagrada Familia has been under construction since 1882 and is still not completed!",
+      "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!",
+      "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!",
+      "Barcelona has 9 UNESCO World Heritage Sites, the most of any city in Spain.",
+      "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!",
+      "Barcelona's Park G\u00fcell was originally a failed housing development project that Gaud\u00ed turned into a public park.",
+      "Barcelona has 9 UNESCO World Heritage Sites, the most of any city in Spain.",
+      "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!",
+      "Barcelona has 9 UNESCO World Heritage Sites, the most of any city in Spain.",
+      "Barcelona's Sagrada Familia has been under construction since 1882 and is still not completed!",
+      "Barcelona's Sagrada Familia has been under construction since 1882 and is still not completed!",
+      "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!",
+      "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!",
+      "Barcelona's Sagrada Familia has been under construction since 1882 and is still not completed!",
+      "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!",
+      "Barcelona's Park G\u00fcell was originally a failed housing development project that Gaud\u00ed turned into a public park.",
+      "The city has over 20,000 orange trees, and locals make fresh orange juice from them in winter!",
+      "Barcelona's Park G\u00fcell was originally a failed housing development project that Gaud\u00ed turned into a public park.",
+      "Barcelona's Park G\u00fcell was originally a failed housing development project that Gaud\u00ed turned into a public park.",
+      "Barcelona has 9 UNESCO World Heritage Sites, the most of any city in Spain.",
+>>>>>>> Stashed changes
       "Barcelona's Sagrada Familia has been under construction since 1882 and is still not completed!"
     ],
     "sources": [
@@ -7546,6 +7617,27 @@
       "seeded",
       "seeded",
       "seeded",
+<<<<<<< Updated upstream
+=======
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+      "seeded",
+>>>>>>> Stashed changes
       "seeded"
     ],
     "quality_scores": [
@@ -7556,12 +7648,39 @@
       0.5,
       0.5,
       0.7,
+<<<<<<< Updated upstream
       0.5,
       0.7,
       0.7
     ],
     "avg_quality": 0.65,
     "last_attempt": 1770410684.762052
+=======
+      0.7,
+      0.7,
+      0.7,
+      1.0,
+      0.7,
+      0.5,
+      1.0,
+      0.7,
+      1.0,
+      0.7,
+      0.7,
+      0.7,
+      0.7,
+      0.7,
+      0.7,
+      0.5,
+      0.7,
+      0.5,
+      0.5,
+      1.0,
+      0.7
+    ],
+    "avg_quality": 0.7035714285714285,
+    "last_attempt": 1770502923.0549235
+>>>>>>> Stashed changes
   },
   "tai po": {
     "attempts": 1,
@@ -7591,10 +7710,17 @@
     "avg_quality": 0.8999999999999999,
     "last_attempt": 1770381885.0325072
   },
+<<<<<<< Updated upstream
   "terrassa": {
     "attempts": 1,
     "facts": [
       "It is one of the two capitals of Vall\u00e8s Occidental county, being the larger in both area and population, 70."
+=======
+  "tbilisi": {
+    "attempts": 1,
+    "facts": [
+      "Apr 15, 2018 \u00b7 Tbilisi was the capital of the new Democratic Republic of Georgia for only 1,028 days."
+>>>>>>> Stashed changes
     ],
     "sources": [
       "dynamic"
@@ -7603,20 +7729,36 @@
       0.8
     ],
     "avg_quality": 0.8,
+<<<<<<< Updated upstream
     "last_attempt": 1770412680.820686
   },
   "chennai": {
     "attempts": 1,
     "facts": [
       "Chennai, also known as Madras, is the capital and largest city of Tamil Nadu, the southernmost state of India."
+=======
+    "last_attempt": 1770500536.0622337
+  },
+  "seville": {
+    "attempts": 1,
+    "facts": [
+      "Seville is the capital and largest city of the Spanish autonomous community of Andalusia and the province of Seville."
+>>>>>>> Stashed changes
     ],
     "sources": [
       "dynamic"
     ],
     "quality_scores": [
+<<<<<<< Updated upstream
       0.5
     ],
     "avg_quality": 0.5,
     "last_attempt": 1770424059.5993626
+=======
+      0.4
+    ],
+    "avg_quality": 0.4,
+    "last_attempt": 1770502017.9729326
+>>>>>>> Stashed changes
   }
 }

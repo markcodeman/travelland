@@ -1,4 +1,4 @@
-import { Popover, Transition } from '@headlessui/react';
+ import { Popover, Transition } from '@headlessui/react';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import './MarcoChat.css';
@@ -14,8 +14,29 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
   const [loading, setLoading] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [neighborhoodGuide, setNeighborhoodGuide] = useState(null);
   const messagesEndRef = useRef(null);
   const hasSentInitial = useRef(false);
+
+  // Fetch neighborhood guide when neighborhood changes
+  useEffect(() => {
+    if (neighborhood && city) {
+      fetch('/api/generate_quick_guide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ city, neighborhood })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.quick_guide) {
+            setNeighborhoodGuide(data);
+          }
+        })
+        .catch(err => console.error('Failed to fetch neighborhood guide:', err));
+    } else {
+      setNeighborhoodGuide(null);
+    }
+  }, [neighborhood, city]);
 
   // Engaging loading messages
   const thinkingMessages = [
@@ -57,7 +78,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     ],
     parks: [
       "🌳 Finding beautiful parks and gardens in {city}...",
-      "� Looking up green spaces and outdoor spots in {city} — stand by..."
+      "🌲 Looking up green spaces and outdoor spots in {city} — stand by..."
     ],
     entertainment: [
       "🎭 Searching for theaters and live performance venues in {city}...",
@@ -66,6 +87,14 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     hotels: [
       "🏨 Searching for accommodations in {city}...",
       "🏨 Finding great places to stay in {city} — one moment..."
+    ],
+    castles_und_fortifications: [
+      "⚔️ Searching for castles and historic fortifications in {city}...",
+      "🏰 Looking up medieval castles and historic sites in {city} — one moment..."
+    ],
+    historic: [
+      "🏛️ Searching for historic sites and landmarks in {city}...",
+      "📜 Looking up historic landmarks and heritage sites in {city} — one moment..."
     ]
   };
 
@@ -148,20 +177,27 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       matchedCategory = 'hotels';
     } else if (lowerText.includes('theatre') || lowerText.includes('theater') || lowerText.includes('show') || lowerText.includes('performance') || lowerText.includes('play') || lowerText.includes('concert')) {
       matchedCategory = 'entertainment';
+<<<<<<< Updated upstream
     } else if (lowerText.includes('castle') || lowerText.includes('fort') || lowerText.includes('fortification') || lowerText.includes('palace')) {
       // Castles/forts are not venue-seeking - they're topic queries for RAG
       matchedCategory = null; // Don't trigger venue mode
+=======
+    } else if (lowerText.includes('castle') || lowerText.includes('fortification') || lowerText.includes('fortress') || lowerText.includes('palace')) {
+      matchedCategory = 'castles_und_fortifications';
+    } else if (lowerText.includes('historic site') || lowerText.includes('historic landmark') || lowerText.includes('ancient')) {
+      matchedCategory = 'historic';
+    } else if (lowerText.includes('literary') || lowerText.includes('writer') || lowerText.includes('author') || lowerText.includes('book')) {
+      matchedCategory = 'literary_heritage';
+    } else if (lowerText.includes('music') || lowerText.includes('musical') || lowerText.includes('jazz') || lowerText.includes('concert hall')) {
+      matchedCategory = 'music_heritage';
+    } else if (lowerText.includes('industrial') || lowerText.includes('factory') || lowerText.includes('mill') || lowerText.includes('manufacturing')) {
+      matchedCategory = 'industrial_heritage';
+>>>>>>> Stashed changes
     }
-    // Note: heritage, maritime, history, architecture, etc. are NOT here - they go to RAG
+    // Note: generic heritage, maritime, history, architecture queries go to RAG for better synthesis
 
     if (matchedCategory) {
-      // Use a neutral, city-aware quick message while we fetch venues
-      const templates = quickResponses[matchedCategory] || [`Searching for ${matchedCategory} in ${city}...`];
-      const tmpl = templates.length ? templates[Math.floor(Math.random() * templates.length)] : `Searching for ${matchedCategory} in ${city}...`;
-      const quickMsg = tmpl.replace('{city}', city || 'this city');
-      setMessages(m => [...m, { role: 'assistant', text: quickMsg, isQuick: true }]);
-
-      // Ask the client to fetch venues for the matched category (override allowed)
+      // Fetch venues directly without showing quick response message
       fetchVenuesForCategory(matchedCategory);
       return;
     }
@@ -254,7 +290,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
   const fetchVenuesForCategory = async (overrideCategory = null) => {
     const useCategory = overrideCategory || category;
     // Only fetch venues for actual venue-seeking categories
-    const venueCategories = ['cafes', 'restaurants', 'museums', 'nightlife', 'parks', 'hotels', 'shopping', 'landmarks', 'entertainment'];
+    const venueCategories = ['cafes', 'restaurants', 'museums', 'nightlife', 'parks', 'hotels', 'shopping', 'landmarks', 'entertainment', 'castles_und_fortifications', 'historic', 'literary_heritage', 'music_heritage', 'industrial_heritage'];
     if (!venueCategories.includes(useCategory?.toLowerCase())) {
       console.debug('Not a venue category, skipping venue fetch:', useCategory);
       // Fall through to RAG mode instead
@@ -269,7 +305,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
         category: useCategory,
         neighborhood: neighborhood,
       };
-      const resp = await fetch('/search', {
+      const resp = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -279,12 +315,13 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       console.log('Fetched venues:', fetchedVenues.length, fetchedVenues.slice(0, 3));
       
       if (fetchedVenues.length > 0) {
-        // Use REAL venue data from backend
-        setMessages([{ role: 'assistant', venues: fetchedVenues.slice(0, 10) }]);
+        // Use REAL venue data from backend with follow-up suggestions
+        const suggestions = generateSuggestions({ text: `Found ${fetchedVenues.length} ${useCategory} venues` });
+        setMessages([{ role: 'assistant', venues: fetchedVenues.slice(0, 10), suggestions: suggestions.slice(0, 4) }]);
       } else {
-        const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and found some great ${useCategory} options! Let me search for more details.`;
-        // Keep existing behavior when user explicitly triggers a search
-        sendMessage(venueText, `What are some great ${useCategory} options in ${neighborhood ? neighborhood + ', ' : ''}${city}?`);
+        // No venues found - fall back to RAG for informational response
+        const query = `Tell me about ${useCategory} in ${neighborhood ? neighborhood + ', ' : ''}${city}`;
+        sendMessage(query);
       }
     } catch (e) {
       console.error('Failed to fetch venues for category', e);
@@ -320,7 +357,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     console.debug('handleSubmit', { category, input, loading });
     if (!input.trim() || loading) return;
     // Only fetch venues for actual venue-seeking categories
-    const venueCategories = ['cafes', 'restaurants', 'museums', 'nightlife', 'parks', 'hotels', 'shopping', 'landmarks', 'entertainment'];
+    const venueCategories = ['cafes', 'restaurants', 'museums', 'nightlife', 'parks', 'hotels', 'shopping', 'landmarks', 'entertainment', 'castles_und_fortifications', 'historic', 'literary_heritage', 'music_heritage', 'industrial_heritage'];
     const isVenueCategory = category && venueCategories.includes(category.toLowerCase());
     // If there's a venue category and input matches the category, fetch venues instead of AI chat
     if (isVenueCategory && input.trim().toLowerCase().includes(category.toLowerCase())) {
@@ -390,33 +427,65 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
         </div>
 
         <div className="marco-messages" role="region" aria-live="polite">
-          {/* City guide as first message */}
+          {/* City/Neighborhood guide as first message */}
           <div className="marco-msg assistant">
             <div className="city-guide">
-              <div style={{fontWeight:600, marginBottom:8}}>📍 {city} Travel Guide</div>
-              {results?.quick_guide ? (
-                <div style={{fontSize:14, lineHeight:1.5, color: '#333'}}>
-                  <ReactMarkdown
-                    components={{
-                      a: props => <a {...props} target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', textDecoration: 'underline' }}>{props.children}</a>,
-                      strong: props => <strong style={{ color: '#333' }}>{props.children}</strong>,
-                      p: props => <p style={{ marginBottom: '16px', lineHeight: '1.6' }}>{props.children}</p>
-                    }}
-                  >
-                    {results.quick_guide}
-                  </ReactMarkdown>
-                </div>
-              ) : (
-                <div style={{fontSize:14, color: '#666'}}>
-                  No city guide information available for {city}.
-                </div>
-              )}
-              {results?.source && (
-                <div style={{fontSize:12, color: '#666', marginTop:8}}>
-                  Source: {results.source}{results.source_url && (
-                    <a href={results.source_url} target="_blank" rel="noopener noreferrer" style={{color: '#1976d2', marginLeft: '4px'}}>↗</a>
+              {neighborhood ? (
+                // Show neighborhood guide when neighborhood is selected
+                <>
+                  <div style={{fontWeight:600, marginBottom:8}}>📍 {neighborhood}, {city}</div>
+                  {neighborhoodGuide?.quick_guide ? (
+                    <div style={{fontSize:14, lineHeight:1.5, color: '#333'}}>
+                      <ReactMarkdown
+                        components={{
+                          a: props => <a {...props} target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', textDecoration: 'underline' }}>{props.children}</a>,
+                          strong: props => <strong style={{ color: '#333' }}>{props.children}</strong>,
+                          p: props => <p style={{ marginBottom: '16px', lineHeight: '1.6' }}>{props.children}</p>
+                        }}
+                      >
+                        {neighborhoodGuide.quick_guide}
+                      </ReactMarkdown>
+                      {neighborhoodGuide.source && (
+                        <div style={{fontSize:12, color: '#666', marginTop:8}}>
+                          Source: {neighborhoodGuide.source}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{fontSize:14, color: '#666'}}>
+                      {neighborhoodGuide === null ? 'Loading neighborhood guide...' : `No guide available for ${neighborhood}.`}
+                    </div>
                   )}
-                </div>
+                </>
+              ) : (
+                // Show city guide when no neighborhood selected
+                <>
+                  <div style={{fontWeight:600, marginBottom:8}}>📍 {city} Travel Guide</div>
+                  {results?.quick_guide ? (
+                    <div style={{fontSize:14, lineHeight:1.5, color: '#333'}}>
+                      <ReactMarkdown
+                        components={{
+                          a: props => <a {...props} target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', textDecoration: 'underline' }}>{props.children}</a>,
+                          strong: props => <strong style={{ color: '#333' }}>{props.children}</strong>,
+                          p: props => <p style={{ marginBottom: '16px', lineHeight: '1.6' }}>{props.children}</p>
+                        }}
+                      >
+                        {results.quick_guide}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div style={{fontSize:14, color: '#666'}}>
+                      No city guide information available for {city}.
+                    </div>
+                  )}
+                  {results?.source && (
+                    <div style={{fontSize:12, color: '#666', marginTop:8}}>
+                      Source: {results.source}{results.source_url && (
+                        <a href={results.source_url} target="_blank" rel="noopener noreferrer" style={{color: '#1976d2', marginLeft: '4px'}}>↗</a>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

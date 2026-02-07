@@ -6,31 +6,7 @@ Provides stronger snippet extraction, language normalization, and safer trimming
 import re
 from typing import List, Optional, Tuple
 
-# Import persistence functions lazily to break circular import
-_persistence_loaded = False
-_load_weights = None
-_save_weights = None
-
-def _ensure_persistence():
-    global _persistence_loaded, _load_weights, _save_weights
-    if not _persistence_loaded:
-        try:
-            from persistence import load_weights, save_weights
-            _load_weights, _save_weights = load_weights, save_weights
-        except ImportError:
-            from city_guides.src.persistence import load_weights, save_weights
-            _load_weights, _save_weights = load_weights, save_weights
-        _persistence_loaded = True
-    return _load_weights, _save_weights
-
-# Module-level access functions
-def load_weights(*args, **kwargs):
-    lw, _ = _ensure_persistence()
-    return lw(*args, **kwargs)
-
-def save_weights(*args, **kwargs):
-    _, sw = _ensure_persistence()
-    return sw(*args, **kwargs)
+# No persistence imports needed - this module is self-contained
 
 class SynthesisEnhancer:
     """
@@ -143,7 +119,7 @@ class SynthesisEnhancer:
         return (snippet, detected_lang)
 
     @staticmethod
-    def ensure_includes_term(snippet: str, original_text: str, term: str, fallback_sentence: str = None, max_length: int = 140) -> str:
+    def ensure_includes_term(snippet: str, original_text: str, term: str, fallback_sentence: Optional[str] = None, max_length: int = 140) -> str:
         """
         Ensure the returned snippet includes the specified term (e.g., neighborhood name or leading article like 'Las').
 
@@ -239,7 +215,7 @@ class SynthesisEnhancer:
         return clean, uniq
 
     @staticmethod
-    def generate_neighborhood_paragraph(neighborhood: str, city: str, features: Optional[List[str]] = None, max_length: int = 240) -> str:
+    def generate_neighborhood_paragraph(neighborhood: str, city: str, features: Optional[List[str]] = None, max_length: int = 500) -> str:
         """
         Generate a concise neighborhood paragraph that includes the neighborhood and city.
         If `features` are provided, mention one or two of them.
@@ -266,7 +242,7 @@ class SynthesisEnhancer:
         return SynthesisEnhancer.safe_trim(paragraph, max_length)
 
     @staticmethod
-    def neutralize_tone(text: str, neighborhood: Optional[str] = None, city: Optional[str] = None, max_length: int = 200) -> str:
+    def neutralize_tone(text: str, neighborhood: Optional[str] = None, city: Optional[str] = None, max_length: int = 500) -> str:
         """
         Remove first-person tone and personalize output to include neighborhood/city when provided.
         This is a lightweight neutralizer (not an LLM). It removes obvious first-person pronouns

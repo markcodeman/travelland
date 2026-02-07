@@ -564,7 +564,7 @@ async def catch_all(path):
         abort(404)
     return await app.send_static_file("index.html")
 
-@app.route("/weather", methods=["POST"])
+@app.route("/api/weather", methods=["POST"])
 async def weather():
     payload = await request.get_json(silent=True) or {}
     city = (payload.get("city") or "").strip()
@@ -583,7 +583,7 @@ async def weather():
         return jsonify({"error": "weather_fetch_failed"}), 500
     return jsonify({"lat": lat, "lon": lon, "city": city, "weather": weather})
 
-@app.route("/neighborhoods", methods=["GET"])
+@app.route("/api/neighborhoods", methods=["GET"])
 async def get_neighborhoods():
     """Get neighborhoods for a city or location.
     Query params: city, lat, lon, lang
@@ -682,7 +682,7 @@ async def get_neighborhoods():
 
     return jsonify({"cached": False, "neighborhoods": data})
 
-@app.route('/reverse_lookup', methods=['POST'])
+@app.route('/api/reverse_lookup', methods=['POST'])
 async def reverse_lookup():
     """Reverse lookup coordinates to structured location info.
     POST payload: { lat: number, lon: number }
@@ -1195,7 +1195,7 @@ async def get_fun_fact():
             return jsonify({'error': 'city required'}), 400
         
         # Import tracker
-        from .fun_fact_tracker import track_fun_fact
+        from city_guides.src.fun_fact_tracker import track_fun_fact
         
 
         
@@ -1377,7 +1377,7 @@ async def api_smart_neighborhoods():
             'error': str(e)
         }), 500
 
-@app.route('/geocode', methods=['POST'])
+@app.route('/api/geocode', methods=['POST'])
 async def geocode():
     """Geocode a city/neighborhood to get coordinates"""
     payload = await request.get_json(silent=True) or {}
@@ -1423,8 +1423,8 @@ async def search():
         return jsonify({"error": "city required"}), 400
     
     try:
-        # Use the search implementation from routes
-        from .routes import _search_impl
+        # Use the search implementation from persistence
+        from persistence import _search_impl
         result = await asyncio.to_thread(_search_impl, payload)
 
         # Add categories to the search result
@@ -1480,7 +1480,7 @@ async def search():
         app.logger.exception('Search failed')
         return jsonify({"error": "search_failed", "details": str(e)}), 500
 
-@app.route('/synthesize', methods=['POST'])
+@app.route('/api/synthesize', methods=['POST'])
 async def synthesize():
     """Synthesize venues from search results using AI enhancement"""
     try:
@@ -1518,7 +1518,7 @@ async def synthesize():
         app.logger.exception('Synthesis failed')
         return jsonify({'error': 'synthesis_failed', 'details': str(e)}), 500
 
-@app.route('/generate_quick_guide', methods=['POST'])
+@app.route('/api/generate_quick_guide', methods=['POST'])
 async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
     """Generate a neighborhood quick_guide using Wikipedia and local data-first heuristics.
     POST payload: { city: "City Name", neighborhood: "Neighborhood Name" }

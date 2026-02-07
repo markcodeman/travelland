@@ -1482,6 +1482,20 @@ def _search_impl(payload):
                 "historic": "historic",
                 "historic sites": "historic",
                 "historical": "historic",
+                "castles_und_fortifications": "historic",
+                "castles & fortifications": "historic",
+                "castle": "historic",
+                "castles": "historic",
+                "fortification": "historic",
+                "fortifications": "historic",
+                "palace": "historic",
+                "palaces": "historic",
+                "literary_heritage": "historic",
+                "literary heritage": "historic",
+                "music_heritage": "historic",
+                "music heritage": "historic",
+                "industrial_heritage": "historic",
+                "industrial heritage": "historic",
                 "culture": "museum",
                 "art": "museum",
                 "museum": "museum",
@@ -1497,7 +1511,13 @@ def _search_impl(payload):
                 "entertainment": "amenity",
                 "public transport": "amenity",
                 "transport": "amenity",
-                "transit": "amenity"
+                "transit": "amenity",
+                "theatre": "amenity",
+                "theater": "amenity",
+                "show": "amenity",
+                "performance": "amenity",
+                "play": "amenity",
+                "concert": "amenity",
             }
             poi_type = category_mapping.get(q, q)
             
@@ -1510,7 +1530,7 @@ def _search_impl(payload):
                     city=city,
                     poi_type=poi_type,
                     limit=limit,
-                    bbox=bbox,
+                    bbox=tuple(bbox) if bbox else None,
                     timeout=10.0
                 )
                 print(f"[SEARCH DEBUG] multi_provider returned {len(venues)} venues")
