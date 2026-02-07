@@ -177,11 +177,9 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       matchedCategory = 'hotels';
     } else if (lowerText.includes('theatre') || lowerText.includes('theater') || lowerText.includes('show') || lowerText.includes('performance') || lowerText.includes('play') || lowerText.includes('concert')) {
       matchedCategory = 'entertainment';
-<<<<<<< Updated upstream
     } else if (lowerText.includes('castle') || lowerText.includes('fort') || lowerText.includes('fortification') || lowerText.includes('palace')) {
       // Castles/forts are not venue-seeking - they're topic queries for RAG
       matchedCategory = null; // Don't trigger venue mode
-=======
     } else if (lowerText.includes('castle') || lowerText.includes('fortification') || lowerText.includes('fortress') || lowerText.includes('palace')) {
       matchedCategory = 'castles_und_fortifications';
     } else if (lowerText.includes('historic site') || lowerText.includes('historic landmark') || lowerText.includes('ancient')) {
@@ -192,7 +190,6 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       matchedCategory = 'music_heritage';
     } else if (lowerText.includes('industrial') || lowerText.includes('factory') || lowerText.includes('mill') || lowerText.includes('manufacturing')) {
       matchedCategory = 'industrial_heritage';
->>>>>>> Stashed changes
     }
     // Note: generic heritage, maritime, history, architecture queries go to RAG for better synthesis
 
