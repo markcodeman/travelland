@@ -1477,8 +1477,10 @@ async def admin_dashboard():
 
 function copyMarcoInfo() {
     const marcoContent = document.getElementById('marco-response').textContent;
+    const queryInfo = document.getElementById('marco-query-info').textContent;
     if (marcoContent) {
-        navigator.clipboard.writeText(marcoContent).then(() => {
+        const fullContent = `${queryInfo}\n\n${marcoContent}`;
+        navigator.clipboard.writeText(fullContent).then(() => {
             const button = document.querySelector('#marco-tools .copy-debug');
             const originalText = button.textContent;
             button.textContent = '✅ Copied!';
@@ -1519,7 +1521,7 @@ function antiDufusScan() {
         scanResults.push('⚠️  Response seems too short');
     }
     
-    if (response.includes("I don't know") || response.includes('not sure')) {
+    if (response.includes('I don\'t know') || response.includes('not sure')) {
         scanResults.push('🤔 Uncertain response detected');
     }
     
@@ -1531,14 +1533,20 @@ function antiDufusScan() {
         scanResults.push('📍 Google Maps links present');
     }
     
-    // Check for JSON structure
+    // Check for JSON structure - extract JSON part after Status line
     try {
-        const parsed = JSON.parse(response);
-        if (parsed.response) {
-            scanResults.push('✅ Valid JSON structure with response field');
-        }
-        if (parsed.sources) {
-            scanResults.push('📋 Sources included');
+        // Find the JSON part (after "Status: 200" or similar)
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed.response || parsed.answer) {
+                scanResults.push('✅ Valid JSON structure with response field');
+            }
+            if (parsed.sources) {
+                scanResults.push('📋 Sources included');
+            }
+        } else {
+            scanResults.push('⚠️  No JSON structure found');
         }
     } catch (e) {
         scanResults.push('⚠️  Not valid JSON format');
