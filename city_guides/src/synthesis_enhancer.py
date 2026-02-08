@@ -4,7 +4,7 @@ Provides stronger snippet extraction, language normalization, and safer trimming
 """
 
 import re
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 # No persistence imports needed - this module is self-contained
 
