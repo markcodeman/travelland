@@ -672,6 +672,11 @@ async def admin_dashboard():
                     <button type="button" class="refresh" onclick="refreshMarcoResponse()">Refresh</button>
                 </form>
                 <div id="marco-response" class="response" style="display:none;"></div>
+                <div id="marco-tools" style="margin-top: 10px; display: none;">
+                    <button type="button" class="copy-debug" onclick="copyMarcoInfo()">📋 Copy Debug</button>
+                    <button type="button" class="scan-debug" onclick="antiDufusScan()">🔍 Anti-Dufus Scan</button>
+                    <span id="marco-query-info" style="margin-left: 10px; font-family: monospace; font-size: 12px; color: #666;"></span>
+                </div>
             </div>
 
             <div class="test-form" id="test-search">
@@ -800,6 +805,7 @@ async def admin_dashboard():
                 document.getElementById('marco-neighborhood').innerHTML = '<option value="">City-wide (no neighborhood)</option><option value="" disabled>── Load neighborhoods first ──</option>';
                 document.getElementById('query').value = '';
                 document.getElementById('marco-response').style.display = 'none';
+                document.getElementById('marco-tools').style.display = 'none';
             }
             
             // Auto-generate query when category changes
@@ -1438,6 +1444,12 @@ async def admin_dashboard():
                     responseDiv.style.display = 'block';
                     responseDiv.textContent = 'Testing...';
                     
+                    // Show tools and update query info
+                    const toolsDiv = document.getElementById('marco-tools');
+                    const queryInfo = document.getElementById('marco-query-info');
+                    toolsDiv.style.display = 'block';
+                    queryInfo.textContent = `Query: "${query}" | City: "${city}"`;
+                    
                     const resp = await fetch('/api/chat/rag', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1458,6 +1470,8 @@ async def admin_dashboard():
                     }, 50);
                 } catch (error) {
                     responseDiv.textContent = 'Error: ' + error.message;
+                    document.getElementById('marco-tools').style.display = 'block';
+                    document.getElementById('marco-query-info').textContent = `Query: "${query}" | City: "${city}" | ERROR: ${error.message}`;
                 }
             });
 
@@ -1481,6 +1495,71 @@ function copyMarcoInfo() {
             alert('Failed to copy Marco info');
         });
     }
+}
+
+function antiDufusScan() {
+    const response = document.getElementById('marco-response').textContent;
+    if (!response) {
+        alert('No response to scan!');
+        return;
+    }
+    
+    const scanResults = [];
+    
+    // Check for common issues
+    if (response.includes('error') || response.includes('Error')) {
+        scanResults.push('❌ Error detected in response');
+    }
+    
+    if (response.includes('null') || response.includes('undefined')) {
+        scanResults.push('⚠️  Null/undefined values found');
+    }
+    
+    if (response.length < 50) {
+        scanResults.push('⚠️  Response seems too short');
+    }
+    
+    if (response.includes('I don\'t know') || response.includes('not sure')) {
+        scanResults.push('🤔 Uncertain response detected');
+    }
+    
+    if (response.includes('Wikipedia') && response.includes('DDGS')) {
+        scanResults.push('📚 Multiple sources used (good!)');
+    }
+    
+    if (response.includes('google.com/maps')) {
+        scanResults.push('📍 Google Maps links present');
+    }
+    
+    // Check for JSON structure
+    try {
+        const parsed = JSON.parse(response);
+        if (parsed.response) {
+            scanResults.push('✅ Valid JSON structure with response field');
+        }
+        if (parsed.sources) {
+            scanResults.push('📋 Sources included');
+        }
+    } catch (e) {
+        scanResults.push('⚠️  Not valid JSON format');
+    }
+    
+    // Show results
+    const scanButton = document.querySelector('#marco-tools .scan-debug');
+    const originalText = scanButton.textContent;
+    scanButton.textContent = scanResults.length > 0 ? scanResults.join(' | ') : '✅ No issues detected';
+    scanButton.style.background = scanResults.some(r => r.includes('❌')) ? '#f44336' : '#4CAF50';
+    scanButton.style.color = 'white';
+    scanButton.style.fontSize = '10px';
+    scanButton.style.padding = '5px';
+    
+    setTimeout(() => {
+        scanButton.textContent = originalText;
+        scanButton.style.background = '';
+        scanButton.style.color = '';
+        scanButton.style.fontSize = '';
+        scanButton.style.padding = '';
+    }, 3000);
 }
 
             // Weather Test
