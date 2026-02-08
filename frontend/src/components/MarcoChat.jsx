@@ -10,7 +10,8 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     return saved ? JSON.parse(saved) : [];
   });
   const [input, setInput] = useState(initialInput || ''); // allow initial input
-  const [sessionId, setSessionId] = useState(localStorage.getItem('marco_session_id') || null);
+  // DISABLED FOR TESTING: Clear session ID for fresh Marco sessions
+  const [sessionId, setSessionId] = useState(null); // localStorage.getItem('marco_session_id') || null
   const [loading, setLoading] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -201,10 +202,12 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
 
     try {
       // Build conversation history from messages (exclude initial message and venue cards)
-      const history = messages
-        .filter(m => m.role && (m.role === 'user' || m.role === 'assistant') && m.text)
-        .slice(-6) // Last 6 messages for context
-        .map(m => ({ role: m.role, content: m.text }));
+      // DISABLED FOR TESTING: Only keep current session, no cross-session memory
+      const history = []; // Clear history for clean testing
+      // const history = messages
+      //   .filter(m => m.role && (m.role === 'user' || m.role === 'assistant') && m.text)
+      //   .slice(-6) // Last 6 messages for context
+      //   .map(m => ({ role: m.role, content: m.text }));
       
       // Use the RAG chat endpoint
       const payload = {
@@ -239,10 +242,11 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
         suggestions: suggestions.slice(0, 4) // Add top 4 suggestions
       }]);
       
+      // DISABLED FOR TESTING: Don't store session ID
       // Update session ID if provided
-      if (data.session_id) {
-        setSessionId(data.session_id);
-      }
+      // if (data.session_id) {
+      //   setSessionId(data.session_id);
+      // }
     } catch (error) {
       console.error('Chat error:', error);
       const errorMsg = { 

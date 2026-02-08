@@ -281,27 +281,32 @@ async def api_chat_rag():
                 app.logger.debug(f'Fun facts lookup failed for {city}: {e}')
                 # Continue to normal flow if seeded data not available
         
-        # Compute a cache key for this query+city and try Redis cache to avoid repeating long work
+        # DISABLED FOR MARCO TESTING: No caching during development
+        # Skip cache to ensure fresh responses and avoid query contamination
         cache_key = None
-        try:
-            if redis_client:
-                ck_input = f"{query}|{city}|{state}|{country}|{lat}|{lon}"
-                cache_key = "rag:" + hashlib.sha256(ck_input.encode('utf-8')).hexdigest()
-                cached = await redis_client.get(cache_key)
-                if cached:
-                    app.logger.info('RAG cache hit for key %s', cache_key)
-                    try:
-                        # metrics: cache hit
-                        await increment('rag.cache_hit')
-                    except Exception:
-                        pass
-                    try:
-                        cached_parsed = json.loads(cached)
-                        return jsonify(cached_parsed)
-                    except Exception:
-                        app.logger.debug('Failed to parse cached RAG response for %s', cache_key)
-        except Exception:
-            app.logger.exception('Redis cache lookup failed')
+        cached = None
+        
+        # Compute a cache key for this query+city and try Redis cache to avoid repeating long work
+        # cache_key = None
+        # try:
+        #     if redis_client:
+        #         ck_input = f"{query}|{city}|{state}|{country}|{lat}|{lon}"
+        #         cache_key = "rag:" + hashlib.sha256(ck_input.encode('utf-8')).hexdigest()
+        #         cached = await redis_client.get(cache_key)
+        #         if cached:
+        #             app.logger.info('RAG cache hit for key %s', cache_key)
+        #             try:
+        #                 # metrics: cache hit
+        #                 await increment('rag.cache_hit')
+        #             except Exception:
+        #                 pass
+        #             try:
+        #                 cached_parsed = json.loads(cached)
+        #                 return jsonify(cached_parsed)
+        #             except Exception:
+        #                 app.logger.debug('Failed to parse cached RAG response for %s', cache_key)
+        # except Exception:
+        #     app.logger.exception('Redis cache lookup failed')
 
         # Skip venue fetching for speed - web search + Groq is sufficient
         venues = []
@@ -450,14 +455,15 @@ async def api_chat_rag():
             await observe_latency('rag.latency_ms', elapsed)
         except Exception:
             pass
+        # DISABLED FOR MARCO TESTING: No cache storage during development
         # Cache the result for repeated queries to improve latency on hot paths
-        try:
-            if redis_client and cache_key:
-                ttl = int(os.getenv('RAG_CACHE_TTL', 60 * 60 * 6))  # default 6 hours
-                await redis_client.setex(cache_key, ttl, json.dumps(result_payload))
-                app.logger.info('Cached RAG response %s (ttl=%s)', cache_key, ttl)
-        except Exception:
-            app.logger.exception('Failed to cache RAG response')
+        # try:
+        #     if redis_client and cache_key:
+        #         ttl = int(os.getenv('RAG_CACHE_TTL', 60 * 60 * 6))  # default 6 hours
+        #         await redis_client.setex(cache_key, ttl, json.dumps(result_payload))
+        #         app.logger.info('Cached RAG response %s (ttl=%s)', cache_key, ttl)
+        # except Exception:
+        #     app.logger.exception('Failed to cache RAG response')
 
         return jsonify(result_payload)
     except Exception as e:
