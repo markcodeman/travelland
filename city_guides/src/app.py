@@ -3482,8 +3482,52 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
                     source = 'geo-enriched'
                     confidence = 'medium'
                 else:
-                    # Only use fallback if we don't already have synthesized content
-                    if not synthesized or source != 'synthesized':
+                    # Try POI discovery as fallback for better neighborhood knowledge
+                    try:
+                        from city_guides.providers.overpass_provider import geocode_city as overpass_geocode
+                        from city_guides.providers.multi_provider import multi_provider
+                        
+                        # Get neighborhood coordinates
+                        nb_coords = await overpass_geocode(f"{neighborhood}, {city}")
+                        if nb_coords and isinstance(nb_coords, tuple) and len(nb_coords) == 4:
+                            min_lon, min_lat, max_lon, max_lat = nb_coords
+                            lat = (min_lat + max_lat) / 2
+                            lon = (min_lon + max_lon) / 2
+                            
+                            # Discover POIs in the neighborhood
+                            poi_results = await multi_provider.discover_pois(
+                                lat=lat, lon=lon,
+                                poi_type='tourism',  # General POIs
+                                radius_m=1000,
+                                limit=10,
+                                session=aiohttp_session
+                            )
+                            
+                            if poi_results and len(poi_results) > 0:
+                                # Build quick guide from discovered POIs
+                                poi_names = [p.get('name', '') for p in poi_results[:5] if p.get('name')]
+                                poi_types = list(set([p.get('type', '').replace('_', ' ') for p in poi_results[:5] if p.get('type')]))
+                                
+                                if poi_names:
+                                    poi_text = ', '.join(poi_names)
+                                    type_text = ', '.join(poi_types[:3]) if poi_types else 'various places'
+                                    
+                                    synthesized = f"{neighborhood} is a neighborhood in {city}. It features {type_text} including {poi_text}. The area offers local amenities and attractions for visitors."
+                                    source = 'poi-enriched'
+                                    confidence = 'medium'
+                                    
+                                    # Update source_url with POI provider info
+                                    provider_counts = {}
+                                    for p in poi_results:
+                                        prov = p.get('provider', 'unknown')
+                                        provider_counts[prov] = provider_counts.get(prov, 0) + 1
+                                    source_url = f"POI discovery: {dict(provider_counts)}"
+                                
+                    except Exception as poi_error:
+                        app.logger.debug(f"POI discovery fallback failed for {city}/{neighborhood}: {poi_error}")
+                    
+                    # Only use basic fallback if POI discovery also failed
+                    if not synthesized or source == 'data-first':
                         synthesized = f"{neighborhood} is a neighborhood in {city}."
                         source = source or 'data-first'
             except Exception:

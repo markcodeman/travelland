@@ -215,10 +215,11 @@ class SynthesisEnhancer:
         return clean, uniq
 
     @staticmethod
-    def generate_neighborhood_paragraph(neighborhood: str, city: str, features: Optional[List[str]] = None, max_length: int = 500) -> str:
+    def generate_neighborhood_paragraph(neighborhood: str, city: str, features: Optional[List[str]] = None, pois: Optional[List[Dict]] = None, max_length: int = 500) -> str:
         """
         Generate a concise neighborhood paragraph that includes the neighborhood and city.
         If `features` are provided, mention one or two of them.
+        If `pois` (points of interest) are provided, use actual place names to build a rich description.
         """
         if not neighborhood or not city:
             return ''
@@ -226,7 +227,28 @@ class SynthesisEnhancer:
         parts = []
         parts.append(f"{neighborhood} is a neighborhood in {city}.")
 
-        if features:
+        # If we have actual POI data, use it to build a rich description
+        if pois and len(pois) > 0:
+            poi_names = [p.get('name', '') for p in pois[:5] if p.get('name')]
+            poi_types = list(set([p.get('type', '').replace('_', ' ').replace('historic', 'historic site').replace('tourism', 'tourist attraction') for p in pois[:5] if p.get('type')]))
+            
+            if poi_names and poi_types:
+                poi_text = ', '.join(poi_names[:3])  # Top 3 places
+                type_text = ', '.join(poi_types[:2]) if len(poi_types) >= 2 else poi_types[0] if poi_types else 'points of interest'
+                
+                parts.append(f"The area features {type_text} including {poi_text}.")
+                parts.append("Visitors can explore local amenities and attractions throughout the neighborhood.")
+            elif poi_names:
+                poi_text = ', '.join(poi_names[:3])
+                parts.append(f"Notable places include {poi_text}.")
+            elif features:
+                chosen = [f.strip() for f in features if f and f.strip()][:2]
+                if chosen:
+                    if len(chosen) == 1:
+                        parts.append(f"It's known for {chosen[0]}.")
+                    else:
+                        parts.append(f"It's known for {chosen[0]} and {chosen[1]}.")
+        elif features:
             # use up to two features for brevity
             chosen = [f.strip() for f in features if f and f.strip()][:2]
             if chosen:
