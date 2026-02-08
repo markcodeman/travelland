@@ -422,6 +422,25 @@ async def api_chat_rag():
         intent = analyze_user_intent(query, venues or [])
         should_use_groq = should_call_groq({"quality_score": 0.5}, intent)  # Default quality score
 
+        # Log what we're sending to Groq
+        print(f"[RAG_DEBUG] === Marco RAG Analysis ===")
+        print(f"[RAG_DEBUG] Query: {query}")
+        print(f"[RAG_DEBUG] City: {city}")
+        print(f"[RAG_DEBUG] Intent: {intent}")
+        print(f"[RAG_DEBUG] Venues found: {len(venues) if venues else 0}")
+        print(f"[RAG_DEBUG] Should use Groq: {should_use_groq}")
+        if venues:
+            print(f"[RAG_DEBUG] Top 3 venues: {[v.get('name', 'Unknown') for v in venues[:3]]}")
+        
+        app.logger.info(f"[RAG_DEBUG] === Marco RAG Analysis ===")
+        app.logger.info(f"[RAG_DEBUG] Query: {query}")
+        app.logger.info(f"[RAG_DEBUG] City: {city}")
+        app.logger.info(f"[RAG_DEBUG] Intent: {intent}")
+        app.logger.info(f"[RAG_DEBUG] Venues found: {len(venues) if venues else 0}")
+        app.logger.info(f"[RAG_DEBUG] Should use Groq: {should_use_groq}")
+        if venues:
+            app.logger.info(f"[RAG_DEBUG] Top 3 venues: {[v.get('name', 'Unknown') for v in venues[:3]]}")
+
         # Call Groq via recommender (6s timeout for Flash Gordon speed)
         GROQ_TIMEOUT = int(os.getenv('GROQ_CHAT_TIMEOUT', '6'))
         groq_resp = None

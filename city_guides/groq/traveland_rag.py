@@ -167,18 +167,52 @@ class TravelLandRecommender:
             "temperature": 0.2
         }
 
+        # Log what Groq is being asked to do
+        print(f"[GROQ_DEBUG] === Groq Call Started ===")
+        print(f"[GROQ_DEBUG] Model: {self.model}")
+        print(f"[GROQ_DEBUG] Messages being sent:")
+        for i, msg in enumerate(messages):
+            role = msg.get('role', 'unknown')
+            content = msg.get('content', '')
+            print(f"[GROQ_DEBUG]   Message {i+1} ({role}): {content[:200]}{'...' if len(content) > 200 else ''}")
+        
+        logger.info(f"[GROQ_DEBUG] === Groq Call Started ===")
+        logger.info(f"[GROQ_DEBUG] Model: {self.model}")
+        logger.info(f"[GROQ_DEBUG] Messages being sent:")
+        for i, msg in enumerate(messages):
+            role = msg.get('role', 'unknown')
+            content = msg.get('content', '')
+            logger.info(f"[GROQ_DEBUG]   Message {i+1} ({role}): {content[:200]}{'...' if len(content) > 200 else ''}")
+
         try:
             session = self.session or aiohttp.ClientSession()
             try:
                 headers["Accept-Encoding"] = "identity"  # Avoid brotli compression
                 async with session.post(GROQ_CHAT_URL, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=timeout)) as resp:
                     resp.raise_for_status()
-                    return await resp.json()
+                    result = await resp.json()
+                    
+                    # Log Groq's response
+                    print(f"[GROQ_DEBUG] Raw response received: {result}")
+                    if 'choices' in result and len(result['choices']) > 0:
+                        response_content = result['choices'][0]['message']['content']
+                        print(f"[GROQ_DEBUG] Groq's thinking/response:")
+                        print(f"[GROQ_DEBUG]   {response_content}")
+                        print(f"[GROQ_DEBUG] === Groq Call Completed ===")
+                        logger.info(f"[GROQ_DEBUG] Groq's thinking/response:")
+                        logger.info(f"[GROQ_DEBUG]   {response_content}")
+                        logger.info(f"[GROQ_DEBUG] === Groq Call Completed ===")
+                    else:
+                        print(f"[GROQ_DEBUG] Unexpected response format: {result}")
+                        logger.warning(f"[GROQ_DEBUG] Unexpected response format: {result}")
+                    
+                    return result
             finally:
                 if not self.session:
                     await session.close()
         except Exception as e:
             logger.error(f"GROQ API call failed: {e}")
+            logger.error(f"[GROQ_DEBUG] === Groq Call Failed ===")
             return None
 
     async def recommend_synthesis_enhanced(self, user_context: Dict, candidates: List[Dict]) -> List[Dict]:
