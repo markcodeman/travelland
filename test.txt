@@ -1,1 +1,1 @@
-test
+This is a test file that is way too long and should be blocked by the pre-commit hook because it exceeds the line limit for whatever file type it is. Let's make it really long to test the enforcement properly.
