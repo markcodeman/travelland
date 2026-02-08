@@ -15,7 +15,43 @@ logger = logging.getLogger(__name__)
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = "llama-3.1-8b-instant"
+GROQ_MODELS_URL = "https://api.groq.com/openai/v1/models"
+
+# Auto-detect latest available model
+async def get_latest_groq_model() -> str:
+    """Get the latest available Groq model, preferring Llama 3.3 70B"""
+    if not GROQ_API_KEY:
+        return "llama-3.1-8b-instant"  # fallback
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Accept-Encoding": "identity"}
+            async with session.get(GROQ_MODELS_URL, headers=headers) as resp:
+                if resp.status == 200:
+                    models = await resp.json()
+                    # Prefer Llama 3.3 70B, then 3.1 70B, then 3.1 8B
+                    preferred_models = [
+                        "llama-3.3-70b-versatile",
+                        "llama-3.1-70b-versatile", 
+                        "llama-3.1-8b-instant"
+                    ]
+                    
+                    available_models = [m['id'] for m in models.get('data', [])]
+                    for model in preferred_models:
+                        if model in available_models:
+                            logger.info(f"[traveland_rag] Using model: {model}")
+                            return model
+                    
+                    # Fallback to first available model
+                    if available_models:
+                        logger.info(f"[traveland_rag] Using fallback model: {available_models[0]}")
+                        return available_models[0]
+    except Exception as e:
+        logger.warning(f"[traveland_rag] Failed to detect models: {e}")
+    
+    return "llama-3.1-8b-instant"  # ultimate fallback
+
+GROQ_MODEL = "llama-3.3-70b-versatile"  # will be updated at runtime
 
 # Debug logging for RAG availability
 if not GROQ_API_KEY:
@@ -28,7 +64,7 @@ class TravelLandRecommender:
 
     def __init__(self, session: aiohttp.ClientSession = None):
         self.api_key = GROQ_API_KEY
-        self.model = GROQ_MODEL
+        self.model = GROQ_MODEL  # will be updated dynamically
         self.session = session  # Shared aiohttp session for connection reuse
         # Local synthesizer fallback (keeps outputs usable when Groq fails)
         try:
@@ -36,6 +72,10 @@ class TravelLandRecommender:
             self.synthesizer = SynthesisEnhancer()
         except Exception:
             self.synthesizer = None
+
+    async def update_model(self):
+        """Update to the latest available model"""
+        self.model = await get_latest_groq_model()
 
 
     def build_system_prompt(self, recommendation_type: str = "venues") -> str:
@@ -115,6 +155,10 @@ class TravelLandRecommender:
             logger.warning("GROQ_API_KEY not configured")
             return None
 
+        # Auto-detect model on first call if still using default
+        if self.model == "llama-3.3-70b-versatile":
+            await self.update_model()
+
         headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
         payload = {
             "model": self.model,
@@ -126,6 +170,7 @@ class TravelLandRecommender:
         try:
             session = self.session or aiohttp.ClientSession()
             try:
+                headers["Accept-Encoding"] = "identity"  # Avoid brotli compression
                 async with session.post(GROQ_CHAT_URL, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=timeout)) as resp:
                     resp.raise_for_status()
                     return await resp.json()
