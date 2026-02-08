@@ -1519,7 +1519,7 @@ function antiDufusScan() {
         scanResults.push('⚠️  Response seems too short');
     }
     
-    if (response.includes('I don\'t know') || response.includes('not sure')) {
+    if (response.includes("I don't know") || response.includes('not sure')) {
         scanResults.push('🤔 Uncertain response detected');
     }
     
