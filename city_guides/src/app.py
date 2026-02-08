@@ -561,6 +561,140 @@ async def index():
     """Serve the React app at root"""
     return await app.send_static_file("index.html")
 
+@app.route("/admin", methods=["GET"])
+async def admin_dashboard():
+    """Simple admin dashboard for backend visualization"""
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>TravelLand Backend Admin</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+            .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+            h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+            .status { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+            .status-card { background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #007bff; }
+            .status-card h3 { margin: 0 0 10px 0; color: #495057; }
+            .status-ok { border-left-color: #28a745; }
+            .status-error { border-left-color: #dc3545; }
+            .api-list { list-style: none; padding: 0; }
+            .api-list li { background: #e9ecef; margin: 5px 0; padding: 10px; border-radius: 3px; }
+            .api-list a { text-decoration: none; color: #007bff; font-weight: bold; }
+            .api-list a:hover { text-decoration: underline; }
+            .test-form { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
+            .test-form input, .test-form textarea, .test-form button { margin: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 3px; }
+            .test-form button { background: #007bff; color: white; cursor: pointer; }
+            .test-form button:hover { background: #0056b3; }
+            .response { background: #f8f9fa; padding: 10px; border-radius: 3px; margin: 10px 0; white-space: pre-wrap; font-family: monospace; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🚀 TravelLand Backend Admin</h1>
+            
+            <div class="status">
+                <div class="status-card status-ok">
+                    <h3>🟢 Server Status</h3>
+                    <p>Backend is running</p>
+                    <p>Port: 5010</p>
+                </div>
+                <div class="status-card">
+                    <h3>🔑 API Keys</h3>
+                    <p>GROQ: """ + ("✅ Configured" if os.getenv("GROQ_API_KEY") else "❌ Missing") + """</p>
+                    <p>Redis: """ + ("✅ Connected" if redis_client else "❌ Not connected") + """</p>
+                </div>
+                <div class="status-card">
+                    <h3>🧠 Marco Memory</h3>
+                    <p>History: ❌ Disabled (testing)</p>
+                    <p>Cache: ❌ Disabled (testing)</p>
+                </div>
+            </div>
+
+            <h2>📡 API Endpoints</h2>
+            <ul class="api-list">
+                <li><a href="/api/health" target="_blank">GET /api/health</a> - Health check</li>
+                <li><a href="/api/search" target="_blank">POST /api/search</a> - Venue search</li>
+                <li><a href="/api/chat/rag" target="_blank">POST /api/chat/rag</a> - Marco chat</li>
+                <li><a href="/api/fun-fact" target="_blank">POST /api/fun-fact</a> - Fun facts</li>
+                <li><a href="/api/weather" target="_blank">POST /api/weather</a> - Weather</li>
+                <li><a href="/api/geocode" target="_blank">POST /api/geocode</a> - Geocoding</li>
+            </ul>
+
+            <div class="test-form">
+                <h2>🧪 Test Marco Chat</h2>
+                <form id="marco-test">
+                    <input type="text" id="city" placeholder="City (e.g., Barcelona)" style="width: 200px;">
+                    <input type="text" id="query" placeholder="Query (e.g., Tell me about beaches)" style="width: 300px;">
+                    <button type="submit">Test Marco</button>
+                </form>
+                <div id="marco-response" class="response" style="display:none;"></div>
+            </div>
+
+            <div class="test-form">
+                <h2>🔍 Test Venue Search</h2>
+                <form id="search-test">
+                    <input type="text" id="search-city" placeholder="City" style="width: 150px;">
+                    <input type="text" id="search-category" placeholder="Category" style="width: 150px;">
+                    <button type="submit">Search</button>
+                </form>
+                <div id="search-response" class="response" style="display:none;"></div>
+            </div>
+        </div>
+
+        <script>
+            // Marco Chat Test
+            document.getElementById('marco-test').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const city = document.getElementById('city').value;
+                const query = document.getElementById('query').value;
+                const responseDiv = document.getElementById('marco-response');
+                
+                try {
+                    responseDiv.style.display = 'block';
+                    responseDiv.textContent = 'Testing...';
+                    
+                    const resp = await fetch('/api/chat/rag', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query, city, history: [] })
+                    });
+                    
+                    const data = await resp.json();
+                    responseDiv.textContent = 'Status: ' + resp.status + '\\n\\n' + JSON.stringify(data, null, 2);
+                } catch (error) {
+                    responseDiv.textContent = 'Error: ' + error.message;
+                }
+            });
+
+            // Venue Search Test
+            document.getElementById('search-test').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const city = document.getElementById('search-city').value;
+                const category = document.getElementById('search-category').value;
+                const responseDiv = document.getElementById('search-response');
+                
+                try {
+                    responseDiv.style.display = 'block';
+                    responseDiv.textContent = 'Searching...';
+                    
+                    const resp = await fetch('/api/search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: city, category })
+                    });
+                    
+                    const data = await resp.json();
+                    responseDiv.textContent = 'Status: ' + resp.status + '\\n\\n' + JSON.stringify(data, null, 2);
+                } catch (error) {
+                    responseDiv.textContent = 'Error: ' + error.message;
+                }
+            });
+        </script>
+    </body>
+    </html>
+    """
+
 @app.route("/<path:path>", methods=["GET"])
 async def catch_all(path):
     # Serve React app for client-side routing
