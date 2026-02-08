@@ -682,9 +682,9 @@ async def admin_dashboard():
                     </select>
                     <select id="marco-neighborhood" style="width: 150px;">
                         <option value="">City-wide (no neighborhood)</option>
-                        <option value="" disabled>── Load neighborhoods first ──</option>
+                        <option value="" disabled>── Loading neighborhoods... ──</option>
                     </select>
-                    <button type="button" class="load-nh" onclick="loadMarcoNeighborhoods()">Load Neighborhoods</button>
+                    <button type="button" class="city-only" onclick="setCityOnly()">🏙️ City Only</button>
                     <input type="text" id="query" placeholder="Query (auto-generated)" style="width: 300px;">
                     <button type="submit">🎭 Marco Chat</button>
                     <button type="button" class="clear" onclick="clearMarcoForm()">Clear</button>
@@ -817,6 +817,113 @@ async def admin_dashboard():
         </div>
 
         <script>
+            // Global functions (outside DOMContentLoaded)
+            async function loadMarcoNeighborhoods() {
+                const city = document.getElementById('city').value;
+                const category = document.getElementById('marco-category').value;
+                if (!city) {
+                    alert('Please enter a city first');
+                    return;
+                }
+                
+                console.log(`🔍 Loading neighborhoods for Marco: city="${city}", category="${category}"`);
+                
+                try {
+                    const response = await fetch(`/api/smart-neighborhoods?city=${encodeURIComponent(city)}`);
+                    const data = await response.json();
+                    
+                    console.log('📊 Smart neighborhoods response:', data);
+                    
+                    if (data.neighborhoods && data.neighborhoods.length > 0) {
+                        const select = document.getElementById('marco-neighborhood');
+                        select.innerHTML = '<option value="">City-wide (no neighborhood)</option>';
+                        
+                        // Dynamic category suggestions based on actual city neighborhoods
+                        const categoryKeywords = {
+                            'coffee': ['coffee', 'cafe', 'espresso', 'brew', 'roast'],
+                            'restaurants': ['restaurant', 'eatery', 'bistro', 'diner', 'food'],
+                            'architecture': ['historic', 'old', 'quarter', 'district', 'building'],
+                            'museums': ['museum', 'gallery', 'art', 'cultural', 'heritage'],
+                            'historic': ['historic', 'old', 'heritage', 'ancient', 'colonial'],
+                            'tourism': ['tourist', 'visitor', 'attraction', 'landmark', 'sight'],
+                            'parks': ['park', 'garden', 'green', 'recreation', 'outdoor']
+                        };
+                        
+                        // Get suggestions for this category from actual city neighborhoods
+                        const keywords = categoryKeywords[category] || [];
+                        let suggestions = [];
+                        
+                        if (keywords.length > 0) {
+                            suggestions = data.neighborhoods.filter(nh => {
+                                const name = (nh.name || nh).toLowerCase();
+                                return keywords.some(keyword => name.includes(keyword));
+                            }).map(nh => nh.name || nh);
+                        }
+                        
+                        console.log(`🎯 Category suggestions for "${category}" in ${city}:`, suggestions);
+                        
+                        // Add suggested neighborhoods first
+                        const suggestedNeighborhoods = [];
+                        const otherNeighborhoods = [];
+                        
+                        data.neighborhoods.forEach(nh => {
+                            const name = nh.name || nh;
+                            if (suggestions.some(suggestion => name.toLowerCase().includes(suggestion.toLowerCase()))) {
+                                suggestedNeighborhoods.push(nh);
+                            } else {
+                                otherNeighborhoods.push(nh);
+                            }
+                        });
+                        
+                        console.log(`✅ Found ${suggestedNeighborhoods.length} suggested, ${otherNeighborhoods.length} other neighborhoods`);
+                        
+                        // Add suggested neighborhoods with indicator
+                        if (suggestedNeighborhoods.length > 0 && category) {
+                            const optgroup = document.createElement('optgroup');
+                            optgroup.label = `🎯 Suggested for ${category}`;
+                            suggestedNeighborhoods.forEach(nh => {
+                                const option = document.createElement('option');
+                                option.value = nh.name || nh;
+                                option.textContent = `⭐ ${nh.name || nh}`;
+                                optgroup.appendChild(option);
+                            });
+                            select.appendChild(optgroup);
+                        }
+                        
+                        // Add other neighborhoods
+                        if (otherNeighborhoods.length > 0) {
+                            const optgroup = document.createElement('optgroup');
+                            optgroup.label = 'All neighborhoods';
+                            otherNeighborhoods.forEach(nh => {
+                                const option = document.createElement('option');
+                                option.value = nh.name || nh;
+                                option.textContent = nh.name || nh;
+                                optgroup.appendChild(option);
+                            });
+                            select.appendChild(optgroup);
+                        }
+                        
+                        console.log(`🎉 Successfully loaded ${data.neighborhoods.length} neighborhoods for Marco (${suggestedNeighborhoods.length} suggested for ${category})`);
+                    } else {
+                        console.log('❌ No neighborhoods found for Marco');
+                        const select = document.getElementById('marco-neighborhood');
+                        select.innerHTML = '<option value="">City-wide (no neighborhood)</option><option value="" disabled>── No neighborhoods found ──</option>';
+                    }
+                } catch (error) {
+                    console.error('❌ Failed to load neighborhoods for Marco:', error);
+                    const select = document.getElementById('marco-neighborhood');
+                    select.innerHTML = '<option value="">City-wide (no neighborhood)</option><option value="" disabled>── Failed to load ──</option>';
+                    alert('Failed to load neighborhoods');
+                }
+            }
+            
+            function setCityOnly() {
+                const neighborhoodSelect = document.getElementById('marco-neighborhood');
+                neighborhoodSelect.value = '';
+                neighborhoodSelect.disabled = false;
+                updateQuery();
+            }
+            
             // Clear and Refresh Functions
             function clearMarcoForm() {
                 document.getElementById('city').value = '';
@@ -827,7 +934,15 @@ async def admin_dashboard():
                 document.getElementById('marco-tools').style.display = 'none';
             }
             
-            // Auto-generate query when category changes
+            function refreshMarcoResponse() {
+                const city = document.getElementById('city').value;
+                const query = document.getElementById('query').value;
+                if (city && query) {
+                    document.getElementById('marco-test').dispatchEvent(new Event('submit'));
+                }
+            }
+            
+            // Auto-loading and event listeners
             document.addEventListener('DOMContentLoaded', function() {
                 const categorySelect = document.getElementById('marco-category');
                 const cityInput = document.getElementById('city');
@@ -862,30 +977,44 @@ async def admin_dashboard():
                         'tourism': 'things to do'
                     };
                     
-                    let newQuery;
+                    let query = `Tell me about ${categoryMap[category] || category}`;
                     if (neighborhood) {
-                        // Clean neighborhood name to avoid duplication
-                        const cleanNeighborhood = neighborhood.replace(/,\s*.*$/, '').trim();
-                        newQuery = `Tell me about ${categoryMap[category]} in ${cleanNeighborhood}, ${city}`;
-                    } else {
-                        newQuery = `Tell me about ${categoryMap[category]} in ${city}`;
+                        query += ` in ${neighborhood}`;
                     }
+                    query += ` in ${city}`;
                     
-                    // Only update if different to prevent infinite loops
-                    if (queryInput.value !== newQuery) {
-                        queryInput.value = newQuery;
-                        console.log(`📝 Generated query: "${newQuery}"`);
-                    }
+                    queryInput.value = query;
+                    console.log(`📝 Generated query: "${queryInput.value}"`);
                 }
                 
-                // Auto-load neighborhoods when category changes (if city is entered)
+                // Auto-load neighborhoods when city is entered (with debounce)
+                let cityTimeout;
+                cityInput.addEventListener('input', function() {
+                    clearTimeout(cityTimeout);
+                    const city = cityInput.value;
+                    
+                    // Clear neighborhoods when city changes
+                    neighborhoodSelect.innerHTML = '<option value="">City-wide (no neighborhood)</option><option value="" disabled>── Loading neighborhoods... ──</option>';
+                    neighborhoodSelect.disabled = true;
+                    updateQuery();
+                    
+                    // Auto-load neighborhoods after typing stops (debounce)
+                    if (city.length >= 3) {
+                        cityTimeout = setTimeout(async () => {
+                            await loadMarcoNeighborhoods();
+                            neighborhoodSelect.disabled = false;
+                        }, 500);
+                    }
+                });
+                
+                // Auto-load neighborhoods when category changes
                 categorySelect.addEventListener('change', async function() {
                     const city = cityInput.value;
                     const category = categorySelect.value;
                     
                     if (city && category) {
                         // Show loading state
-                        neighborhoodSelect.innerHTML = '<option value="">Loading neighborhoods...</option>';
+                        neighborhoodSelect.innerHTML = '<option value="">City-wide (no neighborhood)</option><option value="" disabled>── Loading neighborhoods... ──</option>';
                         neighborhoodSelect.disabled = true;
                         
                         try {
@@ -894,30 +1023,134 @@ async def admin_dashboard():
                             neighborhoodSelect.disabled = false;
                         }
                     }
-                    updateQuery();
-                });
-                
-                neighborhoodSelect.addEventListener('change', updateQuery);
-                cityInput.addEventListener('input', function() {
-                    // Clear neighborhoods when city changes
-                    neighborhoodSelect.innerHTML = '<option value="">City-wide (no neighborhood)</option><option value="" disabled>── Load neighborhoods first ──</option>';
-                    updateQuery();
-                });
             });
-            
-            async function loadMarcoNeighborhoods() {
-                const city = document.getElementById('city').value;
-                const category = document.getElementById('marco-category').value;
-                if (!city) {
-                    alert('Please enter a city first');
-                    return;
-                }
-                
-                console.log(`🔍 Loading neighborhoods for Marco: city="${city}", category="${category}"`);
-                
-                try {
-                    const response = await fetch(`/api/smart-neighborhoods?city=${encodeURIComponent(city)}`);
-                    const data = await response.json();
+            select.appendChild(optgroup);
+        }
+        
+        // Add other neighborhoods
+        if (otherNeighborhoods.length > 0) {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = 'All neighborhoods';
+            otherNeighborhoods.forEach(nh => {
+                const option = document.createElement('option');
+                option.value = nh.name || nh;
+                option.textContent = nh.name || nh;
+                optgroup.appendChild(option);
+            });
+            select.appendChild(optgroup);
+        }
+        
+        console.log(`🎉 Successfully loaded ${data.neighborhoods.length} neighborhoods for Marco (${suggestedNeighborhoods.length} suggested for ${category})`);
+    } else {
+        console.log('❌ No neighborhoods found for Marco');
+        const select = document.getElementById('marco-neighborhood');
+        select.innerHTML = '<option value="">City-wide (no neighborhood)</option><option value="" disabled>── No neighborhoods found ──</option>';
+    }
+} catch (error) {
+    console.error('❌ Failed to load neighborhoods for Marco:', error);
+    const select = document.getElementById('marco-neighborhood');
+    select.innerHTML = '<option value="">City-wide (no neighborhood)</option><option value="" disabled>── Failed to load ──</option>';
+    alert('Failed to load neighborhoods');
+}
+
+function clearSearchForm() {
+    document.getElementById('search-city').value = '';
+    document.getElementById('search-category').value = '';
+    document.getElementById('search-response').style.display = 'none';
+}
+
+function refreshSearchResponse() {
+    const city = document.getElementById('search-city').value;
+    const category = document.getElementById('search-category').value;
+    if (city && category) {
+        document.getElementById('search-test').dispatchEvent(new Event('submit'));
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('marco-category');
+    const cityInput = document.getElementById('city');
+    const neighborhoodSelect = document.getElementById('marco-neighborhood');
+    const queryInput = document.getElementById('query');
+
+    function updateQuery() {
+        const city = cityInput.value;
+        const category = categorySelect.value;
+        const neighborhood = neighborhoodSelect.value;
+
+        console.log(`🔧 Updating query: city="${city}", category="${category}", neighborhood="${neighborhood}"`);
+
+        if (!city) {
+            queryInput.value = '';
+            return;
+        }
+
+        if (!category) {
+            queryInput.value = `Tell me about ${city}`;
+            console.log(`📝 Generated query (no category): "${queryInput.value}"`);
+            return;
+        }
+
+        const categoryMap = {
+            'architecture': 'Architecture & Design',
+            'restaurants': 'restaurants',
+            'coffee': 'coffee shops',
+            'parks': 'parks',
+            'museums': 'museums',
+            'historic': 'historic sites',
+            'tourism': 'things to do'
+        };
+
+        let newQuery;
+        if (neighborhood) {
+            // Clean neighborhood name to avoid duplication
+            const cleanNeighborhood = neighborhood.replace(/,\s*.*$/, '').trim();
+            newQuery = `Tell me about ${categoryMap[category]} in ${cleanNeighborhood}, ${city}`;
+        } else {
+            newQuery = `Tell me about ${categoryMap[category]} in ${city}`;
+        }
+
+        // Only update if different to prevent infinite loops
+        if (queryInput.value !== newQuery) {
+            queryInput.value = newQuery;
+            console.log(`📝 Generated query: "${newQuery}"`);
+        }
+    }
+
+    // Auto-load neighborhoods when city is entered (with debounce)
+    let cityTimeout;
+    cityInput.addEventListener('input', function() {
+        clearTimeout(cityTimeout);
+        const city = cityInput.value;
+
+        // Clear neighborhoods when city changes
+        neighborhoodSelect.innerHTML = '<option value="">City-wide (no neighborhood)</option><option value="" disabled>── Loading neighborhoods... ──</option>';
+        neighborhoodSelect.disabled = true;
+        updateQuery();
+
+        // Auto-load neighborhoods after typing stops (debounce)
+        if (city.length >= 3) {
+            cityTimeout = setTimeout(async () => {
+                await loadMarcoNeighborhoods();
+                neighborhoodSelect.disabled = false;
+            }, 500);
+        }
+    });
+
+    // Auto-load neighborhoods when category changes
+    categorySelect.addEventListener('change', async function() {
+        const city = cityInput.value;
+        const category = categorySelect.value;
+
+        if (city && category) {
+            // Show loading state
+            neighborhoodSelect.innerHTML = '<option value="">City-wide (no neighborhood)</option><option value="" disabled>── Loading neighborhoods... ──</option>';
+            neighborhoodSelect.disabled = true;
+
+            try {
+                await loadMarcoNeighborhoods();
+            } finally {
+                neighborhoodSelect.disabled = false;
                     
                     console.log('📊 Smart neighborhoods response:', data);
                     
