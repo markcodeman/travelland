@@ -586,6 +586,10 @@ async def admin_dashboard():
             .test-form input, .test-form textarea, .test-form button { margin: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 3px; }
             .test-form button { background: #007bff; color: white; cursor: pointer; }
             .test-form button:hover { background: #0056b3; }
+            .test-form button.clear { background: #6c757d; }
+            .test-form button.clear:hover { background: #545b62; }
+            .test-form button.refresh { background: #28a745; }
+            .test-form button.refresh:hover { background: #1e7e34; }
             .response { background: #f8f9fa; padding: 10px; border-radius: 3px; margin: 10px 0; white-space: pre-wrap; font-family: monospace; }
         </style>
     </head>
@@ -614,36 +618,807 @@ async def admin_dashboard():
             <h2>📡 API Endpoints</h2>
             <ul class="api-list">
                 <li><a href="/api/health" target="_blank">GET /api/health</a> - Health check</li>
-                <li><a href="/api/search" target="_blank">POST /api/search</a> - Venue search</li>
-                <li><a href="/api/chat/rag" target="_blank">POST /api/chat/rag</a> - Marco chat</li>
-                <li><a href="/api/fun-fact" target="_blank">POST /api/fun-fact</a> - Fun facts</li>
-                <li><a href="/api/weather" target="_blank">POST /api/weather</a> - Weather</li>
-                <li><a href="/api/geocode" target="_blank">POST /api/geocode</a> - Geocoding</li>
+                <li><a href="#test-search">POST /api/search</a> - Venue search (test below)</li>
+                <li><a href="#test-marco">POST /api/chat/rag</a> - Marco chat (test below)</li>
+                <li><a href="#test-fun-fact">POST /api/fun-fact</a> - Fun facts (test below)</li>
+                <li><a href="#test-weather">POST /api/weather</a> - Weather (test below)</li>
+                <li><a href="#test-geocode">POST /api/geocode</a> - Geocoding (test below)</li>
+                <li><a href="#test-poi">POST /api/poi-discovery</a> - POI discovery (test below)</li>
             </ul>
 
-            <div class="test-form">
+            <div class="test-form" id="test-mapping">
+                <h2>🗺️ Quick Category Mapping Test</h2>
+                <p>Test how categories map to POI types instantly</p>
+                <form id="mapping-test">
+                    <select id="mapping-category" style="width: 200px;">
+                        <option value="">Select Category</option>
+                        <option value="architecture">🏛️ Architecture</option>
+                        <option value="restaurants">🍽️ Restaurants</option>
+                        <option value="coffee">☕ Coffee</option>
+                        <option value="parks">🌳 Parks</option>
+                        <option value="museums">🎨 Museums</option>
+                        <option value="historic">🏛️ Historic Sites</option>
+                        <option value="tourism">🎯 Tourism</option>
+                        <option value="design">✨ Design</option>
+                        <option value="buildings">🏢 Buildings</option>
+                    </select>
+                    <button type="submit">Test Mapping</button>
+                </form>
+                <div id="mapping-result" style="margin-top: 10px; padding: 10px; background: #e9ecef; border-radius: 3px; display: none;"></div>
+            </div>
+
+            <div class="test-form" id="test-marco">
                 <h2>🧪 Test Marco Chat</h2>
                 <form id="marco-test">
-                    <input type="text" id="city" placeholder="City (e.g., Barcelona)" style="width: 200px;">
-                    <input type="text" id="query" placeholder="Query (e.g., Tell me about beaches)" style="width: 300px;">
-                    <button type="submit">Test Marco</button>
+                    <input type="text" id="city" placeholder="City (e.g., Barcelona)" style="width: 150px;">
+                    <select id="marco-category" style="width: 150px;">
+                        <option value="">Select Category</option>
+                        <option value="architecture">🏛️ Architecture & Design</option>
+                        <option value="restaurants">🍽️ Restaurants</option>
+                        <option value="coffee">☕ Coffee Shops</option>
+                        <option value="parks">🌳 Parks</option>
+                        <option value="museums">🎨 Museums</option>
+                        <option value="historic">🏛️ Historic Sites</option>
+                        <option value="tourism">🎯 Things to Do</option>
+                    </select>
+                    <select id="marco-neighborhood" style="width: 150px;">
+                        <option value="">City-wide (no neighborhood)</option>
+                        <option value="" disabled>── Load neighborhoods first ──</option>
+                    </select>
+                    <button type="button" class="load-nh" onclick="loadMarcoNeighborhoods()">Load Neighborhoods</button>
+                    <input type="text" id="query" placeholder="Query (auto-generated)" style="width: 300px;">
+                    <button type="submit">🎭 Marco Chat</button>
+                    <button type="button" class="clear" onclick="clearMarcoForm()">Clear</button>
+                    <button type="button" class="refresh" onclick="refreshMarcoResponse()">Refresh</button>
                 </form>
                 <div id="marco-response" class="response" style="display:none;"></div>
             </div>
 
-            <div class="test-form">
-                <h2>🔍 Test Venue Search</h2>
+            <div class="test-form" id="test-search">
+                <h2>🤖 Test Marco Search</h2>
                 <form id="search-test">
-                    <input type="text" id="search-city" placeholder="City" style="width: 150px;">
-                    <input type="text" id="search-category" placeholder="Category" style="width: 150px;">
+                    <input type="text" id="search-city" placeholder="City (e.g., Barcelona)" style="width: 150px;">
+                    <select id="search-category" style="width: 150px;">
+                        <option value="">Select Category</option>
+                        <option value="restaurant">🍽️ Restaurants</option>
+                        <option value="coffee">☕ Coffee Shops</option>
+                        <option value="park">🌳 Parks</option>
+                        <option value="historic">🏛️ Historic Sites</option>
+                        <option value="museum">🎨 Museums</option>
+                        <option value="attractions">🎯 Attractions</option>
+                        <option value="tourism">🏛️ Architecture & Tourism</option>
+                        <option value="hotel">🏨 Hotels</option>
+                        <option value="shopping">🛍️ Shopping</option>
+                        <option value="nightlife">🌃 Nightlife</option>
+                        <option value="event">🎭 Events</option>
+                    </select>
                     <button type="submit">Search</button>
+                    <button type="button" class="clear" onclick="clearSearchForm()">Clear</button>
+                    <button type="button" class="refresh" onclick="refreshSearchResponse()">Refresh</button>
                 </form>
+                <div id="search-tools" style="margin: 10px 0; display: none;">
+                    <button type="button" class="copy-debug" onclick="copySearchInfo()">📋 Copy Results</button>
+                </div>
                 <div id="search-response" class="response" style="display:none;"></div>
+            </div>
+
+            <div class="test-form" id="test-fun-fact">
+                <h2>🎭 Test Fun Fact</h2>
+                <form id="fun-fact-test">
+                    <input type="text" id="fun-fact-city" placeholder="City (e.g., Barcelona)" style="width: 200px;">
+                    <button type="submit">Get Fun Fact</button>
+                    <button type="button" class="clear" onclick="clearFunFactForm()">Clear</button>
+                    <button type="button" class="refresh" onclick="refreshFunFactResponse()">Refresh</button>
+                </form>
+                <div id="fun-fact-response" class="response" style="display:none;"></div>
+            </div>
+
+            <div class="test-form" id="test-weather">
+                <h2>🌤️ Test Weather</h2>
+                <form id="weather-test">
+                    <input type="text" id="weather-city" placeholder="City (e.g., Barcelona)" style="width: 200px;">
+                    <button type="submit">Get Weather</button>
+                    <button type="button" class="clear" onclick="clearWeatherForm()">Clear</button>
+                    <button type="button" class="refresh" onclick="refreshWeatherResponse()">Refresh</button>
+                </form>
+                <div id="weather-response" class="response" style="display:none;"></div>
+            </div>
+
+            <div class="test-form" id="test-geocode">
+                <h2>📍 Test Geocode</h2>
+                <form id="geocode-test">
+                    <input type="text" id="geocode-location" placeholder="Location (e.g., Barcelona)" style="width: 200px;">
+                    <button type="submit">Get Coordinates</button>
+                    <button type="button" class="clear" onclick="clearGeocodeForm()">Clear</button>
+                    <button type="button" class="refresh" onclick="refreshGeocodeResponse()">Refresh</button>
+                </form>
+                <div id="geocode-response" class="response" style="display:none;"></div>
+            </div>
+
+            <div class="test-form" id="test-guide">
+                <h2>📖 Test City/Neighborhood Guide</h2>
+                <form id="guide-test">
+                    <input type="text" id="guide-city" placeholder="City (e.g., Barcelona)" style="width: 150px;">
+                    <select id="guide-neighborhood" style="width: 150px;">
+                        <option value="">City-wide guide (no neighborhood)</option>
+                        <option value="" disabled>── Load neighborhoods first ──</option>
+                    </select>
+                    <button type="submit">Generate Guide</button>
+                    <button type="button" class="clear" onclick="clearGuideForm()">Clear</button>
+                    <button type="button" class="load-nh" onclick="loadGuideNeighborhoods()">Load Neighborhoods</button>
+                </form>
+                <div id="guide-tools" style="margin: 10px 0; display: none;">
+                    <button type="button" class="copy-debug" onclick="copyGuideInfo()">📋 Copy Guide</button>
+                </div>
+                <div id="guide-response" class="response" style="display:none;"></div>
+            </div>
+
+            <div class="test-form" id="test-poi">
+                <h2>🗺️ Test POI Discovery</h2>
+                <form id="poi-test">
+                    <input type="text" id="poi-city" placeholder="City (e.g., Barcelona)" style="width: 150px;">
+                    <select id="poi-neighborhood" style="width: 150px;">
+                        <option value="">All City (no neighborhood)</option>
+                        <option value="" disabled>── Load neighborhoods first ──</option>
+                    </select>
+                    <select id="poi-type" style="width: 150px;">
+                        <option value="">Select POI Type</option>
+                        <option value="restaurant">🍽️ Restaurants</option>
+                        <option value="coffee">☕ Coffee Shops</option>
+                        <option value="park">🌳 Parks</option>
+                        <option value="historic">🏛️ Historic Sites</option>
+                        <option value="museum">🎨 Museums</option>
+                        <option value="attractions">🎯 Attractions</option>
+                        <option value="tourism">🏛️ Architecture & Tourism</option>
+                        <option value="hotel">🏨 Hotels</option>
+                        <option value="shopping">🛍️ Shopping</option>
+                        <option value="nightlife">🌃 Nightlife</option>
+                        <option value="event">🎭 Events</option>
+                    </select>
+                    <input type="number" id="poi-limit" placeholder="Limit" value="25" style="width: 80px;">
+                    <button type="submit">Discover POIs</button>
+                    <button type="button" class="clear" onclick="clearPOIForm()">Clear</button>
+                    <button type="button" class="refresh" onclick="refreshPOIResponse()">Refresh</button>
+                    <button type="button" class="load-nh" onclick="loadNeighborhoods()">Load Neighborhoods</button>
+                </form>
+                <div id="poi-tools" style="margin: 10px 0; display: none;">
+                    <button type="button" class="copy-debug" onclick="copyDebugInfo()">📋 Copy Debug Info</button>
+                    <button type="button" class="scan-dupes" onclick="scanForDuplicates()">🔍 Scan Duplicates</button>
+                    <button type="button" class="scan-providers" onclick="scanProviders()">📊 Provider Breakdown</button>
+                </div>
+                <div id="poi-response" class="response" style="display:none;">
+                    <pre id="poi-debug-content"></pre>
+                </div>
             </div>
         </div>
 
         <script>
-            // Marco Chat Test
+            // Clear and Refresh Functions
+            function clearMarcoForm() {
+                document.getElementById('city').value = '';
+                document.getElementById('marco-category').value = '';
+                document.getElementById('marco-neighborhood').innerHTML = '<option value="">City-wide (no neighborhood)</option><option value="" disabled>── Load neighborhoods first ──</option>';
+                document.getElementById('query').value = '';
+                document.getElementById('marco-response').style.display = 'none';
+            }
+            
+            // Auto-generate query when category changes
+            document.addEventListener('DOMContentLoaded', function() {
+                const categorySelect = document.getElementById('marco-category');
+                const cityInput = document.getElementById('city');
+                const neighborhoodSelect = document.getElementById('marco-neighborhood');
+                const queryInput = document.getElementById('query');
+                
+                function updateQuery() {
+                    const city = cityInput.value;
+                    const category = categorySelect.value;
+                    const neighborhood = neighborhoodSelect.value;
+                    
+                    console.log(`🔧 Updating query: city="${city}", category="${category}", neighborhood="${neighborhood}"`);
+                    
+                    if (!city) {
+                        queryInput.value = '';
+                        return;
+                    }
+                    
+                    if (!category) {
+                        queryInput.value = `Tell me about ${city}`;
+                        console.log(`📝 Generated query (no category): "${queryInput.value}"`);
+                        return;
+                    }
+                    
+                    const categoryMap = {
+                        'architecture': 'Architecture & Design',
+                        'restaurants': 'restaurants',
+                        'coffee': 'coffee shops',
+                        'parks': 'parks',
+                        'museums': 'museums',
+                        'historic': 'historic sites',
+                        'tourism': 'things to do'
+                    };
+                    
+                    let newQuery;
+                    if (neighborhood) {
+                        // Clean neighborhood name to avoid duplication
+                        const cleanNeighborhood = neighborhood.replace(/,\s*.*$/, '').trim();
+                        newQuery = `Tell me about ${categoryMap[category]} in ${cleanNeighborhood}, ${city}`;
+                    } else {
+                        newQuery = `Tell me about ${categoryMap[category]} in ${city}`;
+                    }
+                    
+                    // Only update if different to prevent infinite loops
+                    if (queryInput.value !== newQuery) {
+                        queryInput.value = newQuery;
+                        console.log(`📝 Generated query: "${newQuery}"`);
+                    }
+                }
+                
+                // Auto-load neighborhoods when category changes (if city is entered)
+                categorySelect.addEventListener('change', async function() {
+                    const city = cityInput.value;
+                    const category = categorySelect.value;
+                    
+                    if (city && category) {
+                        // Show loading state
+                        neighborhoodSelect.innerHTML = '<option value="">Loading neighborhoods...</option>';
+                        neighborhoodSelect.disabled = true;
+                        
+                        try {
+                            await loadMarcoNeighborhoods();
+                        } finally {
+                            neighborhoodSelect.disabled = false;
+                        }
+                    }
+                    updateQuery();
+                });
+                
+                neighborhoodSelect.addEventListener('change', updateQuery);
+                cityInput.addEventListener('input', function() {
+                    // Clear neighborhoods when city changes
+                    neighborhoodSelect.innerHTML = '<option value="">City-wide (no neighborhood)</option><option value="" disabled>── Load neighborhoods first ──</option>';
+                    updateQuery();
+                });
+            });
+            
+            async function loadMarcoNeighborhoods() {
+                const city = document.getElementById('city').value;
+                const category = document.getElementById('marco-category').value;
+                if (!city) {
+                    alert('Please enter a city first');
+                    return;
+                }
+                
+                console.log(`🔍 Loading neighborhoods for Marco: city="${city}", category="${category}"`);
+                
+                try {
+                    const response = await fetch(`/api/smart-neighborhoods?city=${encodeURIComponent(city)}`);
+                    const data = await response.json();
+                    
+                    console.log('📊 Smart neighborhoods response:', data);
+                    
+                    if (data.neighborhoods && data.neighborhoods.length > 0) {
+                        const select = document.getElementById('marco-neighborhood');
+                        select.innerHTML = '<option value="">City-wide (no neighborhood)</option>';
+                        
+                        // Smart suggestions based on category
+                        const categorySuggestions = {
+                            'architecture': ['Gothic Quarter', 'El Born', 'Eixample', 'Gràcia'],
+                            'restaurants': ['El Born', 'Gothic Quarter', 'Eixample', 'Poble Sec'],
+                            'coffee': ['Gothic Quarter', 'El Born', 'Gràcia', 'Eixample'],
+                            'museums': ['Gothic Quarter', 'Eixample', 'Montjuïc'],
+                            'historic': ['Gothic Quarter', 'El Born', 'Barceloneta', 'Raval'],
+                            'tourism': ['Gothic Quarter', 'El Born', 'Eixample', 'Barceloneta'],
+                            'parks': ['Eixample', 'Gràcia', 'Park Güell area']
+                        };
+                        
+                        // Get suggestions for this category
+                        const suggestions = categorySuggestions[category] || [];
+                        console.log(`🎯 Category suggestions for "${category}":`, suggestions);
+                        
+                        // Add suggested neighborhoods first
+                        const suggestedNeighborhoods = [];
+                        const otherNeighborhoods = [];
+                        
+                        data.neighborhoods.forEach(nh => {
+                            const name = nh.name || nh;
+                            if (suggestions.some(suggestion => name.toLowerCase().includes(suggestion.toLowerCase()))) {
+                                suggestedNeighborhoods.push(nh);
+                            } else {
+                                otherNeighborhoods.push(nh);
+                            }
+                        });
+                        
+                        console.log(`✅ Found ${suggestedNeighborhoods.length} suggested, ${otherNeighborhoods.length} other neighborhoods`);
+                        
+                        // Add suggested neighborhoods with indicator
+                        if (suggestedNeighborhoods.length > 0 && category) {
+                            const optgroup = document.createElement('optgroup');
+                            optgroup.label = `🎯 Suggested for ${category}`;
+                            suggestedNeighborhoods.forEach(nh => {
+                                const option = document.createElement('option');
+                                option.value = nh.name || nh;
+                                option.textContent = `⭐ ${nh.name || nh}`;
+                                optgroup.appendChild(option);
+                            });
+                            select.appendChild(optgroup);
+                        }
+                        
+                        // Add other neighborhoods
+                        if (otherNeighborhoods.length > 0) {
+                            const optgroup = document.createElement('optgroup');
+                            optgroup.label = 'All neighborhoods';
+                            otherNeighborhoods.forEach(nh => {
+                                const option = document.createElement('option');
+                                option.value = nh.name || nh;
+                                option.textContent = nh.name || nh;
+                                optgroup.appendChild(option);
+                            });
+                            select.appendChild(optgroup);
+                        }
+                        
+                        console.log(`🎉 Successfully loaded ${data.neighborhoods.length} neighborhoods for Marco (${suggestedNeighborhoods.length} suggested for ${category})`);
+                    } else {
+                        console.log('❌ No neighborhoods found for Marco');
+                        const select = document.getElementById('marco-neighborhood');
+                        select.innerHTML = '<option value="">City-wide (no neighborhood)</option><option value="" disabled>── No neighborhoods found ──</option>';
+                    }
+                } catch (error) {
+                    console.error('❌ Failed to load neighborhoods for Marco:', error);
+                    const select = document.getElementById('marco-neighborhood');
+                    select.innerHTML = '<option value="">City-wide (no neighborhood)</option><option value="" disabled>── Failed to load ──</option>';
+                    alert('Failed to load neighborhoods');
+                }
+            }
+            function refreshMarcoResponse() {
+                const city = document.getElementById('city').value;
+                const query = document.getElementById('query').value;
+                if (city && query) {
+                    document.getElementById('marco-test').dispatchEvent(new Event('submit'));
+                }
+            }
+            
+            function clearSearchForm() {
+                document.getElementById('search-city').value = '';
+                document.getElementById('search-category').value = '';
+                document.getElementById('search-response').style.display = 'none';
+            }
+            function refreshSearchResponse() {
+                const city = document.getElementById('search-city').value;
+                const category = document.getElementById('search-category').value;
+                if (city && category) {
+                    document.getElementById('search-test').dispatchEvent(new Event('submit'));
+                }
+            }
+            
+            function clearFunFactForm() {
+                document.getElementById('fun-fact-city').value = '';
+                document.getElementById('fun-fact-response').style.display = 'none';
+            }
+            function refreshFunFactResponse() {
+                const city = document.getElementById('fun-fact-city').value;
+                if (city) {
+                    document.getElementById('fun-fact-test').dispatchEvent(new Event('submit'));
+                }
+            }
+            
+            function clearWeatherForm() {
+                document.getElementById('weather-city').value = '';
+                document.getElementById('weather-response').style.display = 'none';
+            }
+            function refreshWeatherResponse() {
+                const city = document.getElementById('weather-city').value;
+                if (city) {
+                    document.getElementById('weather-test').dispatchEvent(new Event('submit'));
+                }
+            }
+            
+            function clearGeocodeForm() {
+                document.getElementById('geocode-location').value = '';
+                document.getElementById('geocode-response').style.display = 'none';
+            }
+            function refreshGeocodeResponse() {
+                const location = document.getElementById('geocode-location').value;
+                if (location) {
+                    document.getElementById('geocode-test').dispatchEvent(new Event('submit'));
+                }
+            }
+            
+            function clearPOIForm() {
+                document.getElementById('poi-city').value = '';
+                document.getElementById('poi-neighborhood').value = '';
+                document.getElementById('poi-type').value = '';
+                document.getElementById('poi-limit').value = '25';
+                document.getElementById('poi-response').style.display = 'none';
+                document.getElementById('poi-tools').style.display = 'none';
+                document.getElementById('poi-neighborhood').innerHTML = '<option value="">All City (no neighborhood)</option><option value="" disabled>── Load neighborhoods first ──</option>';
+            }
+            
+            function copyDebugInfo() {
+                const debugContent = document.getElementById('poi-response').textContent;
+                if (debugContent) {
+                    navigator.clipboard.writeText(debugContent).then(() => {
+                        // Show success feedback
+                        const button = document.querySelector('.copy-debug');
+                        const originalText = button.textContent;
+                        button.textContent = '✅ Copied!';
+                        button.style.background = '#4CAF50';
+                        button.style.color = 'white';
+                        
+                        setTimeout(() => {
+                            button.textContent = originalText;
+                            button.style.background = '';
+                            button.style.color = '';
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy debug info:', err);
+                        alert('Failed to copy debug info');
+                    });
+                }
+            }
+            
+            function scanForDuplicates() {
+                const debugContent = document.getElementById('poi-response').textContent;
+                if (!debugContent) {
+                    alert('No debug content to scan. Run a POI search first.');
+                    return;
+                }
+                
+                try {
+                    // Extract JSON from response (handle "Status: 200" prefix)
+                    let jsonStr = debugContent;
+                    if (debugContent.includes('Status:')) {
+                        // Find the start of JSON (after status line and newlines)
+                        const lines = debugContent.split('\\n');
+                        let jsonStart = 0;
+                        for (let i = 0; i < lines.length; i++) {
+                            if (lines[i].trim().startsWith('{')) {
+                                jsonStart = i;
+                                break;
+                            }
+                        }
+                        jsonStr = lines.slice(jsonStart).join('\\n');
+                    }
+                    
+                    const data = JSON.parse(jsonStr);
+                    const pois = data.pois || [];
+                    
+                    if (pois.length === 0) {
+                        alert('No POIs found to scan for duplicates.');
+                        return;
+                    }
+                    
+                    // Find duplicates by name
+                    const nameMap = {};
+                    const duplicates = [];
+                    
+                    pois.forEach((poi, index) => {
+                        const name = poi.name ? poi.name.toLowerCase().trim() : '';
+                        if (name) {
+                            if (nameMap[name]) {
+                                nameMap[name].push({poi, index});
+                            } else {
+                                nameMap[name] = [{poi, index}];
+                            }
+                        }
+                    });
+                    
+                    // Find actual duplicates
+                    Object.entries(nameMap).forEach(([name, entries]) => {
+                        if (entries.length > 1) {
+                            duplicates.push({
+                                name: name,
+                                count: entries.length,
+                                entries: entries
+                            });
+                        }
+                    });
+                    
+                    if (duplicates.length === 0) {
+                        alert('✅ No duplicates found! All ' + pois.length + ' POIs are unique.');
+                    } else {
+                        let report = '🚨 DUPLICATES FOUND:\\n\\n';
+                        report += 'Total POIs: ' + pois.length + '\\n';
+                        report += 'Duplicate groups: ' + duplicates.length + '\\n\\n';
+                        
+                        duplicates.forEach((dup, i) => {
+                            report += (i+1) + '. \"' + dup.name + '\" (appears ' + dup.count + ' times)\\n';
+                            dup.entries.forEach(entry => {
+                                const provider = entry.poi.provider || 'unknown';
+                                report += '   - ' + provider + ' (index ' + entry.index + ')\\n';
+                            });
+                            report += '\\n';
+                        });
+                        
+                        alert(report);
+                        console.log('Duplicate scan results:', duplicates);
+                    }
+                    
+                } catch (error) {
+                    alert('Error parsing debug content: ' + error.message);
+                }
+            }
+            
+            function scanProviders() {
+                const debugContent = document.getElementById('poi-response').textContent;
+                if (!debugContent) {
+                    alert('No debug content to scan. Run a POI search first.');
+                    return;
+                }
+                
+                try {
+                    // Extract JSON from response (handle "Status: 200" prefix)
+                    let jsonStr = debugContent;
+                    if (debugContent.includes('Status:')) {
+                        // Find the start of JSON (after status line and newlines)
+                        const lines = debugContent.split('\\n');
+                        let jsonStart = 0;
+                        for (let i = 0; i < lines.length; i++) {
+                            if (lines[i].trim().startsWith('{')) {
+                                jsonStart = i;
+                                break;
+                            }
+                        }
+                        jsonStr = lines.slice(jsonStart).join('\\n');
+                    }
+                    
+                    const data = JSON.parse(jsonStr);
+                    const pois = data.pois || [];
+                    
+                    if (pois.length === 0) {
+                        alert('No POIs found to analyze providers.');
+                        return;
+                    }
+                    
+                    // Count by provider
+                    const providerCounts = {};
+                    const providerDetails = {};
+                    
+                    pois.forEach((poi, index) => {
+                        const provider = poi.provider || 'unknown';
+                        providerCounts[provider] = (providerCounts[provider] || 0) + 1;
+                        
+                        if (!providerDetails[provider]) {
+                            providerDetails[provider] = [];
+                        }
+                        providerDetails[provider].push({
+                            index: index,
+                            name: poi.name || 'No name',
+                            type: poi.type || 'No type'
+                        });
+                    });
+                    
+                    let report = '📊 PROVIDER BREAKDOWN:\\n\\n';
+                    report += 'Total POIs: ' + pois.length + '\\n\\n';
+                    
+                    Object.entries(providerCounts).forEach(([provider, count]) => {
+                        const percentage = ((count / pois.length) * 100).toFixed(1);
+                        report += provider + ': ' + count + ' POIs (' + percentage + '%)\\n';
+                        
+                        // Show sample POIs from this provider
+                        const samples = providerDetails[provider].slice(0, 3);
+                        samples.forEach(sample => {
+                            report += '  - ' + sample.name + ' (' + sample.type + ')\\n';
+                        });
+                        
+                        if (providerDetails[provider].length > 3) {
+                            report += '  ... and ' + (providerDetails[provider].length - 3) + ' more\\n';
+                        }
+                        report += '\\n';
+                    });
+                    
+                    alert(report);
+                    console.log('Provider breakdown:', providerCounts);
+                    
+                } catch (error) {
+                    alert('Error parsing debug content: ' + error.message);
+                }
+            }
+            function refreshPOIResponse() {
+                const city = document.getElementById('poi-city').value;
+                const neighborhood = document.getElementById('poi-neighborhood').value;
+                const poiType = document.getElementById('poi-type').value;
+                const limit = document.getElementById('poi-limit').value;
+                if (city && poiType) {
+                    document.getElementById('poi-test').dispatchEvent(new Event('submit'));
+                }
+            }
+            
+            async function loadNeighborhoods() {
+                console.log('loadNeighborhoods() called');
+                const city = document.getElementById('poi-city').value;
+                console.log('City entered:', city);
+                
+                if (!city) {
+                    console.log('No city entered, showing alert');
+                    alert('Please enter a city first');
+                    return;
+                }
+                
+                const neighborhoodSelect = document.getElementById('poi-neighborhood');
+                console.log('Neighborhood select element found:', neighborhoodSelect);
+                
+                neighborhoodSelect.innerHTML = '<option value="">Loading neighborhoods...</option>';
+                console.log('Set loading state');
+                
+                try {
+                    console.log('Fetching neighborhoods for city:', city);
+                    const response = await fetch(`/api/smart-neighborhoods?city=${encodeURIComponent(city)}`);
+                    console.log('Response status:', response.status);
+                    
+                    const data = await response.json();
+                    console.log('Response data:', data);
+                    
+                    if (data.neighborhoods && data.neighborhoods.length > 0) {
+                        console.log('Found neighborhoods:', data.neighborhoods.length);
+                        let options = '<option value="">All City (no neighborhood)</option>';
+                        data.neighborhoods.forEach(nh => {
+                            console.log('Adding neighborhood:', nh.name);
+                            options += `<option value="${nh.name}">${nh.name}</option>`;
+                        });
+                        neighborhoodSelect.innerHTML = options;
+                        console.log('Updated dropdown with neighborhoods');
+                    } else {
+                        console.log('No neighborhoods found');
+                        neighborhoodSelect.innerHTML = '<option value="">All City (no neighborhood)</option><option value="" disabled>── No neighborhoods found ──</option>';
+                    }
+                } catch (error) {
+                    console.error('Failed to load neighborhoods:', error);
+                    neighborhoodSelect.innerHTML = '<option value="">All City (no neighborhood)</option><option value="" disabled>── Failed to load ──</option>';
+                }
+            }
+
+            // Quick Category Mapping Test
+            document.getElementById('mapping-test').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const category = document.getElementById('mapping-category').value;
+                const resultDiv = document.getElementById('mapping-result');
+                
+                if (!category) {
+                    resultDiv.style.display = 'none';
+                    return;
+                }
+                
+                // Category mapping (mirrors persistence.py)
+                const categoryMapping = {
+                    'architecture': { poiType: 'tourism', description: 'Architecture → Tourism (landmarks, historic buildings)' },
+                    'restaurants': { poiType: 'restaurant', description: 'Restaurants → Restaurant (all dining)' },
+                    'coffee': { poiType: 'cafe', description: 'Coffee → Cafe (coffee shops)' },
+                    'parks': { poiType: 'park', description: 'Parks → Park (leisure areas)' },
+                    'museums': { poiType: 'museum', description: 'Museums → Museum (cultural sites)' },
+                    'historic': { poiType: 'historic', description: 'Historic → Historic (heritage sites)' },
+                    'tourism': { poiType: 'tourism', description: 'Tourism → Tourism (attractions)' },
+                    'design': { poiType: 'tourism', description: 'Design → Tourism (design landmarks)' },
+                    'buildings': { poiType: 'tourism', description: 'Buildings → Tourism (architectural sites)' }
+                };
+                
+                const mapping = categoryMapping[category];
+                resultDiv.innerHTML = `
+                    <strong>Category:</strong> "${category}"<br>
+                    <strong>Maps to POI Type:</strong> "${mapping.poiType}"<br>
+                    <em>${mapping.description}</em><br><br>
+                    <button type="button" onclick="testMappedCategory('${category}', '${mapping.poiType}')" style="margin-right: 5px;">Test with POI Discovery</button>
+                    <button type="button" onclick="testMarcoCategory('${category}')" style="margin-right: 5px;">Test with Marco Search</button>
+                    <button type="button" onclick="testMarcoChat('${category}')" style="margin-right: 5px;">Test with Marco Chat</button>
+                `;
+                resultDiv.style.display = 'block';
+            });
+            
+            function testMappedCategory(category, poiType) {
+                // Get city from Marco Search form, fallback to POI Discovery city
+                const searchCity = document.getElementById('search-city').value || document.getElementById('poi-city').value || 'barcelona';
+                // Fill in POI Discovery form with mapped values
+                document.getElementById('poi-city').value = searchCity;
+                document.getElementById('poi-type').value = poiType;
+                // Scroll to POI Discovery section
+                document.getElementById('test-poi').scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            function testMarcoCategory(category) {
+                // Get city and neighborhood from POI Discovery form, fallback to Marco Search city
+                const searchCity = document.getElementById('poi-city').value || document.getElementById('search-city').value || 'barcelona';
+                const searchNeighborhood = document.getElementById('poi-neighborhood').value || '';
+                
+                // Fill in Marco Search form with mapped values
+                document.getElementById('search-city').value = searchCity;
+                document.getElementById('search-category').value = category;
+                // Scroll to Marco Search section
+                document.getElementById('test-search').scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            function testMarcoChat(category) {
+                // Get city and neighborhood from Marco Chat form first
+                const searchCity = document.getElementById('city').value || document.getElementById('search-city').value || document.getElementById('poi-city').value || 'barcelona';
+                const searchNeighborhood = document.getElementById('marco-neighborhood').value || document.getElementById('poi-neighborhood').value || '';
+                
+                // Fill in Marco Chat form with architecture-specific query
+                const queryMap = {
+                    'architecture': searchNeighborhood 
+                        ? `Tell me about Architecture & Design in ${searchNeighborhood}, ${searchCity}`
+                        : `Tell me about Architecture & Design in ${searchCity}`,
+                    'restaurants': searchNeighborhood
+                        ? `Best restaurants in ${searchNeighborhood}, ${searchCity}`
+                        : `Best restaurants in ${searchCity}`,
+                    'coffee': searchNeighborhood
+                        ? `Find coffee shops in ${searchNeighborhood}, ${searchCity}`
+                        : `Find coffee shops in ${searchCity}`,
+                    'parks': searchNeighborhood
+                        ? `What parks should I visit in ${searchNeighborhood}, ${searchCity}?`
+                        : `What parks should I visit in ${searchCity}?`,
+                    'museums': searchNeighborhood
+                        ? `What museums should I visit in ${searchNeighborhood}, ${searchCity}?`
+                        : `What museums should I visit in ${searchCity}?`,
+                    'historic': searchNeighborhood
+                        ? `Historic sites in ${searchNeighborhood}, ${searchCity}`
+                        : `Historic sites in ${searchCity}`,
+                    'tourism': searchNeighborhood
+                        ? `Things to do in ${searchNeighborhood}, ${searchCity}`
+                        : `Things to do in ${searchCity}`,
+                    'design': searchNeighborhood
+                        ? `Design and architecture in ${searchNeighborhood}, ${searchCity}`
+                        : `Design and architecture in ${searchCity}`,
+                    'buildings': searchNeighborhood
+                        ? `Famous buildings in ${searchNeighborhood}, ${searchCity}`
+                        : `Famous buildings in ${searchCity}`
+                };
+                
+                document.getElementById('city').value = searchCity;
+                document.getElementById('query').value = queryMap[category] || `Tell me about ${category} in ${searchNeighborhood ? searchNeighborhood + ', ' : ''}${searchCity}`;
+                // Scroll to Marco Chat section
+                document.getElementById('test-marco').scrollIntoView({ behavior: 'smooth' });
+            }
+
+            // Marco Chat Test with preset queries
+            const presetQueries = [
+                { query: "Tell me about Architecture & Design in El Born, Barcelona", desc: "Architecture" },
+                { query: "Best restaurants in Barcelona", desc: "Restaurants" },
+                { query: "Find coffee shops near me", desc: "Coffee" },
+                { query: "What museums should I visit in Barcelona?", desc: "Museums" },
+                { query: "Historic sites in Barcelona", desc: "Historic" },
+                { query: "Things to do in Barcelona", desc: "Tourism" }
+            ];
+            
+            // Add preset query buttons to Marco Chat
+            const marcoForm = document.getElementById('marco-test');
+            const presetDiv = document.createElement('div');
+            presetDiv.style.margin = '10px 0';
+            presetDiv.innerHTML = '<strong>Quick Tests:</strong> ' + 
+                presetQueries.map((p, i) => `<button type="button" onclick="runPresetQuery(${i})" style="font-size: 12px; padding: 4px 8px; margin: 2px;">${p.desc}</button>`).join('');
+            marcoForm.appendChild(presetDiv);
+            
+            function runPresetQuery(index) {
+                const preset = presetQueries[index];
+                // Use actual city and neighborhood from the form
+                const city = document.getElementById('city').value;
+                const neighborhood = document.getElementById('marco-neighborhood').value;
+                
+                if (!city) {
+                    alert('Please enter a city first');
+                    return;
+                }
+                
+                // Set the category based on preset
+                const categoryMap = {
+                    'Architecture': 'architecture',
+                    'Restaurants': 'restaurants',
+                    'Coffee': 'coffee',
+                    'Museums': 'museums',
+                    'Historic': 'historic',
+                    'Tourism': 'tourism'
+                };
+                
+                const category = categoryMap[preset.desc];
+                if (category) {
+                    document.getElementById('marco-category').value = category;
+                }
+                
+                // Trigger query update
+                const event = new Event('change');
+                document.getElementById('marco-category').dispatchEvent(event);
+                
+                // Submit the form
+                document.getElementById('marco-test').dispatchEvent(new Event('submit'));
+            }
+
             document.getElementById('marco-test').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const city = document.getElementById('city').value;
@@ -661,39 +1436,384 @@ async def admin_dashboard():
                     });
                     
                     const data = await resp.json();
-                    responseDiv.textContent = 'Status: ' + resp.status + '\\n\\n' + JSON.stringify(data, null, 2);
+                    const jsonText = 'Status: ' + resp.status + '\\n\\n' + JSON.stringify(data, null, 2);
+                    responseDiv.textContent = jsonText;
+                    
+                    // Make Google Maps links clickable
+                    setTimeout(() => {
+                        const clickableText = jsonText.replace(
+                            /(https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=[^\s"]+)/g,
+                            '<a href="$1" target="_blank" style="color: #007bff; text-decoration: underline; cursor: pointer;">📍 $1</a>'
+                        );
+                        responseDiv.innerHTML = '<pre style="white-space: pre-wrap; word-break: break-all;">' + clickableText.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&lt;a href=/g, '<a href=').replace(/&lt;\/a&gt;/g, '</a>') + '</pre>';
+                    }, 50);
                 } catch (error) {
                     responseDiv.textContent = 'Error: ' + error.message;
                 }
             });
 
-            // Venue Search Test
-            document.getElementById('search-test').addEventListener('submit', async (e) => {
+function copyMarcoInfo() {
+    const marcoContent = document.getElementById('marco-response').textContent;
+    if (marcoContent) {
+        navigator.clipboard.writeText(marcoContent).then(() => {
+            const button = document.querySelector('#marco-tools .copy-debug');
+            const originalText = button.textContent;
+            button.textContent = '✅ Copied!';
+            button.style.background = '#4CAF50';
+            button.style.color = 'white';
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.background = '';
+                button.style.color = '';
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy Marco info:', err);
+            alert('Failed to copy Marco info');
+        });
+    }
+}
+
+            // Weather Test
+            document.getElementById('weather-test').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const city = document.getElementById('search-city').value;
-                const category = document.getElementById('search-category').value;
-                const responseDiv = document.getElementById('search-response');
+                const city = document.getElementById('weather-city').value;
+                const responseDiv = document.getElementById('weather-response');
                 
                 try {
                     responseDiv.style.display = 'block';
-                    responseDiv.textContent = 'Searching...';
+                    responseDiv.textContent = 'Getting weather...';
                     
-                    const resp = await fetch('/api/search', {
+                    const resp = await fetch('/api/weather', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ query: city, category })
+                        body: JSON.stringify({ city })
                     });
                     
                     const data = await resp.json();
-                    responseDiv.textContent = 'Status: ' + resp.status + '\\n\\n' + JSON.stringify(data, null, 2);
+                    const jsonText = 'Status: ' + resp.status + '\\n\\n' + JSON.stringify(data, null, 2);
+                    responseDiv.textContent = jsonText;
+                    
+                    // Make Google Maps links clickable
+                    setTimeout(() => {
+                        const clickableText = jsonText.replace(
+                            /(https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=[^\s"]+)/g,
+                            '<a href="$1" target="_blank" style="color: #007bff; text-decoration: underline; cursor: pointer;">📍 $1</a>'
+                        );
+                        responseDiv.innerHTML = '<pre style="white-space: pre-wrap; word-break: break-all;">' + clickableText.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&lt;a href=/g, '<a href=').replace(/&lt;\/a&gt;/g, '</a>') + '</pre>';
+                    }, 50);
                 } catch (error) {
                     responseDiv.textContent = 'Error: ' + error.message;
                 }
             });
+
+            // Geocode Test
+            document.getElementById('geocode-test').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const location = document.getElementById('geocode-location').value;
+                const responseDiv = document.getElementById('geocode-response');
+                
+                try {
+                    responseDiv.style.display = 'block';
+                    responseDiv.textContent = 'Geocoding...';
+                    
+                    const resp = await fetch('/api/geocode', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: location })
+                    });
+                    
+                    const data = await resp.json();
+                    const jsonText = 'Status: ' + resp.status + '\\n\\n' + JSON.stringify(data, null, 2);
+                    responseDiv.textContent = jsonText;
+                    
+                    // Make Google Maps links clickable
+                    setTimeout(() => {
+                        const clickableText = jsonText.replace(
+                            /(https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=[^\s"]+)/g,
+                            '<a href="$1" target="_blank" style="color: #007bff; text-decoration: underline; cursor: pointer;">📍 $1</a>'
+                        );
+                        responseDiv.innerHTML = '<pre style="white-space: pre-wrap; word-break: break-all;">' + clickableText.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&lt;a href=/g, '<a href=').replace(/&lt;\/a&gt;/g, '</a>') + '</pre>';
+                    }, 50);
+                } catch (error) {
+                    responseDiv.textContent = 'Error: ' + error.message;
+                }
+            });
+
+            // POI Discovery Test
+            document.getElementById('poi-test').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const city = document.getElementById('poi-city').value;
+                const neighborhood = document.getElementById('poi-neighborhood').value;
+                const poiType = document.getElementById('poi-type').value;
+                const limit = document.getElementById('poi-limit').value;
+                const responseDiv = document.getElementById('poi-response');
+                
+                try {
+                    responseDiv.style.display = 'block';
+                    document.getElementById('poi-tools').style.display = 'block';
+                    responseDiv.textContent = '[Discovering] POIs for ' + city + ' (' + (neighborhood || 'city-wide') + ') - Type: ' + poiType + ' - Limit: ' + limit;
+                    responseDiv.textContent += '\\n[Category] Using POI type: ' + poiType;
+                    
+                    // Call real POI API with neighborhood support
+                    const requestBody = { 
+                        city, 
+                        poi_type: poiType, 
+                        limit: parseInt(limit) || 10 
+                    };
+                    
+                    // Add neighborhood if provided
+                    if (neighborhood && neighborhood.trim()) {
+                        requestBody.neighborhood = neighborhood.trim();
+                        responseDiv.textContent += '\\n[Neighborhood] ' + neighborhood;
+                    }
+                    
+                    responseDiv.textContent += '\\n[API] Calling...';
+                    
+                    const resp = await fetch('/api/poi-discovery', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody)
+                    });
+                    
+                    responseDiv.textContent += ' Status: ' + resp.status + ' - Processing response...';
+                    
+                    const data = await resp.json();
+                    const debugContent = 'Status: ' + resp.status + '\\n\\n' + JSON.stringify(data, null, 2);
+                    
+                    // Display debug content directly in response div
+                    responseDiv.textContent = debugContent;
+                } catch (error) {
+                    responseDiv.textContent = 'Error: ' + error.message + '\\n\\n' + error.stack;
+                }
+            });
+
+            // City/Neighborhood Guide Test
+            document.getElementById('guide-test').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const city = document.getElementById('guide-city').value;
+                const neighborhood = document.getElementById('guide-neighborhood').value;
+                const responseDiv = document.getElementById('guide-response');
+                
+                try {
+                    responseDiv.style.display = 'block';
+                    document.getElementById('guide-tools').style.display = 'block';
+                    responseDiv.textContent = 'Generating guide for ' + city + (neighborhood ? ' / ' + neighborhood : '') + '...';
+                    
+                    const resp = await fetch('/api/generate_quick_guide', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ city, neighborhood })
+                    });
+                    
+                    const data = await resp.json();
+                    const jsonText = 'Status: ' + resp.status + '\\n\\n' + JSON.stringify(data, null, 2);
+                    responseDiv.textContent = jsonText;
+                    
+                    // Make Google Maps links clickable
+                    setTimeout(() => {
+                        const clickableText = jsonText.replace(
+                            /(https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=[^\s"]+)/g,
+                            '<a href="$1" target="_blank" style="color: #007bff; text-decoration: underline; cursor: pointer;">📍 $1</a>'
+                        );
+                        responseDiv.innerHTML = '<pre style="white-space: pre-wrap; word-break: break-all;">' + clickableText.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&lt;a href=/g, '<a href=').replace(/&lt;\/a&gt;/g, '</a>') + '</pre>';
+                    }, 50);
+                } catch (error) {
+                    responseDiv.textContent = 'Error: ' + error.message;
+                }
+            });
+            
+            function clearGuideForm() {
+                document.getElementById('guide-city').value = '';
+                document.getElementById('guide-neighborhood').innerHTML = '<option value="">City-wide guide (no neighborhood)</option><option value="" disabled>── Load neighborhoods first ──</option>';
+                document.getElementById('guide-response').style.display = 'none';
+                document.getElementById('guide-tools').style.display = 'none';
+            }
+            
+            async function loadGuideNeighborhoods() {
+                const city = document.getElementById('guide-city').value;
+                if (!city) {
+                    alert('Please enter a city first');
+                    return;
+                }
+                
+                try {
+                    console.log('Loading neighborhoods for guide:', city);
+                    const response = await fetch(`/api/smart-neighborhoods?city=${encodeURIComponent(city)}`);
+                    const data = await response.json();
+                    
+                    if (data.neighborhoods && data.neighborhoods.length > 0) {
+                        const select = document.getElementById('guide-neighborhood');
+                        // Keep the first option
+                        select.innerHTML = '<option value="">City-wide guide (no neighborhood)</option>';
+                        
+                        data.neighborhoods.forEach(nh => {
+                            const option = document.createElement('option');
+                            option.value = nh.name || nh;
+                            option.textContent = nh.name || nh;
+                            select.appendChild(option);
+                        });
+                        console.log(`Loaded ${data.neighborhoods.length} neighborhoods for guide`);
+                    } else {
+                        console.log('No neighborhoods found for guide');
+                        alert('No neighborhoods found for this city');
+                    }
+                } catch (error) {
+                    console.error('Failed to load neighborhoods for guide:', error);
+                    alert('Failed to load neighborhoods');
+                }
+            }
+            
+            function copyGuideInfo() {
+                const guideContent = document.getElementById('guide-response').textContent;
+                if (guideContent) {
+                    navigator.clipboard.writeText(guideContent).then(() => {
+                        const button = document.querySelector('#guide-tools .copy-debug');
+                        const originalText = button.textContent;
+                        button.textContent = '✅ Copied!';
+                        button.style.background = '#4CAF50';
+                        button.style.color = 'white';
+                        
+                        setTimeout(() => {
+                            button.textContent = originalText;
+                            button.style.background = '';
+                            button.style.color = '';
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy guide info:', err);
+                        alert('Failed to copy guide info');
+                    });
+                }
+            }
         </script>
     </body>
     </html>
     """
+
+@app.route('/api/poi-discovery', methods=['POST'])
+async def api_poi_discovery():
+    """POI discovery endpoint for testing Points of Interest"""
+    debug_info = []
+    
+    try:
+        data = await request.get_json(force=True) or {}
+        city = data.get('city', '').strip()
+        neighborhood = data.get('neighborhood', '').strip()
+        poi_type = data.get('poi_type', '').strip()
+        limit = data.get('limit', 10)
+        
+        debug_info.append(f"🔍 Request: city='{city}', neighborhood='{neighborhood}', poi_type='{poi_type}', limit={limit}")
+        
+        if not city:
+            debug_info.append("❌ Error: city required")
+            return jsonify({"error": "city required", "debug": debug_info}), 400
+        
+        try:
+            limit = int(limit)
+        except Exception:
+            limit = 25
+            debug_info.append("⚠️ Invalid limit, using default: 25")
+        
+        # Import POI discovery functions
+        debug_info.append("📦 Importing multi_provider...")
+        from providers.multi_provider import async_discover_pois
+        
+        # Discover POIs using real API
+        debug_info.append(f"🚀 Calling discover_pois for {city}...")
+        
+        # Handle neighborhood-specific search
+        bbox = None
+        if neighborhood:
+            debug_info.append(f"🏘️ Neighborhood specified: {neighborhood}")
+            try:
+                # Try to geocode the neighborhood to get its bbox
+                from providers.overpass_provider import geocode_city
+                
+                neighborhood_coords = await geocode_city(f"{neighborhood}, {city}")
+                if neighborhood_coords:
+                    # Overpass geocode_city returns bbox tuple: (min_lon, min_lat, max_lon, max_lat)
+                    if isinstance(neighborhood_coords, tuple) and len(neighborhood_coords) == 4:
+                        # Use the bbox directly from geocoding
+                        bbox = neighborhood_coords
+                        debug_info.append(f"📍 Using neighborhood bbox: {bbox}")
+                        debug_info.append(f"🗺️ Neighborhood bbox from geocoding")
+                    elif isinstance(neighborhood_coords, tuple) and len(neighborhood_coords) == 2:
+                        # Handle lat/lon tuple format
+                        nh_lat, nh_lon = neighborhood_coords
+                        radius = 0.005  # ~500m radius
+                        bbox = (
+                            nh_lon - radius,  # min_lon
+                            nh_lat - radius,  # min_lat  
+                            nh_lon + radius,  # max_lon
+                            nh_lat + radius   # max_lat
+                        )
+                        debug_info.append(f"📍 Using neighborhood bbox: {bbox}")
+                        debug_info.append(f"🗺️ Neighborhood coords: {neighborhood_coords}")
+                    else:
+                        # Handle dictionary format
+                        nh_lat = neighborhood_coords.get('lat')
+                        nh_lon = neighborhood_coords.get('lon')
+                        if nh_lat and nh_lon:
+                            radius = 0.005  # ~500m radius
+                            bbox = (
+                                nh_lon - radius,  # min_lon
+                                nh_lat - radius,  # min_lat  
+                                nh_lon + radius,  # max_lon
+                                nh_lat + radius   # max_lat
+                            )
+                            debug_info.append(f"📍 Using neighborhood bbox: {bbox}")
+                            debug_info.append(f"🗺️ Neighborhood coords: {neighborhood_coords}")
+                        else:
+                            debug_info.append("⚠️ Neighborhood geocoded but missing coordinates")
+                else:
+                    debug_info.append(f"⚠️ Failed to geocode neighborhood: {neighborhood}")
+                    debug_info.append("🌍 Falling back to city-wide search")
+            except Exception as e:
+                debug_info.append(f"⚠️ Neighborhood geocoding error: {e}")
+                debug_info.append("🌍 Falling back to city-wide search")
+        else:
+            debug_info.append("🌍 City-wide search (no neighborhood specified)")
+        
+        # Capture provider debug info
+        import sys
+        from io import StringIO
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = StringIO()
+        
+        try:
+            pois = await async_discover_pois(
+                city=city,
+                poi_type=poi_type or 'attractions',
+                limit=limit,
+                bbox=bbox
+            )
+        finally:
+            sys.stdout = old_stdout
+            provider_debug = captured_output.getvalue()
+            if provider_debug:
+                debug_info.append("📊 Provider debug:")
+                for line in provider_debug.strip().split('\n')[:10]:  # Limit to 10 lines
+                    if line.strip():
+                        debug_info.append(f"   {line.strip()}")
+        
+        debug_info.append(f"✅ Found {len(pois)} POIs")
+        
+        if pois:
+            debug_info.append(f"📋 Sample POI: {pois[0].get('name', 'Unknown')}")
+        
+        return jsonify({
+            "city": city,
+            "neighborhood": neighborhood if neighborhood else None,
+            "poi_type": poi_type,
+            "count": len(pois),
+            "pois": pois[:limit],
+            "debug": debug_info
+        })
+        
+    except Exception as e:
+        debug_info.append(f"💥 Error: {str(e)}")
+        app.logger.exception('POI discovery failed')
+        return jsonify({"error": "poi_discovery_failed", "details": str(e), "debug": debug_info}), 500
 
 @app.route("/<path:path>", methods=["GET"])
 async def catch_all(path):
@@ -723,104 +1843,12 @@ async def weather():
         return jsonify({"error": "weather_fetch_failed"}), 500
     return jsonify({"lat": lat, "lon": lon, "city": city, "weather": weather})
 
-@app.route("/api/neighborhoods", methods=["GET"])
-async def get_neighborhoods():
-    """Get neighborhoods for a city or location.
-    Query params: city, lat, lon, lang
-    Returns: { cached: bool, neighborhoods: [] }
-    """
-    city = request.args.get("city")
-    lat = request.args.get("lat")
-    lon = request.args.get("lon")
-    lang = request.args.get("lang", "en")
-
-    # If city-only query, resolve to coordinates first to avoid ambiguous city names (e.g. Athens, GA)
-    geocoded = False
-    if city and not (lat and lon):
-        try:
-            geo = await geocode_city(city)
-            if geo and geo.get("lat") is not None and geo.get("lon") is not None:
-                lat = str(geo["lat"])
-                lon = str(geo["lon"])
-                geocoded = True
-        except Exception:
-            app.logger.exception("geocode_city failed for neighborhoods: %s", city)
-
-    # Create slug for caching
-    if lat and lon:
-        slug = f"{lat}_{lon}"
-    else:
-        return jsonify({"error": "city or lat/lon required"}), 400
-
-    cache_key = f"neighborhoods:{slug}:{lang}"
-
-    # try redis cache (treat empty arrays as cache-miss to allow fallbacks)
-    if redis_client:
-        try:
-            raw = await redis_client.get(cache_key)
-            if raw:
-                try:
-                    parsed = json.loads(raw)
-                    if isinstance(parsed, list) and len(parsed) == 0:
-                        # empty neighborhoods: treat as cache miss to allow geocode fallback
-                        app.logger.debug("Empty cached neighborhoods for %s; treating as miss", cache_key)
-                    else:
-                        # Ensure bbox even for cached data
-                        parsed = [ensure_bbox(n) for n in parsed]
-                        return jsonify({"cached": True, "neighborhoods": parsed})
-                except Exception:
-                    # fall through to re-fetch if cached value is corrupted
-                    app.logger.debug("Failed to parse cached neighborhoods for %s; refetching", cache_key)
-        except Exception:
-            app.logger.exception("redis get failed for neighborhoods")
-
-    # fetch from provider with timeout
-    try:
-        data = await asyncio.wait_for(
-            multi_provider.async_get_neighborhoods(
-                city=city or None,
-                lat=float(lat) if lat else None,
-                lon=float(lon) if lon else None,
-                lang=lang,
-                session=aiohttp_session,
-            ),
-            timeout=15.0  # 15 second timeout
-        )
-    except asyncio.TimeoutError:
-        app.logger.warning(f"Neighborhoods fetch timeout for {city or lat+','+lon}")
-        data = []
-    except Exception:
-        app.logger.exception("neighborhoods fetch failed")
-        data = []
-
-    # If provider returned nothing for a city-only query and we still don't have coords, try geocoding
-    if (not data) and city and not (lat and lon) and not geocoded:
-        try:
-            app.logger.debug("No neighborhoods for '%s', attempting geocode fallback", city)
-            result = await geocode_city(city)
-            if result:
-                g_lat = result['lat']
-                g_lon = result['lon']
-                try:
-                    data = await multi_provider.async_get_neighborhoods(city=None, lat=g_lat, lon=g_lon, lang=lang, session=aiohttp_session)
-                    if data:
-                        app.logger.info("Geocode fallback succeeded for '%s' -> %s,%s (%d items)", city, g_lat, g_lon, len(data))
-                except Exception:
-                    app.logger.exception("neighborhoods fetch failed on geocode fallback for %s", city)
-        except Exception:
-            app.logger.exception("geocode fallback failed for %s", city)
-
-    # store in redis
-    if redis_client:
-        try:
-            await redis_client.set(cache_key, json.dumps(data), ex=CACHE_TTL_NEIGHBORHOOD)
-        except Exception:
-            app.logger.exception("redis set failed for neighborhoods")
-
-    # Ensure all neighborhoods have bbox
-    data = [ensure_bbox(n) for n in data]
-
-    return jsonify({"cached": False, "neighborhoods": data})
+# REMOVED: /api/neighborhoods endpoint 
+# Use /api/smart-neighborhoods instead - it's superior:
+# - Works for ANY city globally (no hardcoded lists)
+# - Uses dynamic Overpass API calls  
+# - Better error handling and fallbacks
+# - More comprehensive neighborhood data
 
 @app.route('/api/reverse_lookup', methods=['POST'])
 async def reverse_lookup():
@@ -972,6 +2000,20 @@ async def healthz():
         'time': time.time(),
         'ready': bool(aiohttp_session is not None),
         'redis': bool(redis_client is not None),
+        'geoapify': bool(os.getenv('GEOAPIFY_API_KEY')),
+        'geonames': bool(os.getenv('GEONAMES_USERNAME'))
+    }
+    return jsonify(status)
+
+@app.route('/api/health')
+async def api_health():
+    """API health endpoint for admin dashboard."""
+    status = {
+        'app': 'ok',
+        'time': time.time(),
+        'ready': bool(aiohttp_session is not None),
+        'redis': bool(redis_client is not None),
+        'groq': bool(os.getenv('GROQ_API_KEY')),
         'geoapify': bool(os.getenv('GEOAPIFY_API_KEY')),
         'geonames': bool(os.getenv('GEONAMES_USERNAME'))
     }
@@ -1667,15 +2709,21 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
     payload = await request.get_json(silent=True) or {}
     city = (payload.get('city') or '').strip()
     neighborhood = (payload.get('neighborhood') or '').strip()
-    if not city or not neighborhood:
-        return jsonify({'error': 'city and neighborhood required'}), 400
+    
+    if not city:
+        return jsonify({'error': 'city required'}), 400
 
     def slug(s):
         return re.sub(r'[^a-z0-9_-]', '_', s.lower().replace(' ', '_'))
 
     cache_dir = Path(__file__).parent / 'data' / 'neighborhood_quick_guides' / slug(city)
     cache_dir.mkdir(parents=True, exist_ok=True)
-    cache_file = cache_dir / (slug(neighborhood) + '.json')
+    
+    # Use different cache file for city-only vs neighborhood-specific guides
+    if neighborhood:
+        cache_file = cache_dir / (slug(neighborhood) + '.json')
+    else:
+        cache_file = cache_dir / '_city_guide.json'
 
     # Return cached if exists (unless skip_cache is True)
     if cache_file.exists() and not skip_cache:
