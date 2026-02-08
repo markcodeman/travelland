@@ -900,20 +900,29 @@ async def admin_dashboard():
                         const select = document.getElementById('marco-neighborhood');
                         select.innerHTML = '<option value="">City-wide (no neighborhood)</option>';
                         
-                        // Smart suggestions based on category
-                        const categorySuggestions = {
-                            'architecture': ['Gothic Quarter', 'El Born', 'Eixample', 'Gràcia'],
-                            'restaurants': ['El Born', 'Gothic Quarter', 'Eixample', 'Poble Sec'],
-                            'coffee': ['Gothic Quarter', 'El Born', 'Gràcia', 'Eixample'],
-                            'museums': ['Gothic Quarter', 'Eixample', 'Montjuïc'],
-                            'historic': ['Gothic Quarter', 'El Born', 'Barceloneta', 'Raval'],
-                            'tourism': ['Gothic Quarter', 'El Born', 'Eixample', 'Barceloneta'],
-                            'parks': ['Eixample', 'Gràcia', 'Park Güell area']
+                        // Dynamic category suggestions based on actual city neighborhoods
+                        const categoryKeywords = {
+                            'coffee': ['coffee', 'cafe', 'espresso', 'brew', 'roast'],
+                            'restaurants': ['restaurant', 'eatery', 'bistro', 'diner', 'food'],
+                            'architecture': ['historic', 'old', 'quarter', 'district', 'building'],
+                            'museums': ['museum', 'gallery', 'art', 'cultural', 'heritage'],
+                            'historic': ['historic', 'old', 'heritage', 'ancient', 'colonial'],
+                            'tourism': ['tourist', 'visitor', 'attraction', 'landmark', 'sight'],
+                            'parks': ['park', 'garden', 'green', 'recreation', 'outdoor']
                         };
                         
-                        // Get suggestions for this category
-                        const suggestions = categorySuggestions[category] || [];
-                        console.log(`🎯 Category suggestions for "${category}":`, suggestions);
+                        // Get suggestions for this category from actual city neighborhoods
+                        const keywords = categoryKeywords[category] || [];
+                        let suggestions = [];
+                        
+                        if (keywords.length > 0) {
+                            suggestions = data.neighborhoods.filter(nh => {
+                                const name = (nh.name || nh).toLowerCase();
+                                return keywords.some(keyword => name.includes(keyword));
+                            }).map(nh => nh.name || nh);
+                        }
+                        
+                        console.log(`🎯 Category suggestions for "${category}" in ${city}:`, suggestions);
                         
                         // Add suggested neighborhoods first
                         const suggestedNeighborhoods = [];
