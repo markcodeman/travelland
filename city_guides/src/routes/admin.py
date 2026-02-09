@@ -634,9 +634,9 @@ async def admin():
                 const tests = [];
                 testCityData.global.forEach(city => {
                     tests.push(
-                        { endpoint: '/api/locations/cities', url: `/api/locations/cities?country=US&state=CA`, city, isPost: false, data: null },
-                        { endpoint: '/api/neighborhoods', url: `/api/neighborhoods?city=${city}&country=${city === 'New York' ? 'US' : 'FR'}`, city, isPost: false, data: null },
-                        { endpoint: '/api/fun-fact', url: '/api/fun-fact', city, isPost: true, data: { city } }
+                        { endpoint: '/api/locations/cities', url: '/api/locations/cities?country=US&state=CA', city, isPost: false, data: null },
+                        { endpoint: '/api/neighborhoods', url: '/api/neighborhoods?city=' + city + '&country=' + (city === 'New York' ? 'US' : 'FR'), city, isPost: false, data: null },
+                        { endpoint: '/api/fun-fact', url: '/api/fun-fact', city, isPost: true, data: { city: city } }
                     );
                 });
                 
@@ -725,6 +725,13 @@ async def admin():
                     resultsDiv.innerHTML = '<div class="error">Stress test failed: ' + error.message + '</div>';
                 }
             };
+
+            // Attach other functions to global scope
+            window.testChatRAG = testChatRAG;
+            window.testCities = testCities;
+            window.testNeighborhoods = testNeighborhoods;
+            window.testFunFact = testFunFact;
+            window.testEndpoint = testEndpoint;
 
             // Load data on page load
             window.onload = refreshAll;
