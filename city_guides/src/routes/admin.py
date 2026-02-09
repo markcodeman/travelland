@@ -699,6 +699,107 @@ async def admin():
                 await Promise.all([loadHealth(), loadMetrics(), loadSmoke()]);
             }
 
+            // Attach functions to global scope for button onclick handlers
+            window.runGlobalTest = async function() {
+                const tests = [];
+                testCities.global.forEach(city => {
+                    tests.push(
+                        { endpoint: '/api/locations/cities', url: `/api/locations/cities?country=US&state=CA`, city, isPost: false, data: null },
+                        { endpoint: '/api/neighborhoods', url: `/api/neighborhoods?city=${city}&country=${city === 'New York' ? 'US' : 'FR'}`, city, isPost: false, data: null },
+                        { endpoint: '/api/fun-fact', url: '/api/fun-fact', city, isPost: true, data: { city } }
+                    );
+                });
+                
+                const suite = new APITestSuite('🌍 Global Test', tests);
+                await suite.runSuite();
+            };
+
+            window.runPerformanceTest = async function() {
+                const tests = [
+                    { endpoint: '/api/countries', url: '/api/countries', city: 'Global', isPost: false, data: null },
+                    { endpoint: '/api/locations/cities', url: '/api/locations/cities?country=US&state=CA', city: 'California', isPost: false, data: null },
+                    { endpoint: '/api/neighborhoods', url: '/api/neighborhoods?city=Paris&country=FR', city: 'Paris', isPost: false, data: null },
+                    { endpoint: '/api/fun-fact', url: '/api/fun-fact', city: 'Paris', isPost: true, data: { city: 'Paris' } },
+                    { endpoint: '/api/location-suggestions', url: '/api/location-suggestions', city: 'Search', isPost: true, data: { query: 'par' } }
+                ];
+                
+                const suite = new APITestSuite('⚡ Performance Test', tests);
+                await suite.runSuite();
+            };
+
+            window.runWorkflowTest = async function() {
+                const resultsDiv = document.getElementById('api-results');
+                resultsDiv.innerHTML = '<div class="loading">Testing complete workflow...</div>';
+                
+                try {
+                    // Step 1: Get countries
+                    const countriesResponse = await fetchData('/api/countries');
+                    
+                    // Step 2: Get cities for a country
+                    const citiesResponse = await fetchData('/api/locations/cities?country=US&state=CA');
+                    
+                    // Step 3: Get neighborhoods for a city
+                    const neighborhoodsResponse = await fetchData('/api/neighborhoods?city=Paris&country=FR');
+                    
+                    // Step 4: Get fun fact
+                    const funFactResponse = await testEndpoint('/api/fun-fact', 'funfact-result', true, {city: 'Paris'});
+                    
+                    // Step 5: Chat RAG
+                    const chatResponse = await testChatRAG();
+                    
+                    resultsDiv.innerHTML = `
+                        <div class="card" style="margin-top: 0;">
+                            <h3>🔧 Workflow Test Results</h3>
+                            <div class="status ok">✓ Complete workflow tested successfully</div>
+                            <div style="margin-top: 10px;">
+                                <strong>Steps completed:</strong><br>
+                                1. Countries: ${countriesResponse.error ? '❌' : '✅'}<br>
+                                2. Cities: ${citiesResponse.error ? '❌' : '✅'}<br>
+                                3. Neighborhoods: ${neighborhoodsResponse.error ? '❌' : '✅'}<br>
+                                4. Fun Fact: ${funFactResponse ? '❌' : '✅'}<br>
+                                5. Chat RAG: ${chatResponse ? '❌' : '✅'}
+                            </div>
+                        </div>
+                    `;
+                } catch (error) {
+                    resultsDiv.innerHTML = `<div class="error">Workflow test failed: ${error.message}</div>`;
+                }
+            };
+
+            window.runStressTest = async function() {
+                const resultsDiv = document.getElementById('api-results');
+                resultsDiv.innerHTML = '<div class="loading">Running stress test...</div>';
+                
+                const startTime = performance.now();
+                const promises = [];
+                
+                // Run 10 parallel requests to each endpoint
+                for (let i = 0; i < 10; i++) {
+                    promises.push(fetchData('/api/countries'));
+                    promises.push(fetchData('/api/locations/cities?country=US&state=CA'));
+                    promises.push(fetchData('/api/neighborhoods?city=Paris&country=FR'));
+                }
+                
+                try {
+                    const results = await Promise.all(promises);
+                    const totalTime = performance.now() - startTime;
+                    const successCount = results.filter(r => !r.error).length;
+                    
+                    resultsDiv.innerHTML = `
+                        <div class="card" style="margin-top: 0;">
+                            <h3>🧪 Stress Test Results</h3>
+                            <div class="status ${successCount === 30 ? 'ok' : 'error'}">
+                                ${successCount}/30 requests successful (${((successCount/30)*100).toFixed(1)}%)
+                            </div>
+                            <div>Total time: ${(totalTime/1000).toFixed(2)}s</div>
+                            <div>Avg per request: ${(totalTime/30).toFixed(0)}ms</div>
+                        </div>
+                    `;
+                } catch (error) {
+                    resultsDiv.innerHTML = `<div class="error">Stress test failed: ${error.message}</div>`;
+                }
+            };
+
             // Load data on page load
             window.onload = refreshAll;
         </script>
