@@ -17,13 +17,17 @@ from quart import Blueprint, request, jsonify, current_app as app
 import aiohttp
 from aiohttp import ClientTimeout
 
+# Configuration constants
+CACHE_TTL_SEARCH = int(os.getenv("CACHE_TTL_SEARCH", "1800"))  # 30 minutes
+PREWARM_TTL = CACHE_TTL_SEARCH
+DISABLE_PREWARM = os.getenv("DISABLE_PREWARM", "").lower() in ("1", "true", "yes")
+POPULAR_CITIES = os.getenv("POPULAR_CITIES", "").split(",") if os.getenv("POPULAR_CITIES") else []
+
 # Blueprint creation
 guide = Blueprint('guide', __name__)
 
-def register_blueprint(app, aiohttp_session, redis_client):
-    """Register the guide blueprint with shared resources"""
-    guide.aiohttp_session = aiohttp_session
-    guide.redis_client = redis_client
+def register(app):
+    """Register the guide blueprint with the app"""
     app.register_blueprint(guide)
 
 # --- Route Handlers ---
@@ -37,9 +41,8 @@ async def get_neighborhoods():
     from city_guides.providers import multi_provider
     from city_guides.providers.geocoding import geocode_city
     from city_guides.src.persistence import ensure_bbox
+    from city_guides.src.app import aiohttp_session, redis_client
     
-    aiohttp_session = guide.aiohttp_session
-    redis_client = guide.redis_client
     CACHE_TTL_NEIGHBORHOOD = int(os.getenv("CACHE_TTL_NEIGHBORHOOD", "3600"))
     
     city = request.args.get("city")
@@ -132,8 +135,7 @@ async def reverse_lookup():
     Returns: { display_name, countryName, countryCode, stateName, cityName, neighborhoods: [] }
     """
     from city_guides.providers import multi_provider
-    
-    aiohttp_session = guide.aiohttp_session
+    from city_guides.src.app import aiohttp_session
     
     payload = await request.get_json(silent=True) or {}
     lat = payload.get('lat')
@@ -268,8 +270,7 @@ async def api_smart_neighborhoods():
     """
     from city_guides.providers.geocoding import geocode_city
     from city_guides.src.dynamic_neighborhoods import get_neighborhoods_for_city
-    
-    redis_client = guide.redis_client
+    from city_guides.src.app import redis_client
     
     city = request.args.get('city', '').strip()
     category = request.args.get('category', '').strip()

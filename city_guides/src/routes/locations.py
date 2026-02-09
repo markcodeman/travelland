@@ -554,6 +554,6 @@ async def geonames_search():
         return jsonify({'error': 'geonames_search_failed'}), 500
 
 
-def register_locations_routes(app):
+def register(app):
     """Register locations blueprint with the app"""
     app.register_blueprint(locations_bp)

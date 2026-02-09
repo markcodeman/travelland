@@ -37,3 +37,7 @@ def register_blueprints(app):
     register_suggestions(app)
     register_guide(app)
     register_frontend(app)  # Must be last (catch-all routes)
+
+
+# Alias for backward compatibility
+register_routes = register_blueprints
