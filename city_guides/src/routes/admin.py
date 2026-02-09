@@ -267,7 +267,7 @@ async def admin():
 
                 async runSuite() {
                     const resultsDiv = document.getElementById('api-results');
-                    resultsDiv.innerHTML = `<div class="loading">Running ${this.name}...</div>`;
+                    resultsDiv.innerHTML = '<div class="loading">Running ' + this.name + '...</div>';
                     
                     const startTime = performance.now();
                     
@@ -278,7 +278,7 @@ async def admin():
                         this.displayResults(totalTime);
                         this.saveResults();
                     } catch (error) {
-                        resultsDiv.innerHTML = `<div class="error">Test suite failed: ${error.message}</div>`;
+                        resultsDiv.innerHTML = '<div class="error">Test suite failed: ' + error.message + '</div>';
                     }
                 }
 
@@ -307,18 +307,18 @@ async def admin():
                 displayResults(totalTime) {
                     const resultsDiv = document.getElementById('api-results');
                     
-                    let html = `<div class="card" style="margin-top: 0;">
-                        <h3>${this.name} Results (${this.results.length} tests, ${(totalTime/1000).toFixed(2)}s)</h3>`;
+                    let html = '<div class="card" style="margin-top: 0;">' +
+                        '<h3>' + this.name + ' Results (' + this.results.length + ' tests, ' + (totalTime/1000).toFixed(2) + 's)</h3>';
                     
                     // Summary stats
                     const successCount = this.results.filter(r => r.isValid()).length;
                     const avgTime = this.results.reduce((sum, r) => sum + r.timing, 0) / this.results.length;
                     
-                    html += `<div style="margin-bottom: 15px;">
-                        <span class="status ok">✓ ${successCount} Success</span>
-                        <span class="status error">✗ ${this.results.length - successCount} Failed</span>
-                        <span>Avg: ${avgTime.toFixed(0)}ms</span>
-                    </div>`;
+                    html += '<div style="margin-bottom: 15px;">' +
+                        '<span class="status ok">✓ ' + successCount + ' Success</span>' +
+                        '<span class="status error">✗ ' + (this.results.length - successCount) + ' Failed</span>' +
+                        '<span>Avg: ' + avgTime.toFixed(0) + 'ms</span>' +
+                    '</div>';
                     
                     // Results table
                     html += '<table style="width: 100%; border-collapse: collapse;">';
@@ -329,13 +329,13 @@ async def admin():
                         const statusClass = result.isValid() ? 'ok' : 'error';
                         const statusText = result.isValid() ? '✓' : '✗';
                         
-                        html += `<tr>
-                            <td>${result.endpoint}</td>
-                            <td>${result.city}</td>
-                            <td><span class="status ${statusClass}">${statusText}</span></td>
-                            <td class="${perfClass}">${result.timing.toFixed(0)}ms</td>
-                            <td><button onclick="showTestResult('${result.endpoint}', '${result.city}')" style="font-size: 11px;">View</button></td>
-                        </tr>`;
+                        html += '<tr>' +
+                            '<td>' + result.endpoint + '</td>' +
+                            '<td>' + result.city + '</td>' +
+                            '<td><span class="status ' + statusClass + '">' + statusText + '</span></td>' +
+                            '<td class="' + perfClass + '">' + result.timing.toFixed(0) + 'ms</td>' +
+                            '<td><button onclick="showTestResult(\'' + result.endpoint + '\', \'' + result.city + '\')" style="font-size: 11px;">View</button></td>' +
+                        '</tr>';
                     });
                     
                     html += '</table>';
@@ -366,9 +366,9 @@ async def admin():
                 const tests = [];
                 testCitiesData.global.forEach(city => {
                     tests.push(
-                        { endpoint: '/api/locations/cities', url: `/api/locations/cities?country=US&state=CA`, city, isPost: false, data: null },
-                        { endpoint: '/api/neighborhoods', url: `/api/neighborhoods?city=${city}&country=${city === 'New York' ? 'US' : 'FR'}`, city, isPost: false, data: null },
-                        { endpoint: '/api/fun-fact', url: '/api/fun-fact', city, isPost: true, data: { city } }
+                        { endpoint: '/api/locations/cities', url: '/api/locations/cities?country=US&state=CA', city, isPost: false, data: null },
+                        { endpoint: '/api/neighborhoods', url: '/api/neighborhoods?city=' + city + '&country=' + (city === 'New York' ? 'US' : 'FR'), city, isPost: false, data: null },
+                        { endpoint: '/api/fun-fact', url: '/api/fun-fact', city, isPost: true, data: { city: city } }
                     );
                 });
                 
