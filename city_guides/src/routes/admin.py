@@ -83,9 +83,9 @@ async def smoke_test():
         
         # Test 2: Neighborhoods test
         try:
-            # Try to get neighborhoods for Paris
+            # Try to get neighborhoods for Paris with coordinates
             from city_guides.src.dynamic_neighborhoods import get_neighborhoods_for_city
-            neighborhoods = await get_neighborhoods_for_city('Paris', 'FR')
+            neighborhoods = await get_neighborhoods_for_city('Paris', 48.8566, 2.3522)
             neighborhoods_count = len(neighborhoods) if neighborhoods else 0
             details['neighborhoods_count'] = neighborhoods_count
         except Exception as e:
