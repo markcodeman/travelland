@@ -9,7 +9,7 @@ from quart import Blueprint, request, jsonify
 from aiohttp import ClientTimeout
 import aiohttp
 
-bp = Blueprint('search', __name__)
+bp = Blueprint('search', __name__, url_prefix='/api')
 
 
 async def fetch_city_wikipedia(city: str, state: str | None = None, country: str | None = None) -> tuple[str, str] | None:

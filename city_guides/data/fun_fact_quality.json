@@ -1,17 +1,26 @@
 {
   "barcelona": {
-    "attempts": 1,
+    "attempts": 4,
     "facts": [
+      "Barcelona's Sagrada Familia has been under construction since 1882 and is still not completed!",
+      "Barcelona has 9 UNESCO World Heritage Sites, the most of any city in Spain.",
+      "Barcelona's Sagrada Familia has been under construction since 1882 and is still not completed!",
       "Barcelona's Sagrada Familia has been under construction since 1882 and is still not completed!"
     ],
     "sources": [
+      "seeded",
+      "seeded",
+      "seeded",
       "seeded"
     ],
     "quality_scores": [
+      0.7,
+      1.0,
+      0.7,
       0.7
     ],
-    "avg_quality": 0.7,
-    "last_attempt": 1770503410.1875527
+    "avg_quality": 0.7749999999999999,
+    "last_attempt": 1770668207.7426295
   },
   "madrid": {
     "attempts": 2,
