@@ -141,3 +141,4 @@ instance/
 *.log
 .blackboxcli/
 env
+city_guides/data/banner_cache.json
