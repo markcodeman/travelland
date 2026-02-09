@@ -46,6 +46,7 @@ async def metrics_json():
 async def smoke_test():
     """Quick smoke test of core API functionality"""
     from city_guides.src.app import aiohttp_session
+    from aiohttp import ClientTimeout
     
     details = {}
     overall_ok = True
@@ -63,7 +64,7 @@ async def smoke_test():
                 }
                 headers = {'User-Agent': 'TravelLand/1.0'}
                 
-                async with aiohttp_session.get(url, params=params, headers=headers, timeout=5) as response:
+                async with aiohttp_session.get(url, params=params, headers=headers, timeout=ClientTimeout(total=5)) as response:
                     if response.status == 200:
                         data = await response.json()
                         details['reverse'] = {
@@ -83,13 +84,10 @@ async def smoke_test():
         # Test 2: Neighborhoods test
         try:
             # Try to get neighborhoods for Paris
-            neighborhoods = await multi_provider.get_neighborhoods('Paris', 'FR')
+            from city_guides.src.dynamic_neighborhoods import get_neighborhoods_for_city
+            neighborhoods = await get_neighborhoods_for_city('Paris', 'FR')
             neighborhoods_count = len(neighborhoods) if neighborhoods else 0
             details['neighborhoods_count'] = neighborhoods_count
-            
-            if neighborhoods_count == 0:
-                # Empty result is ok, not necessarily an error
-                pass
         except Exception as e:
             details['neighborhoods_error'] = str(e)
             overall_ok = False
