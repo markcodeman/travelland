@@ -204,7 +204,7 @@ async def admin():
 
         <script>
             // Test data sets for different scenarios
-            const testCities = {
+            const testCitiesData = {
                 global: ['Paris', 'Tokyo', 'New York', 'Sydney', 'Dubai'],
                 popular: ['Barcelona', 'Rome', 'London', 'Bangkok', 'Singapore'],
                 emerging: ['Mumbai', 'Istanbul', 'Cairo', 'Lagos', 'Jakarta'],
@@ -366,7 +366,7 @@ async def admin():
             // Global test function
             async function runGlobalTest() {
                 const tests = [];
-                testCities.global.forEach(city => {
+                testCitiesData.global.forEach(city => {
                     tests.push(
                         { endpoint: '/api/locations/cities', url: `/api/locations/cities?country=US&state=CA`, city, isPost: false, data: null },
                         { endpoint: '/api/neighborhoods', url: `/api/neighborhoods?city=${city}&country=${city === 'New York' ? 'US' : 'FR'}`, city, isPost: false, data: null },
@@ -470,10 +470,10 @@ async def admin():
             // Export results function
             function exportResults() {
                 const history = JSON.parse(localStorage.getItem('apiTestHistory') || '[]');
-                const csv = 'Timestamp,Suite,Endpoint,City,Status,Time (ms)\n' +
+                const csv = 'Timestamp,Suite,Endpoint,City,Status,Time (ms)\\n' +
                     history.flatMap(h => h.results.map(r => 
                         `${h.timestamp},${h.suite},${r.endpoint},${r.city},${r.status},${r.timing}`
-                    )).join('\n');
+                    )).join('\\n');
                 
                 const blob = new Blob([csv], { type: 'text/csv' });
                 const url = URL.createObjectURL(blob);
