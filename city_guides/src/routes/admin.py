@@ -411,22 +411,20 @@ async def admin():
                     // Step 5: Chat RAG
                     const chatResponse = await testChatRAG();
                     
-                    resultsDiv.innerHTML = `
-                        <div class="card" style="margin-top: 0;">
-                            <h3>🔧 Workflow Test Results</h3>
-                            <div class="status ok">✓ Complete workflow tested successfully</div>
-                            <div style="margin-top: 10px;">
-                                <strong>Steps completed:</strong><br>
-                                1. Countries: ${countriesResponse.error ? '❌' : '✅'}<br>
-                                2. Cities: ${citiesResponse.error ? '❌' : '✅'}<br>
-                                3. Neighborhoods: ${neighborhoodsResponse.error ? '❌' : '✅'}<br>
-                                4. Fun Fact: ${funFactResponse ? '❌' : '✅'}<br>
-                                5. Chat RAG: ${chatResponse ? '❌' : '✅'}
-                            </div>
-                        </div>
-                    `;
+                    resultsDiv.innerHTML = '<div class="card" style="margin-top: 0;">' +
+                        '<h3>🔧 Workflow Test Results</h3>' +
+                        '<div class="status ok">✓ Complete workflow tested successfully</div>' +
+                        '<div style="margin-top: 10px;">' +
+                            '<strong>Steps completed:</strong><br>' +
+                            '1. Countries: ' + (countriesResponse.error ? '❌' : '✅') + '<br>' +
+                            '2. Cities: ' + (citiesResponse.error ? '❌' : '✅') + '<br>' +
+                            '3. Neighborhoods: ' + (neighborhoodsResponse.error ? '❌' : '✅') + '<br>' +
+                            '4. Fun Fact: ' + (funFactResponse ? '❌' : '✅') + '<br>' +
+                            '5. Chat RAG: ' + (chatResponse ? '❌' : '✅') +
+                        '</div>' +
+                    '</div>';
                 } catch (error) {
-                    resultsDiv.innerHTML = `<div class="error">Workflow test failed: ${error.message}</div>`;
+                    resultsDiv.innerHTML = '<div class="error">Workflow test failed: ' + error.message + '</div>';
                 }
             }
 
@@ -450,18 +448,16 @@ async def admin():
                     const totalTime = performance.now() - startTime;
                     const successCount = results.filter(r => !r.error).length;
                     
-                    resultsDiv.innerHTML = `
-                        <div class="card" style="margin-top: 0;">
-                            <h3>🧪 Stress Test Results</h3>
-                            <div class="status ${successCount === 30 ? 'ok' : 'error'}">
-                                ${successCount}/30 requests successful (${((successCount/30)*100).toFixed(1)}%)
-                            </div>
-                            <div>Total time: ${(totalTime/1000).toFixed(2)}s</div>
-                            <div>Avg per request: ${(totalTime/30).toFixed(0)}ms</div>
-                        </div>
-                    `;
+                    resultsDiv.innerHTML = '<div class="card" style="margin-top: 0;">' +
+                        '<h3>🧪 Stress Test Results</h3>' +
+                        '<div class="status ' + (successCount === 30 ? 'ok' : 'error') + '">' +
+                            successCount + '/30 requests successful (' + ((successCount/30)*100).toFixed(1) + '%)' +
+                        '</div>' +
+                        '<div>Total time: ' + (totalTime/1000).toFixed(2) + 's</div>' +
+                        '<div>Avg per request: ' + (totalTime/30).toFixed(0) + 'ms</div>' +
+                    '</div>';
                 } catch (error) {
-                    resultsDiv.innerHTML = `<div class="error">Stress test failed: ${error.message}</div>`;
+                    resultsDiv.innerHTML = '<div class="error">Stress test failed: ' + error.message + '</div>';
                 }
             }
 
@@ -470,14 +466,14 @@ async def admin():
                 const history = JSON.parse(localStorage.getItem('apiTestHistory') || '[]');
                 const csv = 'Timestamp,Suite,Endpoint,City,Status,Time (ms)\\n' +
                     history.flatMap(h => h.results.map(r => 
-                        `${h.timestamp},${h.suite},${r.endpoint},${r.city},${r.status},${r.timing}`
+                        h.timestamp + ',' + h.suite + ',' + r.endpoint + ',' + r.city + ',' + r.status + ',' + r.timing
                     )).join('\\n');
                 
                 const blob = new Blob([csv], { type: 'text/csv' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `api-test-results-${new Date().toISOString().split('T')[0]}.csv`;
+                a.download = 'api-test-results-' + new Date().toISOString().split('T')[0] + '.csv';
                 a.click();
             }
 
@@ -489,7 +485,7 @@ async def admin():
                     .find(r => r.endpoint === endpoint && r.city === city);
                 
                 if (result) {
-                    alert(`Endpoint: ${result.endpoint}\nCity: ${result.city}\nStatus: ${result.status}\nTime: ${result.timing}ms`);
+                    alert('Endpoint: ' + result.endpoint + '\\nCity: ' + result.city + '\\nStatus: ' + result.status + '\\nTime: ' + result.timing + 'ms');
                 }
             }
             async function fetchData(url, options = {}) {
@@ -533,14 +529,14 @@ async def admin():
             async function testCities() {
                 const country = document.getElementById('country-input').value;
                 const state = document.getElementById('state-input').value;
-                const url = `/api/locations/cities?state=${encodeURIComponent(state)}&country=${encodeURIComponent(country)}`;
+                const url = '/api/locations/cities?state=' + encodeURIComponent(state) + '&country=' + encodeURIComponent(country);
                 testEndpoint(url, 'cities-result');
             }
 
             async function testNeighborhoods() {
                 const city = document.getElementById('city-input').value;
                 const country = document.getElementById('country-input').value;
-                const url = `/api/neighborhoods?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}`;
+                const url = '/api/neighborhoods?city=' + encodeURIComponent(city) + '&country=' + encodeURIComponent(country);
                 testEndpoint(url, 'neighborhoods-result');
             }
 
@@ -594,7 +590,7 @@ async def admin():
                     const value = data[check.key];
                     const status = value ? 'ok' : 'error';
                     const statusText = value ? '✓ OK' : '✗ FAIL';
-                    html += `<div><strong>${check.label}:</strong> <span class="status ${status}">${statusText}</span></div>`;
+                    html += '<div><strong>' + check.label + ':</strong> <span class="status ' + status + '">' + statusText + '</span></div>';
                 });
                 
                 html += '</div>';
@@ -619,7 +615,7 @@ async def admin():
                 
                 metrics.forEach(metric => {
                     const value = data[metric.key] || 0;
-                    html += `<div class="metric"><div class="value">${value}</div><div class="label">${metric.label}</div></div>`;
+                    html += '<div class="metric"><div class="value">' + value + '</div><div class="label">' + metric.label + '</div></div>';
                 });
                 
                 html += '</div>';
@@ -785,18 +781,16 @@ async def admin():
                     const totalTime = performance.now() - startTime;
                     const successCount = results.filter(r => !r.error).length;
                     
-                    resultsDiv.innerHTML = `
-                        <div class="card" style="margin-top: 0;">
-                            <h3>🧪 Stress Test Results</h3>
-                            <div class="status ${successCount === 30 ? 'ok' : 'error'}">
-                                ${successCount}/30 requests successful (${((successCount/30)*100).toFixed(1)}%)
-                            </div>
-                            <div>Total time: ${(totalTime/1000).toFixed(2)}s</div>
-                            <div>Avg per request: ${(totalTime/30).toFixed(0)}ms</div>
-                        </div>
-                    `;
+                    resultsDiv.innerHTML = '<div class="card" style="margin-top: 0;">' +
+                        '<h3>🧪 Stress Test Results</h3>' +
+                        '<div class="status ' + (successCount === 30 ? 'ok' : 'error') + '">' +
+                            successCount + '/30 requests successful (' + ((successCount/30)*100).toFixed(1) + '%)' +
+                        '</div>' +
+                        '<div>Total time: ' + (totalTime/1000).toFixed(2) + 's</div>' +
+                        '<div>Avg per request: ' + (totalTime/30).toFixed(0) + 'ms</div>' +
+                    '</div>';
                 } catch (error) {
-                    resultsDiv.innerHTML = `<div class="error">Stress test failed: ${error.message}</div>`;
+                    resultsDiv.innerHTML = '<div class="error">Stress test failed: ' + error.message + '</div>';
                 }
             };
 
