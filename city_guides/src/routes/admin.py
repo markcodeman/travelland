@@ -42,6 +42,74 @@ async def metrics_json():
         return jsonify({'error': 'failed to fetch metrics'}), 500
 
 
+@bp.route('/smoke')
+async def smoke_test():
+    """Quick smoke test of core API functionality"""
+    from city_guides.src.app import aiohttp_session
+    
+    details = {}
+    overall_ok = True
+    
+    try:
+        # Test 1: Reverse geocoding
+        if aiohttp_session:
+            try:
+                # Test reverse lookup for Paris coordinates
+                url = 'https://nominatim.openstreetmap.org/reverse'
+                params = {
+                    'lat': 48.8566,
+                    'lon': 2.3522,
+                    'format': 'json'
+                }
+                headers = {'User-Agent': 'TravelLand/1.0'}
+                
+                async with aiohttp_session.get(url, params=params, headers=headers, timeout=5) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        details['reverse'] = {
+                            'display_name': data.get('display_name', 'Unknown'),
+                            'status': 'ok'
+                        }
+                    else:
+                        details['reverse'] = {'status': 'error', 'message': f'HTTP {response.status}'}
+                        overall_ok = False
+            except Exception as e:
+                details['reverse'] = {'status': 'error', 'message': str(e)}
+                overall_ok = False
+        else:
+            details['reverse'] = {'status': 'error', 'message': 'Session not initialized'}
+            overall_ok = False
+        
+        # Test 2: Neighborhoods test
+        try:
+            # Try to get neighborhoods for Paris
+            neighborhoods = await multi_provider.get_neighborhoods('Paris', 'FR')
+            neighborhoods_count = len(neighborhoods) if neighborhoods else 0
+            details['neighborhoods_count'] = neighborhoods_count
+            
+            if neighborhoods_count == 0:
+                # Empty result is ok, not necessarily an error
+                pass
+        except Exception as e:
+            details['neighborhoods_error'] = str(e)
+            overall_ok = False
+        
+        return jsonify({
+            'ok': overall_ok,
+            'details': details,
+            'timestamp': time.time()
+        })
+        
+    except Exception as e:
+        from city_guides.src.app import app
+        app.logger.exception('Smoke test failed')
+        return jsonify({
+            'ok': False,
+            'error': str(e),
+            'details': details
+        }), 500
+
+
 @bp.route('/admin')
 async def admin():
     """Serve interactive admin dashboard HTML page."""
@@ -231,10 +299,10 @@ async def admin():
                         const data = await response.json();
                         const timing = tracker.endTimer(test.endpoint);
                         
-                        return new TestResult(test.endpoint, data, response.ok ? 'ok' : 'error', timing, test.city);
+                        return new TestResult(test.endpoint, data, timing, response.ok ? 'ok' : 'error', test.city);
                     } catch (error) {
                         const timing = tracker.endTimer(test.endpoint);
-                        return new TestResult(test.endpoint, { error: error.message }, 'error', timing, test.city);
+                        return new TestResult(test.endpoint, { error: error.message }, timing, 'error', test.city);
                     }
                 }
 
@@ -293,6 +361,7 @@ async def admin():
                     });
                     localStorage.setItem('apiTestHistory', JSON.stringify(history.slice(-20))); // Keep last 20
                 }
+            }
 
             // Global test function
             async function runGlobalTest() {
