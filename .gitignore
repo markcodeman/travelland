@@ -126,6 +126,9 @@ venv_new/
 .secrets.baseline
 .wiki_token.json
 
+# Generated data - always ignore to prevent merge conflicts
+city_guides/data/fun_fact_quality.json
+
 # Temporary files
 *.bak
 /tmp_overpass_debug.py
