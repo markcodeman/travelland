@@ -139,13 +139,12 @@ async def admin():
             .refresh-btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 10px 0; }
             .refresh-btn:hover { background: #0056b3; }
         </style>
+        <script src="/admin.js" defer></script>
     </head>
     <body>
         <div class="container">
             <h1>🚀 TravelLand Admin Dashboard</h1>
-            
             <button class="refresh-btn" onclick="refreshAll()">🔄 Refresh All</button>
-            
             <div class="card">
                 <h2>🏥 System Health</h2>
                 <div id="health-status" class="loading">Loading health status...</div>
@@ -179,6 +178,7 @@ async def admin():
                 </div>
                 <!-- Manual Test Controls and rest of HTML ... -->
                 <!-- ... (rest of the HTML remains unchanged) ... -->
+                <div id="api-results" style="margin-top: 15px;"></div>
             </div>
         </div>
 
