@@ -1,4 +1,4 @@
-from providers import overpass_provider
+from city_guides.providers import overpass_provider
 import requests
 import json
 

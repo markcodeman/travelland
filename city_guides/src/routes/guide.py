@@ -265,21 +265,23 @@ async def api_smart_neighborhoods():
     """
     Get smart neighborhood suggestions for ANY city.
     First checks seed files, then falls back to Overpass API.
-    Query params: city, category (optional)
+    Returns top 24 neighborhoods enriched with Wikipedia descriptions.
+    Query params: city, category (optional), enrich (optional, default=true)
     Returns: { is_large_city: bool, neighborhoods: [] }
     """
     from city_guides.providers.geocoding import geocode_city
     from city_guides.src.dynamic_neighborhoods import get_neighborhoods_for_city
-    from city_guides.src.app import redis_client
+    from city_guides.src.app import redis_client, aiohttp_session
     
     city = request.args.get('city', '').strip()
     category = request.args.get('category', '').strip()
+    enrich = request.args.get('enrich', 'true').lower() != 'false'
     
     if not city:
         return jsonify({'is_large_city': False, 'neighborhoods': []}), 400
     
     try:
-        cache_key = f"smart_neighborhoods:{city.lower()}"
+        cache_key = f"smart_neighborhoods:{city.lower()}:enriched"
         if redis_client:
             cached_data = await redis_client.get(cache_key)
             if cached_data:
@@ -294,32 +296,48 @@ async def api_smart_neighborhoods():
                 with open(seed_file, 'r', encoding='utf-8') as f:
                     seed_data = json.load(f)
                 
-                if not isinstance(seed_data, dict) or 'cities' not in seed_data:
-                    continue
-                    
-                cities = seed_data.get('cities', {})
-                if not isinstance(cities, dict):
-                    continue
-                    
-                city_key = next((k for k in cities.keys() if k.lower() == city.lower()), None)
-                if city_key:
-                    neighborhoods_data = cities[city_key]
-                    if neighborhoods_data and isinstance(neighborhoods_data, list) and len(neighborhoods_data) > 0:
-                        first_item = neighborhoods_data[0]
-                        if isinstance(first_item, dict) and 'name' in first_item:
-                            seed_neighborhoods = neighborhoods_data
-                            app.logger.info(f"Found {len(seed_neighborhoods)} neighborhoods in {seed_file.name} for {city}")
-                            break
+                # Support both formats: {"cities": {"CityName": [...]}} and {"city": "Name", "neighborhoods": [...]}
+                neighborhoods_data = None
+                
+                # Format 1: {"cities": {"CityName": [...]}}
+                if isinstance(seed_data, dict) and 'cities' in seed_data:
+                    cities = seed_data.get('cities', {})
+                    if isinstance(cities, dict):
+                        city_key = next((k for k in cities.keys() if k.lower() == city.lower()), None)
+                        if city_key:
+                            neighborhoods_data = cities[city_key]
+                
+                # Format 2: {"city": "Name", "neighborhoods": [...]}
+                elif isinstance(seed_data, dict) and 'city' in seed_data and 'neighborhoods' in seed_data:
+                    if seed_data.get('city', '').lower() == city.lower():
+                        neighborhoods_data = seed_data.get('neighborhoods', [])
+                
+                if neighborhoods_data and isinstance(neighborhoods_data, list) and len(neighborhoods_data) > 0:
+                    first_item = neighborhoods_data[0]
+                    if isinstance(first_item, dict) and 'name' in first_item:
+                        seed_neighborhoods = neighborhoods_data
+                        app.logger.info(f"Found {len(seed_neighborhoods)} neighborhoods in {seed_file.name} for {city}")
+                        break
             except Exception as e:
                 app.logger.debug(f"Could not load {seed_file.name} for {city}: {e}")
 
         if seed_neighborhoods:
+            # Filter to top 24 neighborhoods by population/wikipedia presence
+            top_neighborhoods = _get_top_neighborhoods(seed_neighborhoods, limit=24)
+            
+            # Enrich with Wikipedia descriptions if requested
+            if enrich:
+                top_neighborhoods = await _enrich_neighborhoods_with_descriptions(
+                    city, top_neighborhoods, aiohttp_session
+                )
+            
             response = {
                 'is_large_city': True,
-                'neighborhoods': seed_neighborhoods,
+                'neighborhoods': top_neighborhoods,
                 'city': city,
                 'category': category,
-                'source': 'seed'
+                'source': 'seed',
+                'total_available': len(seed_neighborhoods)
             }
             if redis_client:
                 await redis_client.setex(cache_key, 3600, json.dumps(response))
@@ -1538,6 +1556,230 @@ async def prewarm_neighborhoods():
             await asyncio.sleep(1.0)
 
 # --- Utility Functions ---
+
+def _get_top_neighborhoods(neighborhoods: list, limit: int = 24) -> list:
+    """
+    Filter to top neighborhoods by significance.
+    Prioritizes: population > Wikipedia presence > place type (suburb > neighbourhood)
+    """
+    def score_neighborhood(n):
+        score = 0
+        tags = n.get('tags', {})
+        
+        # Population score (highest weight)
+        pop = tags.get('population')
+        if pop:
+            try:
+                score += min(int(pop) / 1000, 1000)  # Cap at 1000 points
+            except (ValueError, TypeError):
+                pass
+        
+        # Wikipedia presence bonus
+        if tags.get('wikipedia') or tags.get('wikipedia:en'):
+            score += 500
+        
+        # Wikidata presence bonus
+        if tags.get('wikidata'):
+            score += 200
+        
+        # Place type preference
+        place = tags.get('place', '')
+        if place == 'suburb':
+            score += 300
+        elif place == 'quarter':
+            score += 250
+        elif place == 'neighbourhood':
+            score += 100
+        elif place == 'city':
+            score += 400
+        
+        return score
+    
+    # Sort by score descending
+    sorted_neighborhoods = sorted(neighborhoods, key=score_neighborhood, reverse=True)
+    
+    # Return top N
+    return sorted_neighborhoods[:limit]
+
+
+def _generate_neighborhood_context(name: str, city: str, tags: dict) -> str:
+    """Generate travel-relevant neighborhood description from available data."""
+    population = tags.get('population', '')
+    
+    # Population-based descriptors
+    pop_desc = ''
+    if population:
+        try:
+            pop = int(population)
+            if pop > 200000:
+                pop_desc = 'A bustling, densely populated district'
+            elif pop > 150000:
+                pop_desc = 'A lively residential area'
+            elif pop > 100000:
+                pop_desc = 'A vibrant neighborhood'
+            elif pop > 50000:
+                pop_desc = 'A charming mid-sized community'
+            else:
+                pop_desc = 'A cozy, intimate neighborhood'
+        except:
+            pass
+    
+    # Name-based character hints (for Osaka specifically)
+    name_lower = name.lower()
+    character_hints = []
+    
+    if 'sumiyoshi' in name_lower:
+        character_hints.append('home to the historic Sumiyoshi Taisha shrine')
+    if 'yodogawa' in name_lower or 'yodo' in name_lower:
+        character_hints.append('along the Yodo River waterfront')
+    if 'higashi' in name_lower:
+        character_hints.append('in the eastern part of the city')
+    if 'nishi' in name_lower:
+        character_hints.append('in the western part of the city')
+    if 'minami' in name_lower:
+        character_hints.append('in the southern district')
+    if 'kita' in name_lower:
+        character_hints.append('in the northern district')
+    if 'chuo' in name_lower or 'central' in name_lower:
+        character_hints.append('at the heart of the city')
+    if 'bay' in name_lower or 'minato' in name_lower:
+        character_hints.append('near the waterfront and port area')
+    if 'tennoji' in name_lower:
+        character_hints.append('centered around Tennoji Temple and Park')
+    if 'nishinari' in name_lower:
+        character_hints.append('known for its working-class charm and local markets')
+    if 'ikuno' in name_lower:
+        character_hints.append('famous for its Korea Town and multicultural dining')
+    if 'abeno' in name_lower:
+        character_hints.append('home to the Abeno Harukas skyscraper')
+    if 'miyakojima' in name_lower:
+        character_hints.append('on an island with industrial and residential charm')
+    if 'joto' in name_lower:
+        character_hints.append('in the eastern ward with residential character')
+    if 'fukushima' in name_lower:
+        character_hints.append('a trendy area with craft breweries and cafes')
+    if 'honmachi' in name_lower:
+        character_hints.append('a business district with dining options')
+    
+    # Build description - combine population and character hints
+    parts = []
+    if pop_desc:
+        parts.append(pop_desc)
+    
+    if character_hints:
+        parts.append(', '.join(character_hints))
+    
+    if parts:
+        return '. '.join(parts) + '.'
+    
+    return f'A neighborhood in {city}'
+
+
+async def _enrich_neighborhoods_with_descriptions(
+    city: str, 
+    neighborhoods: list, 
+    aiohttp_session
+) -> list:
+    """
+    Enrich neighborhoods with travel-relevant descriptions.
+    Combines Wikipedia data with OSM metadata for engaging descriptions.
+    """
+    import aiohttp
+    
+    async def fetch_wiki_by_title(title: str) -> dict:
+        """Fetch Wikipedia summary by exact page title."""
+        try:
+            if ':' in title:
+                title = title.split(':', 1)[1]
+            
+            url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{title.replace(' ', '_')}"
+            async with aiohttp_session.get(url, timeout=8) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+        except Exception:
+            pass
+        return None
+    
+    async def enrich_single(neighborhood):
+        name = neighborhood.get('name', '')
+        if not name:
+            return neighborhood
+        
+        # Skip if already has description
+        if neighborhood.get('description'):
+            return neighborhood
+        
+        try:
+            neighborhood = neighborhood.copy()
+            tags = neighborhood.get('tags', {})
+            
+            # Generate contextual description from OSM data
+            context_desc = _generate_neighborhood_context(name, city, tags)
+            
+            # Try to get Wikipedia data for additional richness
+            wiki_data = None
+            wiki_ref = tags.get('wikipedia') or tags.get('wikipedia:en')
+            if wiki_ref:
+                wiki_data = await fetch_wiki_by_title(wiki_ref)
+            
+            # Build final description
+            description = context_desc
+            
+            # If we have wiki data, try to extract interesting facts (not just "is a ward")
+            if wiki_data:
+                extract = wiki_data.get('extract', '')
+                # Look for mentions of attractions, features, or character
+                interesting_keywords = [
+                    'shrine', 'temple', 'park', 'museum', 'castle', 'tower', 'station',
+                    'shopping', 'market', 'district', 'entertainment', 'dining', 'restaurant',
+                    'historic', 'traditional', 'modern', 'business', 'residential',
+                    'famous', 'popular', 'known', 'home to', 'features'
+                ]
+                
+                # Extract sentences with interesting keywords
+                sentences = extract.split('. ')
+                interesting_sentences = []
+                for sent in sentences[:3]:  # Check first 3 sentences
+                    if any(kw in sent.lower() for kw in interesting_keywords):
+                        # Skip generic "is a ward" sentences
+                        if not any(phrase in sent.lower() for phrase in ['is one of', 'is a ward', 'make up the city']):
+                            interesting_sentences.append(sent)
+                
+                if interesting_sentences:
+                    # Use the first interesting sentence
+                    interesting_part = interesting_sentences[0][:120]
+                    if len(interesting_part) > 20:  # Make sure it's substantial
+                        description = f"{context_desc} {interesting_part}."
+                
+                neighborhood['source'] = 'enriched'
+                
+                # Add coordinates if available
+                coords = wiki_data.get('coordinates')
+                if coords:
+                    neighborhood['coordinates'] = {
+                        'lat': coords.get('lat'),
+                        'lon': coords.get('lon')
+                    }
+            
+            neighborhood['description'] = description[:200] if len(description) > 200 else description
+            return neighborhood
+            
+        except Exception as e:
+            # Return original on error
+            return neighborhood
+    
+    # Enrich concurrently with semaphore to limit concurrency
+    sem = asyncio.Semaphore(5)
+    
+    async def enrich_with_limit(n):
+        async with sem:
+            return await enrich_single(n)
+    
+    tasks = [enrich_with_limit(n) for n in neighborhoods]
+    enriched = await asyncio.gather(*tasks)
+    
+    return list(enriched)
+
 
 async def _get_countries():
     """Get list of countries from GeoNames."""

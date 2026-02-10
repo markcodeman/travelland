@@ -3,7 +3,7 @@
 ## Overview
 Marco the Explorer now has access to multiple data sources for comprehensive search results:
 
-### 1. **Web Search (Searx/DuckDuckGo)**
+### 1. **Web Search (DuckDuckGo)**
 - Primary source for general queries
 - Returns web snippets and articles
 - Works for any type of query
@@ -18,10 +18,10 @@ Marco the Explorer now has access to multiple data sources for comprehensive sea
   - OSM map links
 - **Smart filtering**: Excludes major chain restaurants for authentic local recommendations
 
-### 3. **WikiVoyage (via Wikimedia Enterprise API)**
-- Travel guide articles
-- Background info and cultural context
-- Activated as fallback when other sources have gaps
+### 3. **WikiVoyage (planned)**
+- Travel guide articles (not yet implemented)
+- Would provide background info and cultural context
+- Currently falls back to Wikipedia for city summaries
 
 ### 4. **OpenTripMap** (ready for integration)
 - Points of interest with ratings
@@ -33,41 +33,36 @@ When Marco processes a user query:
 
 ```python
 # In semantic.py, Marco now calls:
-results = search_provider.combined_search(search_query, max_results=8, city=city)
+results = search_provider.duckduckgo_search(query, max_results=5)
 ```
 
 ### Example Queries
 
 **"Where can I find authentic pizza in Rome?"**
-- Searx: Generic pizza articles
+- DuckDuckGo: Generic pizza articles
 - **OSM/Overpass**: Local pizzerias in Rome with addresses ← Most useful!
-- WikiVoyage: Roman cuisine background
+- Wikipedia: Roman cuisine background (fallback)
 
 **"Tell me about sushi culture"**
-- Searx: Articles and guides
-- WikiVoyage: Travel info on sushi destinations
+- DuckDuckGo: Articles and guides
+- Wikipedia: Travel info on sushi destinations (fallback)
 - (OSM skipped—no city provided)
 
 **"Best restaurants near Paris"** (if city=Paris)
-- Searx: Web reviews
+- DuckDuckGo: Web reviews
 - **OSM/Overpass**: 100+ actual restaurants in Paris with coordinates
-- WikiVoyage: French cuisine guide
+- Wikipedia: French cuisine guide (fallback)
 
 ## Testing
 
 ```bash
-# Test combined search programmatically
-python test_combined.py
+# Test web search programmatically
+from city_guides.providers.search_provider import duckduckgo_search
+results = duckduckgo_search("best pizza in Rome", max_results=5)
 
-# Test individual sources
-from search_provider import combined_search, overpass_provider
-
-# Get OSM restaurants directly
-restaurants = overpass_provider.discover_restaurants("Paris", cuisine="italian")
-
-# Get WikiVoyage articles
-from search_provider import wikivoyage_search
-articles = wikivoyage_search("french cuisine")
+# Test OSM restaurants directly
+from city_guides.providers.overpass_provider import discover_restaurants
+restaurants = discover_restaurants("Paris", cuisine="italian")
 ```
 
 ## Data Quality
@@ -78,18 +73,19 @@ articles = wikivoyage_search("french cuisine")
 - Most accurate for local venues
 - Best for: Finding specific restaurants/cafes/bars
 
-### Searx (Best for General Info)
+### DuckDuckGo (Best for General Info)
 - Web aggregation from multiple engines
 - Fast, broad coverage
 - Good for: Background, reviews, recipes
 
-### WikiVoyage (Best for Travel Context)
-- Curated travel guides
-- Cultural and historical info
-- Good for: Understanding cuisine, culture, travel tips
+### WikiVoyage (planned)
+- Curated travel guides (not yet implemented)
+- Would provide cultural and historical info
+- Currently falls back to Wikipedia
 
 ## Future Enhancements
 
+- [ ] Implement WikiVoyage integration via Wikimedia Enterprise API
 - [ ] Integrate OpenTripMap for rated POIs
 - [ ] Add caching to reduce API calls
 - [ ] Support multiple languages from WikiVoyage (27 available)

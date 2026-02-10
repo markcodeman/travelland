@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-import city_guides.app as app
+import city_guides.src.app as app
 
 
 class FakeRedis:

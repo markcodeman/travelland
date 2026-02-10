@@ -152,23 +152,52 @@ async function runPerformanceTest() {
 
 async function runWorkflowTest() {
     const resultsDiv = document.getElementById('api-results');
-    resultsDiv.innerHTML = '<div class="loading">Testing complete workflow...</div>';
+    resultsDiv.innerHTML = '<div class="loading">Testing complete workflow (real frontend flow)...</div>';
     try {
-        const countriesResponse = await fetchData('/api/countries');
-        const citiesResponse = await fetchData('/api/locations/cities?country=US&state=CA');
-        const neighborhoodsResponse = await fetchData('/api/neighborhoods?city=Paris&country=FR');
-        const funFactResponse = await testEndpoint('/api/fun-fact', 'funfact-result', true, {city: 'Paris'});
-        const chatResponse = await testChatRAG();
+        // 1. Fetch countries
+        const countries = await fetchData('/api/countries');
+        const country = Array.isArray(countries) && countries.length > 0 ? countries[0] : { code: 'US' };
+        // 2. Fetch states for that country
+        const states = await fetchData(`/api/locations/states?countryCode=${country.code}`);
+        const state = Array.isArray(states) && states.length > 0 ? states[0] : { code: 'CA' };
+        // 3. Fetch cities for that state
+        const cities = await fetchData(`/api/locations/cities?countryCode=${country.code}&stateCode=${state.code}`);
+        const city = Array.isArray(cities) && cities.length > 0 ? cities[0] : { name: 'Paris' };
+        // 4. Fetch neighborhoods for that city
+        const neighborhoods = await fetchData(`/api/neighborhoods?city=${encodeURIComponent(city.name)}&country=${country.code}`);
+        // 5. Fetch fun fact for that city
+        const funFact = await fetchData('/api/fun-fact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ city: city.name })
+        });
+        // 6. Fetch chat RAG for that city
+        const chat = await fetchData('/api/chat/rag', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: `Hello, can you tell me about ${city.name}?`,
+                city: city.name,
+                country: country.code
+            })
+        });
         resultsDiv.innerHTML = '<div class="card" style="margin-top: 0;">' +
-            '<h3>Workflow Test Results</h3>' +
-            '<div class="status ok">OK Complete workflow tested successfully</div>' +
+            '<h3>Workflow Test Results (Real API Flow)</h3>' +
+            '<div class="status ok">OK Complete workflow tested as frontend would</div>' +
             '<div style="margin-top: 10px;">' +
                 '<strong>Steps completed:</strong><br>' +
-                '1. Countries: ' + (countriesResponse.error ? 'FAIL' : 'OK') + '<br>' +
-                '2. Cities: ' + (citiesResponse.error ? 'FAIL' : 'OK') + '<br>' +
-                '3. Neighborhoods: ' + (neighborhoodsResponse.error ? 'FAIL' : 'OK') + '<br>' +
-                '4. Fun Fact: ' + (funFactResponse ? 'FAIL' : 'OK') + '<br>' +
-                '5. Chat RAG: ' + (chatResponse ? 'FAIL' : 'OK') +
+                '1. Countries: ' + (countries.error ? 'FAIL' : 'OK') + '<br>' +
+                '<pre class="json-data">' + JSON.stringify(countries, null, 2) + '</pre>' +
+                '2. States: ' + (states.error ? 'FAIL' : 'OK') + '<br>' +
+                '<pre class="json-data">' + JSON.stringify(states, null, 2) + '</pre>' +
+                '3. Cities: ' + (cities.error ? 'FAIL' : 'OK') + '<br>' +
+                '<pre class="json-data">' + JSON.stringify(cities, null, 2) + '</pre>' +
+                '4. Neighborhoods: ' + (neighborhoods.error ? 'FAIL' : 'OK') + '<br>' +
+                '<pre class="json-data">' + JSON.stringify(neighborhoods, null, 2) + '</pre>' +
+                '5. Fun Fact: ' + (funFact.error ? 'FAIL' : 'OK') + '<br>' +
+                '<pre class="json-data">' + JSON.stringify(funFact, null, 2) + '</pre>' +
+                '6. Chat RAG: ' + (chat.error ? 'FAIL' : 'OK') + '<br>' +
+                '<pre class="json-data">' + JSON.stringify(chat, null, 2) + '</pre>' +
             '</div>' +
         '</div>';
     } catch (error) {

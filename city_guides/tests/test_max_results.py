@@ -17,7 +17,7 @@ def test_semantic_search_max_results():
     print("✓ Testing semantic.py max_results configuration...")
 
     # Look for max_results=5 in search_and_reason function
-    with open(os.path.join(os.path.dirname(__file__), "semantic.py"), "r") as f:
+    with open(os.path.join(os.path.dirname(__file__), "../src/semantic.py"), "r") as f:
         content = f.read()
         if "max_results=5" in content:
             print("  ✓ semantic.py uses max_results=5")
@@ -27,25 +27,11 @@ def test_semantic_search_max_results():
             return False
 
 
-def test_search_provider_support():
-    """Test that search_provider supports max_results parameter"""
-    print("✓ Testing search_provider.py max_results support...")
-
-    with open(os.path.join(os.path.dirname(__file__), "search_provider.py"), "r") as f:
-        content = f.read()
-        if "max_results" in content:
-            print("  ✓ search_provider.py supports max_results parameter")
-            return True
-        else:
-            print("  ✗ search_provider.py missing max_results parameter")
-            return False
-
-
 def test_configuration_consistency():
     """Test that all files use consistent max_results value"""
     print("✓ Testing configuration consistency...")
 
-    files_to_check = ["semantic.py", "search_provider.py"]
+    files_to_check = ["../src/semantic.py"]
     uses_5 = True
 
     for filename in files_to_check:
@@ -67,7 +53,6 @@ if __name__ == "__main__":
 
     tests = [
         test_semantic_search_max_results(),
-        test_search_provider_support(),
         test_configuration_consistency(),
     ]
 

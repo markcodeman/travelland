@@ -2,7 +2,7 @@ def test_multi_provider_bbox_search():
     """Test multi_provider.discover_pois with a London neighborhood bbox"""
     print("✓ Testing multi_provider.discover_pois with bbox...")
     try:
-        from providers import multi_provider
+        from city_guides.providers import multi_provider
         # Larger bbox: central London
         bbox = (-0.16, 51.48, -0.07, 51.54)  # Covers much of central London
         results = multi_provider.discover_pois(
@@ -19,7 +19,7 @@ def test_multi_provider_bbox_search():
         print(f"  ✗ Error: {e}")
         assert False, f"Exception occurred: {e}"
 """
-Integration tests to validate the structure and functionality of the Google Places integration.
+Integration tests to validate the structure and functionality of the TravelLand application.
 """
 
 import sys
@@ -33,11 +33,11 @@ def test_imports():
     """Test that all required modules can be imported"""
     print("✓ Testing module imports...")
     try:
-        import app
-        from providers import multi_provider
-        from providers import overpass_provider
+        import city_guides.src.app as app
+        from city_guides.providers import multi_provider
+        from city_guides.providers import overpass_provider
         import semantic
-        from providers import search_provider
+        from city_guides.providers import search_provider
 
         print("  ✓ All modules imported successfully")
         assert True
@@ -50,7 +50,7 @@ def test_multi_provider_functions():
     """Test that multi_provider has required functions"""
     print("✓ Testing multi_provider functions...")
     try:
-        from providers import multi_provider
+        from city_guides.providers import multi_provider
 
         required_functions = ["discover_restaurants", "_norm_name", "_haversine_meters"]
 

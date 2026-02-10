@@ -11,6 +11,7 @@ from quart import Blueprint, request, jsonify, current_app
 from aiohttp import ClientTimeout
 from city_guides.providers.geocoding import geocode_city
 from city_guides.providers.utils import get_session
+from city_guides.providers.overpass_provider import async_get_neighborhoods
 
 locations_bp = Blueprint('locations', __name__)
 
@@ -381,6 +382,32 @@ async def api_neighborhoods():
         return jsonify([])
 
 
+@locations_bp.route('/api/neighborhoods')
+async def api_neighborhoods_query():
+    """Get neighborhoods for a city or coordinates"""
+    city = request.args.get('city', '').strip()
+    lat = request.args.get('lat', '').strip()
+    lon = request.args.get('lon', '').strip()
+    lang = request.args.get('lang', 'en')
+    
+    if not city and not (lat and lon):
+        return jsonify({'error': 'city or lat/lon required'}), 400
+    
+    try:
+        async with get_session() as session:
+            if city:
+                neighborhoods = await async_get_neighborhoods(city=city, lang=lang, session=session)
+            else:
+                # For lat/lon, we need to get city first or handle differently
+                # For now, return empty as lat/lon neighborhoods not implemented
+                neighborhoods = []
+            
+            return jsonify({'neighborhoods': neighborhoods})
+    except Exception:
+        current_app.logger.exception('Failed to fetch neighborhoods')
+        return jsonify({'neighborhoods': []})
+
+
 @locations_bp.route('/api/geocode', methods=['POST'])
 async def geocode():
     """Geocode a city/neighborhood to get coordinates"""
@@ -392,15 +419,52 @@ async def geocode():
         return jsonify({'error': 'city required'}), 400
     
     try:
+        # Resolve alias mappings (e.g., "Osaka North" -> "Kita Ward")
+        try:
+            aliases_path = Path(__file__).parent.parent.parent / 'data' / 'neighborhood_aliases.json'
+            if aliases_path.exists():
+                aliases = json.loads(aliases_path.read_text(encoding='utf-8') or '{}')
+                city_key = city.split(',')[0].strip().lower()
+                alias_key = neighborhood.strip().lower()
+                city_aliases = aliases.get(city_key, {})
+                if alias_key and city_aliases.get(alias_key):
+                    neighborhood = city_aliases.get(alias_key)
+        except Exception:
+            # Don't fail geocoding on alias file read errors
+            current_app.logger.debug('Failed to load neighborhood aliases')
+
         # Try to geocode city + neighborhood first, then city alone
         query = f"{neighborhood}, {city}" if neighborhood else city
+
+        # Use candidate-aware geocoding to enforce importance thresholds (avoid tiny micro-localities)
+        from city_guides.providers.geocoding import geocode_city_candidates
+
+        IMPORTANCE_THRESHOLD = 0.17
+
+        candidates = await geocode_city_candidates(query, limit=5)
+        # Pick the first candidate meeting the importance threshold
+        best = None
+        for c in (candidates or []):
+            try:
+                if float(c.get('importance', 0) or 0) >= IMPORTANCE_THRESHOLD:
+                    best = c
+                    break
+            except Exception:
+                continue
+
+        if best:
+            return jsonify({
+                'lat': best.get('lat'),
+                'lon': best.get('lon'),
+                'display_name': best.get('display_name')
+            })
+
+        # Fallback: try the legacy single-provider geocode (may return something without importance)
         result = await geocode_city(query)
-        
         if not result:
             return jsonify({'error': 'geocode_failed'}), 400
-        
         return jsonify(result)
-        
+
     except Exception:
         current_app.logger.exception('Geocoding failed')
         return jsonify({'error': 'geocode_failed'}), 500
@@ -481,8 +545,13 @@ async def geonames_search():
                         current_app.logger.debug(f"Skipping Lyon suburb: {city_name}")
                         continue
                     
-                    # Skip very small places (less than 50,000 people) unless it's a hardcoded destination
-                    if population > 0 and population < 50000:
+                    # Skip very small places (less than 50,000 people) unless it's a hardcoded destination.
+                    # Treat missing/zero population as small and skip them as well.
+                    try:
+                        pop_val = int(population or 0)
+                    except Exception:
+                        pop_val = 0
+                    if pop_val < 50000:
                         current_app.logger.debug(f"Skipping small place: {city_name} (pop: {population})")
                         continue
                     

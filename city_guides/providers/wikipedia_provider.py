@@ -1,7 +1,39 @@
+
+from typing import Optional
+WIKIVOYAGE_API_URL = "https://{lang}.wikivoyage.org/api/rest_v1/page/summary/{title}"
+
+async def fetch_wikivoyage_summary(title: str, lang: str = "en", city: Optional[str] = None, country: Optional[str] = None, debug_logs: Optional[list] = None) -> Optional[str]:
+    """Fetch summary for a WikiVoyage page title. Handles disambiguation by trying city, country format."""
+    headers = {'User-Agent': 'TravelLand/1.0 (Educational; contact@example.com)'}
+    search_variations = []
+    if country:
+        search_variations.append(f"{title}, {country}")
+    search_variations.append(title)
+    if country:
+        search_variations.append(f"{title} ({country})")
+    for search_title in search_variations:
+        slug = re.sub(r"\s+", "_", search_title)
+        url = WIKIVOYAGE_API_URL.format(lang=lang, title=slug)
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(url, headers=headers) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        extract = data.get("extract")
+                        if extract and not looks_like_disambiguation(extract):
+                            if debug_logs:
+                                debug_logs.append(f"[WIKIVOYAGE] Found valid summary for '{search_title}'")
+                            return extract
+                        elif extract:
+                            if debug_logs:
+                                debug_logs.append(f"[WIKIVOYAGE] Skipping disambiguation for '{search_title}'")
+            except Exception as e:
+                if debug_logs:
+                    debug_logs.append(f"[WIKIVOYAGE] Error fetching '{search_title}': {e}")
+    return None
 import aiohttp
 import re
 from bs4 import BeautifulSoup
-from typing import Optional
 
 WIKI_API_URL = "https://{lang}.wikipedia.org/api/rest_v1/page/summary/{title}"
 
@@ -9,32 +41,29 @@ async def fetch_wikipedia_summary(title: str, lang: str = "en", city: Optional[s
     """Fetch summary for a Wikipedia page title.
     Handles disambiguation by trying city, country format."""
     headers = {'User-Agent': 'TravelLand/1.0 (Educational; contact@example.com)'}
-    
     # Try multiple variations to avoid disambiguation pages
     search_variations = []
-    
     # Primary: City, Country
     if country:
         search_variations.append(f"{title}, {country}")
-    
     # Secondary: Just city name
     search_variations.append(title)
-    
     # Tertiary: City (Country)
     if country:
         search_variations.append(f"{title} ({country})")
-    
     for search_title in search_variations:
         slug = re.sub(r"\s+", "_", search_title)
         url = WIKI_API_URL.format(lang=lang, title=slug)
-        
+        if debug_logs is not None:
+            debug_logs.append(f"[WIKI] Trying title: '{search_title}' (URL: {url})")
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(url, headers=headers) as resp:
                     if resp.status == 200:
                         data = await resp.json()
                         extract = data.get("extract")
-                        
+                        if debug_logs is not None:
+                            debug_logs.append(f"[WIKI] Response for '{search_title}': {repr(extract)[:120]}")
                         # Check if this is a disambiguation page
                         if extract and not looks_like_disambiguation(extract):
                             if debug_logs:
@@ -43,17 +72,18 @@ async def fetch_wikipedia_summary(title: str, lang: str = "en", city: Optional[s
                         elif extract:
                             if debug_logs:
                                 debug_logs.append(f"[WIKI] Skipping disambiguation for '{search_title}'")
-                            
                     # Continue to next variation
             except Exception as e:
                 if debug_logs:
                     debug_logs.append(f"[WIKI] Error fetching '{search_title}': {e}")
                 continue
-    
     # If all variations failed, try English as fallback
     if lang != "en":
+        if debug_logs is not None:
+            debug_logs.append(f"[WIKI] Retrying in English for '{title}'")
         return await fetch_wikipedia_summary(title, "en", city, country, debug_logs)
-    
+    if debug_logs is not None:
+        debug_logs.append(f"[WIKI] No valid summary found for '{title}'")
     return None
 
 

@@ -2,7 +2,7 @@
   "tokyo": {
     "remote_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Skyscrapers_of_Shinjuku_2009_January.jpg/2560px-Skyscrapers_of_Shinjuku_2009_January.jpg",
     "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=30057)",
-    "generated_at": "2026-02-03T02:13:29.999936"
+    "generated_at": "2026-02-10T16:11:25.619937"
   },
   "hong kong": {
     "remote_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Flag_of_Hong_Kong.svg/3840px-Flag_of_Hong_Kong.svg.png",
@@ -17,7 +17,7 @@
   "paris": {
     "remote_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg/3840px-La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg",
     "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=22989)",
-    "generated_at": "2026-02-03T02:21:19.049028"
+    "generated_at": "2026-02-10T16:12:08.171735"
   },
   "barcelona": {
     "remote_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Aerial_view_of_Barcelona%2C_Spain_%2851227309370%29_edited.jpg/3840px-Aerial_view_of_Barcelona%2C_Spain_%2851227309370%29_edited.jpg",
@@ -418,5 +418,15 @@
     "remote_url": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Zaragoza_-_Bas%C3%ADlica_del_Pilar_y_r%C3%ADo_Ebro.jpg",
     "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=64203)",
     "generated_at": "2026-02-07T22:40:53.752053"
+  },
+  "hachiōji": {
+    "remote_url": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Hachioji_montage.JPG",
+    "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=329686)",
+    "generated_at": "2026-02-10T16:19:13.214705"
+  },
+  "motril": {
+    "remote_url": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Santuario_de_Nuestra_Se%C3%B1ora_de_la_Cabeza%2C_en_Motril_%28Granada%29.jpg",
+    "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=2085032)",
+    "generated_at": "2026-02-10T17:31:29.629239"
   }
 }

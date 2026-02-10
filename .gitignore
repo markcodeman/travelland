@@ -124,7 +124,6 @@ venv_new/
 
 # Secrets
 .secrets.baseline
-.wiki_token.json
 
 # Generated data - always ignore to prevent merge conflicts
 city_guides/data/fun_fact_quality.json

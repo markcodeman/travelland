@@ -1,7 +1,7 @@
 
 import pytest
 
-import city_guides.overpass_provider as overpass_provider
+import city_guides.providers.overpass_provider as overpass_provider
 
 
 @pytest.mark.asyncio

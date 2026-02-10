@@ -1438,25 +1438,42 @@ def _search_impl(payload):
     try:
         # Try to geocode the city
         print(f"[SEARCH DEBUG] Geocoding city: {city}")
-        # geocode_city returns a coroutine, so we need to run it in an event loop
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            city_coords = loop.run_until_complete(geocode_city(city))
-            if city_coords:
-                print(f"[SEARCH DEBUG] City coordinates: {city_coords}")
+        # Allow caller to provide a selected candidate (disambiguation) to bypass geocoding
+        selected = payload.get('selected_candidate') or payload.get('city_coords')
+        if selected and isinstance(selected, dict) and selected.get('lat') and selected.get('lon'):
+            try:
+                city_coords = {'lat': float(selected.get('lat')), 'lon': float(selected.get('lon')), 'display_name': selected.get('display_name') or city}
+                print(f"[SEARCH DEBUG] Using selected candidate coords: {city_coords}")
                 bbox = [
-                    city_coords.get('lon', 0) - 0.05,  # min_lon
-                    city_coords.get('lat', 0) - 0.05,  # min_lat  
-                    city_coords.get('lon', 0) + 0.05,  # max_lon
-                    city_coords.get('lat', 0) + 0.05   # max_lat
+                    city_coords.get('lon', 0) - 0.05,
+                    city_coords.get('lat', 0) - 0.05,
+                    city_coords.get('lon', 0) + 0.05,
+                    city_coords.get('lat', 0) + 0.05
                 ]
                 result["debug_info"]["city_coords"] = city_coords
                 result["debug_info"]["bbox"] = bbox
-            else:
-                print("[SEARCH DEBUG] Failed to geocode city")
-        finally:
-            loop.close()
+            except Exception as e:
+                print(f"[SEARCH DEBUG] Failed to use selected candidate: {e}")
+        else:
+            # geocode_city returns a coroutine, so we need to run it in an event loop
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                city_coords = loop.run_until_complete(geocode_city(city))
+                if city_coords:
+                    print(f"[SEARCH DEBUG] City coordinates: {city_coords}")
+                    bbox = [
+                        city_coords.get('lon', 0) - 0.05,  # min_lon
+                        city_coords.get('lat', 0) - 0.05,  # min_lat  
+                        city_coords.get('lon', 0) + 0.05,  # max_lon
+                        city_coords.get('lat', 0) + 0.05   # max_lat
+                    ]
+                    result["debug_info"]["city_coords"] = city_coords
+                    result["debug_info"]["bbox"] = bbox
+                else:
+                    print("[SEARCH DEBUG] Failed to geocode city")
+            finally:
+                loop.close()
     except Exception as e:
         print(f"[SEARCH DEBUG] Geocoding error: {e}")
         result["debug_info"]["geocoding_error"] = str(e)
@@ -1819,23 +1836,87 @@ def _search_impl(payload):
     else:
         print("[SEARCH DEBUG] No category specified, skipping venue search - will return city guide only")
     
-    # Generate quick guide using Wikipedia for CITY-level searches only
+    # Generate quick guide using WikiVoyage as primary, Wikipedia as fallback for CITY-level searches only
     # Neighborhood searches should use the existing /generate_quick_guide endpoint
     if wikipedia_search and not neighborhood and city:
         try:
-            print(f"[SEARCH DEBUG] Generating city-wide Wikipedia quick guide for {city}")
-            
+            print(f"[SEARCH DEBUG] Generating city-wide WikiVoyage quick guide for {city}")
+            # If caller provided a selected_candidate, try to extract country from it
+            selected_candidate = payload.get('selected_candidate') or payload.get('city_coords')
+            candidate_country = None
+            try:
+                if selected_candidate and isinstance(selected_candidate, dict):
+                    addr = selected_candidate.get('address') or {}
+                    candidate_country = addr.get('country') or addr.get('country_code')
+                    # normalize two-letter code to uppercase ISO code or full name
+                    if candidate_country and isinstance(candidate_country, str) and len(candidate_country) == 2:
+                        candidate_country = candidate_country.upper()
+            except Exception:
+                candidate_country = None
+
             async def get_city_guide():
-                # Simple Wikipedia API call with proper User-Agent
-                url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{city.replace(' ', '_')}"
+                from city_guides.providers.wikipedia_provider import fetch_wikivoyage_summary
+                from city_guides.src.persistence import get_country_for_city
+                url_voy = f"https://en.wikivoyage.org/wiki/{city.replace(' ', '_')}"
+                # Try to detect country to prefer local WikiVoyage language (e.g., Spanish for Spain)
+                detected_country = None
+                try:
+                    # prefer candidate_country from selected candidate if present
+                    detected_country = candidate_country or get_country_for_city(city)
+                except Exception:
+                    detected_country = None
+                preferred_langs = ["en"]
+                if detected_country and isinstance(detected_country, str) and ("spa" in detected_country.lower() or detected_country.lower() in ("spain", "españa", "espana")):
+                    preferred_langs = ["es", "en"]
+
+                summary = None
+                for lang in preferred_langs:
+                    try:
+                        summary = await fetch_wikivoyage_summary(city, lang=lang, city=city)
+                        if summary:
+                            # update url to language specific wikivoyage
+                            url_voy = f"https://{lang}.wikivoyage.org/wiki/{city.replace(' ', '_')}"
+                            return {
+                                'guide': summary,
+                                'image': None,
+                                'source': 'wikivoyage',
+                                'source_url': url_voy
+                            }
+                    except Exception:
+                        continue
+                # Fallback to Wikipedia
+                url_wiki = f"https://en.wikipedia.org/wiki/{city.replace(' ', '_')}"
                 headers = {"User-Agent": "TravelLand/1.0 (travel-guide-app; https://github.com/example/travelland)"}
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=10), headers=headers) as resp:
+                    async with session.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{city.replace(' ', '_')}", timeout=aiohttp.ClientTimeout(total=10), headers=headers) as resp:
                         if resp.status == 200:
                             data = await resp.json()
                             extract = data.get('extract')
                             if extract:
-                                # Add city image if available
+                                # Strip generic boilerplate lead like "X is a town..." when possible
+                                def strip_boilerplate_lead(city_name: str, text: str) -> str:
+                                    import re
+                                    def split_sentences(t):
+                                        return [s.strip() for s in re.split(r'(?<=[.!?])\\s+', t) if s.strip()]
+                                    parts = split_sentences(text)
+                                    if not parts:
+                                        return text
+                                    first = parts[0]
+                                    city_pattern = re.escape(city_name.split(',')[0].strip())
+                                    # generic lead pattern
+                                    if re.match(rf"(?i)^\\s*{city_pattern}\\s+(is|was)\\s+(a|an|the)\\b", first):
+                                        if len(parts) > 1:
+                                            return ' '.join(parts[1:])
+                                        # if only boilerplate present, keep it
+                                        return first
+                                    # short sentence containing only location tokens -> consider boilerplate
+                                    words = first.split()
+                                    if len(words) < 14 and any(tok in first.lower() for tok in ("city", "town", "province", "region", "located", "autonomous")):
+                                        if len(parts) > 1:
+                                            return ' '.join(parts[1:])
+                                    return text
+
+                                cleaned = strip_boilerplate_lead(city, extract)
                                 city_image = None
                                 if city_image_search:
                                     try:
@@ -1848,13 +1929,55 @@ def _search_impl(payload):
                                             }
                                     except Exception as e:
                                         print(f"[SEARCH DEBUG] Failed to fetch city image: {e}")
-                                
                                 return {
-                                    'guide': extract,
-                                    'image': city_image
+                                    'guide': cleaned,
+                                    'image': city_image,
+                                    'source': 'wikipedia_city',
+                                    'source_url': url_wiki
                                 }
-                        return None
-            
+                return None
+                # If WikiVoyage/Wikipedia failed, try DDGS as a last-resort web snippet fallback
+                try:
+                    from city_guides.providers.ddgs_provider import ddgs_search
+                    from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text, filter_ddgs_results
+                    # Prefer more specific queries by including detected country when possible
+                    ddgs_query = f"{city} travel"
+                    try:
+                        if detected_country:
+                            ddgs_query = f"{city} {detected_country} travel"
+                        else:
+                            # Best-effort: try to fetch country if not already detected
+                            try:
+                                cc = get_country_for_city(city)
+                                if cc:
+                                    ddgs_query = f"{city} {cc} travel"
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+                    print(f"[SEARCH DEBUG] Trying DDGS fallback for city: {ddgs_query}")
+                    raw_ddgs = await asyncio.wait_for(ddgs_search(ddgs_query, engine='google', max_results=5, timeout=int(os.getenv('DDGS_TIMEOUT','5'))), timeout=10)
+                    if raw_ddgs:
+                        # Apply simple blocklist filtering
+                        blocked_domains = [d.strip().lower() for d in os.getenv('BLOCKED_DDGS_DOMAINS', 'tripsavvy.com,tripadvisor.com').split(',') if d.strip()]
+                        allowed, blocked = filter_ddgs_results(raw_ddgs, blocked_domains)
+                        for r in allowed:
+                            txt = (r.get('body') or r.get('text') or '')
+                            if not txt:
+                                continue
+                            if looks_like_ddgs_disambiguation_text(txt):
+                                continue
+                            # Prefer snippets that mention the city/neighborhood
+                            if city.lower().split(',')[0] in txt.lower() or len(txt.split()) > 20:
+                                return {
+                                    'guide': txt.strip(),
+                                    'image': None,
+                                    'source': 'ddgs',
+                                    'source_url': r.get('href') or r.get('url')
+                                }
+                except Exception as e:
+                    print(f"[SEARCH DEBUG] DDGS fallback failed: {e}")
+                return None
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
@@ -1863,18 +1986,18 @@ def _search_impl(payload):
                     result["quick_guide"] = city_guide_result['guide']
                     if city_guide_result.get('image'):
                         result["city_image"] = city_guide_result['image']
-                    result["source"] = "wikipedia_city"
-                    print("[SEARCH DEBUG] Generated city-wide quick guide using Wikipedia")
+                    result["source"] = city_guide_result['source']
+                    result["source_url"] = city_guide_result['source_url']
+                    print(f"[SEARCH DEBUG] Generated city-wide quick guide using {city_guide_result['source']}")
                 else:
-                    print("[SEARCH DEBUG] No Wikipedia results for city")
+                    print("[SEARCH DEBUG] No WikiVoyage or Wikipedia results for city")
             finally:
                 loop.close()
-                
         except Exception as e:
-            print(f"[SEARCH DEBUG] Wikipedia city guide generation error: {e}")
+            print(f"[SEARCH DEBUG] WikiVoyage/Wikipedia city guide generation error: {e}")
             result["debug_info"]["city_guide_error"] = str(e)
     elif neighborhood:
-        print(f"[SEARCH DEBUG] Neighborhood specified ({neighborhood}), skipping city-level Wikipedia guide (will use /generate_quick_guide endpoint)")
+        print(f"[SEARCH DEBUG] Neighborhood specified ({neighborhood}), skipping city-level quick guide (will use /generate_quick_guide endpoint)")
     else:
         print("[SEARCH DEBUG] Wikipedia not available or no city specified, skipping quick guide generation")
     

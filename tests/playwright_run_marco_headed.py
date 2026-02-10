@@ -11,7 +11,7 @@ from playwright.sync_api import sync_playwright, TimeoutError
 FRONTEND_URL = "http://localhost:5174"
 
 
-def run(headful=True, city_name="San Francisco", query="best coffee nearby"):
+def run(headful=True, city_name="Los Tablones", query="best coffee nearby"):
     out_file = Path("/tmp/marco_headed.png")
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=not headful)

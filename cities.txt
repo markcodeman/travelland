@@ -1,0 +1,5 @@
+JP:Tokyo
+US:Los Angeles
+DE:Berlin
+IT:Rome
+ES:Madrid

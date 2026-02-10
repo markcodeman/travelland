@@ -15,8 +15,9 @@ bp = Blueprint('search', __name__, url_prefix='/api')
 async def fetch_city_wikipedia(city: str, state: str | None = None, country: str | None = None) -> tuple[str, str] | None:
     """Return (summary, url) for the given city using Wikipedia."""
     from city_guides.src.app import app, aiohttp_session, WIKI_CITY_AVAILABLE, fetch_wikipedia_summary
-    
+    debug_logs = []
     if not (WIKI_CITY_AVAILABLE and city):
+        debug_logs.append("[WIKI] Not available or city missing")
         return None
 
     def _candidates():
@@ -36,11 +37,14 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
 
     async def _fetch_for_title(title: str, country: str | None = None):
         if not fetch_wikipedia_summary:
+            debug_logs.append(f"[WIKI] fetch_wikipedia_summary not available for {title}")
             return None
         slug = title.replace(' ', '_')
-        summary = await fetch_wikipedia_summary(title, lang="en", city=city, country=country)
+        summary = await fetch_wikipedia_summary(title, lang="en", city=city, country=country, debug_logs=debug_logs)
         if summary:
+            debug_logs.append(f"[WIKI] Returning summary for {title}")
             return summary.strip(), f"https://en.wikipedia.org/wiki/{slug}"
+        debug_logs.append(f"[WIKI] No summary for {title}")
         return None
 
     # Try direct titles first
@@ -49,9 +53,12 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
             # Pass country for better disambiguation handling
             result = await _fetch_for_title(title, country)
             if result:
+                debug_logs.append(f"[WIKI] Success for candidate {title}")
+                print("\n".join(debug_logs))
                 return result
         except Exception:
             app.logger.exception('Direct Wikipedia summary fetch failed for %s via %s', city, title)
+            debug_logs.append(f"[WIKI] Exception for {title}")
 
     # Fallback: use Wikipedia open search with candidates
     try:
@@ -73,12 +80,17 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
                         try:
                             result = await _fetch_for_title(best_title, country)
                             if result:
+                                debug_logs.append(f"[WIKI] OpenSearch success for {best_title}")
+                                print("\n".join(debug_logs))
                                 return result
                         except Exception:
                             app.logger.exception('OpenSearch Wikipedia summary failed for %s via %s', city, best_title)
+                            debug_logs.append(f"[WIKI] Exception in OpenSearch for {best_title}")
     except Exception:
         app.logger.exception('Wikipedia open search failed for %s', city)
+        debug_logs.append(f"[WIKI] OpenSearch outer exception for {city}")
 
+    print("\n".join(debug_logs))
     return None
 
 
@@ -136,21 +148,93 @@ async def search():
             except Exception as e:
                 app.logger.debug(f'Failed to get fun facts for {city}: {e}')
 
-        # If no quick_guide/summary provided by upstream providers, supplement with Wikipedia summary
+        # If no quick_guide/summary provided by upstream providers, try WikiVoyage and Wikipedia, then merge if both exist
         if WIKI_CITY_AVAILABLE and isinstance(result, dict):
             has_quick = bool((result.get('quick_guide') or '').strip())
             has_summary = bool((result.get('summary') or '').strip())
-            if not has_quick and not has_summary:
+            try:
+                from city_guides.providers.wikipedia_provider import fetch_wikivoyage_summary
+                from city_guides.src.persistence import get_country_for_city
+                # Attempt to disambiguate city by detecting country first (best-effort)
+                detected_country = None
                 try:
-                    wiki_data = await fetch_city_wikipedia(city, state_name or None, country_name or None)
-                    if wiki_data:
-                        summary, url = wiki_data
-                        result['quick_guide'] = summary
-                        result['source'] = 'wikipedia'
-                        result['cached'] = False
-                        result['source_url'] = url
+                    detected_country = get_country_for_city(city)
                 except Exception:
-                    app.logger.exception('Wikipedia city fallback failed for %s', city)
+                    detected_country = None
+                if not country_name and detected_country:
+                    country_name = detected_country
+
+                # Prefer local WikiVoyage language for countries with strong local content (e.g., Spain -> 'es')
+                preferred_langs = ["en"]
+                if country_name and isinstance(country_name, str) and "spa" in country_name.lower() or (country_name and country_name.lower() in ("spain", "españa", "espana")):
+                    preferred_langs = ["es", "en"]
+
+                wikivoyage_summary = None
+                for lang in preferred_langs:
+                    try:
+                        wikivoyage_summary = await fetch_wikivoyage_summary(city, lang=lang, city=city, country=country_name or None)
+                        if wikivoyage_summary:
+                            break
+                    except Exception:
+                        continue
+                wiki_data = await fetch_city_wikipedia(city, state_name or None, country_name or None)
+                wikipedia_summary, wikipedia_url = (wiki_data if wiki_data else (None, None))
+                merged = None
+                sources = []
+                source_urls = []
+                if wikivoyage_summary:
+                    sources.append('wikivoyage')
+                    source_urls.append(f"https://en.wikivoyage.org/wiki/{city.replace(' ', '_')}")
+                if wikipedia_summary:
+                    sources.append('wikipedia')
+                    source_urls.append(wikipedia_url)
+
+                # If both sources available, merge deduped sentences and prefer richer combined text
+                if wikivoyage_summary and wikipedia_summary:
+                    def split_sentences(text):
+                        import re
+                        return [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if s.strip()]
+                    seen = set()
+                    merged_sentences = []
+                    for s in split_sentences(wikivoyage_summary) + split_sentences(wikipedia_summary):
+                        key = s.lower()
+                        if key not in seen:
+                            seen.add(key)
+                            merged_sentences.append(s)
+                    merged = ' '.join(merged_sentences)
+
+                # If only WikiVoyage exists and no upstream quick_guide/summary, use it
+                elif wikivoyage_summary and not has_quick and not has_summary:
+                    merged = wikivoyage_summary
+
+                # If only Wikipedia exists and no upstream quick_guide/summary, use it
+                elif wikipedia_summary and not has_quick and not has_summary:
+                    merged = wikipedia_summary
+
+                # If upstream quick_guide exists but is too short/generic, and Wikipedia offers richer content, merge
+                elif wikivoyage_summary and wikipedia_summary and has_quick:
+                    existing_qg = (result.get('quick_guide') or '').strip()
+                    if len(existing_qg) < 160 or existing_qg.lower().startswith(city.lower()):
+                        # Prefer the merged richer version
+                        def split_sentences(text):
+                            import re
+                            return [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if s.strip()]
+                        seen = set()
+                        merged_sentences = []
+                        for s in split_sentences(wikivoyage_summary) + split_sentences(wikipedia_summary):
+                            key = s.lower()
+                            if key not in seen:
+                                seen.add(key)
+                                merged_sentences.append(s)
+                        merged = ' '.join(merged_sentences)
+
+                if merged:
+                    result['quick_guide'] = merged
+                    result['source'] = '+'.join(sources) if sources else result.get('source')
+                    result['cached'] = False
+                    result['source_url'] = source_urls[0] if source_urls else result.get('source_url')
+            except Exception:
+                app.logger.exception('WikiVoyage/Wikipedia city fallback failed for %s', city)
 
         if should_cache and redis_client:
             cache_key = build_search_cache_key(city, q, neighborhood)
@@ -170,3 +254,21 @@ async def search():
 def register(app):
     """Register search blueprint with app"""
     app.register_blueprint(bp)
+
+
+@bp.route('/geocode_candidates', methods=['POST'])
+async def geocode_candidates():
+    """Return geocoding candidates for a user query to assist disambiguation."""
+    payload = await request.get_json(silent=True) or {}
+    query = (payload.get('query') or payload.get('city') or '').strip()
+    country = (payload.get('country') or payload.get('countryName') or '').strip()
+    if not query:
+        return jsonify({'error': 'query required'}), 400
+    try:
+        from city_guides.providers.geocoding import geocode_city_candidates
+        candidates = await geocode_city_candidates(query, country=country, limit=5)
+        return jsonify({'candidates': candidates})
+    except Exception as e:
+        from city_guides.src.app import app
+        app.logger.exception('Geocode candidates failed')
+        return jsonify({'error': 'geocode_failed', 'details': str(e)}), 500

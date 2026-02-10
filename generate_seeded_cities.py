@@ -28,10 +28,12 @@ from urllib.parse import urlencode
 
 try:
     import aiohttp
+    from aiohttp import ClientTimeout
     import asyncio
 except Exception:
     aiohttp = None
     asyncio = None
+    ClientTimeout = None
 
 ROOT = Path(__file__).resolve().parents[1]
 SEED_PATH = ROOT / "city_guides" / "data" / "seeded_cities.json"
@@ -91,7 +93,8 @@ async def geonames_fetch_top(session, username, country=None, admin_code=None, m
 
     q = urlencode(params)
     full = f"{url}?{q}"
-    async with session.get(full, timeout=10) as resp:
+    timeout = ClientTimeout(total=10) if ClientTimeout else None
+    async with session.get(full, timeout=timeout) as resp:
         if resp.status != 200:
             return []
         data = await resp.json()
@@ -110,7 +113,8 @@ async def geonames_lookup(session, username, name, country=None, max_rows=5):
         params['country'] = country
     q = urlencode(params)
     full = f"{url}?{q}"
-    async with session.get(full, timeout=10) as resp:
+    timeout = ClientTimeout(total=10) if ClientTimeout else None
+    async with session.get(full, timeout=timeout) as resp:
         if resp.status != 200:
             return None
         data = await resp.json()
@@ -121,6 +125,8 @@ async def geonames_lookup(session, username, name, country=None, max_rows=5):
 
 
 async def gather_with_geonames(names, count, username):
+    if aiohttp is None:
+        raise RuntimeError("aiohttp is required for GeoNames lookups")
     results = {}
     async with aiohttp.ClientSession() as session:
         for name in names:
@@ -142,7 +148,8 @@ async def gather_with_geonames(names, count, username):
             countries = []
             # Query the countryInfo service to get all country codes
             try:
-                async with session.get(f'http://api.geonames.org/countryInfoJSON?username={username}', timeout=10) as resp:
+                timeout = ClientTimeout(total=10) if ClientTimeout else None
+                async with session.get(f'http://api.geonames.org/countryInfoJSON?username={username}', timeout=timeout) as resp:
                     if resp.status == 200:
                         data = await resp.json()
                         countries = [c.get('countryCode') for c in data.get('geonames', []) if c.get('countryCode')]
@@ -204,11 +211,12 @@ def gather_local_candidates():
     try:
         from importlib import util
         spec = util.spec_from_file_location('test_100_cities', str(ROOT / 'test_100_cities.py'))
-        mod = util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        if hasattr(mod, 'CITIES'):
-            for c in mod.CITIES:
-                names.add(c)
+        if spec is not None and spec.loader is not None:
+            mod = util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            if hasattr(mod, 'CITIES'):
+                for c in mod.CITIES:
+                    names.add(c)
     except Exception:
         pass
     return list(names)

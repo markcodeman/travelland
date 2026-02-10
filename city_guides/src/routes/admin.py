@@ -44,61 +44,113 @@ async def metrics_json():
 
 @bp.route('/smoke')
 async def smoke_test():
-    """Quick smoke test of core API functionality"""
+    """Comprehensive smoke test with random cities, provenance, and timestamps"""
     from city_guides.src.app import aiohttp_session
     from aiohttp import ClientTimeout
 
-    details = {}
+    results = []
     overall_ok = True
 
-    try:
-        # Test 1: Reverse geocoding
-        if aiohttp_session:
-            try:
-                # Test reverse lookup for Paris coordinates
-                url = 'https://nominatim.openstreetmap.org/reverse'
-                params = {
-                    'lat': 48.8566,
-                    'lon': 2.3522,
-                    'format': 'json'
-                }
-                headers = {'User-Agent': 'TravelLand/1.0'}
-                try:
-                    async with aiohttp_session.get(url, params=params, headers=headers, timeout=ClientTimeout(total=5)) as response:
-                        if response.status == 200:
-                            data = await response.json()
-                            details['reverse'] = {
-                                'display_name': data.get('display_name', 'Unknown'),
-                                'status': 'ok'
-                            }
-                        else:
-                            details['reverse'] = {'status': 'error', 'message': f'HTTP {response.status}'}
-                            overall_ok = False
-                except Exception as e:
-                    details['reverse'] = {'status': 'error', 'message': str(e)}
-                    overall_ok = False
-            except Exception as e:
-                details['reverse'] = {'status': 'error', 'message': str(e)}
-                overall_ok = False
-        else:
-            details['reverse'] = {'status': 'error', 'message': 'Session not initialized'}
-            overall_ok = False
+    # Test cities from different regions with known coordinates
+    test_cities = [
+        # Europe
+        {'name': 'Paris', 'lat': 48.8566, 'lon': 2.3522, 'country': 'FR', 'region': 'Europe'},
+        {'name': 'London', 'lat': 51.5074, 'lon': -0.1278, 'country': 'GB', 'region': 'Europe'},
+        {'name': 'Tokyo', 'lat': 35.6762, 'lon': 139.6503, 'country': 'JP', 'region': 'Asia'},
+        {'name': 'New York', 'lat': 40.7128, 'lon': -74.0060, 'country': 'US', 'region': 'North America'},
+        {'name': 'Sydney', 'lat': -33.8688, 'lon': 151.2093, 'country': 'AU', 'region': 'Oceania'},
+        {'name': 'Rio de Janeiro', 'lat': -22.9068, 'lon': -43.1729, 'country': 'BR', 'region': 'South America'},
+        {'name': 'Cairo', 'lat': 30.0444, 'lon': 31.2357, 'country': 'EG', 'region': 'Africa'},
+        {'name': 'Mumbai', 'lat': 19.0760, 'lon': 72.8777, 'country': 'IN', 'region': 'Asia'},
+    ]
 
-        # Test 2: Neighborhoods test
-        try:
-            # Try to get neighborhoods for Paris
-            from city_guides.src.dynamic_neighborhoods import get_neighborhoods_for_city
-            neighborhoods = await get_neighborhoods_for_city('Paris', 48.8566, 2.3522)
-            neighborhoods_count = len(neighborhoods) if neighborhoods else 0
-            details['neighborhoods_count'] = neighborhoods_count
-        except Exception as e:
-            details['neighborhoods_error'] = str(e)
-            overall_ok = False
+    try:
+        from city_guides.src.dynamic_neighborhoods import get_neighborhoods_for_city
+
+        # Test each city
+        for city in test_cities:
+            city_start = time.time()
+            city_result = {
+                'city': city['name'],
+                'region': city['region'],
+                'country': city['country'],
+                'coordinates': {'lat': city['lat'], 'lon': city['lon']},
+                'timestamp': city_start,
+                'tests': {}
+            }
+
+            # Test 1: Reverse geocoding (OpenStreetMap/Nominatim)
+            try:
+                url = 'https://nominatim.openstreetmap.org/reverse'
+                params = {'lat': city['lat'], 'lon': city['lon'], 'format': 'json'}
+                headers = {'User-Agent': 'TravelLand/1.0'}
+                
+                rev_start = time.time()
+                async with aiohttp_session.get(url, params=params, headers=headers, timeout=ClientTimeout(total=5)) as response:
+                    rev_time = time.time() - rev_start
+                    if response.status == 200:
+                        data = await response.json()
+                        city_result['tests']['reverse_geocoding'] = {
+                            'provider': 'OpenStreetMap/Nominatim',
+                            'status': 'ok',
+                            'time_ms': round(rev_time * 1000, 2),
+                            'display_name': data.get('display_name', 'Unknown')[:100] + '...' if len(data.get('display_name', '')) > 100 else data.get('display_name', 'Unknown')
+                        }
+                    else:
+                        city_result['tests']['reverse_geocoding'] = {
+                            'provider': 'OpenStreetMap/Nominatim',
+                            'status': 'error',
+                            'time_ms': round(rev_time * 1000, 2),
+                            'error': f'HTTP {response.status}'
+                        }
+                        overall_ok = False
+            except Exception as e:
+                city_result['tests']['reverse_geocoding'] = {
+                    'provider': 'OpenStreetMap/Nominatim',
+                    'status': 'error',
+                    'error': str(e)
+                }
+                overall_ok = False
+
+            # Test 2: Neighborhoods with provenance
+            try:
+                neighborhoods_start = time.time()
+                neighborhoods = await get_neighborhoods_for_city(city['name'], city['lat'], city['lon'])
+                neighborhoods_time = time.time() - neighborhoods_start
+                
+                # Determine which provider returned data
+                provider = 'unknown'
+                if neighborhoods:
+                    first = neighborhoods[0] if neighborhoods else None
+                    if first and hasattr(first, 'source'):
+                        provider = getattr(first, 'source', 'unknown')
+                    elif isinstance(first, dict):
+                        provider = first.get('source', first.get('provider', 'unknown'))
+                
+                city_result['tests']['neighborhoods'] = {
+                    'provider': provider,
+                    'status': 'ok' if neighborhoods else 'warning',
+                    'time_ms': round(neighborhoods_time * 1000, 2),
+                    'count': len(neighborhoods) if neighborhoods else 0,
+                    'first_neighborhood': neighborhoods[0].get('name') if neighborhoods and isinstance(neighborhoods[0], dict) else (neighborhoods[0].name if neighborhoods and hasattr(neighborhoods[0], 'name') else 'N/A')
+                }
+            except Exception as e:
+                city_result['tests']['neighborhoods'] = {
+                    'provider': 'get_neighborhoods_for_city',
+                    'status': 'error',
+                    'error': str(e)
+                }
+                overall_ok = False
+
+            city_result['total_time_ms'] = round((time.time() - city_start) * 1000, 2)
+            results.append(city_result)
 
         return jsonify({
             'ok': overall_ok,
-            'details': details,
-            'timestamp': time.time()
+            'test_run_timestamp': time.time(),
+            'regions_tested': list(set(r['region'] for r in results)),
+            'cities_tested': len(results),
+            'results': results
         })
 
     except Exception as e:
@@ -107,7 +159,7 @@ async def smoke_test():
         return jsonify({
             'ok': False,
             'error': str(e),
-            'details': details
+            'test_run_timestamp': time.time()
         }), 500
 
 
@@ -616,17 +668,50 @@ async def admin():
                 
                 let html = '<div style="margin-bottom: 15px;"><strong>Overall Status:</strong> <span class="status ' + status + '">' + statusText + '</span></div>';
                 
-                if (data.details) {
-                    html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">';
+                // Test run info
+                if (data.test_run_timestamp) {
+                    html += '<div style="margin-bottom: 10px;"><strong>Test Run:</strong> ' + new Date(data.test_run_timestamp * 1000).toLocaleString() + '</div>';
+                }
+                
+                // Regions and cities summary
+                if (data.regions_tested && data.cities_tested) {
+                    html += '<div style="margin-bottom: 15px;"><strong>Coverage:</strong> ' + data.cities_tested + ' cities across ' + data.regions_tested.length + ' regions: ' + data.regions_tested.join(', ') + '</div>';
+                }
+                
+                // Detailed results per city
+                if (data.results) {
+                    html += '<div style="display: grid; gap: 10px;">';
                     
-                    if (data.details.reverse) {
-                        const rev = data.details.reverse;
-                        html += '<div><strong>Reverse Lookup:</strong> ' + (rev.display_name ? '✓ ' + rev.display_name : '✗ Failed') + '</div>';
-                    }
-                    
-                    if (data.details.neighborhoods_count !== undefined) {
-                        html += '<div><strong>Neighborhoods:</strong> ' + data.details.neighborhoods_count + ' found</div>';
-                    }
+                    data.results.forEach(city => {
+                        const cityStatus = city.tests && Object.values(city.tests).every(t => t.status === 'ok');
+                        const cityClass = cityStatus ? 'ok' : 'error';
+                        
+                        html += '<div style="background: #f8f9fa; padding: 10px; border-radius: 4px; border-left: 4px solid ' + (cityStatus ? '#28a745' : '#dc3545') + ';">';
+                        html += '<strong>' + city.city + '</strong> (' + city.region + ') - ' + city.total_time_ms + 'ms<br>';
+                        
+                        // Reverse geocoding result
+                        if (city.tests && city.tests.reverse_geocoding) {
+                            const rev = city.tests.reverse_geocoding;
+                            html += '<span style="color: ' + (rev.status === 'ok' ? 'green' : 'red') + ';">';
+                            html += '📍 Reverse: ' + rev.status + ' (' + rev.time_ms + 'ms)';
+                            if (rev.provider) html += ' - ' + rev.provider;
+                            if (rev.display_name) html += '<br><small>' + rev.display_name + '</small>';
+                            html += '</span><br>';
+                        }
+                        
+                        // Neighborhoods result
+                        if (city.tests && city.tests.neighborhoods) {
+                            const nh = city.tests.neighborhoods;
+                            html += '<span style="color: ' + (nh.status === 'ok' ? 'green' : (nh.status === 'warning' ? 'orange' : 'red')) + ';">';
+                            html += '🏘️ Neighborhoods: ' + nh.status + ' (' + nh.time_ms + 'ms)';
+                            if (nh.provider) html += ' - ' + nh.provider;
+                            if (nh.count !== undefined) html += ' - ' + nh.count + ' found';
+                            if (nh.first_neighborhood) html += '<br><small>First: ' + nh.first_neighborhood + '</small>';
+                            html += '</span>';
+                        }
+                        
+                        html += '</div>';
+                    });
                     
                     html += '</div>';
                 }

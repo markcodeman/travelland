@@ -21,7 +21,7 @@ TravelLand is a full-stack travel exploration app with:
 ### Starting Services
 ```bash
 # Start all services (backend, frontend, port monitor)
-cd tools && bash restart_and_tail.sh
+./dev.sh
 ```
 
 
@@ -106,7 +106,7 @@ cd tools && bash restart_and_tail.sh
 - `city_guides/src/app.py`: Main backend app, API routes, provider orchestration
 - `frontend/src/App.jsx`: Main React component, state management, API calls
 - `city_guides/providers/`: Individual data provider implementations
-- `tools/restart_and_tail.sh`: Service startup script
+- `./dev.sh`: Service startup script
 - `frontend/vite.config.js`: Dev server proxy configuration
 
 ## Travel App Vision

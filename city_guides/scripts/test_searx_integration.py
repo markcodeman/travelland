@@ -1,10 +1,10 @@
-from providers import multi_provider
+from city_guides.providers import multi_provider
 
 city = "Chesapeake VA"
 cuisine = "burger"
 
 print(f"--- Running orchestrated search for {city} ({cuisine}) ---")
-print("Providers active: OSM, OpenTripMap, SearX")
+print("Providers active: OSM, OpenTripMap")
 
 results = multi_provider.discover_restaurants(
     city, cuisine=cuisine, local_only=True, limit=20

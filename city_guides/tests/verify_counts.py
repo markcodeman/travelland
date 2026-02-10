@@ -4,7 +4,7 @@ import os
 # Add the city-guides directory to the path
 sys.path.append(os.path.join(os.getcwd(), "city_guides"))
 
-from providers import multi_provider
+from city_guides.providers import multi_provider
 
 
 def test_count():

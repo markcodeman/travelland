@@ -825,6 +825,12 @@ async def async_get_neighborhoods(city: Optional[str] = None, lat: Optional[floa
         session = await aiohttp.ClientSession().__aenter__()
         own = True
     try:
+        # Check for seeded neighborhoods first
+        if city:
+            seeded = load_seeded_neighborhoods(city)
+            if seeded:
+                return seeded
+
         area_id = None
         # Only use Nominatim if we don't have coordinates
         if city and not (lat and lon):

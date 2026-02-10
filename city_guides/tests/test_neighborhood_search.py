@@ -17,7 +17,7 @@ if os.path.exists(env_file):
 # Add to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'city_guides'))
 
-from city_guides.overpass_provider import discover_pois, async_get_neighborhoods
+from city_guides.providers.overpass_provider import discover_pois, async_get_neighborhoods
 
 async def main():
     print("=" * 60)

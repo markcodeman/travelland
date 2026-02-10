@@ -11,6 +11,7 @@ import json
 import re
 from typing import List, Dict, Any
 from urllib.parse import urlparse
+from quart import request
 
 # Import existing providers
 try:
@@ -66,56 +67,137 @@ def dedupe_categories(categories: List[str]) -> List[Dict[str, str]]:
 
 
 def get_category_icon(category: str) -> str:
-    """Map normalized category to emoji icon."""
-    icons = {
-        # Distinctive category icons
-        'fashion': '👗', 'design': '✨',
-        'film': '🎬', 'entertainment': '🎭',
-        'industrial': '🏭', 'factory': '🏭', 'plant': '🏭',
-        'agriculture': '🌾', 'farming': '🚜', 'farm': '🌾',
-        'springs': '💧', 'hot': '🔥', 'natural': '🌿',
-        'caves': '🏔️', 'cave': '🏔️', 'limestone': '🗿',
-        'regional': '🗺️', 'information': '📊',
-        'business': '💼', 'finance': '💰',
-        'geographical': '🌍', 'features': '🏞️',
-        'nightlife': '🌃', 'entertainment': '🎭',
-        'castle': '🏰', 'castles': '🏰', 'fortifications': '⚔️', 'knight': '⚔️',
-        'castles_&_fortifications': '⚔️',
+    """Map normalized category to emoji icon - order matters, most specific first."""
+    # Most specific first to avoid overlaps - LONGER strings BEFORE shorter substrings
+    icons = [
+        # ★ DISTINCTIVE Categories - must match BEFORE generic patterns ★
+        ('vatican', '🇻🇦'),        # Vatican - unique flag (before religious)
+        ('fountain', '⛲'),         # Fountains - Rome special (before fountain matches)
+        ('fountains', '⛲'),
+        ('industrial heritage', '🏭'),  # BEFORE 'industrial' alone
+        ('music heritage', '🎵'),       # BEFORE 'music' alone
+        ('musical heritage', '🎵'),
+        ('literary heritage', '📚'),    # BEFORE 'literary' alone
+        ('religious heritage', '⛪'),    # BEFORE 'religious' alone
+        ('castle', '🏰'),          # Castles & Fortifications (before generic)
+        ('fortress', '🏰'),
+        ('fortification', '🏰'),
+        ('citadel', '🏰'),
+        ('walled', '🏰'),
         
-        # Food & Drink
-        'food': '🍴', 'cuisine': '🍜', 'specialties': '🍰',
-        'restaurant': '🍴', 'dining': '🍴',
-        'wine': '🍷', 'vineyards': '🍇',
-        'coffee': '☕', 'cafe': '☕',
+        # Ancient & Archaeology - must come AFTER distinctive patterns
+        ('ancient', '🏛️'),
+        ('roman', '🏛️'),
+        ('archaeological', '🏛️'),
+        ('colosseum', '🏛️'),
+        ('pantheon', '🏛️'),
+        ('forum', '🏛️'),
+        ('ruins', '🏛️'),
         
-        # Culture & Arts
-        'museums': '🏛️', 'culture': '🎭',
-        'historic': '🏛️', 'museum': '🏛️', 'art': '🎨',
-        'bar': '🍷', 'club': '🎭', 'music': '🎵',
+        # Religious
+        ('religious', '⛪'),
+        ('cathedral', '⛪'),
+        ('church', '⛪'),
+        ('basilica', '⛪'),
+        ('temple', '🛕'),
+        ('mosque', '🕌'),
+        ('pilgrimage', '🙏'),
         
-        # Nature & Outdoors
-        'beach': '🏖️', 'coast': '🌊', 'sea': '🌊', 'ocean': '🌊',
-        'parks': '🌳', 'gardens': '🌺', 'nature': '🌿',
-        'mountain': '⛰️', 'mountains': '🏔️', 'hiking': '🥾',
+        # Art & Culture
+        ('art', '🎨'),
+        ('museum', '🏛️'),
+        ('gallery', '🖼️'),
+        ('exhibition', '🎨'),
         
-        # Urban & Transport
-        'skyscrapers': '🏙️',
-        'transport': '🚇', 'metro': '🚉',
+        # Historic Sites
+        ('historic', '📜'),
+        ('heritage', '🏛️'),
+        ('monument', '🗿'),
+        ('landmark', '🗿'),
         
-        # Activities
-        'sport': '⚽', 'stadium': '🏟️',
-        'education': '🎓', 'university': '🎓', 'school': '🏫',
-        'festivals': '🎉', 'events': '🎊',
+        # Industrial (alone)
+        ('industrial', '🏭'),
+        ('industry', '🏭'),
+        
+        # Music (alone)
+        ('music', '🎵'),
+        ('musical', '🎵'),
+        
+        # Literary (alone)
+        ('literary', '📚'),
+        ('literature', '📚'),
+        
+        # Beaches & Coast
+        ('beach', '🏖️'),
+        ('coast', '🌊'),
+        ('seaside', '🏖️'),
+        
+        # Nature & Parks
+        ('park', '🌳'),
+        ('garden', '🌺'),
+        ('nature', '🌿'),
+        ('mountain', '⛰️'),
+        ('hiking', '🥾'),
+        
+        # Food & Dining
+        ('restaurant', '🍝'),
+        ('dining', '🍝'),
+        ('food', '🍴'),
+        ('cuisine', '🍜'),
+        ('wine', '🍷'),
+        ('vineyard', '🍇'),
+        ('coffee', '☕'),
+        ('cafe', '☕'),
+        ('bar', '🍸'),
+        
+        # Nightlife & Entertainment
+        ('nightlife', '🌙'),
+        ('club', '🎭'),
+        ('music venue', '🎵'),
+        ('theatre', '🎭'),
+        ('theater', '🎭'),
         
         # Shopping
-        'shopping': '🛍️', 'market': '🏪', 'store': '🏪',
-    }
+        ('shopping', '🛍️'),
+        ('market', '🛒'),
+        ('boutique', '🏪'),
+        
+        # Sports & Recreation
+        ('sport', '⚽'),
+        ('stadium', '🏟️'),
+        ('recreation', '🎯'),
+        
+        # Education
+        ('university', '🎓'),
+        ('education', '🎓'),
+        ('school', '🏫'),
+        
+        # Architecture
+        ('architecture', '🏗️'),
+        ('skyscraper', '🏙️'),
+        ('building', '🏛️'),
+        
+        # Transportation
+        ('transport', '🚇'),
+        ('metro', '🚉'),
+        ('airport', '✈️'),
+        
+        # Local specialties
+        ('local specialty', '🏆'),
+        ('traditional', '🎯'),
+        
+        # Festivals & Events
+        ('festival', '🎉'),
+        ('event', '🎪'),
+    ]
     
     category_lower = category.lower()
-
-    for key, icon in icons.items():
-        if key in category:
+    
+    for key, icon in icons:
+        if key in category_lower:
             return icon
+    
+    # Ultimate fallback
     return '📍'
 
 
@@ -208,11 +290,12 @@ def extract_from_fun_facts(city: str) -> List[Dict[str, Any]]:
     try:
         city_lower = city.lower().strip()
         
-        # Import the actual fun_facts from app.py
+        # Prefer seeded facts via the seeded_facts loader for reliable seed data
         try:
-            from city_guides.src.app import fun_facts
-            fun_facts_data = fun_facts
-        except ImportError:
+            from city_guides.src.data.seeded_facts import get_city_fun_facts
+            # get_city_fun_facts returns a list of facts/keywords for the city
+            city_keywords = get_city_fun_facts(city) or []
+        except Exception:
             # Fallback to hardcoded data if import fails
             fun_facts_data = {
                 'paris': [
@@ -416,10 +499,11 @@ def extract_from_fun_facts(city: str) -> List[Dict[str, Any]]:
                 ],
             }  # <--- Added closing bracket
         
-        # Check if city exists in fun facts
-        city_keywords = []
-        if city_lower in fun_facts_data:
+        # Check if city exists in fun facts (fallback map)
+        if 'fun_facts_data' in locals() and city_lower in fun_facts_data:
             city_keywords = fun_facts_data[city_lower]
+        elif 'city_keywords' not in locals():
+            city_keywords = []
         
         # Map keywords to distinctive categories
         keyword_to_category = {
@@ -449,6 +533,8 @@ def extract_from_fun_facts(city: str) -> List[Dict[str, Any]]:
             'ancient': ('Ancient History', 0.9),
             'Vatican': ('Religious Sites', 0.95),
             'mosques': ('Religious Sites', 0.9),
+            'Trevi': ('Iconic Fountains', 0.95),
+            'fountains': ('Iconic Fountains', 0.9),
             
             # Food & Dining special
             'Michelin': ('Michelin Dining', 0.95),
@@ -1225,9 +1311,48 @@ async def extract_from_ddgs_trends(city: str, state: str = "") -> List[Dict[str,
     return categories
 
 
+# Semantic category groups - keep highest scoring category from each group
+CATEGORY_GROUPS = {
+    # Food categories - keep one
+    'food': ['Food & Dining', 'Local Food Specialties', 'Michelin Dining', 'Food & Drink', 
+             'Street Food', 'Cajun & Creole Cuisine', 'Brazilian Cuisine', 'Mexican Street Food',
+             'Sushi & Japanese Cuisine', 'Food & Bakeries', 'Seafood', 'Bouillabaisse & Seafood'],
+    
+    # Art categories - keep one
+    'art': ['Art & Culture', 'Museums & Culture', 'Art Museums', 'Cultural Heritage', 
+            'Arts & Culture', 'Cultural Districts'],
+    
+    # Nature categories - keep one
+    'nature': ['Parks & Nature', 'Parks & Gardens', 'Nature', 'Green Spaces'],
+    
+    # Historic categories - keep one
+    'history': ['Historic Sites', 'Historic Districts', 'Historical Sites', 'Historic Landmarks'],
+    
+    # Religious categories - keep one
+    'religious': ['Religious Sites', 'Religious Heritage', 'Religious Icons', 'Pilgrimage Sites'],
+    
+    # Music categories - keep one
+    'music': ['Music Heritage', 'Jazz & Blues', 'Music & Culture', 'Music & Dance'],
+    
+    # Water categories - keep one
+    'water': ['Beaches & Coast', 'Coast', 'Seaside'],
+}
+
+
+def _get_category_group(cat_name: str) -> str:
+    """Get the semantic group for a category name."""
+    cat_lower = cat_name.lower()
+    for group_key, group_cats in CATEGORY_GROUPS.items():
+        for gc in group_cats:
+            if gc.lower() in cat_lower or cat_lower in gc.lower():
+                return group_key
+    return cat_lower  # Return itself as unique key
+
+
 def combine_and_score_categories(all_categories: List[Dict[str, Any]]) -> List[Dict[str, str]]:
-    """Combine categories from all sources with intelligent scoring."""
+    """Combine categories from all sources with intelligent scoring and deduplication."""
     category_scores = {}
+    group_scores = {}  # Track best score per semantic group
     
     # Aggregate scores by category name
     for cat_info in all_categories:
@@ -1257,9 +1382,18 @@ def combine_and_score_categories(all_categories: List[Dict[str, Any]]) -> List[D
         elif source == 'ddgs':
             weight = 0.7  # Current but less reliable
             
-        category_scores[cat_name]['total_score'] += confidence * weight
+        score = confidence * weight
+        category_scores[cat_name]['total_score'] += score
         category_scores[cat_name]['sources'].append(source)
         category_scores[cat_name]['count'] += 1
+        
+        # Track best per semantic group
+        group_key = _get_category_group(cat_name)
+        if group_key not in group_scores or category_scores[cat_name]['total_score'] > group_scores[group_key]['score']:
+            group_scores[group_key] = {
+                'category': cat_name,
+                'score': category_scores[cat_name]['total_score']
+            }
     
     # Sort by total score and convert to final format
     sorted_categories = sorted(
@@ -1269,7 +1403,16 @@ def combine_and_score_categories(all_categories: List[Dict[str, Any]]) -> List[D
     )
     
     final_categories = []
+    seen_groups = set()
+    
     for cat_name, scores in sorted_categories[:12]:  # Top 12 categories
+        group_key = _get_category_group(cat_name)
+        
+        # Skip if we've already used a category from this semantic group
+        if group_key in seen_groups:
+            continue
+        seen_groups.add(group_key)
+        
         intent = cat_name.lower().replace(' & ', '_').replace(' ', '_')
         final_categories.append({
             'icon': get_category_icon(cat_name.lower()),
@@ -1367,9 +1510,10 @@ def register_category_routes(app):
     """Register dynamic categories endpoint."""
     @app.route('/api/categories/<city>', methods=['GET'])
     async def get_categories(city):
-        state = app.request.args.get('state', '')
-        country = app.request.args.get('country', 'US')
-        nocache = app.request.args.get('nocache', '').lower() == 'true'
+        # Use the request context for query params
+        state = request.args.get('state', '')
+        country = request.args.get('country', 'US')
+        nocache = request.args.get('nocache', '').lower() == 'true'
         
         # Support nocache parameter for testing
         if nocache:

@@ -22,6 +22,12 @@ async def geocode_city(city: str, country: str = ''):
     if not city:
         return None
 
+    # Respect name blacklist: if the query explicitly matches a blacklisted place,
+    # don't resolve coordinates for it to prevent surfacing problematic names.
+    BL_NAME = "los tablones"
+    if BL_NAME in city.lower():
+        return None
+
     query = city
     if country:
         query = f"{city}, {country}"
@@ -131,3 +137,84 @@ async def reverse_geocode(lat, lon):
         print(f"[DEBUG geocoding.py] reverse_geocode Exception: {e}")
         return None
     return None
+
+
+async def geocode_city_candidates(city: str, country: str = '', limit: int = 5):
+    """Return a list of candidate geocoding results for a city name.
+
+    Each candidate is a dict with keys: display_name, lat, lon, type, importance, address
+    Uses Nominatim as a predictable fallback for candidate lists.
+    """
+    if not city:
+        return []
+
+    query = city
+    if country:
+        query = f"{city}, {country}"
+
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {"q": query, "format": "json", "limit": limit, "addressdetails": 1}
+    headers = {"User-Agent": "city-guides-app", "Accept-Language": "en"}
+    # Policy: filter out tiny micro-localities unless they have reasonable importance.
+    MICROLOCALITY_TYPES = {"hamlet", "village", "locality", "suburb"}
+    # Strict cutoff: hide candidates with importance < 0.17
+    IMPORTANCE_THRESHOLD = 0.17
+    # Name-based blacklist for problematic place names we never want surfaced
+    # Lowercase entries; use substring match against display_name and address
+    BLACKLISTED_PLACE_NAMES = {"los tablones"}
+
+    try:
+        async with get_session() as session:
+            async with session.get(url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=8)) as resp:  # type: ignore
+                if resp.status != 200:
+                    return []
+                data = await resp.json()
+                out = []
+                if isinstance(data, list):
+                    for item in data:
+                        try:
+                            imp_raw = item.get("importance")
+                            try:
+                                importance = float(imp_raw) if imp_raw is not None else 0.0
+                            except Exception:
+                                importance = 0.0
+
+                            candidate = {
+                                "display_name": item.get("display_name"),
+                                "lat": float(item.get("lat")),
+                                "lon": float(item.get("lon")),
+                                "type": item.get("type"),
+                                "importance": importance,
+                                "address": item.get("address", {})
+                            }
+
+                            # Global importance threshold: skip any candidate below threshold
+                            # (user requested to hide all candidates with importance < IMPORTANCE_THRESHOLD)
+                            if importance < IMPORTANCE_THRESHOLD:
+                                continue
+
+                            # Apply explicit name blacklist: don't surface problem place names
+                            dn = (candidate.get("display_name") or "").lower()
+                            blacklisted = False
+                            for bad in BLACKLISTED_PLACE_NAMES:
+                                if bad in dn:
+                                    blacklisted = True
+                                    break
+                            if not blacklisted:
+                                # also check address fields
+                                for v in (candidate.get("address") or {}).values():
+                                    try:
+                                        if isinstance(v, str) and any(bad in v.lower() for bad in BLACKLISTED_PLACE_NAMES):
+                                            blacklisted = True
+                                            break
+                                    except Exception:
+                                        continue
+                            if blacklisted:
+                                continue
+
+                            out.append(candidate)
+                        except Exception:
+                            continue
+                return out
+    except Exception:
+        return []

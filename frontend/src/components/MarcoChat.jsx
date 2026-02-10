@@ -308,7 +308,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     
     // Set a timeout for fast fallback
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Venue fetch timeout')), 2000) // 2 second timeout
+      setTimeout(() => reject(new Error('Venue fetch timeout')), 10000) // 10 second timeout
     );
     
     try {
