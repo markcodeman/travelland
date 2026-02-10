@@ -20,6 +20,7 @@ import asyncio
 import re
 
 from .utils import get_session
+from .neighborhood_loader import load_seeded_neighborhoods
 
 def normalize_city_name(city: Optional[str]) -> Optional[str]:
     if not city:
