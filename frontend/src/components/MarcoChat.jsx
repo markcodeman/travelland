@@ -146,7 +146,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     return baseSuggestions;
   };
 
-  const sendMessage = useCallback(async (text, query = null) => {
+  const sendMessage = useCallback(async (text, skipCategoryMatch = null) => {
     if (!text || !text.trim()) return;
     const msg = { role: 'user', text };
     setMessages(m => [...m, msg]);
@@ -163,35 +163,37 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
     // Detect a category match - ONLY for explicit venue-seeking queries
     // Topic queries like "heritage", "maritime", "history" should fall through to RAG
     let matchedCategory = null;
-    if (lowerText.includes('cafe') || lowerText.includes('coffee') || lowerText.includes('espresso')) {
-      matchedCategory = 'cafes';
-    } else if (lowerText.includes('restaurant') || lowerText.includes('food') || lowerText.includes('dining') || lowerText.includes('eat')) {
-      matchedCategory = 'restaurants';
-    } else if (lowerText.includes('museum') || lowerText.includes('art gallery') || lowerText.includes('exhibition')) {
-      matchedCategory = 'museums';
-    } else if (lowerText.includes('nightlife') || lowerText.includes('bar') || lowerText.includes('club') || lowerText.includes('pub')) {
-      matchedCategory = 'nightlife';
-    } else if (lowerText.includes('park') || lowerText.includes('garden') || lowerText.includes('nature')) {
-      matchedCategory = 'parks';
-    } else if (lowerText.includes('hotel') || lowerText.includes('stay') || lowerText.includes('accommodation')) {
-      matchedCategory = 'hotels';
-    } else if (lowerText.includes('theatre') || lowerText.includes('theater') || lowerText.includes('show') || lowerText.includes('performance') || lowerText.includes('play') || lowerText.includes('concert')) {
-      matchedCategory = 'entertainment';
-    } else if (lowerText.includes('castle') || lowerText.includes('fort') || lowerText.includes('fortification') || lowerText.includes('palace')) {
-      // Castles/forts are not venue-seeking - they're topic queries for RAG
-      matchedCategory = null; // Don't trigger venue mode
-    } else if (lowerText.includes('castle') || lowerText.includes('fortification') || lowerText.includes('fortress') || lowerText.includes('palace')) {
-      matchedCategory = 'castles_und_fortifications';
-    } else if (lowerText.includes('historic site') || lowerText.includes('historic landmark') || lowerText.includes('ancient')) {
-      matchedCategory = 'historic';
-    } else if (lowerText.includes('literary') || lowerText.includes('writer') || lowerText.includes('author') || lowerText.includes('book')) {
-      matchedCategory = 'literary_heritage';
-    } else if (lowerText.includes('music') || lowerText.includes('musical') || lowerText.includes('jazz') || lowerText.includes('concert hall')) {
-      matchedCategory = 'music_heritage';
-    } else if (lowerText.includes('industrial') || lowerText.includes('factory') || lowerText.includes('mill') || lowerText.includes('manufacturing')) {
-      matchedCategory = 'industrial_heritage';
+    if (!skipCategoryMatch) { // Skip category matching when flag is set
+      if (lowerText.includes('cafe') || lowerText.includes('coffee') || lowerText.includes('espresso')) {
+        matchedCategory = 'cafes';
+      } else if (lowerText.includes('restaurant') || lowerText.includes('food') || lowerText.includes('dining') || lowerText.includes('eat')) {
+        matchedCategory = 'restaurants';
+      } else if (lowerText.includes('museum') || lowerText.includes('art gallery') || lowerText.includes('exhibition')) {
+        matchedCategory = 'museums';
+      } else if (lowerText.includes('nightlife') || lowerText.includes('bar') || lowerText.includes('club') || lowerText.includes('pub')) {
+        matchedCategory = 'nightlife';
+      } else if (lowerText.includes('park') || lowerText.includes('garden') || lowerText.includes('nature')) {
+        matchedCategory = 'parks';
+      } else if (lowerText.includes('hotel') || lowerText.includes('stay') || lowerText.includes('accommodation')) {
+        matchedCategory = 'hotels';
+      } else if (lowerText.includes('theatre') || lowerText.includes('theater') || lowerText.includes('show') || lowerText.includes('performance') || lowerText.includes('play') || lowerText.includes('concert')) {
+        matchedCategory = 'entertainment';
+      } else if (lowerText.includes('castle') || lowerText.includes('fort') || lowerText.includes('fortification') || lowerText.includes('palace')) {
+        // Castles/forts are not venue-seeking - they're topic queries for RAG
+        matchedCategory = null; // Don't trigger venue mode
+      } else if (lowerText.includes('castle') || lowerText.includes('fortification') || lowerText.includes('fortress') || lowerText.includes('palace')) {
+        matchedCategory = 'castles_und_fortifications';
+      } else if (lowerText.includes('historic site') || lowerText.includes('historic landmark') || lowerText.includes('ancient')) {
+        matchedCategory = 'historic';
+      } else if (lowerText.includes('literary') || lowerText.includes('writer') || lowerText.includes('author') || lowerText.includes('book')) {
+        matchedCategory = 'literary_heritage';
+      } else if (lowerText.includes('music') || lowerText.includes('musical') || lowerText.includes('jazz') || lowerText.includes('concert hall')) {
+        matchedCategory = 'music_heritage';
+      } else if (lowerText.includes('industrial') || lowerText.includes('factory') || lowerText.includes('mill') || lowerText.includes('manufacturing')) {
+        matchedCategory = 'industrial_heritage';
+      }
+      // Note: generic heritage, maritime, history, architecture queries go to RAG for better synthesis
     }
-    // Note: generic heritage, maritime, history, architecture queries go to RAG for better synthesis
 
     if (matchedCategory) {
       // Fetch venues directly without showing quick response message
@@ -203,10 +205,10 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       // Build conversation history from messages (exclude initial message and venue cards)
       const history = messages
         .filter(m => m.role && (m.role === 'user' || m.role === 'assistant') && m.text)
-        .slice(-6) // Last 6 messages for context
+        .slice(-3) // Reduce to last 3 messages for faster processing
         .map(m => ({ role: m.role, content: m.text }));
       
-      // Use the RAG chat endpoint
+      // Use the RAG chat endpoint with optimized payload
       const payload = {
         query: text,
         city: city,
@@ -214,14 +216,21 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
         category: category,
         venues: [],
         history: history, // Send conversation history
-        max_results: 8
+        max_results: 4 // Reduce from 8 to 4 for faster response
       };
+
+      // Add timeout for RAG request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500); // 2.5 second timeout
 
       const response = await fetch('/api/chat/rag', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error('Chat request failed');
@@ -292,38 +301,51 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       console.debug('Not a venue category, skipping venue fetch:', useCategory);
       // Fall through to RAG mode instead
       const query = `Tell me about ${useCategory} in ${neighborhood ? neighborhood + ', ' : ''}${city}`;
-      sendMessage(query);
+      sendMessage(query, true); // Add flag to prevent recursion
       return;
     }
     console.debug('fetchVenuesForCategory', { city, neighborhood, category: useCategory });
+    
+    // Set a timeout for fast fallback
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Venue fetch timeout')), 2000) // 2 second timeout
+    );
+    
     try {
       const payload = {
         query: city,
         category: useCategory,
         neighborhood: neighborhood,
+        limit: 5 // Reduce venue count for faster response
       };
-      const resp = await fetch('/api/search', {
+      
+      const venuePromise = fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+      
+      // Race between venue fetch and timeout
+      const resp = await Promise.race([venuePromise, timeoutPromise]);
       const data = await resp.json();
-      const fetchedVenues = (data.venues || []).filter(v => v.provider !== 'wikivoyage');
+      const fetchedVenues = (data.venues || []).filter(v => v.provider !== 'wikivoyage').slice(0, 5); // Limit to 5 venues
       console.log('Fetched venues:', fetchedVenues.length, fetchedVenues.slice(0, 3));
       
       if (fetchedVenues.length > 0) {
         // Use REAL venue data from backend with follow-up suggestions
         const suggestions = generateSuggestions({ text: `Found ${fetchedVenues.length} ${useCategory} venues` });
-        setMessages([{ role: 'assistant', venues: fetchedVenues.slice(0, 10), suggestions: suggestions.slice(0, 4) }]);
+        setMessages([{ role: 'assistant', venues: fetchedVenues, suggestions: suggestions.slice(0, 4) }]);
+        setLoading(false); // CRITICAL: Enable follow-up interactions
       } else {
         // No venues found - fall back to RAG for informational response
         const query = `Tell me about ${useCategory} in ${neighborhood ? neighborhood + ', ' : ''}${city}`;
-        sendMessage(query);
+        sendMessage(query, true); // Add flag to prevent recursion
       }
     } catch (e) {
       console.error('Failed to fetch venues for category', e);
-      const venueText = `I've explored ${neighborhood ? neighborhood + ', ' : ''}${city} and I'm ready to help you discover the best spots! What are you interested in - ${useCategory}?`;
-      sendMessage(venueText);
+      // Fast fallback to RAG instead of waiting
+      const query = `Tell me about ${useCategory} in ${neighborhood ? neighborhood + ', ' : ''}${city}`;
+      sendMessage(query, true); // Add flag to prevent recursion
     }
   };
 
