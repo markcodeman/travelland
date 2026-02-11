@@ -110,10 +110,14 @@ const FunFact = ({ city }) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text, style })
         });
+<<<<<<< HEAD
 
         if (!resp.ok) {
           console.warn('[FUN-FACT] llm-paraphrase returned non-200:', resp.status);
         } else {
+=======
+        if (resp.ok) {
+>>>>>>> d22d4ab (latest component merging)
           const j = await resp.json();
           if (j.paraphrase) {
             // Client-side safety: reject paraphrases that contain disallowed language
