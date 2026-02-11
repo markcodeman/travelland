@@ -1,314 +1,280 @@
-import os
-import json
+"""
+ImageProvider implementation using Unsplash API.
+
+This provider fetches images for locations from Unsplash
+with proper attribution and fallbacks.
+"""
+
+from typing import Optional, Dict, Any, List
 import aiohttp
-import datetime
-import threading
+import json
 from pathlib import Path
-from urllib.parse import urlparse
-import re
+import hashlib
 
-_CACHE_FILE = Path(__file__).resolve().parents[1] / "data" / "banner_cache.json"
-_CACHE_LOCK = threading.Lock()
-_BANNERS_DIR = Path(__file__).resolve().parents[1] / "static" / "banners"
-
-
-def _load_cache():
-    try:
-        if not _CACHE_FILE.exists():
-            return {}
-        with _CACHE_FILE.open("r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {}
+from city_guides.providers.base import ImageProvider, ProviderMetadata, ProviderError
+from city_guides.config import get_config
+from city_guides.services.session_manager import get_session
 
 
-def _write_cache(c):
-    try:
-        _CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
-        tmp = _CACHE_FILE.with_suffix(".tmp")
-        with tmp.open("w", encoding="utf-8") as f:
-            json.dump(c, f, ensure_ascii=False, indent=2)
-        tmp.replace(_CACHE_FILE)
-    except Exception:
-        pass
-
-
-def _is_expired(iso_str, ttl_days):
-    try:
-        dt = datetime.datetime.fromisoformat(iso_str)
-        return (datetime.datetime.utcnow() - dt).days >= ttl_days
-    except Exception:
-        return True
-
-
-def _slugify(s):
-    s = s.strip().lower()
-    s = re.sub(r"[^a-z0-9]+", "-", s)
-    s = re.sub(r"-{2,}", "-", s).strip("-")
-    return s or "city"
-
-
-def _ensure_banners_dir():
-    try:
-        _BANNERS_DIR.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        pass
-
-
-def _ext_from_url(url):
-    try:
-        p = urlparse(url)
-        _, ext = os.path.splitext(p.path)
-        ext = ext.lower()
-        if ext in (".jpg", ".jpeg", ".png", ".webp"):
-            return ext
-    except Exception:
-        pass
-    return ".jpg"
-
-
-async def fetch_banner_from_wikipedia(city, session: aiohttp.ClientSession = None):
-    """Best-effort: fetch article thumbnail from Wikipedia (returns remote url and attribution)"""
-    # Create a session if caller didn't provide one, and ensure it's closed.
-    own_session = False
-    if session is None:
-        session = aiohttp.ClientSession()
-        own_session = True
-
-    try:
-        url = "https://en.wikipedia.org/w/api.php"
-        params = {
-            "action": "query",
-            "prop": "pageimages",
-            "titles": city,
-            "format": "json",
-            "redirects": 1,
-            "pithumbsize": 2000,
-        }
-
-        # Try direct page thumbnail first
-        try:
-            async with session.get(url, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8) as r:
-                if r.status == 200:
-                    data = await r.json()
-                    pages = data.get("query", {}).get("pages", {})
-                    for p in pages.values():
-                        thumb = p.get("thumbnail", {}).get("source")
-                        if thumb:
-                            pageid = p.get("pageid")
-                            pageurl = f"https://en.wikipedia.org/?curid={pageid}" if pageid else "https://en.wikipedia.org/"
-                            return {
-                                "remote_url": thumb,
-                                "attribution": f"Image via Wikimedia/Wikipedia ({pageurl})",                                "page_title": p.get('title')                            }
-        except Exception:
-            # fall through to fallback search
-            pass
-
-        # Fallback strategy: search for skyline / panorama variants
-        search_url = "https://en.wikipedia.org/w/api.php"
-        search_queries = [
-            f"{city} skyline",
-            f"{city} city skyline",
-            f"{city} skyline aerial",
-            f"{city} skyline at night",
-            f"{city} panorama",
-            city,
-        ]
-        for q in search_queries:
+class UnsplashImageProvider(ImageProvider):
+    """ImageProvider implementation using Unsplash API."""
+    
+    UNSPLASH_API_URL = "https://api.unsplash.com"
+    
+    def __init__(self, api_key: Optional[str] = None):
+        """Initialize the Unsplash image provider.
+        
+        Args:
+            api_key: Unsplash API access key (optional, will use config if not provided)
+        """
+        super().__init__()
+        self.config = get_config()
+        self.api_key = api_key or self.config.unsplash_key
+        self.cache_dir = Path(__file__).parent / ".cache" / "images"
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+    
+    async def get_metadata(self) -> ProviderMetadata:
+        """Get provider metadata."""
+        return ProviderMetadata(
+            name="unsplash",
+            version="1.0.0",
+            description="Unsplash image API",
+            capabilities=["images", "hero_image", "attribution"],
+            rate_limit=50  # requests per hour for demo key
+        )
+    
+    def _get_cache_key(self, query: str) -> str:
+        """Generate cache key for query."""
+        return hashlib.md5(query.lower().encode()).hexdigest()
+    
+    def _read_cache(self, cache_key: str) -> Optional[List[Dict]]:
+        """Read from cache if available."""
+        cache_file = self.cache_dir / f"{cache_key}.json"
+        if cache_file.exists():
             try:
-                params = {
-                    "action": "query",
-                    "list": "search",
-                    "srsearch": q,
-                    "format": "json",
-                    "srlimit": 5,
-                }
-                async with session.get(search_url, params=params, headers={"User-Agent": "TravelLand/1.0"}, timeout=8) as r:
-                    if r.status != 200:
-                        continue
-                    results = (await r.json()).get("query", {}).get("search", [])
-
-                titles = [r_.get("title") for r_ in results if r_.get("title")]
-                if not titles:
-                    continue
-
-                params2 = {
-                    "action": "query",
-                    "prop": "pageimages",
-                    "titles": "|".join(titles[:5]),
-                    "format": "json",
-                    "pithumbsize": 2000,
-                    "redirects": 1,
-                }
-                async with session.get(search_url, params=params2, headers={"User-Agent": "TravelLand/1.0"}, timeout=8) as r2:
-                    if r2.status != 200:
-                        continue
-                    data2 = await r2.json()
-                pages2 = data2.get("query", {}).get("pages", {})
-                for p2 in pages2.values():
-                    thumb = p2.get("thumbnail", {}).get("source")
-                    if thumb:
-                        pageid = p2.get("pageid")
-                        pageurl = f"https://en.wikipedia.org/?curid={pageid}" if pageid else "https://en.wikipedia.org/"
-                        return {
-                            "remote_url": thumb,
-                            "attribution": f"Image via Wikimedia/Wikipedia ({pageurl})",                            "page_title": p2.get('title')                        }
+                with open(cache_file, 'r') as f:
+                    return json.load(f)
             except Exception:
-                # ignore and try next query
-                continue
-
+                return None
         return None
-    finally:
-        if own_session:
-            try:
-                await session.close()
-            except Exception:
-                pass
-
-
-async def _download_image(url, dest_path, session: aiohttp.ClientSession = None):
-    tmp = dest_path.with_suffix(dest_path.suffix + ".tmp")
-    own_session = False
-    if session is None:
-        session = aiohttp.ClientSession()
-        own_session = True
-    else:
-        own_session = False
-    try:
-        async with session.get(url, headers={"User-Agent": "TravelLand/1.0"}, timeout=12) as r:
-            if r.status != 200:
-                if own_session:
-                    await session.close()
-                return False
-            _ensure_banners_dir()
-            with tmp.open("wb") as f:
-                while True:
-                    chunk = await r.content.read(8192)
-                    if not chunk:
-                        break
-                    f.write(chunk)
-        tmp.replace(dest_path)
-        if own_session:
-            await session.close()
-        return True
-    except Exception:
+    
+    def _write_cache(self, cache_key: str, data: List[Dict]) -> None:
+        """Write to cache."""
+        cache_file = self.cache_dir / f"{cache_key}.json"
         try:
-            if tmp.exists():
-                tmp.unlink()
-        except Exception:
-            pass
-        if own_session:
-            await session.close()
-        return False
-
-
-async def get_banner_for_city(city, session: aiohttp.ClientSession = None):
-    """Return banner info for a city.
-
-    Behavior is configurable via environment variable `BANNER_STORE_LOCAL`:
-      - '1' (store locally under `static/banners/` and return a local `/static` URL)
-      - any other value (default): return the remote Wikimedia URL directly and do not store the file locally.
-
-    Cached metadata is kept in `data/banner_cache.json` either way; TTL (days) is controlled by BANNER_CACHE_TTL_DAYS.
-    """
-    if not city:
-        return None
-    key = city.strip().lower()
-    ttl = int(os.getenv("BANNER_CACHE_TTL_DAYS", "7"))
-    store_local = os.getenv("BANNER_STORE_LOCAL", "0") == "1"
-
-    with _CACHE_LOCK:
-        c = _load_cache()
-        rec = c.get(key)
-        if (
-            rec
-            and rec.get("generated_at")
-            and not _is_expired(rec.get("generated_at"), ttl)
-        ):
-            # If we stored a local filename previously and local storage is enabled, prefer it
-            if store_local and rec.get("local_filename"):
-                local_fn = rec.get("local_filename")
-                local_path = _BANNERS_DIR / local_fn
-                if local_path.exists():
-                    return {
-                        "url": f"/static/banners/{local_fn}",
-                        "attribution": rec.get("attribution"),
-                    }
-            # Otherwise, if we have a remote_url cached, return it
-            if rec.get("remote_url"):
-                return {
-                    "url": rec.get("remote_url"),
-                    "attribution": rec.get("attribution"),
-                }
-
-    # Fetch remote thumbnail metadata
-    val = await fetch_banner_from_wikipedia(city, session=session)
-    if not val:
-        return None
-
-    remote_url = val.get("remote_url")
-    attribution = val.get("attribution")
-
-    # If caller doesn't want local storage, cache remote_url and return it
-    if not store_local:
-        with _CACHE_LOCK:
-            c = _load_cache()
-            c[key] = {
-                "remote_url": remote_url,
-                "attribution": attribution,
-                "generated_at": datetime.datetime.utcnow().isoformat(),
-            }
-            _write_cache(c)
-        return {"url": remote_url, "attribution": attribution}
-
-    # Otherwise, download and store locally under static/banners
-    slug = _slugify(city)
-    ext = _ext_from_url(remote_url)
-    filename = f"{slug}{ext}"
-    dest_path = _BANNERS_DIR / filename
-
-    # If file exists and is recent enough, reuse
-    if dest_path.exists():
-        try:
-            mtime = datetime.datetime.utcfromtimestamp(dest_path.stat().st_mtime)
-            if (datetime.datetime.utcnow() - mtime).days < ttl:
-                with _CACHE_LOCK:
-                    c = _load_cache()
-                    c[key] = {
-                        "local_filename": filename,
-                        "attribution": attribution,
-                        "generated_at": datetime.datetime.utcnow().isoformat(),
-                        "remote_url": remote_url,
-                    }
-                    _write_cache(c)
-                return {
-                    "url": f"/static/banners/{filename}",
-                    "attribution": attribution,
-                }
-        except Exception:
-            pass
-
-    ok = await _download_image(remote_url, dest_path, session=session)
-    if not ok:
-        # fallback to returning remote URL
-        with _CACHE_LOCK:
-            c = _load_cache()
-            c[key] = {
-                "remote_url": remote_url,
-                "attribution": attribution,
-                "generated_at": datetime.datetime.utcnow().isoformat(),
-            }
-            _write_cache(c)
-        return {"url": remote_url, "attribution": attribution}
-
-    with _CACHE_LOCK:
-        c = _load_cache()
-        c[key] = {
-            "local_filename": filename,
-            "attribution": attribution,
-            "generated_at": datetime.datetime.utcnow().isoformat(),
-            "remote_url": remote_url,
+            with open(cache_file, 'w') as f:
+                json.dump(data, f)
+        except Exception as e:
+            self.logger.warning(f"Failed to write cache: {e}")
+    
+    def _format_image(self, photo: Dict[str, Any]) -> Dict[str, Any]:
+        """Format Unsplash photo data to standard format.
+        
+        Args:
+            photo: Unsplash photo data
+            
+        Returns:
+            Formatted image dictionary
+        """
+        urls = photo.get("urls", {})
+        user = photo.get("user", {})
+        
+        return {
+            "url": urls.get("regular") or urls.get("small"),
+            "thumb_url": urls.get("thumb"),
+            "full_url": urls.get("full"),
+            "attribution": f"Photo by {user.get('name', 'Unknown')} on Unsplash",
+            "photographer": user.get("name"),
+            "photographer_url": user.get("links", {}).get("html"),
+            "source": "unsplash",
+            "source_id": photo.get("id"),
+            "description": photo.get("description") or photo.get("alt_description", ""),
+            "width": photo.get("width"),
+            "height": photo.get("height")
         }
-        _write_cache(c)
+    
+    async def get_images(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """Get images for a query.
+        
+        Args:
+            query: Image search query
+            limit: Maximum number of images to return
+            
+        Returns:
+            List of image dictionaries
+        """
+        if not self.api_key:
+            self.logger.warning("Unsplash API key not configured")
+            return []
+        
+        if not query or not query.strip():
+            return []
+        
+        # Check cache
+        cache_key = self._get_cache_key(f"images:{query}:{limit}")
+        cached = self._read_cache(cache_key)
+        if cached:
+            return cached[:limit]
+        
+        try:
+            session = await get_session()
+            timeout = self.config.get_timeout('image')
+            
+            params = {
+                "query": query,
+                "per_page": min(limit, 30),  # Unsplash max is 30
+                "orientation": "landscape"  # Better for hero images
+            }
+            
+            headers = {
+                "Authorization": f"Client-ID {self.api_key}"
+            }
+            
+            async with session.get(
+                f"{self.UNSPLASH_API_URL}/search/photos",
+                params=params,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=timeout)
+            ) as response:
+                if response.status == 401:
+                    raise ProviderError(
+                        "Invalid Unsplash API key",
+                        provider_name="unsplash"
+                    )
+                
+                if response.status != 200:
+                    raise ProviderError(
+                        f"Unsplash returned status {response.status}",
+                        provider_name="unsplash"
+                    )
+                
+                data = await response.json()
+                results = data.get("results", [])
+                
+                images = [self._format_image(photo) for photo in results]
+                
+                # Cache results
+                if images:
+                    self._write_cache(cache_key, images)
+                
+                return images[:limit]
+                
+        except ProviderError:
+            raise
+        except Exception as e:
+            self.logger.warning(f"Failed to get images for '{query}': {e}")
+            return []
+    
+    async def get_hero_image(self, location: str, intent: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Get a hero image for a location.
+        
+        Args:
+            location: Location name
+            intent: Optional context/intent for the image
+            
+        Returns:
+            Image dictionary or None
+        """
+        # Build search query
+        search_terms = [location]
+        if intent:
+            search_terms.append(intent)
+        
+        query = " ".join(search_terms)
+        
+        images = await self.get_images(query, limit=1)
+        return images[0] if images else None
+    
+    async def search(self, query: str, **kwargs) -> List[Dict[str, Any]]:
+        """Search for images."""
+        limit = kwargs.get("limit", 5)
+        return await self.get_images(query, limit)
 
-    return {"url": f"/static/banners/{filename}", "attribution": attribution}
+
+class PixabayImageProvider(ImageProvider):
+    """Fallback ImageProvider using Pixabay API."""
+    
+    PIXABAY_API_URL = "https://pixabay.com/api"
+    
+    def __init__(self, api_key: Optional[str] = None):
+        """Initialize the Pixabay image provider."""
+        super().__init__()
+        self.config = get_config()
+        self.api_key = api_key or self.config.pixabay_key
+    
+    async def get_metadata(self) -> ProviderMetadata:
+        """Get provider metadata."""
+        return ProviderMetadata(
+            name="pixabay",
+            version="1.0.0",
+            description="Pixabay image API (fallback)",
+            capabilities=["images", "hero_image"],
+            rate_limit=100  # requests per minute
+        )
+    
+    def _format_image(self, photo: Dict[str, Any]) -> Dict[str, Any]:
+        """Format Pixabay photo to standard format."""
+        return {
+            "url": photo.get("webformatURL"),
+            "thumb_url": photo.get("previewURL"),
+            "full_url": photo.get("largeImageURL"),
+            "attribution": f"Photo by {photo.get('user', 'Unknown')} on Pixabay",
+            "photographer": photo.get("user"),
+            "source": "pixabay",
+            "source_id": str(photo.get("id")),
+            "description": photo.get("tags", ""),
+            "width": photo.get("webformatWidth"),
+            "height": photo.get("webformatHeight")
+        }
+    
+    async def get_images(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """Get images from Pixabay."""
+        if not self.api_key:
+            return []
+        
+        if not query or not query.strip():
+            return []
+        
+        try:
+            session = await get_session()
+            timeout = self.config.get_timeout('image')
+            
+            params = {
+                "key": self.api_key,
+                "q": query,
+                "per_page": limit,
+                "orientation": "horizontal",
+                "safesearch": "true"
+            }
+            
+            async with session.get(
+                self.PIXABAY_API_URL,
+                params=params,
+                timeout=aiohttp.ClientTimeout(total=timeout)
+            ) as response:
+                if response.status != 200:
+                    return []
+                
+                data = await response.json()
+                hits = data.get("hits", [])
+                
+                return [self._format_image(photo) for photo in hits]
+                
+        except Exception as e:
+            self.logger.warning(f"Pixabay image search failed: {e}")
+            return []
+    
+    async def get_hero_image(self, location: str, intent: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Get hero image."""
+        search_terms = [location]
+        if intent:
+            search_terms.append(intent)
+        
+        query = " ".join(search_terms)
+        images = await self.get_images(query, limit=1)
+        return images[0] if images else None
+    
+    async def search(self, query: str, **kwargs) -> List[Dict[str, Any]]:
+        """Search for images."""
+        limit = kwargs.get("limit", 5)
+        return await self.get_images(query, limit)

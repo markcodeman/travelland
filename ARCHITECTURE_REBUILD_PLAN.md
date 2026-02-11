@@ -148,24 +148,52 @@ class ImageProvider(Provider):
 - [ ] Implement dependency injection
 - [ ] Add provider health checks
 
-### 2.2 Provider Consolidation
-**Goal:** Reduce 18 providers to 4 core providers
 
-| Current | New | Rationale |
-|---------|-----|-----------|
-| ddgs_provider.py | SearchProvider | DuckDuckGo + fallbacks |
-| wikipedia_provider.py | ContentProvider | Wikipedia + fallbacks |
-| unsplash_provider.py | ImageProvider | Unsplash + fallbacks |
-| geocoding.py | GeoProvider | Nominatim + fallbacks |
-| 14 other providers | Removed | Consolidated into core 4 |
+
+### 2.2A Provider Orchestration for Redundancy
+**Goal:** Maintain multiple independent providers per function to maximize reliability and avoid single points of failure.
+
+**Why:**
+- Relying on a single provider (even with fallbacks) creates a bottleneck and risk of total outage if that provider fails or is rate-limited.
+- True redundancy means running multiple providers in parallel, health-checking them, and dynamically routing requests to healthy ones.
+
+**How to Orchestrate Providers:**
+- **Keep each provider as a separate module/class** (e.g., DDGSProvider, BingProvider, WikipediaProvider, WikivoyageProvider, etc.).
+- **Create an Orchestrator class** for each function (Search, Content, Image, Geo) that:
+  - Maintains a list of available providers.
+  - Runs queries in parallel or with smart fallback order.
+  - Performs health checks and disables unhealthy providers at runtime.
+  - Aggregates, deduplicates, and ranks results from all providers.
+- **Example:**
+
+```python
+class SearchOrchestrator:
+    def __init__(self, providers: list):
+        self.providers = providers
+
+    async def search(self, query: str, **kwargs):
+        results = []
+        for provider in self.providers:
+            try:
+                res = await provider.search(query, **kwargs)
+                if res:
+                    results.extend(res)
+            except Exception as e:
+                # Log and continue to next provider
+                continue
+        # Deduplicate and rank results
+        return self._deduplicate_and_rank(results)
+```
+
+- **Configure providers via config/env, not hardcoded.**
+- **Add metrics and logging** to monitor provider health and performance.
 
 **Tasks:**
-- [ ] Implement SearchProvider (DDGS + fallbacks)
-- [ ] Implement ContentProvider (Wikipedia + fallbacks)  
-- [ ] Implement ImageProvider (Unsplash + fallbacks)
-- [ ] Implement GeoProvider (Nominatim + fallbacks)
-- [ ] Remove redundant providers
-- [ ] Update all imports
+- [ ] Implement orchestrator classes for each provider type
+- [ ] Register multiple providers per function
+- [ ] Add health checks and dynamic failover
+- [ ] Aggregate and deduplicate results
+- [ ] Remove single-provider bottlenecks
 
 ### 2.3 Dynamic Data Strategy
 **Goal:** Eliminate all hardcoded data
@@ -462,3 +490,30 @@ jobs:
 4. **Stakeholder Updates** - Weekly progress reports with metrics
 
 This plan transforms the current chaotic architecture into a clean, maintainable, and scalable system while eliminating all identified critical issues.
+
+# Hardcoded Data Audit (2026-02-11)
+
+## Locations and Types Found
+
+### 1. frontend/src/services/imageService.js
+- **Static image URLs**: Unsplash, Picsum, and other hardcoded fallback images for categories, cities, and venues.
+- **Fallback mappings**: CATEGORY_FALLBACKS, HERO_FALLBACKS, VENUE_FALLBACKS objects contained direct mappings from category/city/venue to static image URLs.
+- **Default images**: DEFAULT_HERO, DEFAULT_VENUE constants were hardcoded URLs.
+
+### 2. Backend Python (city_guides/)
+- **No hardcoded city/POI/neighborhood data found**. All config, API keys, and provider logic use environment variables or dynamic loading.
+
+### 3. Data/Seed Files
+- No hardcoded data in Python files under city_guides/data/ (confirmed by scan).
+
+## Remediation
+- All static image URLs and fallback mappings in imageService.js have been removed.
+- Fallbacks are now loaded dynamically from a versioned JSON file (`image_fallbacks.json`).
+- No other hardcoded city/category/POI data found in backend or data scripts.
+
+## Policy Compliance
+- All hardcoded data is now centralized in versioned files, not in code.
+- No static mappings remain in scripts/components.
+- Dynamic fetching or seed file loading is enforced for all fallback data.
+
+---

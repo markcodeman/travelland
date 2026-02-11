@@ -216,20 +216,50 @@ async def fetch_neighborhoods_enhanced(
 
     ranked = []
     for name in unique_names:
-        is_valid, confidence, canonical = disambiguator.validate_neighborhood(name, city)
-        ranked.append({
-            'name': canonical or name,
-            'display_name': canonical or name,
-            'label': canonical or name,
-            'id': canonical or name,
-            'confidence': confidence,
-            'is_valid': is_valid
-        })
+            is_valid, confidence, canonical = disambiguator.validate_neighborhood(name, city)
+            ranked.append({
+                'label': canonical or name,
+                'id': canonical or name,
+                'confidence': confidence,
+                'is_valid': is_valid
+            })
 
-    ranked.sort(key=lambda x: x['confidence'], reverse=True)
     filtered = [n for n in ranked if n['confidence'] >= 0.6]
 
     logger.info(f"Neighborhoods for {city}: {len(neighborhoods)} raw → {len(unique_names)} unique → {len(filtered)} high-confidence")
+
+    # Aggressive caching: 30s TTL for dev, 5min for prod
+    from redis import asyncio as aioredis
+    cache_key = f"neighborhoods:{city}:{lat}:{lon}"
+    cache_ttl = int(os.getenv("NEIGHBORHOOD_CACHE_TTL", "30"))
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    redis_client = None
+    try:
+        redis_client = await aioredis.from_url(redis_url)
+        cached = await redis_client.get(cache_key)
+        if cached:
+            logger.info(f"Cache hit for {cache_key}")
+            return json.loads(cached)
+    except Exception as e:
+        logger.debug(f"Redis cache unavailable: {e}")
+
+    # Cache result and log fallback
+    try:
+        if redis_client:
+            await redis_client.set(cache_key, json.dumps(filtered), ex=cache_ttl)
+            logger.info(f"Cached neighborhoods for {cache_key} (TTL={cache_ttl}s)")
+    except Exception as e:
+        logger.debug(f"Failed to cache neighborhoods: {e}")
+
+    # Fallback: if provider fetch fails, serve last known good cached result
+    if not filtered and redis_client:
+        try:
+            cached = await redis_client.get(cache_key)
+            if cached:
+                logger.warning(f"Fallback to stale cache for {cache_key}")
+                return json.loads(cached)
+        except Exception as e:
+            logger.debug(f"Fallback cache unavailable: {e}")
 
     return filtered
 
@@ -243,60 +273,7 @@ GEOAPIFY_CATEGORIES = {
     "historic": "building.historic,heritage.historic",
     "museum": "entertainment.museum,entertainment.art_gallery",
     "market": "commercial.marketplace",
-    "transport": "transport",
-    "family": "leisure.playground,leisure.amusement_arcade,leisure.miniature_golf",
-    "event": "entertainment.theatre,entertainment.cinema,entertainment.arts_centre",
-    "hotel": "accommodation.hotel,accommodation.hostel",
-    "shopping": "commercial.shopping_mall,commercial.retail",
-    "nightlife": "catering.bar,catering.pub",
-    "local": "tourism.attraction",
-    "hidden": "tourism.attraction",
 }
-
-async def geoapify_discover_pois(
-    bbox: Optional[Union[list[float], tuple[float, float, float, float]]],
-    kinds: Optional[str] = None,
-    poi_type: Optional[str] = None,
-    limit: int = 200,
-    session: Optional[aiohttp.ClientSession] = None,
-) -> list[dict]:
-    """Discover POIs using Geoapify Places API, normalized to Overpass-like output.
-    If `kinds` is not provided, a best-effort mapping from `poi_type` to Geoapify
-    categories will be used via the `GEOAPIFY_CATEGORIES` constant."""
-    api_key = get_geoapify_key()
-    if not api_key:
-        print("[DEBUG] Geoapify API key missing!")
-    if not bbox or len(bbox) != 4:
-        print(f"[DEBUG] Invalid bbox for geoapify_discover_pois: {bbox}")
-    if not api_key or not bbox or len(bbox) != 4:
-        return []
-    # bbox format: (west, south, east, north)
-    west, south, east, north = bbox
-    # Prepare pagination-aware requests: Geoapify enforces max limit=500 per request.
-    requested_limit = int(limit)
-    per_request_max = 500
-    params_base = {
-        "filter": f"rect:{west},{south},{east},{north}",
-        "apiKey": api_key,
-        "format": "json",
-    }
-    if kinds:
-        params_base["categories"] = kinds
-    else:
-        # Use explicit mapping for poi_type when available, otherwise fall back to a broad default
-        if poi_type and poi_type in GEOAPIFY_CATEGORIES:
-            params_base["categories"] = GEOAPIFY_CATEGORIES[poi_type]
-        else:
-            params_base["categories"] = ",".join([
-                "tourism","catering","entertainment","leisure","commercial","healthcare","education"
-            ])
-
-    headers = {"User-Agent": "CityGuides/1.0", "Accept-Language": "en"}
-    if session is None:
-        async with get_session() as session:
-            return await _geoapify_discover_pois_impl(bbox, requested_limit, per_request_max, params_base, headers, session)
-    else:
-        return await _geoapify_discover_pois_impl(bbox, requested_limit, per_request_max, params_base, headers, session)
 
 
 async def _geoapify_discover_pois_impl(bbox, requested_limit, per_request_max, params_base, headers, session):
@@ -370,66 +347,304 @@ async def _geoapify_discover_pois_impl(bbox, requested_limit, per_request_max, p
 def normalize_address(prop: dict) -> Optional[str]:
     """
     Construct a human-readable address from Geoapify properties.
-    Falls back through multiple strategies to ensure we never return None/empty.
+    Enhanced version with better field mapping and more robust fallbacks.
     Returns None only if no address components are available.
     """
     if not isinstance(prop, dict):
         return None
     
-    # Strategy 1: Use pre-formatted address if available
-    formatted = prop.get("formatted")
+    # Strategy 1: Use pre-formatted address if available (highest priority)
+    formatted = prop.get("formatted") or prop.get("display_name") or prop.get("full_address")
     if formatted and len(formatted.strip()) > 5:  # Ensure it's not just a number
         return formatted.strip()
     
-    # Strategy 2: Use address_line1
-    addr_line1 = prop.get("address_line1")
+    # Strategy 2: Use address_line1 or address_line2
+    addr_line1 = prop.get("address_line1") or prop.get("address_line2")
     if addr_line1 and len(addr_line1.strip()) > 3:
+        # Check if address_line2 provides additional info
+        addr_line2 = prop.get("address_line2")
+        if addr_line2 and addr_line2 != addr_line1 and len(addr_line2.strip()) > 2:
+            return f"{addr_line1.strip()}, {addr_line2.strip()}"
         return addr_line1.strip()
     
-    # Strategy 3: Build from components
+    # Strategy 3: Build from structured address components
     parts = []
     
-    # Street + house number
-    street = prop.get("street")
-    housenumber = prop.get("housenumber")
-    if street and housenumber:
-        parts.append(f"{street} {housenumber}")
-    elif street:
-        parts.append(street)
-    elif housenumber:
-        parts.append(f"{housenumber}")
+    # Street address (housenumber + street)
+    housenumber = prop.get("housenumber") or prop.get("house_number")
+    street = prop.get("street") or prop.get("street_name") or prop.get("road")
     
-    # District/Suburb/Neighborhood
-    district = prop.get("district") or prop.get("suburb") or prop.get("neighbourhood")
-    if district and district not in parts:
+    if street:
+        if housenumber:
+            parts.append(f"{housenumber} {street}")
+        else:
+            parts.append(street)
+    
+    # Neighborhood/District/Suburb/Local area
+    district = (prop.get("district") or prop.get("suburb") or prop.get("neighbourhood") or 
+                prop.get("locality") or prop.get("neighborhood") or prop.get("quarter"))
+    if district and district not in parts and len(district) > 2:
         parts.append(district)
     
-    # City
-    city = prop.get("city")
+    # City/Town
+    city = (prop.get("city") or prop.get("town") or prop.get("village") or 
+            prop.get("municipality") or prop.get("place"))
     if city and city not in parts:
         parts.append(city)
     
-    # Postcode
-    postcode = prop.get("postcode")
-    if postcode:
-        parts.append(postcode)
+    # State/Region/Province
+    state = (prop.get("state") or prop.get("region") or prop.get("province") or 
+             prop.get("county") or prop.get("department"))
+    if state and len(parts) >= 1 and state not in parts:  # Only add if we have street/city
+        parts.append(state)
     
-    # Country
+    # Postcode/ZIP
+    postcode = (prop.get("postcode") or prop.get("postal_code") or prop.get("zip_code") or 
+                prop.get("zip"))
+    if postcode and len(parts) >= 1:
+        # Insert postcode before country if available
+        if len(parts) >= 2:
+            parts.insert(-1, postcode)
+        else:
+            parts.append(postcode)
+    
+    # Country (only add if we have other components)
     country = prop.get("country")
-    if country and len(parts) > 0:
+    if country and len(parts) >= 2 and country not in parts:
         parts.append(country)
     
-    if len(parts) >= 2:  # Need at least street-level + city-level
+    # If we have at least street + city, join them
+    if len(parts) >= 2:
         return ", ".join(parts)
     
-    # Strategy 4: Last resort - use name + district/city
+    # Strategy 4: Use name + location context as last resort
     name = prop.get("name")
-    if name and district:
-        return f"{name}, {district}"
-    if name and city:
-        return f"{name}, {city}"
+    location_parts = []
+    
+    # Try to get some location context
+    if district and district != name:
+        location_parts.append(district)
+    if city and city != name:
+        location_parts.append(city)
+    if state and len(location_parts) > 0:
+        location_parts.append(state)
+    
+    if name and location_parts:
+        return f"{name}, {', '.join(location_parts)}"
+    
+    # Strategy 5: Extract from datasource or other fields
+    datasource = prop.get("datasource", {})
+    if isinstance(datasource, dict):
+        raw_address = datasource.get("raw", {}).get("address")
+        if raw_address and isinstance(raw_address, str) and len(raw_address) > 5:
+            return raw_address
     
     return None
+
+
+# Import re at module level for performance (used by is_valid_address and deduplication)
+import re as _re
+
+# --- DUPLICATE DETECTION UTILITIES ---
+
+def normalize_venue_name(name: Optional[str]) -> str:
+    """
+    Normalize venue name for deduplication comparison.
+    - Lowercase
+    - Remove punctuation and extra spaces
+    - Remove common suffixes like 'cafe', 'restaurant', 'bar'
+    """
+    if not name:
+        return ""
+    
+    # Lowercase and strip
+    normalized = name.lower().strip()
+    
+    # Remove common punctuation and special chars
+    normalized = _re.sub(r'[^\w\s]', '', normalized)
+    
+    # Remove extra whitespace
+    normalized = _re.sub(r'\s+', ' ', normalized).strip()
+    
+    # Remove common business suffixes for better matching
+    suffixes = [
+        ' restaurant', ' cafe', ' bar', ' pub', ' bistro', 
+        ' grill', ' kitchen', ' house', ' shop', ' store'
+    ]
+    for suffix in suffixes:
+        if normalized.endswith(suffix):
+            normalized = normalized[:-len(suffix)].strip()
+    
+    return normalized
+
+
+def hash_venue_name(name: str) -> str:
+    """
+    Create a hash of the normalized venue name for fast duplicate detection.
+    Uses MD5 for speed (not security-critical).
+    """
+    normalized = normalize_venue_name(name)
+    return hashlib.md5(normalized.encode('utf-8')).hexdigest()[:16]
+
+
+def venues_are_duplicates(venue1: Dict, venue2: Dict, 
+                          name_threshold: float = 0.85,
+                          coord_threshold_meters: float = 100) -> bool:
+    """
+    Check if two venues are duplicates based on name similarity and coordinate proximity.
+    
+    Args:
+        venue1, venue2: Venue dictionaries with 'name', 'lat', 'lon' keys
+        name_threshold: Minimum name similarity score (0-1) to consider as duplicate
+        coord_threshold_meters: Maximum distance in meters to consider as duplicate
+    
+    Returns:
+        True if venues are likely duplicates
+    """
+    # Quick hash check for exact normalized name matches
+    name1_hash = hash_venue_name(venue1.get('name', ''))
+    name2_hash = hash_venue_name(venue2.get('name', ''))
+    
+    names_match = (name1_hash == name2_hash)
+    
+    # Check coordinate proximity
+    lat1, lon1 = venue1.get('lat'), venue1.get('lon')
+    lat2, lon2 = venue2.get('lat'), venue2.get('lon')
+    
+    if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
+        # If we don't have coordinates, rely only on name hash
+        return names_match
+    
+    try:
+        lat1, lon1, lat2, lon2 = float(lat1), float(lon1), float(lat2), float(lon2)
+    except (ValueError, TypeError):
+        return names_match
+    
+    # Calculate approximate distance using Haversine formula
+    distance_m = haversine_distance(lat1, lon1, lat2, lon2)
+    coords_close = distance_m <= coord_threshold_meters
+    
+    # Duplicates if: same normalized name AND close coordinates
+    # OR: very close coordinates (within 10m) even if names differ slightly
+    if names_match and coords_close:
+        return True
+    
+    # Additional check: fuzzy name matching for similar names
+    if coords_close and distance_m <= 50:  # Very close
+        name1_norm = normalize_venue_name(venue1.get('name', ''))
+        name2_norm = normalize_venue_name(venue2.get('name', ''))
+        if name1_norm and name2_norm:
+            similarity = calculate_name_similarity(name1_norm, name2_norm)
+            if similarity >= name_threshold:
+                return True
+    
+    return False
+
+
+def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """
+    Calculate the great circle distance between two points on Earth.
+    Returns distance in meters.
+    """
+    from math import radians, sin, cos, sqrt, atan2
+    
+    R = 6371000  # Earth's radius in meters
+    
+    phi1 = radians(lat1)
+    phi2 = radians(lat2)
+    delta_phi = radians(lat2 - lat1)
+    delta_lambda = radians(lon2 - lon1)
+    
+    a = sin(delta_phi / 2) ** 2 + cos(phi1) * cos(phi2) * sin(delta_lambda / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    
+    return R * c
+
+
+def calculate_name_similarity(name1: str, name2: str) -> float:
+    """
+    Calculate similarity between two normalized names using Jaccard similarity.
+    Returns score between 0 and 1.
+    """
+    # Tokenize by words
+    tokens1 = set(name1.split())
+    tokens2 = set(name2.split())
+    
+    if not tokens1 or not tokens2:
+        return 0.0
+    
+    # Jaccard similarity: intersection / union
+    intersection = len(tokens1 & tokens2)
+    union = len(tokens1 | tokens2)
+    
+    if union == 0:
+        return 0.0
+    
+    return intersection / union
+
+
+def deduplicate_venues(venues: List[Dict], 
+                       name_threshold: float = 0.85,
+                       coord_threshold_meters: float = 100) -> List[Dict]:
+    """
+    Deduplicate a list of venues using name hashing and coordinate proximity.
+    
+    Args:
+        venues: List of venue dictionaries
+        name_threshold: Minimum name similarity for fuzzy matching
+        coord_threshold_meters: Maximum distance to consider as duplicate
+    
+    Returns:
+        Deduplicated list of venues (keeps first occurrence)
+    """
+    if not venues:
+        return []
+    
+    deduped = []
+    
+    for venue in venues:
+        is_duplicate = False
+        
+        for existing in deduped:
+            if venues_are_duplicates(venue, existing, name_threshold, coord_threshold_meters):
+                is_duplicate = True
+                # Merge data from duplicate into existing (keep better data)
+                _merge_venue_data(existing, venue)
+                break
+        
+        if not is_duplicate:
+            # Add name hash for potential future use
+            venue['_name_hash'] = hash_venue_name(venue.get('name', ''))
+            deduped.append(venue)
+    
+    return deduped
+
+
+def _merge_venue_data(primary: Dict, duplicate: Dict) -> None:
+    """
+    Merge data from duplicate venue into primary, keeping the best available info.
+    Modifies primary in place.
+    """
+    # Keep better address (longer usually means more complete)
+    if duplicate.get('address') and len(str(duplicate['address'])) > len(str(primary.get('address', ''))):
+        primary['address'] = duplicate['address']
+    
+    # Keep website if primary doesn't have one
+    if duplicate.get('website') and not primary.get('website'):
+        primary['website'] = duplicate['website']
+    
+    # Keep OSM URL if primary doesn't have one
+    if duplicate.get('osm_url') and not primary.get('osm_url'):
+        primary['osm_url'] = duplicate['osm_url']
+    
+    # Merge tags if they're different
+    if duplicate.get('tags') and primary.get('tags'):
+        primary_tags = set(str(primary['tags']).split(','))
+        duplicate_tags = set(str(duplicate['tags']).split(','))
+        merged_tags = primary_tags | duplicate_tags
+        primary['tags'] = ','.join(sorted(merged_tags))
+    elif duplicate.get('tags') and not primary.get('tags'):
+        primary['tags'] = duplicate['tags']
 
 
 def is_valid_address(address: Optional[str]) -> bool:
@@ -442,31 +657,59 @@ def is_valid_address(address: Optional[str]) -> bool:
     
     addr = str(address).strip()
     
-    # Reject if too short
-    if len(addr) < 5:
+    # Reject if too short (must be at least 8 characters for a meaningful address)
+    if len(addr) < 8:
+        print(f"[DEBUG] Address too short: '{addr}' (length {len(addr)})")
         return False
     
-    # Extract just the address part (remove emoji and prefixes)
-    # Remove common prefixes that might be added
-    cleaned = addr
-    for prefix in ['📍', '📍 ', 'Approximate location:', 'Location:', 'Address:']:
-        cleaned = cleaned.replace(prefix, '').strip()
-    
-    # Reject if it looks like coordinates (contains lat/lon pattern)
-    # Pattern: two numbers separated by comma, possibly with decimals
-    coord_pattern = r'^\s*-?\d+\.?\d*\s*,\s*-?\d+\.?\d*\s*$'
-    if _re.match(coord_pattern, cleaned):
-        return False
+    # Reject if it looks like coordinates (multiple patterns to catch various formats)
+    coord_patterns = [
+        r'^\s*-?\d+\.?\d*\s*,\s*-?\d+\.?\d*\s*$',  # Simple lat,lng
+        r'^\s*-?\d+\.?\d*\s*,\s*-?\d+\.?\d*\s*,\s*\d+\.?\d*\s*$',  # lat,lng,alt
+        r'^\s*\(\s*-?\d+\.?\d*\s*,\s*-?\d+\.?\d*\s*\)\s*$',  # (lat, lng)
+        r'^\s*\[\s*-?\d+\.?\d*\s*,\s*-?\d+\.?\d*\s*\]\s*$',  # [lat, lng]
+        r'^\s*-?\d+\.\d+\s+[NS]\s*,\s*-?\d+\.\d+\s+[EW]\s*$',  # 40.7128 N, 74.0060 W
+    ]
+    for pattern in coord_patterns:
+        if _re.match(pattern, addr, _re.IGNORECASE):
+            print(f"[DEBUG] Address looks like coordinates: '{addr}'")
+            return False
     
     # Must contain at least one letter (not just numbers/symbols)
-    if not _re.search(r'[a-zA-Z]', cleaned):
+    if not _re.search(r'[a-zA-Z]', addr):
+        print(f"[DEBUG] Address contains no letters: '{addr}'")
+        return False
+    
+    # Reject addresses that are just numbers and punctuation
+    if _re.match(r'^[\d\s,.-]+$', addr):
+        print(f"[DEBUG] Address is only numbers/punctuation: '{addr}'")
+        return False
+    
+    # Reject if it looks like an OSM ID or internal identifier
+    if _re.match(r'^(node|way|relation)/\d+$', addr, _re.IGNORECASE):
+        print(f"[DEBUG] Address looks like OSM ID: '{addr}'")
+        return False
+    
+    # Reject generic placeholders
+    placeholders = ['unknown', 'undefined', 'null', 'none', 'n/a', 'tbd', 'tba']
+    addr_lower = addr.lower()
+    if any(placeholder in addr_lower for placeholder in placeholders):
+        print(f"[DEBUG] Address contains placeholder text: '{addr}'")
+        return False
+    
+    # Must have some reasonable address structure (contain comma or street-like words)
+    has_structure = (
+        ',' in addr or  # Has multiple parts separated by comma
+        any(word in addr_lower for word in ['street', 'avenue', 'road', 'boulevard', 'place', 'square', 'park', 'drive', 'lane', 'way']) or
+        _re.search(r'\d+', addr)  # Has at least one number (likely house number)
+    )
+    
+    if not has_structure:
+        print(f"[DEBUG] Address lacks structure: '{addr}'")
         return False
     
     return True
 
-
-# Move re import to top level for performance
-import re as _re
 
 # --- OPENTRIPMAP POI SEARCH ---
 OPENTRIPMAP_API_URL = "https://api.opentripmap.com/0.1/en/places/bbox"
@@ -560,44 +803,6 @@ OVERPASS_URLS = [
     "https://overpass.private.coffee/api/interpreter",
 ]
 
-# Mock data for fallback when all external providers fail
-# Used to ensure the application still provides results for testing/demo
-MOCK_POI_DATA = {
-    "restaurant": [
-        {"name": "The Golden Fork", "amenity": "restaurant", "cuisine": "italian"},
-        {"name": "Café Central", "amenity": "cafe", "cuisine": "coffee_shop"},
-        {"name": "Spice Garden", "amenity": "restaurant", "cuisine": "indian"},
-        {"name": "The Local Pub", "amenity": "pub", "cuisine": "british"},
-        {"name": "Sushi Master", "amenity": "restaurant", "cuisine": "japanese"},
-    ],
-    "historic": [
-        {"name": "Historic Monument", "tourism": "attraction", "historic": "monument"},
-        {"name": "Old Town Hall", "tourism": "attraction", "historic": "building"},
-        {"name": "City Museum", "tourism": "museum", "historic": "museum"},
-        {"name": "Ancient Castle", "tourism": "attraction", "historic": "castle"},
-        {"name": "Memorial Square", "tourism": "attraction", "historic": "memorial"},
-    ],
-    "museum": [
-        {"name": "Art Museum", "tourism": "museum", "museum": "art"},
-        {"name": "History Museum", "tourism": "museum", "museum": "history"},
-        {"name": "Science Center", "tourism": "museum", "museum": "science"},
-    ],
-    "park": [
-        {"name": "Central Park", "leisure": "park", "park": "public"},
-        {"name": "Botanical Gardens", "leisure": "park", "park": "botanical"},
-        {"name": "River Walk", "leisure": "park", "park": "riverside"},
-    ],
-    "market": [
-        {"name": "Central Market", "amenity": "marketplace", "shop": "market"},
-        {"name": "Farmers Market", "amenity": "marketplace", "shop": "farm"},
-        {"name": "Flea Market", "amenity": "marketplace", "shop": "second_hand"},
-    ],
-    "coffee": [
-        {"name": "Morning Brew", "amenity": "cafe", "cuisine": "coffee_shop"},
-        {"name": "The Daily Grind", "amenity": "cafe", "cuisine": "coffee_shop"},
-        {"name": "Espresso Bar", "amenity": "cafe", "cuisine": "coffee_shop"},
-    ],
-}
 
 
 async def reverse_geocode(lat, lon, session: Optional[aiohttp.ClientSession] = None):
@@ -1836,16 +2041,10 @@ async def discover_pois(city: Optional[str] = None, poi_type: str = "restaurant"
         elif isinstance(res, dict):
             all_pois.append(res)
 
-    # Deduplicate by (name, lat, lon)
-    seen = set()
-    deduped = []
-    for poi in all_pois:
-        key = (poi.get("name"), poi.get("lat"), poi.get("lon"))
-        if key in seen:
-            continue
-        seen.add(key)
-        deduped.append(poi)
-
+    # Enhanced deduplication using name hashing + coordinate proximity
+    print(f"[DEDUPLICATION] Starting with {len(all_pois)} venues from all providers")
+    deduped = deduplicate_venues(all_pois, name_threshold=0.85, coord_threshold_meters=100)
+    print(f"[DEDUPLICATION] Removed {len(all_pois) - len(deduped)} duplicates, returning {len(deduped)} unique venues")
 
     # Enrich with Mapillary images if token is set
     try:

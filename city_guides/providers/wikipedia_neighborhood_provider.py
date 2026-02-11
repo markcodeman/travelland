@@ -197,4 +197,4 @@ class WikipediaNeighborhoodProvider:
         return info
 
 # Global instance
-wikipedia_neighborhood_provider = WikipediaNeighborhoodProvider()
+# No global singleton. Always create and pass WikipediaNeighborhoodProvider explicitly.

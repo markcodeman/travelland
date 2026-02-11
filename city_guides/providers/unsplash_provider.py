@@ -37,7 +37,7 @@ def _is_expired(iso_str, ttl_days):
 
 async def fetch_unsplash_image(query, session: aiohttp.ClientSession = None):
     """Fetch an image from Unsplash API with proper attribution and UTM tracking."""
-    access_key = os.getenv("UNSPLASH_ACCESS_KEY")
+    access_key = os.getenv("UNSPLASH_KEY")
     if not access_key:
         return None
 
@@ -124,5 +124,3 @@ async def trigger_unsplash_download(download_url, session: aiohttp.ClientSession
     finally:
         if own_session:
             await session.close()
-</path>
-</write_to_file>

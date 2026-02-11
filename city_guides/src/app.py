@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 # Standard library imports
 import os
+from city_guides.config import config
 import asyncio
 import json
 import hashlib
@@ -87,31 +88,33 @@ async def cleanup_pixabay():
     """Clean up Pixabay service on shutdown"""
     await pixabay_service.close()
 
+aiohttp_session: aiohttp.ClientSession | None = None
+
 # Global async clients
 aiohttp_session: aiohttp.ClientSession | None = None
 redis_client: aioredis.Redis | None = None
 
-# Track active long-running searches (search_id -> metadata)
-active_searches = {}
+# Attach active_searches to app context to avoid global mutable state
+app.active_searches = {}
 
 # Configuration constants
-CACHE_TTL_NEIGHBORHOOD = int(os.getenv("CACHE_TTL_NEIGHBORHOOD", "3600"))  # 1 hour
-CACHE_TTL_RAG = int(os.getenv("CACHE_TTL_RAG", "1800"))  # 30 minutes
-CACHE_TTL_SEARCH = int(os.getenv("CACHE_TTL_SEARCH", "1800"))  # 30 minutes
-CACHE_TTL_TELEPORT = int(os.getenv("CACHE_TTL_TELEPORT", "86400"))  # 24 hours
-DDGS_CONCURRENCY = int(os.getenv("DDGS_CONCURRENCY", "5"))
-DDGS_TIMEOUT = int(os.getenv("DDGS_TIMEOUT", "5"))
+CACHE_TTL_NEIGHBORHOOD = config.get_int("CACHE_TTL_NEIGHBORHOOD", 3600)  # 1 hour
+CACHE_TTL_RAG = config.get_int("CACHE_TTL_RAG", 1800)  # 30 minutes
+CACHE_TTL_SEARCH = config.get_int("CACHE_TTL_SEARCH", 1800)  # 30 minutes
+CACHE_TTL_TELEPORT = config.get_int("CACHE_TTL_TELEPORT", 86400)  # 24 hours
+DDGS_CONCURRENCY = config.get_int("DDGS_CONCURRENCY", 5)
+DDGS_TIMEOUT = config.get_int("DDGS_TIMEOUT", 5)
 DEFAULT_PREWARM_CITIES = os.getenv("DEFAULT_PREWARM_CITIES", "").split(",") if os.getenv("DEFAULT_PREWARM_CITIES") else []
 DEFAULT_PREWARM_QUERIES = os.getenv("DEFAULT_PREWARM_QUERIES", "").split(",") if os.getenv("DEFAULT_PREWARM_QUERIES") else []
 DISABLE_PREWARM = os.getenv("DISABLE_PREWARM", "false").lower() == "true"
-GEOCODING_TIMEOUT = int(os.getenv("GEOCODING_TIMEOUT", "10"))
-GROQ_TIMEOUT = int(os.getenv("GROQ_TIMEOUT", "30"))
+GEOCODING_TIMEOUT = config.get_int("GEOCODING_TIMEOUT", 10)
+GROQ_TIMEOUT = config.get_int("GROQ_TIMEOUT", 30)
 POPULAR_CITIES = os.getenv("POPULAR_CITIES", "").split(",") if os.getenv("POPULAR_CITIES") else []
-PREWARM_RAG_CONCURRENCY = int(os.getenv("PREWARM_RAG_CONCURRENCY", "3"))
+PREWARM_RAG_CONCURRENCY = config.get_int("PREWARM_RAG_CONCURRENCY", 3)
 VERBOSE_OPEN_HOURS = os.getenv("VERBOSE_OPEN_HOURS", "false").lower() == "true"
 # Constants
 PREWARM_TTL = CACHE_TTL_SEARCH
-PREWARM_RAG_TOP_N = int(os.getenv('PREWARM_RAG_TOP_N', '50'))
+PREWARM_RAG_TOP_N = config.get_int('PREWARM_RAG_TOP_N', 50)
 
 # US State Icons - State-specific symbols instead of limited flag emojis
 US_STATE_ICONS = {
@@ -260,7 +263,7 @@ async def startup():
     # Update recommender with shared session for connection reuse
     recommender = TravelLandRecommender(session=aiohttp_session)
     try:
-        redis_client = aioredis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
+        redis_client = aioredis.from_url(config.redis_url)
         await redis_client.ping()  # type: ignore
         app.logger.info("✅ Redis connected")
         if DEFAULT_PREWARM_CITIES and DEFAULT_PREWARM_QUERIES:
@@ -313,7 +316,7 @@ async def shutdown():
 
 @app.context_processor
 def inject_feature_flags():
-    return {"GROQ_ENABLED": bool(os.getenv("GROQ_API_KEY"))}
+    return {"GROQ_ENABLED": bool(config.groq_api_key)}
 
 # --- Core Routes ---
 
@@ -427,7 +430,7 @@ async def prewarm_rag_responses(top_n: int | None = None):
         # Choose top N by population (descending)
         cities = sorted(cities, key=lambda c: int(c.get('population', 0) or 0), reverse=True)[:top_n]
         queries = DEFAULT_PREWARM_QUERIES or ["Top food"]
-        sem = asyncio.Semaphore(int(os.getenv('PREWARM_RAG_CONCURRENCY', '4')))
+        sem = asyncio.Semaphore(config.get_int('PREWARM_RAG_CONCURRENCY', 4))
 
         async def _warm_city(city_entry):
             async with sem:
@@ -445,7 +448,7 @@ async def prewarm_rag_responses(top_n: int | None = None):
                                 try:
                                     existing = await redis_client.get(ck)
                                     if existing:
-                                        await redis_client.expire(ck, int(os.getenv('RAG_CACHE_TTL', 60 * 60 * 6)))
+                                        await redis_client.expire(ck, config.get_int('RAG_CACHE_TTL', 60 * 60 * 6))
                                         continue
                                 except Exception:
                                     pass
@@ -465,7 +468,7 @@ async def prewarm_rag_responses(top_n: int | None = None):
                             continue
 
                         if data and isinstance(data, dict):
-                            ttl = int(os.getenv('RAG_CACHE_TTL', 60 * 60 * 6))
+                            ttl = config.get_int('RAG_CACHE_TTL', 60 * 60 * 6)
                             try:
                                 if redis_client:
                                     await redis_client.setex(ck, ttl, json.dumps(data))
@@ -544,10 +547,6 @@ async def prewarm_neighborhoods():
 # Import and register routes from routes module
 from city_guides.src.routes import register_routes  # noqa: E402
 register_routes(app)
-
-# Register category routes for cache management
-from city_guides.src.simple_categories import register_category_routes  # noqa: E402
-register_category_routes(app)
 
 if __name__ == "__main__":
     # Load environment variables from .env file manually

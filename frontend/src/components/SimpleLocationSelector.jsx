@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import './SimpleLocationSelector.css';
 
 const POPULAR_DESTINATIONS = [
@@ -21,22 +21,18 @@ const POPULAR_DESTINATIONS = [
 ];
 
 const HIDDEN_GEMS = [
-  { city: 'Bruges', country: 'Belgium', emoji: '🇧🇪', description: 'Medieval canals & chocolate' },
-  { city: 'Hallstatt', country: 'Austria', emoji: '🇦🇹', description: 'Alpine lakeside village' },
-  { city: 'Chefchaouen', country: 'Morocco', emoji: '🇲🇦', description: 'Blue-painted mountain town' },
-  { city: 'Ravello', country: 'Italy', emoji: '🇮🇹', description: 'Cliffside Amalfi gem' },
-  { city: 'Colmar', country: 'France', emoji: '🇫🇷', description: 'Fairytale half-timbered town' },
-  { city: 'Sintra', country: 'Portugal', emoji: '🇵🇹', description: 'Mystical palaces & forests' },
-  { city: 'Ghent', country: 'Belgium', emoji: '🇧🇪', description: 'Medieval architecture & canals' },
-  { city: 'Annecy', country: 'France', emoji: '🇫🇷', description: 'Alpine lake town' },
-  { city: 'Kotor', country: 'Montenegro', emoji: '🇲🇪', description: 'Bay of Kotor fjord' },
-  { city: 'Cesky Krumlov', country: 'Czech Republic', emoji: '��', description: 'Medieval old town' },
-  { city: 'Rothenburg', country: 'Germany', emoji: '🇩🇪', description: 'Medieval walled town' },
-  { city: 'Positano', country: 'Italy', emoji: '🇮🇹', description: 'Colorful cliffside village' },
-  { city: 'Bergen', country: 'Norway', emoji: '🇳🇴', description: 'Colorful wharf town' },
-  { city: 'Porto', country: 'Portugal', emoji: '🇵🇹', description: 'Historic port & wine region' },
-  { city: 'Salzburg', country: 'Austria', emoji: '🇦🇹', description: 'Mozart\'s birthplace' },
-  { city: 'Guanajuato', country: 'Mexico', emoji: '🇲🇽', description: 'Colorful colonial city' }
+  { city: 'Paris', neighborhood: 'Le Marais', country: 'France', emoji: '��', description: 'Historic Jewish quarter, LGBTQ+ friendly' },
+  { city: 'London', neighborhood: 'Notting Hill', country: 'United Kingdom', emoji: '��', description: 'Colorful houses and Portobello market' },
+  { city: 'New York City', neighborhood: 'Greenwich Village', country: 'United States', emoji: '��', description: 'Bohemian history and jazz clubs' },
+  { city: 'Rome', neighborhood: 'Trastevere', country: 'Italy', emoji: '🇮🇹', description: 'Bohemian riverside with trattorias' },
+  { city: 'Barcelona', neighborhood: 'El Born', country: 'Spain', emoji: '��', description: 'Trendy medieval quarter' },
+  { city: 'Tokyo', neighborhood: 'Shibuya', country: 'Japan', emoji: '��', description: 'Youth culture, fashion, and nightlife' },
+  { city: 'Paris', neighborhood: 'Montmartre', country: 'France', emoji: '🇫🇷', description: 'Artist hill with village atmosphere' },
+  { city: 'London', neighborhood: 'Shoreditch', country: 'United Kingdom', emoji: '��', description: 'Street art and hipster nightlife' },
+  { city: 'Tokyo', neighborhood: 'Harajuku', country: 'Japan', emoji: '��', description: 'Street fashion and quirky culture' },
+  { city: 'Bangkok', neighborhood: 'Sukhumvit', country: 'Thailand', emoji: '🇹🇭', description: 'Expat nightlife, malls, and street food' },
+  { city: 'Rome', neighborhood: 'Monti', country: 'Italy', emoji: '�🇹', description: 'Vintage shopping and aperitivo culture' },
+  { city: 'Barcelona', neighborhood: 'Gràcia', country: 'Spain', emoji: '��', description: 'Village atmosphere with plazas' }
 ];
 
 const ALL_DESTINATIONS = [
@@ -303,7 +299,7 @@ const SimpleLocationSelector = ({ onLocationChange, onCityGuide }) => {
 
   const handleSelect = useCallback((destination) => {
     setSelectedDestination(destination);
-    setSearchQuery(`${destination.city}, ${destination.country}`);
+    setSearchQuery(`${destination.neighborhood || destination.city}, ${destination.country}`);
     setShowSuggestions(false);
     
     onLocationChange({
@@ -313,8 +309,8 @@ const SimpleLocationSelector = ({ onLocationChange, onCityGuide }) => {
       cityName: destination.city,
       state: '',
       stateName: '',
-      neighborhood: '',
-      neighborhoodName: '',
+      neighborhood: destination.neighborhood || '',
+      neighborhoodName: destination.neighborhood || '',
       intent: ''
     });
 
@@ -360,8 +356,8 @@ const SimpleLocationSelector = ({ onLocationChange, onCityGuide }) => {
                 onClick={() => handleSelect(dest)}
               >
                 <span className="flag" data-country={dest.country}>{dest.emoji}</span>
-                <div className="destination-info">
-                  <span className="city-name">{dest.city}</span>
+                <div className="destination-info" aria-label={`Select ${dest.city}, ${dest.country}`}>
+                  <span className="city-name">{dest.city}</span>{' '}
                   <span className="country-name">
                     {dest.state ? `${dest.state}, ${dest.country}` : dest.country}
                   </span>
@@ -423,14 +419,14 @@ const SimpleLocationSelector = ({ onLocationChange, onCityGuide }) => {
           <div className="gems-grid">
             {HIDDEN_GEMS.map((dest, index) => (
               <div
-                key={`gem-${dest.city}`}
+                key={`gem-${dest.city}-${dest.neighborhood || index}`}
                 className="gem-card"
                 style={{ animationDelay: `${index * 50}ms` }}
                 onClick={() => handleSelect(dest)}
                 title={dest.description}
               >
                 <span className="flag" data-country={dest.country}>{dest.emoji}</span>
-                <span className="city-name">{dest.city}</span>
+                <span className="city-name">{dest.neighborhood || dest.city}</span>
                 <span className="gem-description">{dest.description}</span>
               </div>
             ))}

@@ -6,6 +6,13 @@ import asyncio
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 
+# Cities that should ONLY use curated data (no Overpass fallback)
+CURATED_ONLY_CITIES = {
+    "tokyo", "london", "paris", "new york", "shanghai", "beijing", 
+    "singapore", "bangkok", "mumbai", "seoul", "hong kong", "barcelona", 
+    "rome", "amsterdam", "berlin", "dubai", "los angeles", "toronto"
+}
+
 # City relation IDs for major cities (OSM relation IDs)
 CITY_RELATIONS = {
     # Europe
@@ -91,7 +98,7 @@ CITY_SEEDS = {
     "lisbon": ["Alfama", "Baixa", "Chiado", "Bairro Alto", "Belém"],
     
     # Asia
-    "tokyo": ["Shibuya", "Shinjuku", "Harajuku", "Ginza", "Akihabara"],
+    "tokyo": ["Shibuya", "Shinjuku", "Harajuku", "Ginza", "Akihabara", "Ueno", "Tamachi", "Roppongi", "Ikebukuro", "Asakusa"],
     "shanghai": ["The Bund", "French Concession", "Jing'an", "Pudong", "Xintiandi"],
     "beijing": ["Forbidden City", "Hutongs", "Sanlitun", "Wangfujing", "798 Art District"],
     "singapore": ["Marina Bay", "Orchard Road", "Chinatown", "Little India", "Kampong Glam"],
@@ -288,34 +295,35 @@ def get_neighborhood_suggestions(city: str, category: Optional[str] = None) -> L
     if "," in city_key:
         city_key = city_key.split(",")[0].strip()
     
-    # Special case: London - use direct borough fetch
+    # Special handling for London boroughs
     if city_key == "london":
         try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                boroughs = loop.run_until_complete(_fetch_london_boroughs())
-                if len(boroughs) >= 32:
-                    print(f"[DEBUG] London: returning {len(boroughs)} boroughs")
-                    return boroughs[:32]
-            finally:
-                loop.close()
+            from city_guides.utils.async_utils import AsyncRunner
+            boroughs = AsyncRunner.run(_fetch_london_boroughs())
+            if len(boroughs) >= 32:
+                print(f"[DEBUG] London: returning {len(boroughs)} boroughs")
+                return boroughs[:32]
         except Exception as e:
             print(f"[DEBUG] London direct fetch failed: {e}")
     
-    # General case: Nominatim + Overpass
-    try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+    # Fall back to seed data (unless city is curated-only)
+    city_key = city.lower().strip()
+    if "," in city_key:
+        city_key = city_key.split(",")[0].strip()
+    
+    # Skip Overpass for curated-only cities
+    if city_key in CURATED_ONLY_CITIES:
+        print(f"[DEBUG] {city_key}: curated-only city, skipping Overpass")
+    else:
+        # General case: Nominatim + Overpass
         try:
-            neighborhoods = loop.run_until_complete(_fetch_neighborhoods_nominatim(city_key))
+            from city_guides.utils.async_utils import AsyncRunner
+            neighborhoods = AsyncRunner.run(_fetch_neighborhoods_nominatim(city_key))
             if len(neighborhoods) >= 4:
                 print(f"[DEBUG] {city_key}: returning {len(neighborhoods)} neighborhoods")
                 return neighborhoods[:32]
-        finally:
-            loop.close()
-    except Exception as e:
-        print(f"[DEBUG] Nominatim+Overpass failed: {e}")
+        except Exception as e:
+            print(f"[DEBUG] Nominatim+Overpass failed: {e}")
     
     # Fall back to seed data
     seeds = CITY_SEEDS.get(city_key, [])

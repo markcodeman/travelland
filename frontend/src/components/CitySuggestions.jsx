@@ -1,9 +1,9 @@
-import React from 'react';
 import './CitySuggestions.css';
 
-const CitySuggestions = ({ city, onCategorySelect, searchResults }) => {
+const CitySuggestions = ({ city, neighborhood, onCategorySelect, searchResults }) => {
   console.log('CitySuggestions DEBUG:', { 
     city, 
+    neighborhood,
     searchResults,
     hasCategories: searchResults?.categories?.length > 0,
     categoriesLength: searchResults?.categories?.length,
@@ -18,10 +18,18 @@ const CitySuggestions = ({ city, onCategorySelect, searchResults }) => {
     return null;
   }
 
+  // Dynamic heading based on whether neighborhood is selected
+  const getLocationText = () => {
+    if (neighborhood) {
+      return `${neighborhood}, ${city}`;
+    }
+    return city;
+  };
+
   return (
     <div className="city-suggestions">
       <h3 className="suggestions-title">
-        ✨ What interests you in {city}?
+        ✨ What interests you in {getLocationText()}?
       </h3>
       <div className="suggestions-grid">
         {suggestions.map((suggestion, index) => (

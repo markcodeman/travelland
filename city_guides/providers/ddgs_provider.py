@@ -5,7 +5,9 @@
 import os
 from ddgs import DDGS
 
-async def ddgs_search(query, engine="google", max_results=3, timeout=5):
+from city_guides.src.metrics import increment, MetricsStore
+
+async def ddgs_search(query, engine="google", max_results=3, timeout=5, metrics_store: MetricsStore = None):
     """
     Search the web using DDGS (supports: google, brave, yahoo, yandex, duckduckgo).
     This function runs the blocking DDGS call in a thread and enforces an overall
@@ -46,15 +48,13 @@ async def ddgs_search(query, engine="google", max_results=3, timeout=5):
     except asyncio.TimeoutError:
         # Search timed out; return empty list to allow graceful fallback
         try:
-            from city_guides.src.metrics import increment
-            await increment('ddgs.timeout')
+            await increment('ddgs.timeout', metrics_store=metrics_store)
         except Exception:
             pass
         return []
     except Exception:
         try:
-            from city_guides.src.metrics import increment
-            await increment('ddgs.error')
+            await increment('ddgs.error', metrics_store=metrics_store)
         except Exception:
             pass
         return []

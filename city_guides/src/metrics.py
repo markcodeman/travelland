@@ -12,10 +12,22 @@ Design:
 from typing import Dict, Any
 import statistics
 
+
 # We'll import redis_client lazily from app to avoid circular import at module import time
 
-_MEM_COUNTERS: Dict[str, int] = {}
-_MEM_LATS: Dict[str, list] = {}
+class MetricsStore:
+    """In-memory fallback for metrics (counters and latencies)."""
+    def __init__(self):
+        self.counters: Dict[str, int] = {}
+        self.lats: Dict[str, list] = {}
+
+    def increment(self, name: str, amount: int = 1):
+        self.counters[name] = self.counters.get(name, 0) + amount
+
+    def observe_latency(self, name: str, ms: float, max_samples: int = 1000):
+        self.lats.setdefault(name, []).insert(0, ms)
+        if len(self.lats[name]) > max_samples:
+            self.lats[name] = self.lats[name][:max_samples]
 
 
 async def _get_redis():
@@ -28,35 +40,39 @@ async def _get_redis():
 
 async def increment(name: str, amount: int = 1) -> None:
     """Increment a named counter by amount"""
-    rc = await _get_redis()
-    key = f"metrics:counter:{name}"
-    if rc:
+    """Increment a named counter by amount, using provided MetricsStore for fallback."""
+    async def _increment(rc, key):
         try:
             await rc.incrby(key, amount)
         except Exception:
-            # best-effort fallback to memory
-            _MEM_COUNTERS[name] = _MEM_COUNTERS.get(name, 0) + amount
-    else:
-        _MEM_COUNTERS[name] = _MEM_COUNTERS.get(name, 0) + amount
+            if metrics_store:
+                metrics_store.increment(name, amount)
+
+    key = f"metrics:counter:{name}"
+    rc = await _get_redis()
+    if rc:
+        await _increment(rc, key)
+    elif metrics_store:
+        metrics_store.increment(name, amount)
 
 
 async def observe_latency(name: str, ms: float, max_samples: int = 1000) -> None:
     """Record a latency sample (milliseconds) for a named metric"""
-    rc = await _get_redis()
-    key = f"metrics:lat:{name}"
-    if rc:
+    """Record a latency sample (milliseconds) for a named metric, using provided MetricsStore for fallback."""
+    async def _observe(rc, key):
         try:
-            # LPUSH value and LTRIM to keep last max_samples
             await rc.lpush(key, str(ms))
             await rc.ltrim(key, 0, max_samples - 1)
         except Exception:
-            _MEM_LATS.setdefault(name, []).insert(0, ms)
-            if len(_MEM_LATS[name]) > max_samples:
-                _MEM_LATS[name] = _MEM_LATS[name][:max_samples]
-    else:
-        _MEM_LATS.setdefault(name, []).insert(0, ms)
-        if len(_MEM_LATS[name]) > max_samples:
-            _MEM_LATS[name] = _MEM_LATS[name][:max_samples]
+            if metrics_store:
+                metrics_store.observe_latency(name, ms, max_samples)
+
+    key = f"metrics:lat:{name}"
+    rc = await _get_redis()
+    if rc:
+        await _observe(rc, key)
+    elif metrics_store:
+        metrics_store.observe_latency(name, ms, max_samples)
 
 
 async def get_metrics() -> Dict[str, Any]:
@@ -70,12 +86,9 @@ async def get_metrics() -> Dict[str, Any]:
     out = {"counters": {}, "latencies": {}}
     if rc:
         try:
-            # list all counter keys
-            # Note: KEYS is acceptable for small-scale usage; if used in prod with large keyspace, change to SCAN
             keys = await rc.keys('metrics:counter:*')
             for k in keys:
                 try:
-                    # keys may be bytes
                     key = k.decode() if isinstance(k, (bytes, bytearray)) else k
                     name = key.split(':', 2)[-1]
                     v = await rc.get(key)
@@ -83,7 +96,6 @@ async def get_metrics() -> Dict[str, Any]:
                 except Exception:
                     continue
 
-            # For latencies we will collect raw lists so we can merge in-memory samples
             raw_lat_vals = {}
             lat_keys = await rc.keys('metrics:lat:*')
             for k in lat_keys:
@@ -96,22 +108,21 @@ async def get_metrics() -> Dict[str, Any]:
                 except Exception:
                     continue
 
-            # Merge in-memory counters/samples collected before Redis was available
-            for n, v in _MEM_COUNTERS.items():
-                out['counters'][n] = out['counters'].get(n, 0) + v
+            # Merge in-memory counters/samples from provided metrics_store
+            if metrics_store:
+                for n, v in metrics_store.counters.items():
+                    out['counters'][n] = out['counters'].get(n, 0) + v
+                for n, mem_vals in metrics_store.lats.items():
+                    combined = list(mem_vals)
+                    if n in raw_lat_vals:
+                        combined = combined + raw_lat_vals.get(n, [])
+                    if combined:
+                        out['latencies'][n] = {
+                            'count': len(combined),
+                            'avg_ms': sum(combined) / len(combined),
+                            'p50_ms': float(statistics.median(combined))
+                        }
 
-            for n, mem_vals in _MEM_LATS.items():
-                combined = list(mem_vals)
-                if n in raw_lat_vals:
-                    combined = combined + raw_lat_vals.get(n, [])
-                if combined:
-                    out['latencies'][n] = {
-                        'count': len(combined),
-                        'avg_ms': sum(combined) / len(combined),
-                        'p50_ms': float(statistics.median(combined))
-                    }
-
-            # Also include any lat keys that were in Redis but had no in-memory samples
             for n, vals in raw_lat_vals.items():
                 if n in out['latencies']:
                     continue
@@ -124,17 +135,17 @@ async def get_metrics() -> Dict[str, Any]:
 
             return out
         except Exception:
-            # fallback to mem
             pass
 
-    # In-memory fallback
-    for n, v in _MEM_COUNTERS.items():
-        out['counters'][n] = v
-    for n, vals in _MEM_LATS.items():
-        if vals:
-            out['latencies'][n] = {
-                'count': len(vals),
-                'avg_ms': sum(vals) / len(vals),
-                'p50_ms': float(statistics.median(vals))
-            }
+    # In-memory fallback only
+    if metrics_store:
+        for n, v in metrics_store.counters.items():
+            out['counters'][n] = v
+        for n, vals in metrics_store.lats.items():
+            if vals:
+                out['latencies'][n] = {
+                    'count': len(vals),
+                    'avg_ms': sum(vals) / len(vals),
+                    'p50_ms': float(statistics.median(vals))
+                }
     return out

@@ -100,6 +100,43 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
     return emojiMap[type] || emojiMap['default'];
   };
 
+  // Extract feature badges from OSM tags
+  const getFeatureBadges = (hood) => {
+    const tags = hood?.tags || {};
+    const badges = [];
+    
+    // Historic landmarks
+    if (tags.historic || tags.heritage || tags.castle || tags.ruins) {
+      badges.push({ emoji: '🏛️', label: 'Historic' });
+    }
+    // Tourism/attractions
+    if (tags.tourism === 'attraction' || tags.tourism === 'museum' || tags.tourism === 'gallery') {
+      badges.push({ emoji: '🎯', label: 'Attractions' });
+    }
+    // Parks/nature
+    if (tags.leisure === 'park' || tags.leisure === 'garden' || tags.natural) {
+      badges.push({ emoji: '🌳', label: 'Parks' });
+    }
+    // Dining/food
+    if (tags.amenity === 'restaurant' || tags.amenity === 'cafe' || tags.amenity === 'bar') {
+      badges.push({ emoji: '🍽️', label: 'Dining' });
+    }
+    // Shopping
+    if (tags.shop || tags.amenity === 'marketplace') {
+      badges.push({ emoji: '🛍️', label: 'Shopping' });
+    }
+    // Beach/waterfront
+    if (tags.natural === 'beach' || tags.beach) {
+      badges.push({ emoji: '🏖️', label: 'Beach' });
+    }
+    // Entertainment
+    if (tags.amenity === 'theatre' || tags.amenity === 'cinema') {
+      badges.push({ emoji: '🎭', label: 'Entertainment' });
+    }
+    
+    return badges.slice(0, 3); // Max 3 badges
+  };
+
   const getCategoryColor = (type) => {
     const colorMap = {
       'historic': '#8B4513',
@@ -181,7 +218,7 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
               <button
                 key={index}
                 className="neighborhood-card"
-                onClick={() => onSelect(hood.name)}
+                onClick={() => onSelect(hood)}
                 style={{ '--card-color': getCategoryColor(hood.type) }}
               >
                 <div className="neighborhood-emoji">
@@ -210,9 +247,9 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
     <div className="neighborhood-picker-overlay">
       <div className="neighborhood-picker">
         <div className="picker-header">
-          <h3>🎯 Narrow Down Your Search</h3>
+          <h3>🎯 Pick a Neighborhood</h3>
           <p className="picker-subtitle">
-            {city} is huge! Pick a neighborhood for better {category} results.
+            {city} has distinct neighborhoods. Choose one to explore, then select what interests you.
           </p>
         </div>
 
@@ -222,11 +259,12 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
             const name = typeof hood === 'string' ? hood : hood.name;
             const description = typeof hood === 'string' ? '' : (hood.description || '');
             const type = typeof hood === 'string' ? 'culture' : (hood.type || 'culture');
+            const badges = typeof hood === 'string' ? [] : getFeatureBadges(hood);
             return (
               <button
                 key={index}
                 className="neighborhood-card"
-                onClick={() => onSelect(name)}
+                onClick={() => onSelect(typeof hood === 'string' ? { name: hood } : hood)}
                 style={{ '--card-color': getCategoryColor(type) }}
               >
                 <div className="neighborhood-emoji">
@@ -235,6 +273,32 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
                 <div className="neighborhood-info">
                   <h4>{formatBilingualName(name)}</h4>
                   <p>{description}</p>
+                  {badges.length > 0 && (
+                    <div className="neighborhood-badges" style={{ 
+                      display: 'flex', 
+                      gap: '6px', 
+                      marginTop: '8px',
+                      flexWrap: 'wrap'
+                    }}>
+                      {badges.map((badge, i) => (
+                        <span 
+                          key={i}
+                          style={{
+                            fontSize: '12px',
+                            background: '#f0f0f0',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            color: '#555',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '3px'
+                          }}
+                        >
+                          {badge.emoji} {badge.label}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="neighborhood-arrow">→</div>
               </button>

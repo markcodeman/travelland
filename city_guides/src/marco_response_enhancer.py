@@ -381,7 +381,7 @@ class MarcoResponseEnhancer:
 
 
 # Global enhancer instance
-MARCO_ENHANCER = MarcoResponseEnhancer()
+# No global singleton. Always create and pass MarcoResponseEnhancer explicitly.
 
 
 def enhance_marco_response(response: str, query: str, city: str, venues: List[Dict], neighborhoods: List[Dict]) -> str:

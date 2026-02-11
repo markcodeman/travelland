@@ -128,12 +128,22 @@ async def search():
         # Add categories to the search result
         if isinstance(result, dict):
             try:
-                from city_guides.src.simple_categories import get_dynamic_categories
-                categories = await get_dynamic_categories(city, state_name, country_name)
+                from city_guides.src.simple_categories import get_dynamic_categories, get_neighborhood_specific_categories
+                neighborhood = payload.get('neighborhood', '').strip()
+                
+                if neighborhood:
+                    # Use neighborhood-specific categories
+                    categories = await get_neighborhood_specific_categories(city, neighborhood, state_name)
+                    app.logger.info(f'Using neighborhood-specific categories for {neighborhood}, {city}: {[c["category"] for c in categories]}')
+                else:
+                    # Use city-wide categories
+                    categories = await get_dynamic_categories(city, state_name, country_name)
+                    app.logger.info(f'Using city-wide categories for {city}: {[c["category"] for c in categories]}')
+                
                 result['categories'] = categories
             except Exception as e:
                 import traceback
-                app.logger.error(f'Failed to get categories for {city}: {e}')
+                app.logger.error(f'Failed to get categories for {city}{" / " + neighborhood if payload.get("neighborhood") else ""}: {e}')
                 app.logger.error(traceback.format_exc())
                 result['categories'] = []
 

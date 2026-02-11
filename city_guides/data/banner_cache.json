@@ -428,5 +428,10 @@
     "remote_url": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Santuario_de_Nuestra_Se%C3%B1ora_de_la_Cabeza%2C_en_Motril_%28Granada%29.jpg",
     "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=2085032)",
     "generated_at": "2026-02-10T17:31:29.629239"
+  },
+  "spanish town": {
+    "remote_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/St.-Jago-de-la-Vega.JPG/2592px-St.-Jago-de-la-Vega.JPG",
+    "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=504969)",
+    "generated_at": "2026-02-10T22:04:41.918375"
   }
 }

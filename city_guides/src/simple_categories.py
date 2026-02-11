@@ -186,9 +186,75 @@ def get_category_icon(category: str) -> str:
         ('local specialty', '🏆'),
         ('traditional', '🎯'),
         
-        # Festivals & Events
-        ('festival', '🎉'),
-        ('event', '🎪'),
+        # Anime & Electronics
+        ('anime', '🎮'),
+        ('electronics', '📱'),
+        ('gaming', '🎮'),
+        ('arcade', '🕹️'),
+        ('tech', '💻'),
+        ('otaku', '🎌'),
+        ('manga', '📚'),
+        ('cosplay', '🎭'),
+        
+        # Fashion & Style
+        ('fashion', '👗'),
+        ('style', '👠'),
+        ('luxury', '💎'),
+        ('boutique', '🏪'),
+        ('street fashion', '👟'),
+        ('youth culture', '🎒'),
+        ('trendy', '🔥'),
+        
+        # Traditional Japanese
+        ('traditional', '⛩️'),
+        ('temple', '⛩️'),
+        ('shrine', '⛩️'),
+        ('japanese', '🗾'),
+        ('crafts', '🎋'),
+        ('cherry blossom', '🌸'),
+        ('sakura', '🌸'),
+        
+        # Art & Museums
+        ('art museum', '🎨'),
+        ('contemporary art', '🖼️'),
+        ('gallery', '🖼️'),
+        ('museum', '🏛️'),
+        
+        # Business & Finance
+        ('business', '💼'),
+        ('finance', '💰'),
+        ('banking', '🏦'),
+        ('corporate', '🏢'),
+        
+        # Nightlife & Entertainment
+        ('nightlife', '🌃'),
+        ('bar', '🍸'),
+        ('club', '🎵'),
+        ('live music', '🎶'),
+        ('entertainment', '🎪'),
+        
+        # Transport & Station Areas
+        ('transport', '🚆'),
+        ('station', '🚉'),
+        ('hub', '🎯'),
+        
+        # Alternative Culture
+        ('alternative', '�'),
+        ('vintage', '📀'),
+        ('secondhand', '♻️'),
+        ('subculture', '🎪'),
+        
+        # Waterfront & Modern
+        ('waterfront', '🌊'),
+        ('modern', '🏙️'),
+        ('architecture', '🏗️'),
+        ('bay', '⚓'),
+        
+        # Local Life
+        ('local', '🏘️'),
+        ('cafe', '☕'),
+        ('bakery', '🥐'),
+        ('small shop', '🏪'),
     ]
     
     category_lower = category.lower()
@@ -1423,6 +1489,207 @@ def combine_and_score_categories(all_categories: List[Dict[str, Any]]) -> List[D
         })
     
     return final_categories
+
+
+async def get_neighborhood_specific_categories(city: str, neighborhood: str, state: str = "") -> List[Dict[str, Any]]:
+    """Generate categories based on neighborhood-specific content and characteristics."""
+    categories = []
+    
+    try:
+        print(f"[NEIGHBORHOOD-CATEGORIES] Analyzing {neighborhood}, {city}")
+        print(f"[NEIGHBORHOOD-CATEGORIES] Normalized neighborhood: {neighborhood.lower().replace('-', '').replace(' ', '')}")
+        
+        # Neighborhood name-based heuristics for common patterns
+        neighborhood_lower = neighborhood.lower().replace('-', '').replace(' ', '')  # Normalize for matching
+        city_lower = city.lower()
+        print(f"[NEIGHBORHOOD-CATEGORIES] Checking patterns against: '{neighborhood_lower}'")
+        
+        # Historic neighborhoods (common patterns)
+        if any(word in neighborhood_lower for word in ['old town', 'historic', 'quartier', 'distrito', 'ciudad vieja', 'altstadt', 'vieille ville']):
+            categories.append({'category': 'Historic Sites', 'confidence': 0.9, 'source': 'neighborhood_name'})
+            categories.append({'category': 'Art & Culture', 'confidence': 0.8, 'source': 'neighborhood_name'})
+        
+        # University areas
+        if any(word in neighborhood_lower for word in ['university', 'campus', 'academic', 'student', 'college']):
+            categories.append({'category': 'University & Academia', 'confidence': 0.9, 'source': 'neighborhood_name'})
+        
+        # Beach/coastal neighborhoods
+        if any(word in neighborhood_lower for word in ['beach', 'coast', 'seaside', 'waterfront', 'playa', 'costa']):
+            categories.append({'category': 'Beaches & Coast', 'confidence': 0.9, 'source': 'neighborhood_name'})
+        
+        # Entertainment districts
+        if any(word in neighborhood_lower for word in ['entertainment', 'nightlife', 'district', 'quartier', 'shibuya', 'ginza', 'times square', 'sukhumvit']):
+            categories.append({'category': 'Entertainment Districts', 'confidence': 0.8, 'source': 'neighborhood_name'})
+        
+        # Shopping areas
+        if any(word in neighborhood_lower for word in ['market', 'bazaar', 'shopping', 'mall', 'boutique', 'souk']):
+            categories.append({'category': 'Shopping', 'confidence': 0.8, 'source': 'neighborhood_name'})
+        
+        # Food-specific neighborhoods
+        if any(word in neighborhood_lower for word in ['food', 'dining', 'restaurant', 'cuisine', 'gastronomy']):
+            categories.append({'category': 'Food & Dining', 'confidence': 0.9, 'source': 'neighborhood_name'})
+        
+        # Parks/nature
+        if any(word in neighborhood_lower for word in ['park', 'garden', 'nature', 'green', 'forest', 'mountain', 'central park']):
+            categories.append({'category': 'Parks & Nature', 'confidence': 0.8, 'source': 'neighborhood_name'})
+        
+        # Industrial/railway
+        if any(word in neighborhood_lower for word in ['industrial', 'factory', 'railway', 'station', 'port', 'harbor']):
+            categories.append({'category': 'Industrial Heritage', 'confidence': 0.7, 'source': 'neighborhood_name'})
+        
+        # Castles/fortifications
+        if any(word in neighborhood_lower for word in ['castle', 'fort', 'fortification', 'palace', 'citadel']):
+            categories.append({'category': 'Castles & Fortifications', 'confidence': 0.8, 'source': 'neighborhood_name'})
+        
+        # Railway specific
+        if any(word in neighborhood_lower for word in ['railway', 'train', 'station', 'railroad']):
+            categories.append({'category': 'Railway Heritage', 'confidence': 0.7, 'source': 'neighborhood_name'})
+        
+        # Anime & Electronics specific for Tokyo
+        if any(word in neighborhood_lower for word in ['akihabara', 'ota', 'kanda']):
+            categories.append({'category': 'Anime & Electronics', 'confidence': 0.95, 'source': 'city_specific'})
+            categories.append({'category': 'Gaming & Arcades', 'confidence': 0.9, 'source': 'city_specific'})
+            categories.append({'category': 'Tech Culture', 'confidence': 0.8, 'source': 'city_specific'})
+        
+        # Fashion & Youth Culture specific for Tokyo
+        if any(word in neighborhood_lower for word in ['harajuku', 'omotesando', 'shibuya']):
+            categories.append({'category': 'Fashion & Style', 'confidence': 0.95, 'source': 'city_specific'})
+            categories.append({'category': 'Youth Culture', 'confidence': 0.9, 'source': 'city_specific'})
+            categories.append({'category': 'Street Fashion', 'confidence': 0.85, 'source': 'city_specific'})
+        
+        # Traditional Culture
+        if any(word in neighborhood_lower for word in ['asakusa', 'ueno', 'yanaka']):
+            categories.append({'category': 'Traditional Culture', 'confidence': 0.95, 'source': 'city_specific'})
+            categories.append({'category': 'Temples & Shrines', 'confidence': 0.9, 'source': 'city_specific'})
+            categories.append({'category': 'Japanese Crafts', 'confidence': 0.8, 'source': 'city_specific'})
+        
+        # Art & Museums
+        if any(word in neighborhood_lower for word in ['ueno', 'roppongi']):
+            categories.append({'category': 'Art Museums', 'confidence': 0.95, 'source': 'city_specific'})
+            categories.append({'category': 'Contemporary Art', 'confidence': 0.9, 'source': 'city_specific'})
+        
+        # Business & Finance
+        if any(word in neighborhood_lower for word in ['shinbashi', 'toranomon', 'kasumigaseki']):
+            categories.append({'category': 'Business District', 'confidence': 0.95, 'source': 'city_specific'})
+            categories.append({'category': 'Finance & Banking', 'confidence': 0.9, 'source': 'city_specific'})
+        
+        # Luxury Shopping
+        if any(word in neighborhood_lower for word in ['ginza', 'omotesando']):
+            categories.append({'category': 'Luxury Shopping', 'confidence': 0.95, 'source': 'city_specific'})
+            categories.append({'category': 'High Fashion', 'confidence': 0.9, 'source': 'city_specific'})
+        
+        # Nightlife & Entertainment
+        if any(word in neighborhood_lower for word in ['shinjuku', 'roppongi', 'shibuya', 'kabukicho']):
+            categories.append({'category': 'Nightlife', 'confidence': 0.95, 'source': 'city_specific'})
+            categories.append({'category': 'Bars & Clubs', 'confidence': 0.9, 'source': 'city_specific'})
+            categories.append({'category': 'Live Music', 'confidence': 0.8, 'source': 'city_specific'})
+        
+        # Parks & Recreation
+        if any(word in neighborhood_lower for word in ['shinjuku', 'ueno', 'meguro', 'komazawa']):
+            categories.append({'category': 'Parks & Gardens', 'confidence': 0.9, 'source': 'city_specific'})
+            categories.append({'category': 'Cherry Blossoms', 'confidence': 0.85, 'source': 'city_specific'})
+        
+        # Station/Transport Hub Areas
+        if any(word in neighborhood_lower for word in ['tokyostation', 'shinagawa', 'shibuya', 'shinjuku']):
+            categories.append({'category': 'Transport Hub', 'confidence': 0.9, 'source': 'city_specific'})
+            categories.append({'category': 'Station Shopping', 'confidence': 0.8, 'source': 'city_specific'})
+        
+        # Subculture & Alternative
+        if any(word in neighborhood_lower for word in ['kōenji', 'shimokitazawa', 'kichijoji']):
+            categories.append({'category': 'Alternative Culture', 'confidence': 0.95, 'source': 'city_specific'})
+            categories.append({'category': 'Vintage & Secondhand', 'confidence': 0.9, 'source': 'city_specific'})
+            categories.append({'category': 'Live Music Venues', 'confidence': 0.85, 'source': 'city_specific'})
+        
+        # Waterfront & Bay Areas
+        if any(word in neighborhood_lower for word in ['odaiba', 'toyosu', 'koto']):
+            categories.append({'category': 'Waterfront', 'confidence': 0.9, 'source': 'city_specific'})
+            categories.append({'category': 'Modern Architecture', 'confidence': 0.85, 'source': 'city_specific'})
+            categories.append({'category': 'Entertainment Complexes', 'confidence': 0.8, 'source': 'city_specific'})
+        
+        # Traditional Crafts & Local Industry
+        if any(word in neighborhood_lower for word in ['sumida', 'taito']):
+            categories.append({'category': 'Traditional Crafts', 'confidence': 0.9, 'source': 'city_specific'})
+            categories.append({'category': 'Local Industry', 'confidence': 0.8, 'source': 'city_specific'})
+        
+        # Residential with Local Flavor
+        if any(word in neighborhood_lower for word in ['setagaya', 'meguro', 'minato', 'suginami']):
+            categories.append({'category': 'Local Life', 'confidence': 0.8, 'source': 'city_specific'})
+            categories.append({'category': 'Cafes & Bakeries', 'confidence': 0.85, 'source': 'city_specific'})
+            categories.append({'category': 'Small Shops', 'confidence': 0.8, 'source': 'city_specific'})
+        
+        elif 'paris' in city_lower:
+            # Paris-specific patterns
+            if any(word in neighborhood_lower for word in ['marais', 'latin', 'saint-germain', 'montmartre']):
+                categories.append({'category': 'Historic Sites', 'confidence': 0.9, 'source': 'city_specific'})
+                categories.append({'category': 'Art & Culture', 'confidence': 0.8, 'source': 'city_specific'})
+            if any(word in neighborhood_lower for word in ['champs-elysées', 'opera', 'saint-honoré']):
+                categories.append({'category': 'Shopping', 'confidence': 0.8, 'source': 'city_specific'})
+            if any(word in neighborhood_lower for word in ['le marais', 'bastille', 'canal saint-martin']):
+                categories.append({'category': 'Entertainment Districts', 'confidence': 0.8, 'source': 'city_specific'})
+        
+        elif 'london' in city_lower:
+            # London-specific patterns
+            if any(word in neighborhood_lower for word in ['covent garden', 'soho', 'camden', 'shoreditch']):
+                categories.append({'category': 'Entertainment Districts', 'confidence': 0.9, 'source': 'city_specific'})
+            if any(word in neighborhood_lower for word in ['westminster', 'city of london', 'southwark']):
+                categories.append({'category': 'Historic Sites', 'confidence': 0.9, 'source': 'city_specific'})
+            if any(word in neighborhood_lower for word in ['notting hill', 'kensington', 'knightsbridge']):
+                categories.append({'category': 'Shopping', 'confidence': 0.8, 'source': 'city_specific'})
+        
+        elif 'new york' in city_lower:
+            # NYC-specific patterns
+            if any(word in neighborhood_lower for word in ['greenwich village', 'soho', 'east village']):
+                categories.append({'category': 'Entertainment Districts', 'confidence': 0.9, 'source': 'city_specific'})
+            if any(word in neighborhood_lower for word in ['financial district', 'wall street', 'tribeca']):
+                categories.append({'category': 'Historic Sites', 'confidence': 0.8, 'source': 'city_specific'})
+            if any(word in neighborhood_lower for word in ['fifth avenue', 'madison', 'soho']):
+                categories.append({'category': 'Shopping', 'confidence': 0.9, 'source': 'city_specific'})
+        
+        # Enhanced fallback for unknown neighborhoods - provide contextually relevant options
+        if len(categories) <= 1:  # Only has Food & Dining or nothing
+            # Add universally useful categories for any neighborhood
+            categories.append({'category': 'Historic Sites', 'confidence': 0.6, 'source': 'enhanced_fallback'})
+            categories.append({'category': 'Art & Culture', 'confidence': 0.6, 'source': 'enhanced_fallback'})
+            categories.append({'category': 'Shopping', 'confidence': 0.5, 'source': 'enhanced_fallback'})
+            
+            # Add city-specific likely categories
+            if 'tokyo' in city_lower:
+                categories.append({'category': 'Entertainment Districts', 'confidence': 0.7, 'source': 'city_fallback'})
+            elif 'paris' in city_lower:
+                categories.append({'category': 'Art & Culture', 'confidence': 0.8, 'source': 'city_fallback'})
+            elif 'london' in city_lower:
+                categories.append({'category': 'Historic Sites', 'confidence': 0.8, 'source': 'city_fallback'})
+            elif 'new york' in city_lower:
+                categories.append({'category': 'Entertainment Districts', 'confidence': 0.8, 'source': 'city_fallback'})
+        
+        # Always include Food & Dining as fallback (most neighborhoods have food options)
+        if not any(c['category'] == 'Food & Dining' for c in categories):
+            categories.append({'category': 'Food & Dining', 'confidence': 0.7, 'source': 'fallback'})
+        
+        # Remove duplicates and sort by confidence
+        seen = set()
+        unique_categories = []
+        for cat in sorted(categories, key=lambda x: x['confidence'], reverse=True):
+            if cat['category'] not in seen:
+                seen.add(cat['category'])
+                unique_categories.append(cat)
+        
+        # Limit to top 8 most relevant categories for neighborhoods
+        final_categories = unique_categories[:8]
+        
+        print(f"[NEIGHBORHOOD-CATEGORIES] Final categories before return: {[c['category'] for c in final_categories]}")
+        print(f"[NEIGHBORHOOD-CATEGORIES] Generated {len(final_categories)} categories for {neighborhood}, {city}: {[c['category'] for c in final_categories]}")
+        
+        return final_categories
+        
+    except Exception as e:
+        print(f"[NEIGHBORHOOD-CATEGORIES] Error for {neighborhood}, {city}: {e}")
+        # Fallback to basic categories with correct format
+        return [
+            {'category': 'Food & Dining', 'confidence': 0.8, 'source': 'fallback'},
+            {'category': 'Historic Sites', 'confidence': 0.7, 'source': 'fallback'},
+            {'category': 'Shopping', 'confidence': 0.6, 'source': 'fallback'}
+        ]
 
 
 async def get_dynamic_categories(city: str, state: str = "", country: str = "US") -> List[Dict[str, str]]:

@@ -9,34 +9,37 @@ import json
 import logging
 import os
 import time
+import math
 from pathlib import Path
 from typing import Dict, Optional
 import re
 import asyncio
+from city_guides.utils.async_utils import AsyncRunner
 from urllib.parse import urlparse
 
-# Import SynthesisEnhancer lazily to break circular dependency
-_synthesis_enhancer = None
+def get_synthesis_enhancer(enhancer=None):
+    """Return an injected SynthesisEnhancer instance or import a new one (not singleton)."""
+    if enhancer is not None:
+        return enhancer
+    try:
+        from synthesis_enhancer import SynthesisEnhancer
+    except ImportError:
+        from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+    return SynthesisEnhancer
 
-def get_synthesis_enhancer():
-    global _synthesis_enhancer
-    if _synthesis_enhancer is None:
-        try:
-            from synthesis_enhancer import SynthesisEnhancer
-        except ImportError:
-            from city_guides.src.synthesis_enhancer import SynthesisEnhancer
-        _synthesis_enhancer = SynthesisEnhancer
-    return _synthesis_enhancer
 
 # Import other modules
 try:
-    from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text
-except ImportError:
     from snippet_filters import looks_like_ddgs_disambiguation_text
-try:
-    from city_guides.src.venue_quality import filter_high_quality_venues, calculate_venue_quality_score, enhance_chinese_venue_processing
 except ImportError:
+    looks_like_ddgs_disambiguation_text = None
+
+try:
     from venue_quality import filter_high_quality_venues, calculate_venue_quality_score, enhance_chinese_venue_processing
+except ImportError:
+    filter_high_quality_venues = None
+    calculate_venue_quality_score = None
+    enhance_chinese_venue_processing = None
 
 
 async def _persist_quick_guide(out_obj: Dict, city_name: str, neighborhood_name: str, file_path: Path) -> None:
@@ -54,8 +57,7 @@ async def _persist_quick_guide(out_obj: Dict, city_name: str, neighborhood_name:
                 try:
                     # call possible sync or async method on enhancer in a thread-safe way
                     if hasattr(se, 'generate_neighborhood_paragraph'):
-                        # if it's async, run it; otherwise run in thread
-                        gen = se.generate_neighborhood_paragraph
+                        gen = se.generate_neighborhood_paragraph  # type: ignore[attr-defined]
                         if asyncio.iscoroutinefunction(gen):
                             new_para = await gen(neighborhood_name, city_name)
                         else:
@@ -726,6 +728,21 @@ def calculate_search_radius(neighborhood_name, bbox):
         return 300  # Smaller default radius for cities to avoid timeouts
 
 
+def haversine_km(lat1, lon1, lat2, lon2):
+    """Return great-circle distance between two points (in kilometers)."""
+    try:
+        # convert decimal degrees to radians
+        lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+        c = 2 * math.asin(math.sqrt(a))
+        km = 6371.0 * c
+        return float(km)
+    except Exception:
+        return float('inf')
+
+
 def get_country_for_city(city: str) -> Optional[str]:
     """Return country name for a given city using Nominatim (best-effort)."""
     if not city:
@@ -1163,13 +1180,7 @@ def fetch_safety_section(city: str) -> list[str]:
         if semantic is None:
             return []
         q = f"Provide 5 concise crime and safety tips for travelers in {city}. Include common scams, areas to avoid, and nighttime safety."
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            import nest_asyncio  # type: ignore
-            nest_asyncio.apply()
-            res = loop.run_until_complete(semantic.search_and_reason(q, city, mode="explorer"))
-        else:
-            res = loop.run_until_complete(semantic.search_and_reason(q, city, mode="explorer"))
+        res = AsyncRunner.run(semantic.search_and_reason(q, city, mode="explorer"))
         if isinstance(res, dict):
             out = str(res.get("answer") or res.get("text") or res)
         else:
@@ -1440,34 +1451,54 @@ def _search_impl(payload):
         print(f"[SEARCH DEBUG] Geocoding city: {city}")
         # Allow caller to provide a selected candidate (disambiguation) to bypass geocoding
         selected = payload.get('selected_candidate') or payload.get('city_coords')
-        if selected and isinstance(selected, dict) and selected.get('lat') and selected.get('lon'):
+        fallback_bbox_km = float(os.getenv('CITY_FALLBACK_BBOX_KM', '10'))  # fallback radius in km
+        def conservative_bbox(lat, lon, radius_km):
+            # 1 deg lat ~ 111km, 1 deg lon ~ 111km * cos(lat)
+            dlat = radius_km / 111.0
+            dlon = radius_km / (111.0 * math.cos(math.radians(lat))) if lat else radius_km / 111.0
+            return [lon - dlon, lat - dlat, lon + dlon, lat + dlat]
+
+        if selected and isinstance(selected, dict):
             try:
-                city_coords = {'lat': float(selected.get('lat')), 'lon': float(selected.get('lon')), 'display_name': selected.get('display_name') or city}
-                print(f"[SEARCH DEBUG] Using selected candidate coords: {city_coords}")
-                bbox = [
-                    city_coords.get('lon', 0) - 0.05,
-                    city_coords.get('lat', 0) - 0.05,
-                    city_coords.get('lon', 0) + 0.05,
-                    city_coords.get('lat', 0) + 0.05
-                ]
-                result["debug_info"]["city_coords"] = city_coords
-                result["debug_info"]["bbox"] = bbox
+                lat_val = selected.get('lat')
+                lon_val = selected.get('lon')
+                if lat_val is not None and lon_val is not None:
+                    city_coords = {'lat': float(lat_val), 'lon': float(lon_val), 'display_name': selected.get('display_name') or city}
+                    print(f"[SEARCH DEBUG] Using selected candidate coords: {city_coords}")
+                    bbox = conservative_bbox(city_coords['lat'], city_coords['lon'], fallback_bbox_km)
+                    result["debug_info"]["city_coords"] = city_coords
+                    result["debug_info"]["bbox"] = bbox
+                else:
+                    print(f"[SEARCH DEBUG] Selected candidate missing lat/lon: {selected}")
             except Exception as e:
                 print(f"[SEARCH DEBUG] Failed to use selected candidate: {e}")
         else:
             # geocode_city returns a coroutine, so we need to run it in an event loop
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
             try:
-                city_coords = loop.run_until_complete(geocode_city(city))
+                city_coords = AsyncRunner.run(geocode_city(city))
                 if city_coords:
                     print(f"[SEARCH DEBUG] City coordinates: {city_coords}")
-                    bbox = [
-                        city_coords.get('lon', 0) - 0.05,  # min_lon
-                        city_coords.get('lat', 0) - 0.05,  # min_lat  
-                        city_coords.get('lon', 0) + 0.05,  # max_lon
-                        city_coords.get('lat', 0) + 0.05   # max_lat
-                    ]
+                    # If city_coords has a bbox, use it, but if it's too large, tighten it
+                    # Otherwise, fallback to a conservative bbox
+                    # Try to get a bbox from city_coords if present (future-proof)
+                    bbox_from_coords = None
+                    if 'bbox' in city_coords and isinstance(city_coords['bbox'], (list, tuple)) and len(city_coords['bbox']) == 4:
+                        bbox_from_coords = list(city_coords['bbox'])
+                    if bbox_from_coords:
+                        # Check if bbox is too large (e.g., > CITY_FALLBACK_BBOX_KM * 3)
+                        lat_span = abs(bbox_from_coords[3] - bbox_from_coords[1])
+                        lon_span = abs(bbox_from_coords[2] - bbox_from_coords[0])
+                        # Convert to km
+                        lat_km = lat_span * 111.0
+                        lon_km = lon_span * 111.0 * abs(math.cos(math.radians(city_coords['lat'])))
+                        if lat_km > fallback_bbox_km * 3 or lon_km > fallback_bbox_km * 3:
+                            bbox = conservative_bbox(city_coords['lat'], city_coords['lon'], fallback_bbox_km)
+                            result["debug_info"]["bbox_tightened"] = True
+                        else:
+                            bbox = bbox_from_coords
+                    else:
+                        bbox = conservative_bbox(city_coords['lat'], city_coords['lon'], fallback_bbox_km)
+                        result["debug_info"]["bbox_tightened"] = True
                     result["debug_info"]["city_coords"] = city_coords
                     result["debug_info"]["bbox"] = bbox
                 else:
@@ -1671,10 +1702,8 @@ def _search_impl(payload):
                 return formatted_venues
                 
             # Run in event loop
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
             try:
-                formatted_venues = loop.run_until_complete(get_venues_with_images())
+                formatted_venues = AsyncRunner.run(get_venues_with_images())
                 print(f"[SEARCH DEBUG] Found {len(formatted_venues)} venues")
                 
                 # Filter for public transport venues if category is public transport
@@ -1778,7 +1807,84 @@ def _search_impl(payload):
                     result["venues"] = historic_venues
                     print(f"[SEARCH DEBUG] Filtered to {len(historic_venues)} historic venues (strict mode)")
                 else:
-                    result["venues"] = formatted_venues
+                    # Attach city-center distance metrics, filter out extreme outliers, and apply
+                    # a small distance-based boost to ranking so venues nearer the city center
+                    # are preferred. Configuration via env vars:
+                    # CITY_MAX_DISTANCE_KM (default: 40)
+                    # CITY_DISTANCE_DECAY_KM (distance where score decays to 0, default: 20)
+                    MAX_DISTANCE_KM = float(os.getenv('CITY_MAX_DISTANCE_KM', '40'))
+                    DISTANCE_DECAY_KM = float(os.getenv('CITY_DISTANCE_DECAY_KM', '20'))
+
+                    center_lat = None
+                    center_lon = None
+                    try:
+                        if city_coords and isinstance(city_coords, dict):
+                            lat_val = city_coords.get('lat')
+                            lon_val = city_coords.get('lon')
+                            center_lat = float(lat_val) if lat_val is not None else None
+                            center_lon = float(lon_val) if lon_val is not None else None
+                        else:
+                            center_lat = None
+                            center_lon = None
+                    except Exception:
+                        center_lat = None
+                        center_lon = None
+
+                    venues_with_dist = []
+                    filtered_out = 0
+                    for v in formatted_venues:
+                        try:
+                            vlat = v.get('lat')
+                            vlon = v.get('lon')
+                            if vlat is None or vlon is None:
+                                # can't compute distance - include but mark as unknown
+                                v['distance_km'] = None
+                                v['distance_score'] = 0.0
+                                venues_with_dist.append(v)
+                                continue
+
+                            if center_lat is None or center_lon is None:
+                                # No reliable city center - include all but set distances unknown
+                                v['distance_km'] = None
+                                v['distance_score'] = 0.0
+                                venues_with_dist.append(v)
+                                continue
+
+                            if vlat is None or vlon is None:
+                                v['distance_km'] = None
+                                v['distance_score'] = 0.0
+                                venues_with_dist.append(v)
+                                continue
+                            dist = haversine_km(center_lat, center_lon, float(vlat), float(vlon))
+                            v['distance_km'] = round(dist, 3)
+                            # linear decay to zero at DISTANCE_DECAY_KM
+                            v['distance_score'] = max(0.0, 1.0 - (dist / DISTANCE_DECAY_KM)) if DISTANCE_DECAY_KM > 0 else 0.0
+
+                            # Enforce max distance cutoff to eliminate rural/state-level hits
+                            if dist > MAX_DISTANCE_KM:
+                                filtered_out += 1
+                                continue
+
+                            venues_with_dist.append(v)
+                        except Exception:
+                            # On any issue, keep the venue but mark distance unknown
+                            v['distance_km'] = None
+                            v['distance_score'] = 0.0
+                            venues_with_dist.append(v)
+
+                    # Apply a combined score for sorting: prefer higher quality and closer venues.
+                    for v in venues_with_dist:
+                        quality = float(v.get('quality_score', 0) or 0)
+                        dist_score = float(v.get('distance_score', 0) or 0)
+                        # Combined: quality (70%) + distance influence (30%)
+                        v['combined_score'] = quality * 0.7 + dist_score * 0.3
+
+                    venues_with_dist.sort(key=lambda x: x.get('combined_score', 0) or 0, reverse=True)
+
+                    result["venues"] = venues_with_dist
+                    result['debug_info']['distance_filtered_out'] = filtered_out
+                    result['debug_info']['city_max_distance_km'] = MAX_DISTANCE_KM
+                    result['debug_info']['city_distance_decay_km'] = DISTANCE_DECAY_KM
                 
                 # Apply venue quality filtering
                 # Use a lower threshold for neighborhood searches to avoid over-filtering
@@ -1978,10 +2084,8 @@ def _search_impl(payload):
                 except Exception as e:
                     print(f"[SEARCH DEBUG] DDGS fallback failed: {e}")
                 return None
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
             try:
-                city_guide_result = loop.run_until_complete(get_city_guide())
+                city_guide_result = AsyncRunner.run(get_city_guide())
                 if city_guide_result:
                     result["quick_guide"] = city_guide_result['guide']
                     if city_guide_result.get('image'):

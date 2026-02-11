@@ -33,16 +33,19 @@ class SeededFacts:
     def get_city_facts(self, city: str) -> list:
         """Get fun facts for a specific city from seed data"""
         if not self._seed_data:
-            logger.warning("No seed data available")
+            logger.warning("[SEEDED-FACTS] No seed data available")
             return []
         
         city_lower = city.lower().strip()
+        logger.info(f"[SEEDED-FACTS] Looking for city: '{city_lower}'")
+        logger.info(f"[SEEDED-FACTS] Available cities: {list(self._seed_data.get('cities', {}).keys())[:10]}...")
+        
         facts = self._seed_data.get('cities', {}).get(city_lower, [])
         
         if facts:
-            logger.info(f"Using seed data for {city}: {len(facts)} facts")
+            logger.info(f"[SEEDED-FACTS] Found {len(facts)} facts for '{city_lower}'")
         else:
-            logger.info(f"No seed data available for {city}")
+            logger.info(f"[SEEDED-FACTS] No seed data available for '{city_lower}'")
         
         return facts
     

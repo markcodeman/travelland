@@ -164,4 +164,4 @@ Context: This is for a travel guide app that helps visitors understand local nei
         }
 
 # Global instance
-groq_neighborhood_provider = GroqNeighborhoodProvider()
+# No global singleton. Always create and pass GroqNeighborhoodProvider explicitly.

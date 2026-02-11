@@ -1,0 +1,601 @@
+/* LocationGuide Component Styles */
+
+.location-guide {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    min-height: 600px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+/* Header Section */
+.guide-header {
+    grid-column: 1 / -1;
+    position: relative;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.guide-hero {
+    height: 300px;
+    border-radius: 0;
+}
+
+.guide-actions {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    gap: 12px;
+    z-index: 10;
+}
+
+.action-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    background: white;
+}
+
+.action-btn.search-btn {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.action-btn.neighborhood-btn {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.action-btn.suggestions-btn {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* Content Section */
+.guide-content {
+    padding: 24px;
+    min-height: 400px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.empty-state p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #666;
+}
+
+/* Sidebar */
+.guide-sidebar {
+    background: #f8f9fa;
+    padding: 24px;
+    border-left: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.guide-sidebar h3 {
+    margin: 0 0 12px 0;
+    font-size: 18px;
+    color: #333;
+    font-weight: 600;
+}
+
+/* Location Lists */
+.location-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.location-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+}
+
+.location-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.location-item.favorite {
+    border-color: #ffc107;
+    background: #fff9c4;
+}
+
+.location-name {
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+}
+
+.location-country {
+    color: #666;
+    font-size: 14px;
+    margin-right: 8px;
+}
+
+.favorite-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.favorite-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Search Suggestions */
+.search-suggestions {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+/* Fun Fact styling */
+.fun-fact {
+    background: linear-gradient(90deg, #fffbe6 0%, #eef6ff 100%);
+    border: 1px solid #e9f1ff;
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+.fun-line {
+    font-size: 15px;
+    color: #1f2937;
+    line-height: 1.4;
+}
+.read-more {
+    display: inline-block;
+    margin-top: 8px;
+    background: transparent;
+    border: none;
+    color: #2563eb;
+    cursor: pointer;
+    font-weight: 600;
+}
+.full-text {
+    margin-top: 10px;
+    color: #374151;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.suggestion-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.suggestion-tag {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.suggestion-tag:hover {
+    background: #5a6fd8;
+    transform: translateY(-1px);
+}
+
+/* Neighborhoods Grid */
+.neighborhoods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.neighborhood-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.neighborhood-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    transform: translateY(-2px);
+}
+
+.neighborhood-name {
+    font-weight: 700;
+    color: #333;
+    font-size: 16px;
+}
+
+.neighborhood-desc {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Attractions List */
+.attractions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.attraction-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.attraction-icon {
+    font-size: 20px;
+}
+
+/* Modals */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+}
+
+.search-modal {
+    max-width: 500px;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.modal-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    max-height: 60vh;
+}
+
+/* Neighborhood List in Modal */
+.neighborhoods-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.neighborhood-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.neighborhood-item:hover {
+    background: #e9ecef;
+    border-color: #667eea;
+}
+
+.neighborhood-item.selected {
+    background: #e3f2fd;
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.neighborhood-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.neighborhood-info p {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+}
+
+.explore-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.explore-btn:hover {
+    background: #5a6fd8;
+}
+
+/* Search Input in Modal */
+.search-input {
+    margin-bottom: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .location-guide {
+        grid-template-columns: 1fr;
+    }
+    
+    .guide-sidebar {
+        border-left: none;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .guide-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .guide-hero {
+        height: 250px;
+    }
+    
+    .guide-content {
+        padding: 16px;
+    }
+    
+    .guide-sidebar {
+        padding: 16px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 0 10px;
+    }
+    
+    .neighborhoods-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .guide-hero {
+        height: 200px;
+    }
+    
+    .guide-actions {
+        left: 10px;
+        bottom: 10px;
+    }
+    
+    .action-btn {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+    
+    .empty-icon {
+        font-size: 48px;
+    }
+    
+    .empty-state h3 {
+        font-size: 20px;
+    }
+}
+
+/* Accessibility */
+.location-guide:focus-within {
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .location-guide,
+    .action-btn,
+    .neighborhood-card,
+    .location-item,
+    .suggestion-tag,
+    .modal-overlay,
+    .modal-content {
+        transition: none;
+    }
+    
+    .action-btn:hover,
+    .neighborhood-card:hover {
+        transform: none;
+    }
+    
+    .modal-overlay.open {
+        animation: none;
+    }
+}
+
+/* High Contrast Support */
+@media (prefers-contrast: high) {
+    .location-guide {
+        border: 2px solid #000;
+    }
+    
+    .action-btn {
+        border: 2px solid #000;
+        background: #fff;
+        color: #000;
+    }
+    
+    .neighborhood-card {
+        border: 2px solid #000;
+    }
+    
+    .location-item {
+        border: 2px solid #000;
+    }
+    
+    .modal-content {
+        border: 2px solid #000;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .location-guide {
+        background: #1a1a1a;
+        color: #ffffff;
+    }
+    
+    .guide-sidebar {
+        background: #2d2d2d;
+        border-left-color: #404040;
+    }
+    
+    .guide-content {
+        color: #ffffff;
+    }
+    
+    .empty-state {
+        color: #cccccc;
+    }
+    
+    .location-item {
+        background: #2d2d2d;
+        border-color: #404040;
+        color: #ffffff;
+    }
+    
+    .neighborhood-card {
+        background: #2d2d2d;
+        border-color: #404040;
+        color: #ffffff;
+    }
+    
+    .modal-content {
+        background: #2d2d2d;
+        color: #ffffff;
+    }
+    
+    .modal-header {
+        background: #2d2d2d;
+        border-bottom-color: #404040;
+    }
+}

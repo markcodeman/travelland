@@ -1,68 +1,20 @@
-const DEFAULT_HERO = 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80';
-const DEFAULT_VENUE = 'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=800&q=80';
 
-// Category-specific fallback images for when APIs fail
-const CATEGORY_FALLBACKS = {
-  nightlife: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1600&q=80',
-  bar: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1600&q=80',
-  food: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=80',
-  dining: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=80',
-  restaurant: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1600&q=80',
-  coffee: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1600&q=80',
-  cafe: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1600&q=80',
-  culture: 'https://images.unsplash.com/photo-1566127444979-b3d2b654e3d7?auto=format&fit=crop&w=1600&q=80',
-  museum: 'https://images.unsplash.com/photo-1566127444979-b3d2b654e3d7?auto=format&fit=crop&w=1600&q=80',
-  historic: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1600&q=80',
-  shopping: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1600&q=80',
-  nature: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80',
-  park: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1600&q=80',
-  beach: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80',
-  landmark: 'https://images.unsplash.com/photo-1533929736458-ca588d08c8be?auto=format&fit=crop&w=1600&q=80',
-  default: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1600&q=80'
-};
+// Dynamic fallback loader
+let FALLBACKS = null;
+async function loadFallbacks() {
+  if (FALLBACKS) return FALLBACKS;
+  const resp = await fetch('/src/services/image_fallbacks.json');
+  if (!resp.ok) throw new Error('Failed to load image fallbacks');
+  FALLBACKS = await resp.json();
+  return FALLBACKS;
+}
 
-const HERO_FALLBACKS = {
-  paris: 'https://images.unsplash.com/photo-1768201200491-f3f2439f807c?auto=format&fit=crop&w=1600&q=80',
-  london: 'https://images.unsplash.com/photo-1431440869543-efaf3388c585?auto=format&fit=crop&w=1600&q=80',
-  tokyo: 'https://images.unsplash.com/photo-1505060280389-60df856a37e0?auto=format&fit=crop&w=1600&q=80',
-  'new york': 'https://images.unsplash.com/photo-1469478712025-ead91e0b867b?auto=format&fit=crop&w=1600&q=80',
-  bangkok: 'https://images.unsplash.com/photo-1618889128235-93807ca6b114?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  barcelona: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1600&q=80',
-  rome: 'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1600&q=80',
-  hallstatt: 'https://images.unsplash.com/photo-1500530852021-4673b1e67461?auto=format&fit=crop&w=1600&q=80',
-  dublin: 'https://images.unsplash.com/photo-1580118869285-a2b4cfa563b5?auto=format&fit=crop&w=1600&q=80',  // Dublin cityscape
-  tokchon: 'https://picsum.photos/1600/600?random=1',  // Random industrial-style image
-  tanchon: 'https://picsum.photos/1600/600?random=1',  // Random industrial-style image
-  'tanch-n': 'https://picsum.photos/1600/600?random=1',  // Random industrial-style image
-  'tanchon-dong': 'https://picsum.photos/1600/600?random=2',  // Random industrial-style image
-  'tanch-n-dong': 'https://picsum.photos/1600/600?random=2'  // Random industrial-style image
-};
+// Default fallback images
+const DEFAULT_HERO = 'https://picsum.photos/1600/900';
+const DEFAULT_VENUE = 'https://picsum.photos/800/600';
 
-const VENUE_FALLBACKS = {
-  bangkok: {
-    default: [
-      'https://images.unsplash.com/photo-1616047493036-0e1d5ab21dab?w=800&auto=format&fit=crop&q=80&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjN8fGJhbmdrb2t8ZW58MHwwfDB8fHww',
-      'https://images.unsplash.com/photo-1550487221-3750d2cb0b3c?w=800&auto=format&fit=crop&q=80&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-      'https://images.unsplash.com/photo-1528181304800-259b08848526?w=800&auto=format&fit=crop&q=80&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MzJ8fGJhbmdrb2t8ZW58MHwwfDB8fHww'
-    ],
-    food: [
-      'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=800&q=80'
-    ],
-    nightlife: [
-      'https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&fit=crop&w=800&q=80'
-    ]
-  },
-  paris: {
-    coffee: [
-      'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?auto=format&fit=crop&w=800&q=80'
-    ],
-    default: [
-      'https://images.unsplash.com/photo-1423245611892-7fda089cfd4b?auto=format&fit=crop&w=800&q=80'
-    ]
-  }
-};
+// Example usage:
+//   const { CATEGORY_FALLBACKS, HERO_FALLBACKS, VENUE_FALLBACKS } = await loadFallbacks();
 
 const slugifyCity = (city = '') => city.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
@@ -204,6 +156,9 @@ const fetchCityHeroImage = async (city, intent = '') => {
   const normalizedIntent = intent.toLowerCase().trim();
   console.log('fetchCityHeroImage:', { city, slug, intent });
   
+  // Load fallbacks dynamically
+  const { HERO_FALLBACKS, CATEGORY_FALLBACKS } = await loadFallbacks();
+  
   const fallback = HERO_FALLBACKS[slug] ||
     CATEGORY_FALLBACKS[normalizedIntent] ||
     CATEGORY_FALLBACKS.default;
@@ -226,12 +181,17 @@ const fetchCityHeroImage = async (city, intent = '') => {
     return fallback;
   }
 
+  // Special handling for ambiguous city names
+  // "Natal" means "Christmas" in Portuguese - search needs to be specific
+  const searchCity = city.toLowerCase().trim() === 'natal' ? 'Natal Brazil' : city;
+  console.log('Search query:', { original: city, search: searchCity });
+
   const tryPixabayFirst = Math.random() < 0.5;
   
   if (tryPixabayFirst) {
     // Try Pixabay first, then Unsplash
     try {
-      const photos = await fetchPixabayPhoto(`${city} ${intent}`, 1);
+      const photos = await fetchPixabayPhoto(`${searchCity} ${intent}`, 1);
       if (photos?.length > 0) {
         return photos[0].url;
       }
@@ -240,7 +200,7 @@ const fetchCityHeroImage = async (city, intent = '') => {
     }
     
     try {
-      const photos = await fetchUnsplashPhotos(`${city} ${intent}`, 1);
+      const photos = await fetchUnsplashPhotos(`${searchCity} ${intent}`, 1);
       if (photos?.length > 0) {
         return photos[0].url;
       }
@@ -250,7 +210,7 @@ const fetchCityHeroImage = async (city, intent = '') => {
   } else {
     // Try Unsplash first, then Pixabay
     try {
-      const photos = await fetchUnsplashPhotos(`${city} ${intent}`, 1);
+      const photos = await fetchUnsplashPhotos(`${searchCity} ${intent}`, 1);
       if (photos?.length > 0) {
         return photos[0].url;
       }
@@ -259,7 +219,7 @@ const fetchCityHeroImage = async (city, intent = '') => {
     }
     
     try {
-      const photos = await fetchPixabayPhoto(`${city} ${intent}`, 1);
+      const photos = await fetchPixabayPhoto(`${searchCity} ${intent}`, 1);
       if (photos?.length > 0) {
         return photos[0].url;
       }
@@ -273,6 +233,7 @@ const fetchCityHeroImage = async (city, intent = '') => {
 
 const fetchVenueImages = async (city, intent = '', count = 3) => {
   const slug = slugifyCity(city);
+  const { VENUE_FALLBACKS } = await loadFallbacks();
   const fallback = VENUE_FALLBACKS[slug]?.[intent] || VENUE_FALLBACKS[slug]?.default || [DEFAULT_VENUE];
   
   // Randomly choose which API to try first for variety
@@ -365,6 +326,9 @@ const getHeroImageMeta = async (city, intent = '') => {
   const slug = slugifyCity(city);
   console.log('getHeroImageMeta:', { city, slug, intent });
   
+  // Load fallbacks dynamically
+  const { HERO_FALLBACKS } = await loadFallbacks();
+  
   // For Tanchon/Tokchon, return fallback meta immediately
   if (slug === 'tanch-n' || slug === 'tokchon' || slug === 'tanchon' || 
       slug === 'tanchon-dong' || slug === 'tanch-n-dong' ||
@@ -402,8 +366,8 @@ const getHeroImageMeta = async (city, intent = '') => {
 };
 
 export {
-    DEFAULT_HERO,
-    DEFAULT_VENUE, buildImageQueries, fetchCityHeroImage, fetchPixabayPhoto, fetchUnsplashPhotos, fetchVenueImages, getHeroImage,
-    getHeroImageMeta, triggerUnsplashDownload
+  buildImageQueries, DEFAULT_HERO,
+  DEFAULT_VENUE, fetchCityHeroImage, fetchPixabayPhoto, fetchUnsplashPhotos, fetchVenueImages, getHeroImage,
+  getHeroImageMeta, triggerUnsplashDownload
 };
 

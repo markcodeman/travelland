@@ -8,8 +8,8 @@ import json
 import unicodedata
 from quart import Blueprint, request, jsonify
 
-from city_guides.src.data.seeded_facts import get_city_fun_facts
-from city_guides.src.services.location import (
+from ..data.seeded_facts import get_city_fun_facts
+from ..services.location import (
     city_mappings,
     region_mappings,
     levenshtein_distance
@@ -27,7 +27,10 @@ async def get_fun_fact():
         payload = await request.get_json(silent=True) or {}
         city = payload.get('city', '').strip()
         
+        app.logger.info(f"[FUN-FACT] Received request for city: '{city}'")
+        
         if not city:
+            app.logger.warning("[FUN-FACT] No city provided in request")
             return jsonify({'error': 'city required'}), 400
         
         # Import tracker
@@ -37,6 +40,8 @@ async def get_fun_fact():
         normalized = unicodedata.normalize('NFKD', city.lower())
         # Keep alphanumeric and spaces, remove other punctuation
         city_lower = ''.join(c for c in normalized if c.isalnum() or c.isspace()).strip()
+        
+        app.logger.info(f"[FUN-FACT] Normalized city name: '{city_lower}'")
         
         # Initialize city_facts to prevent UnboundLocalError
         city_facts = []
@@ -75,28 +80,103 @@ async def get_fun_fact():
                         city_facts = [filtered[0] + '.' if filtered else sentences[1] + '.']
             except Exception as e:
                 app.logger.warning(f"Failed to fetch Wikipedia fun fact for {city}: {e}")
-                city_facts = [f"Explore {city.title()} and discover what makes it special!"]
+                # Fallback to a factual statement about the city name/origin if possible, or generic but data-focused
+                city_facts = [f"{city.title()} is a significant regional center with unique geographic characteristics."]
         else:
             city_facts = seeded_facts
         
         # Select a random fun fact
         if not city_facts:
-            city_facts = [f"Explore {city.title()} and discover what makes it special!"]
+            city_facts = [f"{city.title()} features a blend of historical architecture and modern urban development."]
         selected_fact = random.choice(city_facts)
         
         # Track the fact quality
         source = "seeded" if seeded_facts else "dynamic"
-        track_fun_fact(city, selected_fact, source)
+        try:
+            from city_guides.src.fun_fact_tracker import FunFactTracker
+            tracker = FunFactTracker()
+            tracker.track_fact(city, selected_fact, source)
+        except Exception as e:
+            app.logger.warning(f"Failed to track fun fact: {e}")
         
         return jsonify({
             'city': city,
             'funFact': selected_fact
         })
-        
+
     except Exception as e:
         from city_guides.src.app import app
         app.logger.exception('Fun fact fetch failed')
         return jsonify({'error': 'Failed to fetch fun fact', 'details': str(e)}), 500
+
+
+@bp.route('/api/llm-paraphrase', methods=['POST'])
+async def llm_paraphrase():
+    """Paraphrase text using Groq LLM. Strictly paraphrase — do not add facts."""
+    try:
+        from city_guides.src.app import app
+        payload = await request.get_json(silent=True) or {}
+        text = (payload.get('text') or '').strip()
+        style = (payload.get('style') or 'punchy').strip().lower()
+
+        if not text:
+            return jsonify({'error': 'text required'}), 400
+
+        # Check GROQ availability
+        from city_guides.groq.groq_reccomend import call_groq_chat
+        import os
+        if not os.getenv('GROQ_API_KEY'):
+            app.logger.warning('LLM paraphrase requested but GROQ_API_KEY not set')
+            return jsonify({'error': 'llm_disabled', 'message': 'LLM paraphrase not available on this server'}), 501
+
+        # Build system instruction — be strict about not inventing facts
+        sys_msg = {
+            'role': 'system',
+            'content': (
+                'You are a professional city guide and historian. Your task is to REWRITE the provided city fact '
+                'to be more engaging while remaining strictly FACTUAL. '
+                'DO NOT add marketing fluff, teasers, or "wanna know a secret" phrases. '
+                'DO NOT add new facts or numbers. Preserve existing numbers and names exactly. '
+                'Available styles: punchy (concise), slang (local flavor), nerdy (data-focused). '
+                'Use family-friendly, PG-13 language. '
+                'Output ONLY the rewritten fact.'
+            )
+        }
+        user_msg = {'role': 'user', 'content': f"Style: {style}\nText: {text}"}
+        resp = call_groq_chat([sys_msg, user_msg], timeout=15)
+
+        # Extract paraphrase
+        paraphrase = ''
+        try:
+            paraphrase = resp['choices'][0]['message']['content'].strip()
+        except Exception:
+            app.logger.exception('Unexpected Groq response')
+            return jsonify({'error': 'llm_error', 'message': 'Unexpected LLM response'}), 500
+
+        # Safety: reject paraphrases containing disallowed language (profanity, explicit sexual/drug content)
+        import re
+        bad_words = ['fuck','shit','bitch','cunt','asshole','motherfucker']
+        if re.search(r"\b(?:" + "|".join(bad_words) + r")\b", paraphrase.lower()):
+            app.logger.warning('Paraphrase contained disallowed language; rejecting')
+            return jsonify({'error': 'llm_rejected', 'message': 'Paraphrase contained disallowed language'}), 422
+
+        # Safety check: no new numeric tokens
+        orig_nums = set(re.findall(r"\d+", text))
+        new_nums = set(re.findall(r"\d+", paraphrase))
+        if not new_nums.issubset(orig_nums):
+            app.logger.warning('Paraphrase introduced new numeric claims; rejecting')
+            return jsonify({'error': 'llm_rejected', 'message': 'Paraphrase introduced new numeric claims'}), 422
+
+        # Length guard
+        if len(paraphrase) > 400:
+            paraphrase = paraphrase[:400].rsplit(' ', 1)[0] + '…'
+
+        return jsonify({'paraphrase': paraphrase, 'style': style, 'source': 'groq'})
+
+    except Exception as e:
+        from city_guides.src.app import app as _app
+        _app.logger.exception('LLM paraphrase failed')
+        return jsonify({'error': 'llm_failed', 'details': str(e)}), 500
 
 
 @bp.route('/api/parse-dream', methods=['POST'])

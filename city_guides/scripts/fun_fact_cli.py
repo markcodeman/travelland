@@ -5,11 +5,11 @@ CLI tool to review hardcode candidates and manage fun fact quality
 import json
 import sys
 from pathlib import Path
-from city_guides.src.fun_fact_tracker import get_tracker
+from city_guides.src.fun_fact_tracker import FunFactTracker
 
 def show_stats():
     """Show tracking statistics"""
-    tracker = get_tracker()
+    tracker = FunFactTracker()
     stats = tracker.get_stats()
     
     print("\n📊 Fun Fact Quality Statistics")
@@ -26,7 +26,7 @@ def show_stats():
 
 def show_candidates(limit=10):
     """Show top hardcode candidates"""
-    tracker = get_tracker()
+    tracker = FunFactTracker()
     candidates = tracker.get_top_candidates(limit)
     
     print(f"\n🎯 Top {limit} Hardcode Candidates")
@@ -46,7 +46,7 @@ def show_candidates(limit=10):
 
 def generate_templates(limit=5):
     """Generate hardcode templates for top candidates"""
-    tracker = get_tracker()
+    tracker = FunFactTracker()
     candidates = tracker.get_top_candidates(limit)
     
     print(f"\n📝 Hardcode Templates for Top {limit}")
@@ -60,7 +60,7 @@ def generate_templates(limit=5):
 
 def export_candidates():
     """Export candidates to JSON for review"""
-    tracker = get_tracker()
+    tracker = FunFactTracker()
     candidates = tracker.get_top_candidates(50)
     
     output_file = Path("hardcode_candidates_export.json")

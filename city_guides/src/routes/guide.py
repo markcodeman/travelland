@@ -390,6 +390,12 @@ async def api_smart_neighborhoods():
         
         neighborhoods = await get_neighborhoods_for_city(city, lat, lon)
         
+        # Enrich with Wikipedia descriptions if requested
+        if enrich and neighborhoods:
+            neighborhoods = await _enrich_neighborhoods_with_descriptions(
+                city, neighborhoods, aiohttp_session
+            )
+        
         response = {
             'is_large_city': len(neighborhoods) >= 3,
             'neighborhoods': neighborhoods,
@@ -1034,8 +1040,9 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
                     sys.path.insert(0, parent_dir)
                 
                 from city_guides.src.synthesis_enhancer import SynthesisEnhancer
-                app.logger.info("About to call SynthesisEnhancer.generate_neighborhood_paragraph for %s/%s", city, neighborhood)
-                synthesized = SynthesisEnhancer.generate_neighborhood_paragraph(neighborhood, city)
+                app.logger.info("About to call SynthesisEnhancer.generate_neighborhood_content for %s/%s", city, neighborhood)
+                content_dict = SynthesisEnhancer.generate_neighborhood_content(neighborhood, city)
+                synthesized = f"{content_dict.get('tagline', '')} {content_dict.get('fun_fact', '')} {content_dict.get('exploration', '')}".strip()
                 source = 'synthesized'
                 app.logger.info("Successfully generated synthesized paragraph for %s/%s: %s", city, neighborhood, synthesized[:100])
             except Exception as e:
@@ -1335,7 +1342,8 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
             # replace with synthesized neutral paragraph if available
             try:
                 from city_guides.src.synthesis_enhancer import SynthesisEnhancer
-                out['quick_guide'] = SynthesisEnhancer.generate_neighborhood_paragraph(neighborhood, city)
+                content_dict = SynthesisEnhancer.generate_neighborhood_content(neighborhood, city)
+                out['quick_guide'] = f"{content_dict.get('tagline', '')} {content_dict.get('fun_fact', '')} {content_dict.get('exploration', '')}".strip()
                 out['source'] = 'synthesized'
                 out['source_url'] = None
             except Exception:
@@ -1355,19 +1363,21 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
     except Exception:
         app.logger.exception('failed to write quick_guide cache')
 
+    resp = {'quick_guide': out.get('quick_guide', synthesized), 'source': out.get('source', source or 'data-first'), 'confidence': out.get('confidence', confidence), 'cached': False, 'source_url': out.get('source_url', source_url)}
+    if mapillary_images:
+        resp['mapillary_images'] = mapillary_images
+    return jsonify(resp)
+
 async def _persist_quick_guide(data: dict, city: str, neighborhood: str, cache_file: Path):
     """Persist quick guide data to cache file."""
     try:
         cache_file.parent.mkdir(parents=True, exist_ok=True)
         with open(cache_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
+        app.logger.debug('Persisted quick guide for %s/%s', city, neighborhood)
     except Exception as e:
         app.logger.exception('Failed to persist quick guide: %s', e)
 
-    resp = {'quick_guide': synthesized, 'source': source or 'data-first', 'confidence': confidence, 'cached': False, 'source_url': source_url}
-    if mapillary_images:
-        resp['mapillary_images'] = mapillary_images
-    return jsonify(resp)
 
 def _is_content_sparse_or_low_quality(content: str, neighborhood: str, city: str) -> bool:
     """Check if content lacks specifics and should trigger Groq/other enhancements."""
@@ -1400,6 +1410,9 @@ def _is_content_sparse_or_low_quality(content: str, neighborhood: str, city: str
     avg_sentence_length = sum(len(s) for s in sentences) / len(sentences) if sentences else 0
 
     return not has_details or avg_sentence_length < 15 or len(content.strip()) < 100
+
+
+
 
 # --- Helper Functions ---
 
@@ -1662,42 +1675,43 @@ def _generate_neighborhood_context(name: str, city: str, tags: dict) -> str:
         except:
             pass
     
-    # Name-based character hints (for Osaka specifically)
+    # Name-based character hints (generalized)
     name_lower = name.lower()
     character_hints = []
     
-    if 'sumiyoshi' in name_lower:
-        character_hints.append('home to the historic Sumiyoshi Taisha shrine')
-    if 'yodogawa' in name_lower or 'yodo' in name_lower:
-        character_hints.append('along the Yodo River waterfront')
-    if 'higashi' in name_lower:
+    # Location-based hints
+    if any(word in name_lower for word in ['east', 'eastern', 'higashi']):
         character_hints.append('in the eastern part of the city')
-    if 'nishi' in name_lower:
+    if any(word in name_lower for word in ['west', 'western', 'nishi']):
         character_hints.append('in the western part of the city')
-    if 'minami' in name_lower:
-        character_hints.append('in the southern district')
-    if 'kita' in name_lower:
-        character_hints.append('in the northern district')
-    if 'chuo' in name_lower or 'central' in name_lower:
+    if any(word in name_lower for word in ['north', 'northern', 'kita']):
+        character_hints.append('in the northern part of the city')
+    if any(word in name_lower for word in ['south', 'southern', 'minami']):
+        character_hints.append('in the southern part of the city')
+    if any(word in name_lower for word in ['central', 'center', 'chuo']):
         character_hints.append('at the heart of the city')
-    if 'bay' in name_lower or 'minato' in name_lower:
+    if any(word in name_lower for word in ['bay', 'harbor', 'port', 'minato']):
         character_hints.append('near the waterfront and port area')
-    if 'tennoji' in name_lower:
-        character_hints.append('centered around Tennoji Temple and Park')
-    if 'nishinari' in name_lower:
-        character_hints.append('known for its working-class charm and local markets')
-    if 'ikuno' in name_lower:
-        character_hints.append('famous for its Korea Town and multicultural dining')
-    if 'abeno' in name_lower:
-        character_hints.append('home to the Abeno Harukas skyscraper')
-    if 'miyakojima' in name_lower:
-        character_hints.append('on an island with industrial and residential charm')
-    if 'joto' in name_lower:
-        character_hints.append('in the eastern ward with residential character')
-    if 'fukushima' in name_lower:
-        character_hints.append('a trendy area with craft breweries and cafes')
-    if 'honmachi' in name_lower:
-        character_hints.append('a business district with dining options')
+    if any(word in name_lower for word in ['river', 'gawa', 'kawa']):
+        character_hints.append('along the river waterfront')
+    
+    # Feature-based hints from OSM tags
+    if tags.get('amenity') == 'university' or 'university' in name_lower:
+        character_hints.append('home to universities and student life')
+    if tags.get('historic') == 'yes' or 'historic' in name_lower:
+        character_hints.append('known for its historical significance')
+    if tags.get('tourism') in ['attraction', 'museum'] or any(word in name_lower for word in ['museum', 'gallery', 'temple', 'shrine']):
+        character_hints.append('featuring cultural and historical attractions')
+    if 'business' in name_lower or tags.get('landuse') == 'commercial':
+        character_hints.append('a business and commercial district')
+    if 'residential' in name_lower or tags.get('landuse') == 'residential':
+        character_hints.append('primarily residential with local amenities')
+    if any(word in name_lower for word in ['park', 'garden', 'green']):
+        character_hints.append('featuring parks and green spaces')
+    if any(word in name_lower for word in ['market', 'shopping', 'mall']):
+        character_hints.append('known for shopping and local markets')
+    if any(word in name_lower for word in ['nightlife', 'entertainment']):
+        character_hints.append('a hub for nightlife and entertainment')
     
     # Build description - combine population and character hints
     parts = []
@@ -1705,12 +1719,43 @@ def _generate_neighborhood_context(name: str, city: str, tags: dict) -> str:
         parts.append(pop_desc)
     
     if character_hints:
-        parts.append(', '.join(character_hints))
+        parts.append(', '.join(character_hints[:2]))  # Limit to 2 hints to keep it concise
     
     if parts:
         return '. '.join(parts) + '.'
     
-    return f'A neighborhood in {city}'
+    # Well-known neighborhood descriptions
+    name_lower = name.lower()
+    if 'copacabana' in name_lower and 'rio' in city.lower():
+        return 'Famous for its four-kilometer beach, Copacabana is one of Rio\'s most iconic neighborhoods, known for its Art Deco architecture, vibrant nightlife, and the famous Copacabana Palace hotel.'
+    if 'ipanema' in name_lower and 'rio' in city.lower():
+        return 'An upscale beachfront neighborhood known for its beautiful beach, high-end shopping on Rua Garcia d\'Ávila, and as the birthplace of bossa nova music.'
+    if 'santa teresa' in name_lower and 'rio' in city.lower():
+        return 'A bohemian hillside neighborhood famous for its historic streetcar, colonial architecture, contemporary art galleries, and panoramic views of Rio.'
+    if 'lapa' in name_lower and 'rio' in city.lower():
+        return 'Rio\'s historic entertainment district, home to the Arcos da Lapa aqueduct, samba clubs, street parties, and the famous Escadaria Selarón.'
+    if 'le marais' in name_lower and 'paris' in city.lower():
+        return 'A historic district known for its medieval architecture, Jewish heritage, trendy boutiques, galleries, and vibrant LGBTQ+ scene.'
+    if 'montmartre' in name_lower and 'paris' in city.lower():
+        return 'The artist hill of Paris, home to the Sacré-Cœur Basilica, street artists, cabarets, and the famous Moulin Rouge.'
+    if 'saint-germain' in name_lower and 'paris' in city.lower():
+        return 'An intellectual and literary district famous for its cafés, bookstores, and association with existentialist philosophers.'
+    if 'latin quarter' in name_lower and 'paris' in city.lower():
+        return 'Paris\' oldest district, home to the Sorbonne University, historic churches, and a lively student atmosphere.'
+    if 'champs-élysées' in name_lower and 'paris' in city.lower():
+        return 'Paris\' most famous avenue, lined with luxury shops, theaters, and grand cafés, leading to the Arc de Triomphe.'
+    
+    # Generic fallbacks based on location patterns
+    if any(word in name_lower for word in ['downtown', 'cbd', 'city center', 'centro']):
+        return f'A bustling downtown district in {city}, featuring shopping, dining, business, and urban amenities.'
+    if any(word in name_lower for word in ['suburb', 'outskirts']):
+        return f'A suburban neighborhood in {city}, offering a quieter pace with good access to the city center.'
+    if any(word in name_lower for word in ['old town', 'historic', 'colonial']):
+        return f'A historic district in {city}, preserving traditional architecture and local culture.'
+    if any(word in name_lower for word in ['beach', 'marina', 'waterfront']):
+        return f'A waterfront neighborhood in {city}, offering beach access, seafood dining, and coastal atmosphere.'
+    
+    return f'A neighborhood in {city} with local character and amenities.'
 
 
 async def _enrich_neighborhoods_with_descriptions(
@@ -1743,9 +1788,34 @@ async def _enrich_neighborhoods_with_descriptions(
         if not name:
             return neighborhood
         
-        # Skip if already has description
-        if neighborhood.get('description'):
+        # Skip if already has a non-generic description
+        existing_desc = neighborhood.get('description', '')
+        if existing_desc and not existing_desc.startswith('Neighborhood in ') and not existing_desc.startswith('A neighborhood in '):
             return neighborhood
+        
+        # For well-known neighborhoods, try Wikipedia even without tags
+        name_lower = name.lower()
+        wiki_title = None
+        if 'copacabana' in name_lower and 'rio' in city.lower():
+            wiki_title = 'Copacabana, Rio de Janeiro'
+        elif 'ipanema' in name_lower and 'rio' in city.lower():
+            wiki_title = 'Ipanema'
+        elif 'santa teresa' in name_lower and 'rio' in city.lower():
+            wiki_title = 'Santa Teresa (Rio de Janeiro)'
+        elif 'lapa' in name_lower and 'rio' in city.lower():
+            wiki_title = 'Lapa, Rio de Janeiro'
+        elif 'leblon' in name_lower and 'rio' in city.lower():
+            wiki_title = 'Leblon'
+        elif 'le marais' in name_lower and 'paris' in city.lower():
+            wiki_title = 'Le Marais'
+        elif 'montmartre' in name_lower and 'paris' in city.lower():
+            wiki_title = 'Montmartre'
+        elif 'saint-germain' in name_lower and 'paris' in city.lower():
+            wiki_title = 'Saint-Germain-des-Prés'
+        elif 'latin quarter' in name_lower and 'paris' in city.lower():
+            wiki_title = 'Latin Quarter, Paris'
+        elif 'champs-élysées' in name_lower and 'paris' in city.lower():
+            wiki_title = 'Champs-Élysées'
         
         try:
             neighborhood = neighborhood.copy()
@@ -1756,9 +1826,12 @@ async def _enrich_neighborhoods_with_descriptions(
             
             # Try to get Wikipedia data for additional richness
             wiki_data = None
-            wiki_ref = tags.get('wikipedia') or tags.get('wikipedia:en')
-            if wiki_ref:
-                wiki_data = await fetch_wiki_by_title(wiki_ref)
+            if wiki_title:
+                wiki_data = await fetch_wiki_by_title(wiki_title)
+            else:
+                wiki_ref = tags.get('wikipedia') or tags.get('wikipedia:en')
+                if wiki_ref:
+                    wiki_data = await fetch_wiki_by_title(wiki_ref)
             
             # Build final description
             description = context_desc

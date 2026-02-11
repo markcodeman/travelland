@@ -112,6 +112,55 @@ async def synthesize():
         return jsonify({'error': 'synthesis_failed', 'details': str(e)}), 500
 
 
+@bp.route("/api/categories", methods=["POST"])
+async def api_city_categories():
+    """Get dynamic categories for a city or neighborhood based on real venue data"""
+    payload = await request.get_json(silent=True) or {}
+    city = (payload.get("city") or "").strip()
+    state = (payload.get("state") or "").strip()
+    neighborhood = (payload.get("neighborhood") or "").strip()
+    
+    if not city:
+        return jsonify({"error": "city required"}), 400
+    
+    try:
+        # If neighborhood is specified, generate neighborhood-specific categories
+        if neighborhood:
+            from city_guides.src.simple_categories import get_neighborhood_specific_categories
+            categories = await get_neighborhood_specific_categories(city, neighborhood, state)
+            source = "neighborhood_dynamic"
+        else:
+            from city_guides.src.simple_categories import get_dynamic_categories
+            categories = await get_dynamic_categories(city, state)
+            source = "dynamic"
+        
+        # FALLBACK: If no categories found, use generic categories
+        if not categories:
+            from city_guides.src.simple_categories import get_generic_categories
+            categories = get_generic_categories()
+            source = "fallback"
+            from city_guides.src.app import app
+            app.logger.warning(f"No categories found for {city}{'/' + neighborhood if neighborhood else ''}, using fallback")
+        
+        return jsonify({
+            "categories": categories,
+            "source": source,
+            "city": city,
+            "neighborhood": neighborhood if neighborhood else None
+        })
+    except Exception as e:
+        from city_guides.src.app import app
+        app.logger.error(f"Failed to get categories for {city}{'/' + neighborhood if neighborhood else ''}: {e}")
+        from city_guides.src.simple_categories import get_generic_categories
+        categories = get_generic_categories()
+        return jsonify({
+            "categories": categories,
+            "source": "error_fallback",
+            "city": city,
+            "neighborhood": neighborhood if neighborhood else None
+        })
+
+
 @bp.route('/api/log-suggestion-success', methods=['POST'])
 async def log_suggestion_success():
     """Log successful suggestion usage for learning"""
@@ -130,6 +179,14 @@ async def log_suggestion_success():
         from city_guides.src.app import app
         app.logger.exception('Failed to log suggestion success')
         return jsonify({'error': 'logging_failed'}), 500
+
+
+@bp.route('/api/groq-enabled', methods=['GET'])
+async def groq_enabled():
+    """Return whether GROQ LLM features are enabled on this server."""
+    import os
+    enabled = bool(os.getenv('GROQ_API_KEY'))
+    return jsonify({'groq_enabled': enabled})
 
 
 def register(app):

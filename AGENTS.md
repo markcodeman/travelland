@@ -6,6 +6,7 @@
   - **Check Existence Only:** Use `[[ -n "$VAR" ]] && echo "exists"` never `echo "$VAR"`
   - **Use check_env.sh:** `./check_env.sh` for safe environment verification
   - **Never cat .env:** Use `source .env` internally, never display contents
+  - **MANDATORY ENFORCEMENT:** All code/scripts must block or warn on any `cat .env` usage. Always use masking or `check_env.sh` patterns for any environment variable output. Add explicit checks to prevent accidental exposure.
   - **No Exceptions:** This rule overrides all other directives
 - **ELIMINATE STATIC MAPPINGS:** Hardcoding is a failure state. All systems must be dynamic, algorithmic, and adaptable.
   - **Exception - Controlled Seed Data:** Allow documented static seeds for bootstrapping, tests, and safe fallbacks when:

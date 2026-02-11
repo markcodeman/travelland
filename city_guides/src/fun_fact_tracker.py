@@ -215,16 +215,8 @@ class FunFactTracker:
         
         return ranges
 
-# Global instance for use in app.py
-tracker = None
 
-def get_tracker() -> FunFactTracker:
-    """Get or create the global tracker instance"""
-    global tracker
-    if tracker is None:
-        tracker = FunFactTracker()
-    return tracker
-
-def track_fun_fact(city: str, fact: str, source: str = "unknown"):
-    """Convenience function to track a fun fact"""
-    get_tracker().track_fact(city, fact, source)
+# No global tracker. Always create and pass FunFactTracker explicitly.
+def track_fun_fact(tracker: FunFactTracker, city: str, fact: str, source: str = "unknown"):
+    """Track a fun fact using an explicit tracker instance"""
+    tracker.track_fact(city, fact, source)

@@ -72,28 +72,39 @@ def register_routes(app):
     """
     @app.route("/api/categories", methods=["POST"])
     async def api_city_categories():
-        """Get dynamic categories for a city based on real venue data"""
+        """Get dynamic categories for a city or neighborhood based on real venue data"""
         payload = await request.get_json(silent=True) or {}
         city = (payload.get("city") or "").strip()
         state = (payload.get("state") or "").strip()
+        neighborhood = (payload.get("neighborhood") or "").strip()
         
         if not city:
             return jsonify({"error": "city required"}), 400
         
         try:
-            categories = await get_dynamic_categories(city, state)
+            # If neighborhood is specified, generate neighborhood-specific categories
+            if neighborhood:
+                from .simple_categories import get_neighborhood_specific_categories
+                categories = await get_neighborhood_specific_categories(city, neighborhood, state)
+                source = "neighborhood_dynamic"
+            else:
+                categories = await get_dynamic_categories(city, state)
+                source = "dynamic"
+            
             return jsonify({
                 "categories": categories,
-                "source": "dynamic",
-                "city": city
+                "source": source,
+                "city": city,
+                "neighborhood": neighborhood if neighborhood else None
             })
         except Exception as e:
-            print(f"[CITY-CATEGORIES] Error for {city}: {e}")
+            print(f"[CITY-CATEGORIES] Error for {city}{'/' + neighborhood if neighborhood else ''}: {e}")
             categories = get_generic_categories()
             return jsonify({
                 "categories": categories,
                 "source": "fallback",
-                "city": city
+                "city": city,
+                "neighborhood": neighborhood if neighborhood else None
             })
     
     @app.route("/api/search", methods=["POST"])

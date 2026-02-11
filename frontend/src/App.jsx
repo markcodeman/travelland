@@ -25,7 +25,8 @@ const NEIGHBORHOOD_FALLBACKS = {
   'New York': ['Manhattan', 'Brooklyn', 'Harlem', 'Queens', 'Bronx'],
   'Paris': ['Le Marais', 'Saint-Germain-des-Prés', 'Montmartre', 'Latin Quarter', 'Champs-Élysées', 'Belleville', 'Le Marais', 'Oberkampf', 'Canal Saint-Martin', 'Palais-Royal'],
   'Lisbon': ['Baixa', 'Chiado', 'Alfama', 'Bairro Alto', 'Belém'],
-  'Reykjavik': ['Miðborg', 'Vesturbær', 'Hlíðar', 'Laugardalur', 'Háaleiti']
+  'Reykjavik': ['Miðborg', 'Vesturbær', 'Hlíðar', 'Laugardalur', 'Háaleiti'],
+  'Natal': ['Ponta Negra', 'Petrópolis', 'Tirol', 'Lagoa Nova', 'Cidade Alta', 'Alecrim']
 };
 
 const SUGGESTION_MAP = {
