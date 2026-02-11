@@ -17,6 +17,10 @@ from quart import Blueprint, request, jsonify, current_app as app
 import aiohttp
 from aiohttp import ClientTimeout
 
+# Import missing dependencies
+from city_guides.src.neighborhood_disambiguator import NeighborhoodDisambiguator
+from city_guides.providers.ddgs_provider import ddgs_search
+
 # Configuration constants
 CACHE_TTL_SEARCH = int(os.getenv("CACHE_TTL_SEARCH", "1800"))  # 30 minutes
 PREWARM_TTL = CACHE_TTL_SEARCH
@@ -288,6 +292,34 @@ async def api_smart_neighborhoods():
                 app.logger.info(f"Cache hit for smart neighborhoods: {city}")
                 return jsonify(json.loads(cached_data))
 
+        # PRIORITY: Check for curated famous neighborhoods first (for major cities)
+        try:
+            from city_guides.providers.neighborhood_suggestions import get_neighborhood_suggestions, is_large_city
+            if is_large_city(city):
+                curated_neighborhoods = get_neighborhood_suggestions(city)
+                if curated_neighborhoods:
+                    app.logger.info(f"Using curated neighborhoods for {city}: {len(curated_neighborhoods)} neighborhoods")
+                    
+                    # Enrich with Wikipedia descriptions if requested
+                    if enrich:
+                        curated_neighborhoods = await _enrich_neighborhoods_with_descriptions(
+                            city, curated_neighborhoods, aiohttp_session
+                        )
+                    
+                    response = {
+                        'is_large_city': True,
+                        'neighborhoods': curated_neighborhoods,
+                        'city': city,
+                        'category': category,
+                        'source': 'curated',
+                        'total_available': len(curated_neighborhoods)
+                    }
+                    if redis_client:
+                        await redis_client.setex(cache_key, 3600, json.dumps(response))
+                    return jsonify(response)
+        except Exception as e:
+            app.logger.debug(f"Could not get curated neighborhoods for {city}: {e}")
+
         seed_neighborhoods = []
         data_path = Path(__file__).parent.parent.parent / 'data'
         
@@ -551,25 +583,22 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
         is_valid, confidence, suggested = NeighborhoodDisambiguator.validate_neighborhood(neighborhood, city)
         if not is_valid:
             app.logger.warning("City/neighborhood combination failed validation: %s/%s (confidence: %.2f)", city, neighborhood, confidence)
-            # Fall back to synthesized content instead of Wikipedia search
-            try:
-                from city_guides.src.synthesis_enhancer import SynthesisEnhancer
-                fallback_guide = SynthesisEnhancer.generate_neighborhood_paragraph(neighborhood, city)
-                return jsonify({
-                    'quick_guide': fallback_guide,
-                    'source': 'synthesized',
-                    'cached': False,
-                    'source_url': None,
-                    'confidence': 'low'
-                })
-            except Exception:
-                return jsonify({
-                    'quick_guide': f"{neighborhood} is a neighborhood in {city}.",
-                    'source': 'data-first',
-                    'cached': False,
-                    'source_url': None,
-                    'confidence': 'low'
-                })
+            # Fall back to synthesized content instead of Wikipedia
+            # Use enhanced synthesis with structured content
+            from city_guides.src.synthesis_enhancer import SynthesisEnhancer
+            structured_content = SynthesisEnhancer.generate_neighborhood_content(neighborhood, city)
+            
+            resp = {
+                'quick_guide': structured_content.get('tagline', ''),
+                'tagline': structured_content.get('tagline', ''),
+                'fun_fact': structured_content.get('fun_fact', ''),
+                'exploration': structured_content.get('exploration', ''),
+                'source': 'synthesized',
+                'cached': False,
+                'source_url': None,
+                'confidence': 'low'
+            }
+            return jsonify(resp)
     except Exception:
         app.logger.exception("Failed to validate city/neighborhood combination")
 
@@ -1325,6 +1354,15 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
 
     except Exception:
         app.logger.exception('failed to write quick_guide cache')
+
+async def _persist_quick_guide(data: dict, city: str, neighborhood: str, cache_file: Path):
+    """Persist quick guide data to cache file."""
+    try:
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(cache_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        app.logger.exception('Failed to persist quick guide: %s', e)
 
     resp = {'quick_guide': synthesized, 'source': source or 'data-first', 'confidence': confidence, 'cached': False, 'source_url': source_url}
     if mapillary_images:
