@@ -10,8 +10,26 @@ const CitySuggestions = ({ city, neighborhood, onCategorySelect, searchResults }
     firstCategory: searchResults?.categories?.[0]
   });
   
-  // Only use categories from search results - no generic fallbacks
-  const suggestions = searchResults?.categories || [];
+  // Map categories from backend into usable suggestions
+  const suggestions = (searchResults?.categories || [])
+    .map((c) => {
+      if (!c) return null;
+      if (typeof c === 'string') {
+        return {
+          label: c,
+          intent: c.toLowerCase(),
+          icon: '📍',
+        };
+      }
+      const label = c.label || c.category || c.name || '';
+      if (!label) return null;
+      return {
+        label,
+        intent: c.intent || label.toLowerCase(),
+        icon: c.icon || '📍',
+      };
+    })
+    .filter(Boolean);
   
   // Don't show anything if no real categories exist
   if (!city || suggestions.length === 0) {
