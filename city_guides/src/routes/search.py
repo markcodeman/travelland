@@ -134,11 +134,26 @@ async def search():
                 if neighborhood:
                     # Use neighborhood-specific categories
                     categories = await get_neighborhood_specific_categories(city, neighborhood, state_name)
-                    app.logger.info(f'Using neighborhood-specific categories for {neighborhood}, {city}: {[c["category"] for c in categories]}')
+                    # Normalize categories to dicts with 'category' key
+                    norm_categories = []
+                    for c in categories or []:
+                        if isinstance(c, dict):
+                            norm_categories.append(c if 'category' in c else {'category': c.get('name') or c.get('label') or str(c)})
+                        else:
+                            norm_categories.append({'category': str(c)})
+                    categories = norm_categories
+                    app.logger.info(f'Using neighborhood-specific categories for {neighborhood}, {city}: {[c.get("category", c) for c in categories]}')
                 else:
                     # Use city-wide categories
                     categories = await get_dynamic_categories(city, state_name, country_name)
-                    app.logger.info(f'Using city-wide categories for {city}: {[c["category"] for c in categories]}')
+                    norm_categories = []
+                    for c in categories or []:
+                        if isinstance(c, dict):
+                            norm_categories.append(c if 'category' in c else {'category': c.get('name') or c.get('label') or str(c)})
+                        else:
+                            norm_categories.append({'category': str(c)})
+                    categories = norm_categories
+                    app.logger.info(f'Using city-wide categories for {city}: {[c.get("category", c) for c in categories]}')
                 
                 result['categories'] = categories
             except Exception as e:
