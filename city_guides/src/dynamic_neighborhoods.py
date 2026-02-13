@@ -3,10 +3,16 @@ Dynamic neighborhood fetcher using Overpass API
 No hardcoded lists - works for ANY city globally
 """
 import aiohttp
-from typing import List, Dict
+from typing import List, Dict, Optional
 import logging
+import json
+import os
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+# Cache for seed data to avoid repeated file reads
+_SEED_DATA_CACHE: Optional[Dict[str, List[Dict]]] = None
 
 async def fetch_neighborhoods_dynamic(city: str, lat: float, lon: float, radius: int = 5000) -> List[Dict]:
     """
@@ -174,29 +180,27 @@ async def get_neighborhoods_for_city(city: str, lat: float, lon: float) -> List[
     """
     Main entry point: Get neighborhoods using multiple strategies
     Optimized for speed with early returns
+    Priority:
+    1. Seed data from JSON files (comprehensive, curated data)
+    2. Overpass API (real-time OSM data)
+    3. Wikidata (structured knowledge base)
+    4. Neighborhood suggestions (legacy seed data)
+    5. Generic fallback (last resort)
     """
-    if city.lower() == "marseille":
-        logger.info("Using seed data from JSON file for Marseille")
-        try:
-            import json
-            import os
-            with open(os.path.join(os.path.dirname(__file__), '../data/marseille_neighborhoods.json'), 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                neighborhoods = data.get('neighborhoods', [])
-                if neighborhoods:
-                    logger.info(f"Found {len(neighborhoods)} neighborhoods for {city} from JSON file")
-                    return neighborhoods
-        except Exception as e:
-            logger.warning(f"Failed to load Marseille neighborhood data from JSON file: {e}")
+    # First try: Load from comprehensive seed data files
+    neighborhoods = load_seed_neighborhoods(city)
+    if neighborhoods:
+        logger.info(f"Found {len(neighborhoods)} neighborhoods for {city} from seed data")
+        return neighborhoods
     
-    # Try Overpass API first (most comprehensive)
+    # Second try: Overpass API (most comprehensive real-time data)
     neighborhoods = await fetch_neighborhoods_dynamic(city, lat, lon)
     
     if neighborhoods:
         logger.info(f"Found {len(neighborhoods)} neighborhoods for {city} via Overpass")
         return neighborhoods
     
-    # Fallback to Wikidata
+    # Third try: Wikidata
     logger.info(f"Trying Wikidata fallback for {city}")
     neighborhoods = await fetch_neighborhoods_wikidata(city, lat, lon)
     
@@ -204,7 +208,7 @@ async def get_neighborhoods_for_city(city: str, lat: float, lon: float) -> List[
         logger.info(f"Found {len(neighborhoods)} neighborhoods for {city} via Wikidata")
         return neighborhoods
     
-    # Fallback to neighborhood suggestions (seed data)
+    # Fourth try: Legacy neighborhood suggestions (seed data in providers)
     logger.info(f"Trying neighborhood suggestions fallback for {city}")
     try:
         from city_guides.providers.neighborhood_suggestions import get_neighborhood_suggestions
@@ -220,17 +224,90 @@ async def get_neighborhoods_for_city(city: str, lat: float, lon: float) -> List[
     return generate_generic_neighborhoods(city, lat, lon)
 
 
+def load_seed_neighborhoods(city: str) -> List[Dict]:
+    """
+    Load neighborhood data from JSON seed files in city_guides/data/
+    Searches recursively through all JSON files for matching city
+    Returns list of neighborhood dicts or empty list if not found
+    """
+    global _SEED_DATA_CACHE
+    
+    # Build cache on first call
+    if _SEED_DATA_CACHE is None:
+        _SEED_DATA_CACHE = {}
+        data_dir = Path(__file__).parent.parent / 'data'
+        
+        if not data_dir.exists():
+            logger.warning(f"Seed data directory not found: {data_dir}")
+            return []
+        
+        # Recursively find all JSON files
+        for json_file in data_dir.rglob('*.json'):
+            # Skip cache and non-city files
+            if 'cache' in json_file.name.lower() or json_file.name == 'seeded_cities.json':
+                continue
+            
+            try:
+                with open(json_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                
+                # Handle different JSON structures
+                if isinstance(data, dict):
+                    # Structure: {"cities": {"CityName": [neighborhoods]}}
+                    cities = data.get('cities', {})
+                    if isinstance(cities, dict):
+                        for city_name, neighborhoods in cities.items():
+                            if isinstance(neighborhoods, list) and len(neighborhoods) > 0:
+                                # Normalize city names to lowercase for matching
+                                city_key = city_name.lower().strip()
+                                _SEED_DATA_CACHE[city_key] = neighborhoods
+                                logger.debug(f"Loaded {len(neighborhoods)} neighborhoods for {city_name} from {json_file.name}")
+            except Exception as e:
+                logger.debug(f"Could not load seed data from {json_file}: {e}")
+        
+        logger.info(f"Loaded seed data for {len(_SEED_DATA_CACHE)} cities")
+    
+    # Look up city in cache (case-insensitive)
+    city_key = city.lower().strip()
+    
+    # Try exact match first
+    if city_key in _SEED_DATA_CACHE:
+        return _SEED_DATA_CACHE[city_key]
+    
+    # Try partial match (e.g., "New York" matches "New York City")
+    for cached_city, neighborhoods in _SEED_DATA_CACHE.items():
+        if city_key in cached_city or cached_city in city_key:
+            logger.debug(f"Partial match: '{city_key}' matched '{cached_city}'")
+            return neighborhoods
+    
+    return []
+
+
 def generate_generic_neighborhoods(city: str, lat: float, lon: float) -> List[Dict]:
     """
-    Last resort: Generate directional neighborhoods (North, South, East, West, Center)
+    Last resort: Generate directional neighborhoods
+    Returns up to 20 generic areas based on common urban patterns
     Better than returning empty
     """
     return [
         {'name': f'{city} Centre', 'description': f'Downtown area of {city}', 'type': 'culture'},
-        {'name': f'{city} North', 'description': f'Northern area of {city}', 'type': 'residential'},
-        {'name': f'{city} South', 'description': f'Southern area of {city}', 'type': 'residential'},
-        {'name': f'{city} East', 'description': f'Eastern area of {city}', 'type': 'residential'},
-        {'name': f'{city} West', 'description': f'Western area of {city}', 'type': 'residential'},
-        {'name': f'{city} Old Town', 'description': f'Historic center of {city}', 'type': 'historic'},
-        {'name': f'{city} Waterfront', 'description': f'Riverside/coastal area of {city}', 'type': 'nature'},
+        {'name': f'{city} Historic District', 'description': f'Historic center of {city}', 'type': 'historic'},
+        {'name': f'{city} Old Town', 'description': f'Traditional old town area of {city}', 'type': 'historic'},
+        {'name': f'{city} Waterfront', 'description': f'Riverside/coastal area of {city}', 'type': 'waterfront'},
+        {'name': f'{city} North', 'description': f'Northern district of {city}', 'type': 'residential'},
+        {'name': f'{city} South', 'description': f'Southern district of {city}', 'type': 'residential'},
+        {'name': f'{city} East', 'description': f'Eastern district of {city}', 'type': 'residential'},
+        {'name': f'{city} West', 'description': f'Western district of {city}', 'type': 'residential'},
+        {'name': f'{city} Market District', 'description': f'Shopping and market area of {city}', 'type': 'market'},
+        {'name': f'{city} Arts Quarter', 'description': f'Cultural and arts district of {city}', 'type': 'culture'},
+        {'name': f'{city} Business District', 'description': f'Commercial center of {city}', 'type': 'modern'},
+        {'name': f'{city} University Area', 'description': f'Academic district near universities in {city}', 'type': 'culture'},
+        {'name': f'{city} Park Area', 'description': f'Green spaces and parks around {city}', 'type': 'nature'},
+        {'name': f'{city} Riverside', 'description': f'Area along the river in {city}', 'type': 'waterfront'},
+        {'name': f'{city} Heights', 'description': f'Elevated area with views in {city}', 'type': 'residential'},
+        {'name': f'{city} Suburb', 'description': f'Suburban areas around {city}', 'type': 'residential'},
+        {'name': f'{city} Shopping District', 'description': f'Main shopping area of {city}', 'type': 'shopping'},
+        {'name': f'{city} Entertainment Quarter', 'description': f'Nightlife and entertainment hub of {city}', 'type': 'nightlife'},
+        {'name': f'{city} Cultural Center', 'description': f'Museums and cultural venues in {city}', 'type': 'culture'},
+        {'name': f'{city} Garden District', 'description': f'Residential area with green spaces in {city}', 'type': 'nature'},
     ]
