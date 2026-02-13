@@ -7,11 +7,8 @@ NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 
 # Cities that should ONLY use curated data (no Overpass fallback)
-CURATED_ONLY_CITIES = {
-    "tokyo", "london", "paris", "new york", "shanghai", "beijing", 
-    "singapore", "bangkok", "mumbai", "seoul", "hong kong", "barcelona", 
-    "rome", "amsterdam", "berlin", "dubai", "los angeles", "toronto"
-}
+# Disabled to allow dynamic paths everywhere
+CURATED_ONLY_CITIES = set()
 
 # City relation IDs for major cities (OSM relation IDs)
 CITY_RELATIONS = {

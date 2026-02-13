@@ -1,11 +1,12 @@
 const CitySuggestions = ({ city, neighborhood, onCategorySelect, searchResults }) => {
+  const categories = Array.isArray(searchResults?.categories) ? searchResults.categories : [];
   console.log('CitySuggestions DEBUG:', { 
     city, 
     neighborhood,
     searchResults,
-    hasCategories: searchResults?.categories?.length > 0,
-    categoriesLength: searchResults?.categories?.length,
-    firstCategory: searchResults?.categories?.[0]
+    hasCategories: categories.length > 0,
+    categoriesLength: categories.length,
+    firstCategory: categories[0]
   });
   
   const pickIcon = (label) => {
@@ -22,7 +23,7 @@ const CitySuggestions = ({ city, neighborhood, onCategorySelect, searchResults }
   };
 
   // Map categories from backend into usable suggestions
-  const suggestions = (searchResults?.categories || [])
+  const suggestions = categories
     .map((c) => {
       if (!c) return null;
       if (typeof c === 'string') {

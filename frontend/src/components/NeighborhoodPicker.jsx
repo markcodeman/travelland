@@ -134,13 +134,31 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
   };
 
   const buildDescription = (name, description, type, badges) => {
-    if (description && description.trim().length > 0) return description;
+    const trimmed = (description || '').trim();
+    const genericRe = new RegExp(`^(area|neighborhood) in ${city}`, 'i');
+    const isGeneric = !trimmed || genericRe.test(trimmed);
+
+    if (!isGeneric) return trimmed;
     if (badges && badges.length > 0) {
       const labels = badges.map(b => b.label).join(', ');
       return `${labels} area of ${city}.`;
     }
-    if (type) return `Notable ${type} spot in ${city}.`;
-    return `Area of ${city} worth exploring.`;
+    if (type) return `${name} is a ${type} area in ${city}.`;
+    return `${name} is an area of ${city} worth exploring.`;
+  };
+
+  const getCategoryChips = (hood) => {
+    const tags = hood?.tags || {};
+    const chips = [];
+    if (tags.historic || tags.heritage || tags.castle || tags.ruins) chips.push({ emoji: '🏛️', label: 'Historic' });
+    if (tags.tourism === 'attraction' || tags.tourism === 'museum' || tags.tourism === 'gallery') chips.push({ emoji: '🎯', label: 'Attractions' });
+    if (tags.leisure === 'park' || tags.leisure === 'garden' || tags.natural) chips.push({ emoji: '🌳', label: 'Nature' });
+    if (tags.amenity === 'restaurant' || tags.amenity === 'cafe' || tags.amenity === 'bar' || tags.amenity === 'pub') chips.push({ emoji: '🍽️', label: 'Food & Drink' });
+    if (tags.shop || tags.amenity === 'marketplace') chips.push({ emoji: '🛍️', label: 'Shopping' });
+    if (tags.natural === 'beach' || tags.beach || tags.waterway || tags.coastline) chips.push({ emoji: '🏖️', label: 'Waterfront' });
+    if (tags.amenity === 'theatre' || tags.amenity === 'cinema') chips.push({ emoji: '🎭', label: 'Entertainment' });
+    if (!chips.length && hood?.type) chips.push({ emoji: getCategoryEmoji(hood.type, hood.name), label: hood.type });
+    return chips.slice(0, 3);
   };
 
   const getCategoryColor = (type) => {
@@ -238,19 +256,32 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
         {neighborhoods.map((hood, index) => {
           const name = typeof hood === 'string' ? hood : hood.name;
           const descriptionRaw = typeof hood === 'string' ? '' : (hood.description || '');
-          const type = typeof hood === 'string' ? 'culture' : (hood.type || 'culture');
+          const rawType = typeof hood === 'string' ? 'culture' : (hood.type || 'culture');
+          const categoryChips = typeof hood === 'string' ? [] : getCategoryChips(hood);
+          const primaryChip = categoryChips[0];
+          const displayType = primaryChip?.label || rawType;
+          const displayEmoji = primaryChip?.emoji || getCategoryEmoji(rawType, name);
           const badges = typeof hood === 'string' ? [] : getFeatureBadges(hood);
-          const description = buildDescription(name, descriptionRaw, type, badges);
+          const description = buildDescription(name, descriptionRaw, displayType, badges);
           return (
             <button
               key={index}
               className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white hover:border-brand-orange hover:bg-brand-orange/5 transition p-2.5 text-left"
               onClick={() => onSelect(typeof hood === 'string' ? { name: hood } : hood)}
             >
-              <div className="text-2xl">{getCategoryEmoji(type, name)}</div>
+              <div className="text-2xl">{displayEmoji}</div>
               <div className="flex-1 space-y-1">
                 <h4 className="text-sm font-semibold text-slate-900">{formatBilingualName(name)}</h4>
                 <p className="text-xs text-slate-600 leading-relaxed">{description}</p>
+                {categoryChips.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {categoryChips.map((chip, chipIndex) => (
+                      <span key={chipIndex} className="px-1.5 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700 font-semibold">
+                        {chip.emoji} {chip.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {badges.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {badges.map((badge, badgeIndex) => (

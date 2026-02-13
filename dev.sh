@@ -47,9 +47,9 @@ start_backend() {
     echo "📡 Starting City Guides backend on port 5010..."
     cd /home/markcodeman/CascadeProjects/travelland
     
-    # Export environment variables from .env
+    # Export environment variables from .env, skip keys with dashes (e.g., RapidAPI keys)
     if [ -f .env ]; then
-        export $(grep -v '^#' .env | xargs)
+        export $(grep -v '^#' .env | grep -v '-' | xargs)
     fi
     
     # Use venv hypercorn if available, else fallback
@@ -79,7 +79,7 @@ start_frontend() {
 start_nextjs() {
     echo "⚡ Starting Next.js app on port 3000..."
     cd /home/markcodeman/CascadeProjects/travelland/next-app
-    npm run dev -- --port 3000 &
+    TURBOPACK_ROOT=./next-app npm run dev -- --port 3000 &
     NEXT_PID=$!
     echo $NEXT_PID > ../next.pid
     echo "✅ Next.js started with PID $NEXT_PID"

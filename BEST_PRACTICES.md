@@ -14,6 +14,54 @@
 - **Mask secrets in logs/output**; never print or expose full API keys or .env contents.
 - **No hardcoded data**: All static data must be in versioned seed files, never in code (except for controlled/test-only seeds).
 
+## Fun Facts Implementation Best Practices
+
+### Dynamic Content Generation
+- **Always fetch dynamic facts**: Never hardcode fun facts in production code. Use Wikipedia/DDGS for fresh content.
+- **Prioritize interesting content**: Filter for facts with numbers, unique characteristics, or historical significance.
+- **Diverse sources**: Combine Wikipedia summaries, DDGS results, and Wikidata for comprehensive facts.
+- **Quality filtering**: Exclude generic definitions and prioritize specific, engaging content.
+
+### Implementation Details
+The `/api/fun-fact` endpoint demonstrates best practices:
+
+**Key Features:**
+- **Dynamic fact gathering**: Fetches from Wikipedia, DDGS, and Wikidata
+- **Quality filtering**: Prioritizes facts with numbers, superlatives, or unique characteristics
+- **Fallback chain**: Wikipedia → DDGS → Wikidata → Generic fallback
+- **Error handling**: Graceful recovery from API failures with logging
+- **Caching**: Uses seeded facts for frequently requested cities
+
+**Interesting Content Patterns:**
+```python
+# Prioritize facts with these characteristics
+INTERESTING_PATTERNS = [
+    'oldest', 'newest', 'largest', 'smallest', 'tallest',
+    'first', 'only', 'unique', 'famous', 'world',
+    'built in', 'founded', 'established', 'created',
+    'known as', 'called', 'renowned', 'legend', 'history',
+    'medieval', 'century', 'population', 'square kilometers',
+    'miles', 'height', 'length', 'width', 'deepest', 'highest',
+    'lowest', 'longest', 'shortest', 'fastest', 'slowest',
+    'most visited', 'popular', 'UNESCO', 'world heritage',
+    'historical significance', 'cultural importance',
+    'architectural style', 'famous for'
+]
+```
+
+**Usage:**
+```python
+# Example from /api/fun-fact endpoint
+if has_interest and not is_definition:
+    fun_fact_candidates.append(sentence)
+```
+
+### Quality Assurance
+- **Avoid generic facts**: Exclude sentences like "Paris is a city..."
+- **Deduplicate**: Remove duplicate facts from multiple sources
+- **Trim to size**: Keep facts between 40-200 characters for readability
+- **Validate sources**: Ensure facts come from reputable sources (Wikipedia, Wikidata)
+
 ## Mock/Test Data
 - **No mock POI data in production paths**. All mock data must be isolated to test files or explicit test helpers.
 - **Seed data**: Only use for bootstrapping, with clear schema and versioning. Log all seed fallbacks.

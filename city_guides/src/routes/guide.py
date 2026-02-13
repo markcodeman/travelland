@@ -292,66 +292,35 @@ async def api_smart_neighborhoods():
                 app.logger.info(f"Cache hit for smart neighborhoods: {city}")
                 return jsonify(json.loads(cached_data))
 
-        # PRIORITY: Check for curated famous neighborhoods first (for major cities)
-        try:
-            from city_guides.providers.neighborhood_suggestions import get_neighborhood_suggestions, is_large_city
-            if is_large_city(city):
-                curated_neighborhoods = get_neighborhood_suggestions(city)
-                if curated_neighborhoods:
-                    app.logger.info(f"Using curated neighborhoods for {city}: {len(curated_neighborhoods)} neighborhoods")
-                    
-                    # Enrich with Wikipedia descriptions if requested
-                    if enrich:
-                        curated_neighborhoods = await _enrich_neighborhoods_with_descriptions(
-                            city, curated_neighborhoods, aiohttp_session
-                        )
-                    
-                    response = {
-                        'is_large_city': True,
-                        'neighborhoods': curated_neighborhoods,
-                        'city': city,
-                        'category': category,
-                        'source': 'curated',
-                        'total_available': len(curated_neighborhoods)
-                    }
-                    if redis_client:
-                        await redis_client.setex(cache_key, 3600, json.dumps(response))
-                    return jsonify(response)
-        except Exception as e:
-            app.logger.debug(f"Could not get curated neighborhoods for {city}: {e}")
-
         seed_neighborhoods = []
         data_path = Path(__file__).parent.parent.parent / 'data'
-        
-        for seed_file in data_path.rglob('*.json'):
-            try:
-                with open(seed_file, 'r', encoding='utf-8') as f:
-                    seed_data = json.load(f)
-                
-                # Support both formats: {"cities": {"CityName": [...]}} and {"city": "Name", "neighborhoods": [...]}
-                neighborhoods_data = None
-                
-                # Format 1: {"cities": {"CityName": [...]}}
-                if isinstance(seed_data, dict) and 'cities' in seed_data:
-                    cities = seed_data.get('cities', {})
-                    if isinstance(cities, dict):
-                        city_key = next((k for k in cities.keys() if k.lower() == city.lower()), None)
-                        if city_key:
-                            neighborhoods_data = cities[city_key]
-                
-                # Format 2: {"city": "Name", "neighborhoods": [...]}
-                elif isinstance(seed_data, dict) and 'city' in seed_data and 'neighborhoods' in seed_data:
-                    if seed_data.get('city', '').lower() == city.lower():
-                        neighborhoods_data = seed_data.get('neighborhoods', [])
-                
-                if neighborhoods_data and isinstance(neighborhoods_data, list) and len(neighborhoods_data) > 0:
-                    first_item = neighborhoods_data[0]
-                    if isinstance(first_item, dict) and 'name' in first_item:
-                        seed_neighborhoods = neighborhoods_data
-                        app.logger.info(f"Found {len(seed_neighborhoods)} neighborhoods in {seed_file.name} for {city}")
-                        break
-            except Exception as e:
-                app.logger.debug(f"Could not load {seed_file.name} for {city}: {e}")
+        large_city_skip = {'london', 'new york', 'tokyo', 'paris', 'los angeles', 'shanghai', 'beijing', 'rio de janeiro', 'rio de janeiro, brazil'}
+
+        if city.lower().split(',')[0].strip() not in large_city_skip:
+            for seed_file in data_path.rglob('*.json'):
+                try:
+                    with open(seed_file, 'r', encoding='utf-8') as f:
+                        seed_data = json.load(f)
+
+                    neighborhoods_data = None
+                    if isinstance(seed_data, dict) and 'cities' in seed_data:
+                        cities = seed_data.get('cities', {})
+                        if isinstance(cities, dict):
+                            city_key = next((k for k in cities.keys() if k.lower() == city.lower()), None)
+                            if city_key:
+                                neighborhoods_data = cities[city_key]
+                    elif isinstance(seed_data, dict) and 'city' in seed_data and 'neighborhoods' in seed_data:
+                        if seed_data.get('city', '').lower() == city.lower():
+                            neighborhoods_data = seed_data.get('neighborhoods', [])
+
+                    if neighborhoods_data and isinstance(neighborhoods_data, list) and len(neighborhoods_data) > 0:
+                        first_item = neighborhoods_data[0]
+                        if isinstance(first_item, dict) and 'name' in first_item:
+                            seed_neighborhoods = neighborhoods_data
+                            app.logger.info(f"Found {len(seed_neighborhoods)} neighborhoods in {seed_file.name} for {city}")
+                            break
+                except Exception as e:
+                    app.logger.debug(f"Could not load {seed_file.name} for {city}: {e}")
 
         if seed_neighborhoods:
             # Filter to top 24 neighborhoods by population/wikipedia presence

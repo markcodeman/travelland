@@ -6,7 +6,7 @@ import re
 import random
 import json
 import unicodedata
-import httpx
+import aiohttp
 from quart import Blueprint, request, jsonify
 
 from ..data.seeded_facts import get_city_fun_facts
@@ -24,8 +24,8 @@ async def fetch_wikidata_fact(city: str):
     if not city:
         return None
     try:
-        async with httpx.AsyncClient(timeout=8) as client:
-            search_resp = await client.get(
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=8)) as session:
+            search_resp = await session.get(
                 "https://www.wikidata.org/w/api.php",
                 params={
                     "action": "wbsearchentities",
@@ -35,9 +35,9 @@ async def fetch_wikidata_fact(city: str):
                     "limit": 1,
                 },
             )
-            if not search_resp.is_success:
+            if not search_resp.ok:
                 return None
-            search_json = search_resp.json()
+            search_json = await search_resp.json()
             search_results = search_json.get("search") or []
             if not search_results:
                 return None
@@ -47,10 +47,10 @@ async def fetch_wikidata_fact(city: str):
             if not entity_id:
                 return None
 
-            entity_resp = await client.get(f"https://www.wikidata.org/wiki/Special:EntityData/{entity_id}.json")
-            if not entity_resp.is_success:
+            entity_resp = await session.get(f"https://www.wikidata.org/wiki/Special:EntityData/{entity_id}.json")
+            if not entity_resp.ok:
                 return None
-            entity_json = entity_resp.json()
+            entity_json = await entity_resp.json()
             entity = (entity_json.get("entities") or {}).get(entity_id, {})
             claims = entity.get("claims", {})
 
@@ -106,8 +106,9 @@ async def get_fun_fact():
         
         app.logger.info(f"[FUN-FACT] Normalized city name: '{city_lower}'")
         
-        # Initialize city_facts to prevent UnboundLocalError
+        # Initialize variables to prevent UnboundLocalError
         fact_sentences: list[str] = []
+        bran_bias = False
         
         # Get seeded facts for this city
         seeded_facts = get_city_fun_facts(city_lower)
@@ -131,7 +132,7 @@ async def get_fun_fact():
                     # Split into sentences and filter for interesting ones
                     sentences = [s.strip() for s in wiki_text.split('.') if 40 < len(s.strip()) < 200]
                     
-                    # PRIORITIZE sentences with numbers/dates for fun facts
+                    # PRIORITIZE sentences with specific, interesting facts
                     # These make for better "fun facts" than generic descriptions
                     fun_fact_candidates = []
                     generic_descriptions = []
@@ -141,15 +142,19 @@ async def get_fun_fact():
                         # Check if it's a boring definition
                         is_definition = bool(re.match(r'^\w+ is (a |an |the )?(city|town|commune|village|place|area|region|district|borough|section|castle|fortress|building|monument|landmark)', s_lower))
                         
-                        # Check if it has interesting content (numbers, dates, unique facts)
-                        # Use \d to match numbers with or without commas
+                        # Check if it has interesting, specific content
                         has_number = bool(re.search(r'\d', s_lower))
-                        has_interest = has_number or any(pattern in s_lower for pattern in [
+                        has_interest = has_number and any(pattern in s_lower for pattern in [
                             'oldest', 'newest', 'largest', 'smallest', 'tallest',
                             'first', 'only', 'unique', 'famous', 'world',
                             'built in', 'founded', 'established', 'created',
                             'known as', 'called', 'renowned', 'legend', 'history',
-                            'medieval', 'century'
+                            'medieval', 'century', 'population', 'square kilometers',
+                            'miles', 'height', 'length', 'width', 'deepest', 'highest',
+                            'lowest', 'longest', 'shortest', 'fastest', 'slowest',
+                            'most visited', 'popular', 'UNESCO', 'world heritage',
+                            'historical significance', 'cultural importance',
+                            'architectural style', 'famous for'
                         ])
                         
                         if has_interest and not is_definition:
@@ -159,6 +164,10 @@ async def get_fun_fact():
                     
                     # Use fun fact candidates first, fall back to generic descriptions
                     chosen_pool = fun_fact_candidates if fun_fact_candidates else generic_descriptions
+                    
+                    # If still not enough interesting facts, try to find more specific details
+                    if not chosen_pool:
+                        chosen_pool = [s for s in sentences if not is_definition and len(s.strip()) > 60]
                     
                     # For Bran, prefer Vlad/Dracula sentences
                     if bran_bias:
