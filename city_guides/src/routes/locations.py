@@ -412,8 +412,10 @@ async def api_neighborhoods_query():
 async def geocode():
     """Geocode a city/neighborhood to get coordinates"""
     payload = await request.get_json(silent=True) or {}
-    city = payload.get('city', '').strip()
-    neighborhood = payload.get('neighborhood', '').strip()
+    raw_city = payload.get('city', '')
+    raw_neighborhood = payload.get('neighborhood', '')
+    city = raw_city.strip() if isinstance(raw_city, str) else ''
+    neighborhood = raw_neighborhood.strip() if isinstance(raw_neighborhood, str) else ''
     
     if not city:
         return jsonify({'error': 'city required'}), 400

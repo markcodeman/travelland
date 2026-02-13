@@ -158,12 +158,17 @@ const fetchCityHeroImage = async (city, intent = '') => {
   
   // Load fallbacks dynamically
   const { HERO_FALLBACKS, CATEGORY_FALLBACKS } = await loadFallbacks();
-  
+
   const fallback = HERO_FALLBACKS[slug] ||
     CATEGORY_FALLBACKS[normalizedIntent] ||
     CATEGORY_FALLBACKS.default;
-    
+
   console.log('Using fallback:', fallback);
+
+  // Hard-prefer R2 fallback for Bran Castle
+  if (slug === 'bran-castle-romania' && fallback) {
+    return fallback;
+  }
 
   // For Tanchon/Tokchon, use fallback immediately to avoid API delays and Firefox CORS issues
   if (slug === 'tanch-n' || slug === 'tokchon' || slug === 'tanchon' || 
@@ -366,8 +371,8 @@ const getHeroImageMeta = async (city, intent = '') => {
 };
 
 export {
-  buildImageQueries, DEFAULT_HERO,
-  DEFAULT_VENUE, fetchCityHeroImage, fetchPixabayPhoto, fetchUnsplashPhotos, fetchVenueImages, getHeroImage,
-  getHeroImageMeta, triggerUnsplashDownload
+    DEFAULT_HERO,
+    DEFAULT_VENUE, buildImageQueries, fetchCityHeroImage, fetchPixabayPhoto, fetchUnsplashPhotos, fetchVenueImages, getHeroImage,
+    getHeroImageMeta, triggerUnsplashDownload
 };
 

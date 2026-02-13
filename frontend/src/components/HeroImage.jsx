@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-import './HeroImage.css';
+import { useEffect } from 'react';
 import { triggerUnsplashDownload } from '../services/imageService';
 
 const DEFAULT_HERO = 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80';
@@ -24,52 +23,32 @@ const HeroImage = ({ city, intent, loading, heroImage, heroImageMeta }) => {
   };
 
   return (
-    <div className="hero-image-container">
+    <div className="mt-8">
       {loading ? (
-        <div className="hero-loading">
-          <div className="hero-skeleton">
-            <div className="skeleton-shimmer"></div>
-          </div>
-        </div>
+        <div className="rounded-3xl overflow-hidden bg-slate-100 h-64 animate-pulse" />
       ) : (
-        <>
-          <div className="hero-image-wrapper">
-            <img
-              src={imageUrl}
-              alt={getAltText(city, intent)}
-              className="hero-image"
-              onError={(e) => {
-                // Fallback to cityscape if specific intent image fails
-                if (!e.target.src.includes('cityscape')) {
-                  e.target.src = `https://source.unsplash.com/1200x600/?${city.toLowerCase().replace(/\s+/g, '-')},cityscape&auto=format&fit=crop`;
-                }
-              }}
-            />
-            <div className="hero-overlay">
-              <div className="hero-content">
-                <h1 className="hero-title">{city}</h1>
-                {intent && (
-                  <p className="hero-subtitle">
-                    Discover {intent.split(',').join(' • ')}
-                  </p>
-                )}
-                <div className="hero-attribution">
-                  <small>Photo by <a href={heroImageMeta.profileUrl ? `${heroImageMeta.profileUrl}?utm_source=travelland&utm_medium=referral` : 'https://unsplash.com'} target="_blank" rel="noopener noreferrer">{heroImageMeta.photographer || 'Unsplash'}</a> on <a href="https://unsplash.com?utm_source=travelland&utm_medium=referral" target="_blank" rel="noopener noreferrer">Unsplash</a></small>
-                </div>
-              </div>
+        <div className="relative rounded-3xl overflow-hidden shadow-xl">
+          <img
+            src={imageUrl}
+            alt={getAltText(city, intent)}
+            className="w-full h-72 md:h-80 object-cover"
+            onError={(e) => {
+              if (!e.target.src.includes('cityscape')) {
+                e.target.src = `https://source.unsplash.com/1200x600/?${city.toLowerCase().replace(/\s+/g, '-')},cityscape&auto=format&fit=crop`;
+              }
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+          <div className="absolute inset-0 flex flex-col justify-end p-6 text-white space-y-2">
+            <h1 className="text-2xl md:text-3xl font-bold">{city}</h1>
+            {intent && (
+              <p className="text-sm md:text-base text-white/90">Discover {intent.split(',').join(' • ')}</p>
+            )}
+            <div className="text-xs text-white/80">
+              Photo by <a className="underline" href={heroImageMeta.profileUrl ? `${heroImageMeta.profileUrl}?utm_source=travelland&utm_medium=referral` : 'https://unsplash.com'} target="_blank" rel="noopener noreferrer">{heroImageMeta.photographer || 'Unsplash'}</a> on <a className="underline" href="https://unsplash.com?utm_source=travelland&utm_medium=referral" target="_blank" rel="noopener noreferrer">Unsplash</a>
             </div>
           </div>
-          
-          {/* Floating action buttons */}
-          <div className="hero-actions">
-            <button className="hero-action-btn primary">
-              📍 Explore Map
-            </button>
-            <button className="hero-action-btn secondary">
-              📸 View Gallery
-            </button>
-          </div>
-        </>
+        </div>
       )}
     </div>
   );

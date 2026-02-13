@@ -1474,37 +1474,34 @@ def _search_impl(payload):
                 print(f"[SEARCH DEBUG] Failed to use selected candidate: {e}")
         else:
             # geocode_city returns a coroutine, so we need to run it in an event loop
-            try:
-                city_coords = AsyncRunner.run(geocode_city(city))
-                if city_coords:
-                    print(f"[SEARCH DEBUG] City coordinates: {city_coords}")
-                    # If city_coords has a bbox, use it, but if it's too large, tighten it
-                    # Otherwise, fallback to a conservative bbox
-                    # Try to get a bbox from city_coords if present (future-proof)
-                    bbox_from_coords = None
-                    if 'bbox' in city_coords and isinstance(city_coords['bbox'], (list, tuple)) and len(city_coords['bbox']) == 4:
-                        bbox_from_coords = list(city_coords['bbox'])
-                    if bbox_from_coords:
-                        # Check if bbox is too large (e.g., > CITY_FALLBACK_BBOX_KM * 3)
-                        lat_span = abs(bbox_from_coords[3] - bbox_from_coords[1])
-                        lon_span = abs(bbox_from_coords[2] - bbox_from_coords[0])
-                        # Convert to km
-                        lat_km = lat_span * 111.0
-                        lon_km = lon_span * 111.0 * abs(math.cos(math.radians(city_coords['lat'])))
-                        if lat_km > fallback_bbox_km * 3 or lon_km > fallback_bbox_km * 3:
-                            bbox = conservative_bbox(city_coords['lat'], city_coords['lon'], fallback_bbox_km)
-                            result["debug_info"]["bbox_tightened"] = True
-                        else:
-                            bbox = bbox_from_coords
-                    else:
+            city_coords = AsyncRunner.run(geocode_city(city))
+            if city_coords:
+                print(f"[SEARCH DEBUG] City coordinates: {city_coords}")
+                # If city_coords has a bbox, use it, but if it's too large, tighten it
+                # Otherwise, fallback to a conservative bbox
+                # Try to get a bbox from city_coords if present (future-proof)
+                bbox_from_coords = None
+                if 'bbox' in city_coords and isinstance(city_coords['bbox'], (list, tuple)) and len(city_coords['bbox']) == 4:
+                    bbox_from_coords = list(city_coords['bbox'])
+                if bbox_from_coords:
+                    # Check if bbox is too large (e.g., > CITY_FALLBACK_BBOX_KM * 3)
+                    lat_span = abs(bbox_from_coords[3] - bbox_from_coords[1])
+                    lon_span = abs(bbox_from_coords[2] - bbox_from_coords[0])
+                    # Convert to km
+                    lat_km = lat_span * 111.0
+                    lon_km = lon_span * 111.0 * abs(math.cos(math.radians(city_coords['lat'])))
+                    if lat_km > fallback_bbox_km * 3 or lon_km > fallback_bbox_km * 3:
                         bbox = conservative_bbox(city_coords['lat'], city_coords['lon'], fallback_bbox_km)
                         result["debug_info"]["bbox_tightened"] = True
-                    result["debug_info"]["city_coords"] = city_coords
-                    result["debug_info"]["bbox"] = bbox
+                    else:
+                        bbox = bbox_from_coords
                 else:
-                    print("[SEARCH DEBUG] Failed to geocode city")
-            finally:
-                loop.close()
+                    bbox = conservative_bbox(city_coords['lat'], city_coords['lon'], fallback_bbox_km)
+                    result["debug_info"]["bbox_tightened"] = True
+                result["debug_info"]["city_coords"] = city_coords
+                result["debug_info"]["bbox"] = bbox
+            else:
+                print("[SEARCH DEBUG] Failed to geocode city")
     except Exception as e:
         print(f"[SEARCH DEBUG] Geocoding error: {e}")
         result["debug_info"]["geocoding_error"] = str(e)
@@ -1702,240 +1699,235 @@ def _search_impl(payload):
                 return formatted_venues
                 
             # Run in event loop
-            try:
-                formatted_venues = AsyncRunner.run(get_venues_with_images())
-                print(f"[SEARCH DEBUG] Found {len(formatted_venues)} venues")
-                
-                # Filter for public transport venues if category is public transport
-                if q == "public transport":
-                    transport_venues = []
-                    for venue in formatted_venues:
-                        tags_str = venue.get("tags", "")
-                        # Check if the tags string contains transport-related keywords
-                        if "railway" in tags_str or "station" in tags_str or "bus_station" in tags_str or "ferry_terminal" in tags_str or "public_transport" in tags_str:
-                            transport_venues.append(venue)
-                    result["venues"] = transport_venues
-                    print(f"[SEARCH DEBUG] Filtered to {len(transport_venues)} transport venues")
-                elif q == "shopping":
-                    # Filter for shopping venues - shops, boutiques, malls
-                    shopping_venues = []
-                    for venue in formatted_venues:
-                        tags = venue.get("tags", {})
-                        tags_str = str(tags).lower()
-                        # Check for shop-related tags and exclude food
-                        is_shop = any(keyword in tags_str for keyword in ["shop=", "boutique", "mall", "store", "retail"])
-                        is_food = any(keyword in tags_str for keyword in ["restaurant", "cafe", "food", "cuisine", "couscous", "kitchen"])
-                        if is_shop and not is_food:
-                            shopping_venues.append(venue)
-                    result["venues"] = shopping_venues
-                    print(f"[SEARCH DEBUG] Filtered to {len(shopping_venues)} shopping venues")
-                elif q == "nightlife":
-                    # Filter for nightlife venues - bars, pubs, clubs, lounges
-                    nightlife_venues = []
-                    for venue in formatted_venues:
-                        tags = venue.get("tags", {})
-                        tags_str = str(tags).lower()
-                        name = venue.get("name", "").lower()
-                        
-                        # STRICT filtering - exclude obvious non-nightlife
-                        excluded_types = [
-                            "library", "bookcase", "education.library", "public_bookcase",
-                            "employment", "government", "office", "administration",
-                            "social_facility", "community_centre", "townhall",
-                            "embassy", "consulate", "courthouse", "police",
-                            "post_office", "bank", "atm", "clinic", "hospital"
-                        ]
-                        if any(bad in tags_str for bad in excluded_types):
-                            continue
-                        
-                        # Must have explicit nightlife amenity tags
-                        nightlife_amenities = [
-                            "amenity=bar", "amenity=pub", "amenity=nightclub",
-                            "amenity=biergarten", "amenity=stripclub",
-                            "bar=yes", "pub=yes"
-                        ]
-                        has_nightlife_amenity = any(tag in tags_str for tag in nightlife_amenities)
-                        
-                        # OR have strong name indicators + beverage keywords
-                        strong_name_indicators = [
-                            "bar", "pub", "tavern", "biergarten", "brewery",
-                            "cocktail", "lounge", "club"
-                        ]
-                        has_strong_name = any(ind in name for ind in strong_name_indicators)
-                        
-                        # Require amenity tag OR (strong name + not excluded)
-                        if has_nightlife_amenity or (has_strong_name and not any(bad in name for bad in ["library", "office", "employment", "government"])):
-                            # Additional check: must have beverage/entertainment related tags
-                            beverage_keywords = ["bar", "pub", "biergarten", "cocktail", "beer", "wine", "drinks", "nightclub", "club", "lounge"]
-                            if any(kw in tags_str for kw in beverage_keywords):
-                                nightlife_venues.append(venue)
-                    
-                    result["venues"] = nightlife_venues
-                    print(f"[SEARCH DEBUG] Filtered to {len(nightlife_venues)} nightlife venues (strict mode)")
-                elif q in ["historic", "historic sites"]:
-                    # Filter for actual historic sites - monuments, museums, castles, etc.
-                    historic_venues = []
-                    for venue in formatted_venues:
-                        tags = venue.get("tags", {})
-                        tags_str = str(tags).lower()
-                        name = venue.get("name", "").lower()
-                        
-                        # STRICT filtering - must have actual historic/tourism tags
-                        historic_indicators = [
-                            "historic", "monument", "memorial", "castle", "palace",
-                            "museum", "gallery", "cathedral", "church", "temple",
-                            "ruins", "archaeological", "heritage", "landmark",
-                            "tourism=attraction", "tourism=museum", "tourism=gallery",
-                            "building=cathedral", "building=church", "building=castle",
-                            "historic=monument", "historic=castle", "historic=ruins"
-                        ]
-                        
-                        # Must have at least one historic indicator
-                        has_historic = any(ind in tags_str for ind in historic_indicators)
-                        
-                        # Exclude garbage like traffic signs, construction, random shops
-                        garbage_indicators = [
-                            "traffic", "sign", "construction", "speed limit",
-                            "kebab", "burger", "fast food", "driveway", "parking",
-                            "regulatory", "maxspeed", "construction--"
-                        ]
-                        is_garbage = any(garb in name or garb in tags_str for garb in garbage_indicators)
-                        
-                        if has_historic and not is_garbage:
-                            historic_venues.append(venue)
-                    
-                    result["venues"] = historic_venues
-                    print(f"[SEARCH DEBUG] Filtered to {len(historic_venues)} historic venues (strict mode)")
-                else:
-                    # Attach city-center distance metrics, filter out extreme outliers, and apply
-                    # a small distance-based boost to ranking so venues nearer the city center
-                    # are preferred. Configuration via env vars:
-                    # CITY_MAX_DISTANCE_KM (default: 40)
-                    # CITY_DISTANCE_DECAY_KM (distance where score decays to 0, default: 20)
-                    MAX_DISTANCE_KM = float(os.getenv('CITY_MAX_DISTANCE_KM', '40'))
-                    DISTANCE_DECAY_KM = float(os.getenv('CITY_DISTANCE_DECAY_KM', '20'))
+            formatted_venues = AsyncRunner.run(get_venues_with_images())
+            print(f"[SEARCH DEBUG] Found {len(formatted_venues)} venues")
 
-                    center_lat = None
-                    center_lon = None
-                    try:
-                        if city_coords and isinstance(city_coords, dict):
-                            lat_val = city_coords.get('lat')
-                            lon_val = city_coords.get('lon')
-                            center_lat = float(lat_val) if lat_val is not None else None
-                            center_lon = float(lon_val) if lon_val is not None else None
-                        else:
-                            center_lat = None
-                            center_lon = None
-                    except Exception:
+            # Filter for public transport venues if category is public transport
+            if q == "public transport":
+                transport_venues = []
+                for venue in formatted_venues:
+                    tags_str = venue.get("tags", "")
+                    # Check if the tags string contains transport-related keywords
+                    if "railway" in tags_str or "station" in tags_str or "bus_station" in tags_str or "ferry_terminal" in tags_str or "public_transport" in tags_str:
+                        transport_venues.append(venue)
+                result["venues"] = transport_venues
+                print(f"[SEARCH DEBUG] Filtered to {len(transport_venues)} transport venues")
+            elif q == "shopping":
+                # Filter for shopping venues - shops, boutiques, malls
+                shopping_venues = []
+                for venue in formatted_venues:
+                    tags = venue.get("tags", {})
+                    tags_str = str(tags).lower()
+                    # Check for shop-related tags and exclude food
+                    is_shop = any(keyword in tags_str for keyword in ["shop=", "boutique", "mall", "store", "retail"])
+                    is_food = any(keyword in tags_str for keyword in ["restaurant", "cafe", "food", "cuisine", "couscous", "kitchen"])
+                    if is_shop and not is_food:
+                        shopping_venues.append(venue)
+                result["venues"] = shopping_venues
+                print(f"[SEARCH DEBUG] Filtered to {len(shopping_venues)} shopping venues")
+            elif q == "nightlife":
+                # Filter for nightlife venues - bars, pubs, clubs, lounges
+                nightlife_venues = []
+                for venue in formatted_venues:
+                    tags = venue.get("tags", {})
+                    tags_str = str(tags).lower()
+                    name = venue.get("name", "").lower()
+                    
+                    # STRICT filtering - exclude obvious non-nightlife
+                    excluded_types = [
+                        "library", "bookcase", "education.library", "public_bookcase",
+                        "employment", "government", "office", "administration",
+                        "social_facility", "community_centre", "townhall",
+                        "embassy", "consulate", "courthouse", "police",
+                        "post_office", "bank", "atm", "clinic", "hospital"
+                    ]
+                    if any(bad in tags_str for bad in excluded_types):
+                        continue
+                    
+                    # Must have explicit nightlife amenity tags
+                    nightlife_amenities = [
+                        "amenity=bar", "amenity=pub", "amenity=nightclub",
+                        "amenity=biergarten", "amenity=stripclub",
+                        "bar=yes", "pub=yes"
+                    ]
+                    has_nightlife_amenity = any(tag in tags_str for tag in nightlife_amenities)
+                    
+                    # OR have strong name indicators + beverage keywords
+                    strong_name_indicators = [
+                        "bar", "pub", "tavern", "biergarten", "brewery",
+                        "cocktail", "lounge", "club"
+                    ]
+                    has_strong_name = any(ind in name for ind in strong_name_indicators)
+                    
+                    # Require amenity tag OR (strong name + not excluded)
+                    if has_nightlife_amenity or (has_strong_name and not any(bad in name for bad in ["library", "office", "employment", "government"])):
+                        # Additional check: must have beverage/entertainment related tags
+                        beverage_keywords = ["bar", "pub", "biergarten", "cocktail", "beer", "wine", "drinks", "nightclub", "club", "lounge"]
+                        if any(kw in tags_str for kw in beverage_keywords):
+                            nightlife_venues.append(venue)
+                
+                result["venues"] = nightlife_venues
+                print(f"[SEARCH DEBUG] Filtered to {len(nightlife_venues)} nightlife venues (strict mode)")
+            elif q in ["historic", "historic sites"]:
+                # Filter for actual historic sites - monuments, museums, castles, etc.
+                historic_venues = []
+                for venue in formatted_venues:
+                    tags = venue.get("tags", {})
+                    tags_str = str(tags).lower()
+                    name = venue.get("name", "").lower()
+                    
+                    # STRICT filtering - must have actual historic/tourism tags
+                    historic_indicators = [
+                        "historic", "monument", "memorial", "castle", "palace",
+                        "museum", "gallery", "cathedral", "church", "temple",
+                        "ruins", "archaeological", "heritage", "landmark",
+                        "tourism=attraction", "tourism=museum", "tourism=gallery",
+                        "building=cathedral", "building=church", "building=castle",
+                        "historic=monument", "historic=castle", "historic=ruins"
+                    ]
+                    
+                    # Must have at least one historic indicator
+                    has_historic = any(ind in tags_str for ind in historic_indicators)
+                    
+                    # Exclude garbage like traffic signs, construction, random shops
+                    garbage_indicators = [
+                        "traffic", "sign", "construction", "speed limit",
+                        "kebab", "burger", "fast food", "driveway", "parking",
+                        "regulatory", "maxspeed", "construction--"
+                    ]
+                    is_garbage = any(garb in name or garb in tags_str for garb in garbage_indicators)
+                    
+                    if has_historic and not is_garbage:
+                        historic_venues.append(venue)
+                
+                result["venues"] = historic_venues
+                print(f"[SEARCH DEBUG] Filtered to {len(historic_venues)} historic venues (strict mode)")
+            else:
+                # Attach city-center distance metrics, filter out extreme outliers, and apply
+                # a small distance-based boost to ranking so venues nearer the city center
+                # are preferred. Configuration via env vars:
+                # CITY_MAX_DISTANCE_KM (default: 40)
+                # CITY_DISTANCE_DECAY_KM (distance where score decays to 0, default: 20)
+                MAX_DISTANCE_KM = float(os.getenv('CITY_MAX_DISTANCE_KM', '40'))
+                DISTANCE_DECAY_KM = float(os.getenv('CITY_DISTANCE_DECAY_KM', '20'))
+
+                center_lat = None
+                center_lon = None
+                try:
+                    if city_coords and isinstance(city_coords, dict):
+                        lat_val = city_coords.get('lat')
+                        lon_val = city_coords.get('lon')
+                        center_lat = float(lat_val) if lat_val is not None else None
+                        center_lon = float(lon_val) if lon_val is not None else None
+                    else:
                         center_lat = None
                         center_lon = None
+                except Exception:
+                    center_lat = None
+                    center_lon = None
 
-                    venues_with_dist = []
-                    filtered_out = 0
-                    for v in formatted_venues:
-                        try:
-                            vlat = v.get('lat')
-                            vlon = v.get('lon')
-                            if vlat is None or vlon is None:
-                                # can't compute distance - include but mark as unknown
-                                v['distance_km'] = None
-                                v['distance_score'] = 0.0
-                                venues_with_dist.append(v)
-                                continue
-
-                            if center_lat is None or center_lon is None:
-                                # No reliable city center - include all but set distances unknown
-                                v['distance_km'] = None
-                                v['distance_score'] = 0.0
-                                venues_with_dist.append(v)
-                                continue
-
-                            if vlat is None or vlon is None:
-                                v['distance_km'] = None
-                                v['distance_score'] = 0.0
-                                venues_with_dist.append(v)
-                                continue
-                            dist = haversine_km(center_lat, center_lon, float(vlat), float(vlon))
-                            v['distance_km'] = round(dist, 3)
-                            # linear decay to zero at DISTANCE_DECAY_KM
-                            v['distance_score'] = max(0.0, 1.0 - (dist / DISTANCE_DECAY_KM)) if DISTANCE_DECAY_KM > 0 else 0.0
-
-                            # Enforce max distance cutoff to eliminate rural/state-level hits
-                            if dist > MAX_DISTANCE_KM:
-                                filtered_out += 1
-                                continue
-
-                            venues_with_dist.append(v)
-                        except Exception:
-                            # On any issue, keep the venue but mark distance unknown
+                venues_with_dist = []
+                filtered_out = 0
+                for v in formatted_venues:
+                    try:
+                        vlat = v.get('lat')
+                        vlon = v.get('lon')
+                        if vlat is None or vlon is None:
+                            # can't compute distance - include but mark as unknown
                             v['distance_km'] = None
                             v['distance_score'] = 0.0
                             venues_with_dist.append(v)
+                            continue
 
-                    # Apply a combined score for sorting: prefer higher quality and closer venues.
-                    for v in venues_with_dist:
-                        quality = float(v.get('quality_score', 0) or 0)
-                        dist_score = float(v.get('distance_score', 0) or 0)
-                        # Combined: quality (70%) + distance influence (30%)
-                        v['combined_score'] = quality * 0.7 + dist_score * 0.3
+                        if center_lat is None or center_lon is None:
+                            # No reliable city center - include all but set distances unknown
+                            v['distance_km'] = None
+                            v['distance_score'] = 0.0
+                            venues_with_dist.append(v)
+                            continue
 
-                    venues_with_dist.sort(key=lambda x: x.get('combined_score', 0) or 0, reverse=True)
+                        if vlat is None or vlon is None:
+                            v['distance_km'] = None
+                            v['distance_score'] = 0.0
+                            venues_with_dist.append(v)
+                            continue
+                        dist = haversine_km(center_lat, center_lon, float(vlat), float(vlon))
+                        v['distance_km'] = round(dist, 3)
+                        # linear decay to zero at DISTANCE_DECAY_KM
+                        v['distance_score'] = max(0.0, 1.0 - (dist / DISTANCE_DECAY_KM)) if DISTANCE_DECAY_KM > 0 else 0.0
 
-                    result["venues"] = venues_with_dist
-                    result['debug_info']['distance_filtered_out'] = filtered_out
-                    result['debug_info']['city_max_distance_km'] = MAX_DISTANCE_KM
-                    result['debug_info']['city_distance_decay_km'] = DISTANCE_DECAY_KM
-                
-                # Apply venue quality filtering
-                # Use a lower threshold for neighborhood searches to avoid over-filtering
-                try:
-                    from city_guides.src.venue_quality import MINIMUM_QUALITY_SCORE
-                except Exception:
-                    from venue_quality import MINIMUM_QUALITY_SCORE
+                        # Enforce max distance cutoff to eliminate rural/state-level hits
+                        if dist > MAX_DISTANCE_KM:
+                            filtered_out += 1
+                            continue
 
-                threshold = MINIMUM_QUALITY_SCORE
-                # Lower threshold significantly for city-level searches to get more venues
-                threshold = min(threshold, 0.5)  # Cap at 0.5 to allow more venues through
-                # If a neighborhood is specified, be even more permissive
-                if neighborhood:
-                    threshold = min(threshold, 0.4)  # lower to 0.4 for neighborhood-level searches
+                        venues_with_dist.append(v)
+                    except Exception:
+                        # On any issue, keep the venue but mark distance unknown
+                        v['distance_km'] = None
+                        v['distance_score'] = 0.0
+                        venues_with_dist.append(v)
 
-                # Filter using the selected threshold
-                high_quality_venues = filter_high_quality_venues(result["venues"], min_score=threshold)
-                result["debug_info"]["quality_filtered"] = len(result["venues"]) - len(high_quality_venues)
-                result["debug_info"]["quality_threshold"] = threshold
+                # Apply a combined score for sorting: prefer higher quality and closer venues.
+                for v in venues_with_dist:
+                    quality = float(v.get('quality_score', 0) or 0)
+                    dist_score = float(v.get('distance_score', 0) or 0)
+                    # Combined: quality (70%) + distance influence (30%)
+                    v['combined_score'] = quality * 0.7 + dist_score * 0.3
 
-                # Fallback: if too few venues remain, include top-scoring remaining venues until we reach the requested limit
-                MIN_VENUES = min(limit, 15)  # Use requested limit or at least try to get 15
-                fallback_included = False
-                if len(high_quality_venues) < MIN_VENUES:
-                    # Ensure quality scores exist for all venues
-                    for v in result["venues"]:
-                        if 'quality_score' not in v:
-                            v['quality_score'] = calculate_venue_quality_score(v)
+                venues_with_dist.sort(key=lambda x: x.get('combined_score', 0) or 0, reverse=True)
 
-                    existing_ids = set(v.get('id') for v in high_quality_venues)
-                    remaining = [v for v in result["venues"] if v.get('id') not in existing_ids]
-                    remaining_sorted = sorted(remaining, key=lambda x: x.get('quality_score', 0), reverse=True)
+                result["venues"] = venues_with_dist
+                result['debug_info']['distance_filtered_out'] = filtered_out
+                result['debug_info']['city_max_distance_km'] = MAX_DISTANCE_KM
+                result['debug_info']['city_distance_decay_km'] = DISTANCE_DECAY_KM
+            
+            # Apply venue quality filtering
+            # Use a lower threshold for neighborhood searches to avoid over-filtering
+            try:
+                from city_guides.src.venue_quality import MINIMUM_QUALITY_SCORE
+            except Exception:
+                from venue_quality import MINIMUM_QUALITY_SCORE
 
-                    to_add = []
-                    for v in remaining_sorted:
-                        if len(high_quality_venues) + len(to_add) >= MIN_VENUES:
-                            break
-                        to_add.append(v)
+            threshold = MINIMUM_QUALITY_SCORE
+            # Lower threshold significantly for city-level searches to get more venues
+            threshold = min(threshold, 0.5)  # Cap at 0.5 to allow more venues through
+            # If a neighborhood is specified, be even more permissive
+            if neighborhood:
+                threshold = min(threshold, 0.4)  # lower to 0.4 for neighborhood-level searches
 
-                    if to_add:
-                        fallback_included = True
-                        high_quality_venues.extend(to_add)
-                        result["debug_info"]["fallback_included"] = True
-                        result["debug_info"]["fallback_added"] = [ {"id": v.get("id"), "name": v.get("name"), "quality_score": v.get("quality_score")} for v in to_add ]
+            # Filter using the selected threshold
+            high_quality_venues = filter_high_quality_venues(result["venues"], min_score=threshold)
+            result["debug_info"]["quality_filtered"] = len(result["venues"]) - len(high_quality_venues)
+            result["debug_info"]["quality_threshold"] = threshold
 
-                result["venues"] = high_quality_venues
-                result["debug_info"]["venues_found"] = len(result["venues"])
-                
-            finally:
-                loop.close()
-                
+            # Fallback: if too few venues remain, include top-scoring remaining venues until we reach the requested limit
+            MIN_VENUES = min(limit, 15)  # Use requested limit or at least try to get 15
+            fallback_included = False
+            if len(high_quality_venues) < MIN_VENUES:
+                # Ensure quality scores exist for all venues
+                for v in result["venues"]:
+                    if 'quality_score' not in v:
+                        v['quality_score'] = calculate_venue_quality_score(v)
+
+                existing_ids = set(v.get('id') for v in high_quality_venues)
+                remaining = [v for v in result["venues"] if v.get('id') not in existing_ids]
+                remaining_sorted = sorted(remaining, key=lambda x: x.get('quality_score', 0), reverse=True)
+
+                to_add = []
+                for v in remaining_sorted:
+                    if len(high_quality_venues) + len(to_add) >= MIN_VENUES:
+                        break
+                    to_add.append(v)
+
+                if to_add:
+                    fallback_included = True
+                    high_quality_venues.extend(to_add)
+                    result["debug_info"]["fallback_included"] = True
+                    result["debug_info"]["fallback_added"] = [ {"id": v.get("id"), "name": v.get("name"), "quality_score": v.get("quality_score")} for v in to_add ]
+
+            result["venues"] = high_quality_venues
+            result["debug_info"]["venues_found"] = len(result["venues"])
         except Exception as e:
             print(f"[SEARCH DEBUG] Venue search error: {e}")
             result["debug_info"]["venue_search_error"] = str(e)
@@ -1963,11 +1955,10 @@ def _search_impl(payload):
             async def get_city_guide():
                 from city_guides.providers.wikipedia_provider import fetch_wikivoyage_summary
                 from city_guides.src.persistence import get_country_for_city
-                url_voy = f"https://en.wikivoyage.org/wiki/{city.replace(' ', '_')}"
-                # Try to detect country to prefer local WikiVoyage language (e.g., Spanish for Spain)
+
+                # Wikivoyage primary
                 detected_country = None
                 try:
-                    # prefer candidate_country from selected candidate if present
                     detected_country = candidate_country or get_country_for_city(city)
                 except Exception:
                     detected_country = None
@@ -1975,12 +1966,10 @@ def _search_impl(payload):
                 if detected_country and isinstance(detected_country, str) and ("spa" in detected_country.lower() or detected_country.lower() in ("spain", "españa", "espana")):
                     preferred_langs = ["es", "en"]
 
-                summary = None
                 for lang in preferred_langs:
                     try:
                         summary = await fetch_wikivoyage_summary(city, lang=lang, city=city)
                         if summary:
-                            # update url to language specific wikivoyage
                             url_voy = f"https://{lang}.wikivoyage.org/wiki/{city.replace(' ', '_')}"
                             return {
                                 'guide': summary,
@@ -1990,113 +1979,119 @@ def _search_impl(payload):
                             }
                     except Exception:
                         continue
-                # Fallback to Wikipedia
+
+                # Wikipedia with search fallback
                 url_wiki = f"https://en.wikipedia.org/wiki/{city.replace(' ', '_')}"
                 headers = {"User-Agent": "TravelLand/1.0 (travel-guide-app; https://github.com/example/travelland)"}
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{city.replace(' ', '_')}", timeout=aiohttp.ClientTimeout(total=10), headers=headers) as resp:
-                        if resp.status == 200:
+                    async def fetch_summary(title: str):
+                        async with session.get(
+                            f"https://en.wikipedia.org/api/rest_v1/page/summary/{title}",
+                            timeout=aiohttp.ClientTimeout(total=10),
+                            headers=headers,
+                        ) as resp:
+                            if resp.status != 200:
+                                return None
                             data = await resp.json()
-                            extract = data.get('extract')
-                            if extract:
-                                # Strip generic boilerplate lead like "X is a town..." when possible
-                                def strip_boilerplate_lead(city_name: str, text: str) -> str:
-                                    import re
-                                    def split_sentences(t):
-                                        return [s.strip() for s in re.split(r'(?<=[.!?])\\s+', t) if s.strip()]
-                                    parts = split_sentences(text)
-                                    if not parts:
-                                        return text
-                                    first = parts[0]
-                                    city_pattern = re.escape(city_name.split(',')[0].strip())
-                                    # generic lead pattern
-                                    if re.match(rf"(?i)^\\s*{city_pattern}\\s+(is|was)\\s+(a|an|the)\\b", first):
-                                        if len(parts) > 1:
-                                            return ' '.join(parts[1:])
-                                        # if only boilerplate present, keep it
-                                        return first
-                                    # short sentence containing only location tokens -> consider boilerplate
-                                    words = first.split()
-                                    if len(words) < 14 and any(tok in first.lower() for tok in ("city", "town", "province", "region", "located", "autonomous")):
-                                        if len(parts) > 1:
-                                            return ' '.join(parts[1:])
-                                    return text
+                            return data.get('extract')
 
-                                cleaned = strip_boilerplate_lead(city, extract)
-                                city_image = None
-                                if city_image_search:
-                                    try:
-                                        image_info = await city_image_search(city, session=session)
-                                        if image_info and image_info.get('image_url'):
-                                            city_image = {
-                                                'url': image_info['image_url'],
-                                                'attribution': image_info.get('attribution'),
-                                                'source': 'wikipedia'
-                                            }
-                                    except Exception as e:
-                                        print(f"[SEARCH DEBUG] Failed to fetch city image: {e}")
-                                return {
-                                    'guide': cleaned,
-                                    'image': city_image,
-                                    'source': 'wikipedia_city',
-                                    'source_url': url_wiki
-                                }
-                return None
-                # If WikiVoyage/Wikipedia failed, try DDGS as a last-resort web snippet fallback
-                try:
-                    from city_guides.providers.ddgs_provider import ddgs_search
-                    from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text, filter_ddgs_results
-                    # Prefer more specific queries by including detected country when possible
-                    ddgs_query = f"{city} travel"
-                    try:
-                        if detected_country:
-                            ddgs_query = f"{city} {detected_country} travel"
-                        else:
-                            # Best-effort: try to fetch country if not already detected
+                    extract = await fetch_summary(city.replace(' ', '_'))
+
+                    if not extract:
+                        try:
+                            search_url = "https://en.wikipedia.org/w/api.php"
+                            params = {
+                                "action": "query",
+                                "list": "search",
+                                "srsearch": city,
+                                "srlimit": 1,
+                                "format": "json",
+                            }
+                            async with session.get(
+                                search_url,
+                                params=params,
+                                timeout=aiohttp.ClientTimeout(total=10),
+                                headers=headers,
+                            ) as sresp:
+                                if sresp.status == 200:
+                                    sdata = await sresp.json()
+                                    hits = sdata.get('query', {}).get('search', [])
+                                    if hits:
+                                        title = hits[0].get('title')
+                                        if title:
+                                            extract = await fetch_summary(title.replace(' ', '_'))
+                                            if extract:
+                                                url_wiki = f"https://en.wikipedia.org/wiki/{title.replace(' ', '_')}"
+                        except Exception as e:
+                            print(f"[SEARCH DEBUG] Wikipedia search fallback failed: {e}")
+
+                    if extract:
+                        def strip_boilerplate_lead(city_name: str, text: str) -> str:
+                            import re
+                            def split_sentences(t):
+                                return [s.strip() for s in re.split(r'(?<=[.!?])\s+', t) if s.strip()]
+                            parts = split_sentences(text)
+                            if not parts:
+                                return text
+                            first = parts[0]
+                            city_pattern = re.escape(city_name.split(',')[0].strip())
+                            if re.match(rf"(?i)^\s*{city_pattern}\s+(is|was)\s+(a|an|the)\b", first):
+                                if len(parts) > 1:
+                                    return ' '.join(parts[1:])
+                                return first
+                            words = first.split()
+                            if len(words) < 14 and any(tok in first.lower() for tok in ("city", "town", "province", "region", "located", "autonomous")):
+                                if len(parts) > 1:
+                                    return ' '.join(parts[1:])
+                            return text
+
+                        cleaned = strip_boilerplate_lead(city, extract)
+                        city_image = None
+                        if city_image_search:
                             try:
-                                cc = get_country_for_city(city)
-                                if cc:
-                                    ddgs_query = f"{city} {cc} travel"
-                            except Exception:
-                                pass
-                    except Exception:
-                        pass
-                    print(f"[SEARCH DEBUG] Trying DDGS fallback for city: {ddgs_query}")
-                    raw_ddgs = await asyncio.wait_for(ddgs_search(ddgs_query, engine='google', max_results=5, timeout=int(os.getenv('DDGS_TIMEOUT','5'))), timeout=10)
-                    if raw_ddgs:
-                        # Apply simple blocklist filtering
-                        blocked_domains = [d.strip().lower() for d in os.getenv('BLOCKED_DDGS_DOMAINS', 'tripsavvy.com,tripadvisor.com').split(',') if d.strip()]
-                        allowed, blocked = filter_ddgs_results(raw_ddgs, blocked_domains)
-                        for r in allowed:
-                            txt = (r.get('body') or r.get('text') or '')
-                            if not txt:
-                                continue
-                            if looks_like_ddgs_disambiguation_text(txt):
-                                continue
-                            # Prefer snippets that mention the city/neighborhood
+                                image_info = await city_image_search(city, session=session)
+                                if image_info and image_info.get('image_url'):
+                                    city_image = {
+                                        'url': image_info['image_url'],
+                                        'attribution': image_info.get('attribution'),
+                                        'source': 'wikipedia',
+                                    }
+                            except Exception as e:
+                                print(f"[SEARCH DEBUG] Failed to fetch city image: {e}")
+                        return {
+                            'guide': cleaned,
+                            'image': city_image,
+                            'source': 'wikipedia_city',
+                            'source_url': url_wiki,
+                        }
+
+                # DDGS fallback
+                try:
+                    ddgs_results = await search_provider.search_with_fallback(f"{city} travel guide hidden gems", limit=3)
+                    for r in ddgs_results:
+                        txt = r.get('body') or r.get('snippet') or ''
+                        if txt:
                             if city.lower().split(',')[0] in txt.lower() or len(txt.split()) > 20:
                                 return {
                                     'guide': txt.strip(),
                                     'image': None,
                                     'source': 'ddgs',
-                                    'source_url': r.get('href') or r.get('url')
+                                    'source_url': r.get('href') or r.get('url'),
                                 }
                 except Exception as e:
                     print(f"[SEARCH DEBUG] DDGS fallback failed: {e}")
                 return None
-            try:
-                city_guide_result = AsyncRunner.run(get_city_guide())
-                if city_guide_result:
-                    result["quick_guide"] = city_guide_result['guide']
-                    if city_guide_result.get('image'):
-                        result["city_image"] = city_guide_result['image']
-                    result["source"] = city_guide_result['source']
-                    result["source_url"] = city_guide_result['source_url']
-                    print(f"[SEARCH DEBUG] Generated city-wide quick guide using {city_guide_result['source']}")
-                else:
-                    print("[SEARCH DEBUG] No WikiVoyage or Wikipedia results for city")
-            finally:
-                loop.close()
+
+            city_guide_result = AsyncRunner.run(get_city_guide())
+            if city_guide_result:
+                result["quick_guide"] = city_guide_result['guide']
+                if city_guide_result.get('image'):
+                    result["city_image"] = city_guide_result['image']
+                result["source"] = city_guide_result['source']
+                result["source_url"] = city_guide_result['source_url']
+                print(f"[SEARCH DEBUG] Generated city-wide quick guide using {city_guide_result['source']}")
+            else:
+                print("[SEARCH DEBUG] No WikiVoyage or Wikipedia results for city")
         except Exception as e:
             print(f"[SEARCH DEBUG] WikiVoyage/Wikipedia city guide generation error: {e}")
             result["debug_info"]["city_guide_error"] = str(e)

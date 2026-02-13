@@ -28,6 +28,100 @@ class PerformanceTracker {
 }
 const tracker = new PerformanceTracker();
 
+// --- Health status ---
+async function fetchHealth() {
+    try {
+        const resp = await fetch('/healthz');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return await resp.json();
+    } catch (e) {
+        return { error: e.message };
+    }
+}
+
+async function renderHealthStatus() {
+    const container = document.querySelector('.container');
+    if (!container) return;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<h2>System Health</h2><div class="loading">Checking health...</div>';
+    container.prepend(card);
+
+    const data = await fetchHealth();
+    if (data.error) {
+        card.innerHTML = `<h2>System Health</h2><div class="error">${data.error}</div>`;
+        return;
+    }
+
+    const serverTime = data.time ? new Date(data.time * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'n/a';
+
+    const booleanRows = ['app','ready','redis','geoapify','geonames','groq','unsplash','pixabay']
+      .filter(k => k in data)
+      .map(k => {
+        const val = !!data[k];
+        const cls = val ? 'ok' : 'error';
+        const label = val ? 'OK' : 'FAIL';
+        const name = k.toUpperCase();
+        return `<tr><td>${name}</td><td><span class="status ${cls}">${label}</span></td></tr>`;
+      }).join('');
+
+    card.innerHTML = `
+      <h2>System Health</h2>
+      <div style="margin-bottom:10px;">
+        <span class="status ${(!data.redis ? 'warning' : 'ok')}">${(!data.redis ? 'Degraded' : 'Healthy')}</span>
+        <span style="margin-left:8px; font-size:12px; color:#666;">Server Time: ${serverTime}</span>
+      </div>
+      <table style="width:100%; border-collapse: collapse;">
+        <tr><th style="text-align:left;">Component</th><th style="text-align:left;">Status</th></tr>
+        ${booleanRows}
+      </table>
+    `;
+}
+
+// --- Key status ---
+async function fetchKeysStatus() {
+    try {
+        const resp = await fetch('/admin/keys');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return await resp.json();
+    } catch (e) {
+        return { ok: false, error: e.message, keys: {}, missing: [] };
+    }
+}
+
+async function renderKeysStatus() {
+    const container = document.querySelector('.container');
+    if (!container) return;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<h2>API Keys</h2><div class="loading">Checking keys...</div>';
+    container.prepend(card);
+
+    const data = await fetchKeysStatus();
+    if (data.error) {
+        card.innerHTML = `<h2>API Keys</h2><div class="error">${data.error}</div>`;
+        return;
+    }
+
+    const rows = Object.entries(data.keys || {}).map(([k, v]) => {
+        const cls = v ? 'ok' : 'error';
+        const label = v ? 'present' : 'missing';
+        return `<tr><td>${k}</td><td><span class="status ${cls}">${label}</span></td></tr>`;
+    }).join('');
+
+    card.innerHTML = `
+      <h2>API Keys</h2>
+      <div style="margin-bottom:10px;">
+        <span class="status ${data.ok ? 'ok' : 'warning'}">${data.ok ? 'All present' : 'Missing keys'}</span>
+        ${data.missing && data.missing.length ? '<span style="margin-left:8px; font-size:12px; color:#856404;">Missing: ' + data.missing.join(', ') + '</span>' : ''}
+      </div>
+      <table style="width:100%; border-collapse: collapse;">
+        <tr><th style="text-align:left;">Key</th><th style="text-align:left;">Status</th></tr>
+        ${rows}
+      </table>
+    `;
+}
+
 class TestResult {
     constructor(endpoint, data, timing, status, city = '') {
         this.endpoint = endpoint;
@@ -349,39 +443,72 @@ function formatMetrics(data) {
     if (data.error) {
         return '<div class="error">Error loading metrics: ' + data.error + '</div>';
     }
+    const counters = data.counters || {};
+    const latencies = data.latencies || {};
+    const totalRequests = Object.values(counters).reduce((a, b) => a + b, 0);
+    const searchRequests = Object.entries(counters).filter(([k]) => k.includes('req.api.search')).reduce((a, [, v]) => a + v, 0);
+    const chatRequests = Object.entries(counters).filter(([k]) => k.includes('req.api.chat')).reduce((a, [, v]) => a + v, 0);
+    const errorCount = Object.entries(counters).filter(([k]) => k.includes('.status.500')).reduce((a, [, v]) => a + v, 0);
+
+    const topEndpoints = Object.entries(counters)
+      .filter(([k]) => k.startsWith('req.') && k.endsWith('.count'))
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
     let html = '<div class="metrics">';
-    const metrics = [
-        { key: 'total_requests', label: 'Total Requests' },
-        { key: 'search_requests', label: 'Search Requests' },
-        { key: 'chat_requests', label: 'Chat Requests' },
-        { key: 'error_count', label: 'Errors' }
-    ];
-    metrics.forEach(metric => {
-        const value = data[metric.key] || 0;
-        html += '<div class="metric"><div class="value">' + value + '</div><div class="label">' + metric.label + '</div></div>';
+    [
+      { label: 'Total Requests', value: totalRequests },
+      { label: 'Search Requests', value: searchRequests },
+      { label: 'Chat Requests', value: chatRequests },
+      { label: '5xx Errors', value: errorCount }
+    ].forEach(m => {
+      html += '<div class="metric"><div class="value">' + m.value + '</div><div class="label">' + m.label + '</div></div>';
     });
     html += '</div>';
+
+    if (topEndpoints.length) {
+      html += '<div class="card" style="margin-top:10px;"><h3>Top Endpoints</h3><table style="width:100%; border-collapse: collapse;">';
+      html += '<tr><th style="text-align:left;">Endpoint</th><th style="text-align:left;">Count</th></tr>';
+      topEndpoints.forEach(([k, v]) => {
+        const name = k.replace('req.', '').replace('.count', '').replace(/\./g, '/');
+        html += `<tr><td>${name}</td><td>${v}</td></tr>`;
+      });
+      html += '</table></div>';
+    }
+
+    if (Object.keys(latencies).length) {
+      html += '<div class="card" style="margin-top:10px;"><h3>Latency (p50)</h3><table style="width:100%; border-collapse: collapse;">';
+      html += '<tr><th style="text-align:left;">Endpoint</th><th style="text-align:left;">p50 ms</th><th style="text-align:left;">Count</th></tr>';
+      Object.entries(latencies).slice(0, 8).forEach(([k, v]) => {
+        const name = k.replace('req.', '').replace('.latency_ms', '').replace(/\./g, '/');
+        html += `<tr><td>${name}</td><td>${v.p50_ms?.toFixed ? v.p50_ms.toFixed(0) : v.p50_ms}</td><td>${v.count}</td></tr>`;
+      });
+      html += '</table></div>';
+    }
+
     html += '<details style="margin-top: 15px;"><summary>Raw Metrics Data</summary>';
     html += '<pre class="json-data">' + JSON.stringify(data, null, 2) + '</pre>';
     html += '</details>';
     return html;
 }
+
 function formatSmoke(data) {
-    const status = data.ok ? 'ok' : 'error';
-    const statusText = data.ok ? 'PASS' : 'FAIL';
-    let html = '<div style="margin-bottom: 15px;"><strong>Overall Status:</strong> <span class="status ' + status + '">' + statusText + '</span></div>';
-    if (data.details) {
-        html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">';
-        if (data.details.reverse) {
-            const rev = data.details.reverse;
-            html += '<div><strong>Reverse Lookup:</strong> ' + (rev.display_name ? 'OK ' + rev.display_name : 'Failed') + '</div>';
-        }
-        if (data.details.neighborhoods_count !== undefined) {
-            html += '<div><strong>Neighborhoods:</strong> ' + data.details.neighborhoods_count + ' found</div>';
-        }
-        html += '</div>';
-    }
-    return html;
+    if (data.error) return '<div class="error">Smoke test failed: ' + data.error + '</div>';
+    const header = `<div class="status ${data.ok ? 'ok' : 'warning'}">${data.ok ? 'PASS' : 'WARN'}</div>`;
+    const meta = `<div style="color:#555; margin-bottom:8px;">Cities: ${data.cities_tested || 0} | Regions: ${(data.regions_tested || []).join(', ')}</div>`;
+    const cards = (data.results || []).map(r => {
+        const n = r.tests?.neighborhoods || {};
+        const rev = r.tests?.reverse_geocoding || {};
+        return `
+          <div class="card" style="margin-top:10px;">
+            <h3>${r.city} (${r.region})</h3>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; font-size:14px;">
+              <div><strong>Neighborhoods:</strong> <span class="status ${n.status || 'warning'}">${n.status || 'unknown'}</span> • ${n.count || 0} found${n.first_neighborhood ? ` • first: ${n.first_neighborhood}` : ''} • ${n.time_ms ? `${n.time_ms.toFixed ? n.time_ms.toFixed(0) : n.time_ms} ms` : ''}</div>
+              <div><strong>Reverse geocode:</strong> <span class="status ${rev.status || 'warning'}">${rev.status || 'unknown'}</span> • ${rev.provider || ''} • ${rev.time_ms ? `${rev.time_ms.toFixed ? rev.time_ms.toFixed(0) : rev.time_ms} ms` : ''}</div>
+            </div>
+          </div>`;
+    }).join('');
+    return `<div class="card"><h2>Smoke Test</h2>${header}${meta}${cards}</div>`;
 }
 async function loadHealth() {
     const element = document.getElementById('health-status');

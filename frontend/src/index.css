@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    background-color: #e8fbff;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(29, 182, 224, 0.25) 0, rgba(29, 182, 224, 0.25) 18%, transparent 40%),
+      radial-gradient(circle at 80% 0%, rgba(232, 117, 26, 0.12) 0, rgba(232, 117, 26, 0.12) 10%, transparent 32%),
+      linear-gradient(180deg, #c6f1ff 0%, #a8e5fb 40%, #8fdcf7 75%, #c6f1ff 100%);
+    color: #0f172a;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
 /* Custom animations */
 @keyframes sparkle {
   0%, 100% { opacity: 0; transform: scale(0); }

@@ -13,6 +13,10 @@ from typing import Dict, Any
 import statistics
 
 
+# Global in-memory fallback store (used when Redis unavailable)
+metrics_store = None
+
+
 # We'll import redis_client lazily from app to avoid circular import at module import time
 
 class MetricsStore:
@@ -28,6 +32,10 @@ class MetricsStore:
         self.lats.setdefault(name, []).insert(0, ms)
         if len(self.lats[name]) > max_samples:
             self.lats[name] = self.lats[name][:max_samples]
+
+
+# Instantiate global fallback store
+metrics_store = MetricsStore()
 
 
 async def _get_redis():

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import './SimpleLocationSelector.css';
 
 const POPULAR_DESTINATIONS = [
   { city: 'Paris', country: 'France', emoji: '🇫🇷' },
@@ -319,10 +318,10 @@ const SimpleLocationSelector = ({ onLocationChange, onCityGuide }) => {
   }, [onLocationChange]);
 
   return (
-    <div className="simple-location-selector">
-      <div className="search-section">
-        <h2>Where would you like to explore?</h2>
-        <div className="search-container">
+    <div className={`space-y-5 relative z-[9999] ${showSuggestions ? 'pb-48' : ''}`}>
+      <div className="rounded-2xl bg-white/90 backdrop-blur shadow-lg p-4 sm:p-6 space-y-3 relative z-[9999] overflow-visible">
+        <h2 className="text-lg font-semibold text-slate-900">Where would you like to explore?</h2>
+        <div className="relative overflow-visible">
           <input
             type="text"
             value={searchQuery}
@@ -332,11 +331,11 @@ const SimpleLocationSelector = ({ onLocationChange, onCityGuide }) => {
             }}
             onFocus={() => setShowSuggestions(searchQuery.length > 0)}
             placeholder="Search for a city..."
-            className="search-input"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-aqua"
           />
           {searchQuery && (
             <button
-              className="clear-btn"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
               onClick={() => {
                 setSearchQuery('');
                 setShowSuggestions(false);
@@ -345,98 +344,38 @@ const SimpleLocationSelector = ({ onLocationChange, onCityGuide }) => {
               ✕
             </button>
           )}
-        </div>
 
-        {showSuggestions && allSuggestions.length > 0 && (
-          <div className="suggestions-dropdown">
-            {allSuggestions.map((dest, index) => (
-              <div
-                key={`${dest.city}-${dest.source || 'hardcoded'}-${index}`}
-                className={`suggestion-item ${dest.source === 'geonames' ? 'geonames-result' : ''}`}
-                onClick={() => handleSelect(dest)}
-              >
-                <span className="flag" data-country={dest.country}>{dest.emoji}</span>
-                <div className="destination-info" aria-label={`Select ${dest.city}, ${dest.country}`}>
-                  <span className="city-name">{dest.city}</span>{' '}
-                  <span className="country-name">
-                    {dest.state ? `${dest.state}, ${dest.country}` : dest.country}
-                  </span>
-                  {dest.source === 'geonames' && (
-                    <span className="geonames-badge">🌍</span>
-                  )}
+          {showSuggestions && allSuggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full z-[100000] mt-2 w-full rounded-xl border border-slate-200 bg-white shadow-2xl max-h-72 overflow-y-auto">
+              {allSuggestions.map((dest, index) => (
+                <div
+                  key={`${dest.city}-${dest.source || 'hardcoded'}-${index}`}
+                  className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 cursor-pointer"
+                  onClick={() => handleSelect(dest)}
+                >
+                  <span className="text-lg" data-country={dest.country}>{dest.emoji}</span>
+                  <div className="text-sm" aria-label={`Select ${dest.city}, ${dest.country}`}>
+                    <span className="font-semibold text-slate-900">{dest.city}</span>{' '}
+                    <span className="text-slate-600">
+                      {dest.state ? `${dest.state}, ${dest.country}` : dest.country}
+                    </span>
+                    {dest.source === 'geonames' && (
+                      <span className="ml-1 text-xs text-brand-aqua">🌍</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-            {isLoadingGeonames && (
-              <div className="loading-geonames">
-                <span className="loading-text">Searching worldwide...</span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className={`popular-section ${popularCollapsed ? 'collapsed' : 'expanded'}`}>
-        <div className="collapsible-header">
-          <h3>Popular Destinations</h3>
-          <button
-            className="collapse-button"
-            onClick={() => setPopularCollapsed((prev) => !prev)}
-            aria-expanded={!popularCollapsed}
-          >
-            {popularCollapsed ? 'Show Cities' : 'Hide Cities'}
-          </button>
+              ))}
+              {isLoadingGeonames && (
+                <div className="px-3 py-2 text-sm text-slate-500">Searching worldwide...</div>
+              )}
+            </div>
+          )}
         </div>
-        {!popularCollapsed && (
-          <div className="popular-grid">
-            {POPULAR_DESTINATIONS.map((dest) => (
-              <button
-                key={`popular-${dest.city}`}
-                className="popular-card"
-                onClick={() => handleSelect(dest)}
-              >
-                <span className="flag" data-country={dest.country}>{dest.emoji}</span>
-                <span className="city-name">{dest.city}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className={`gems-section ${gemsCollapsed ? 'collapsed' : 'expanded'}`}>
-        <div className="collapsible-header">
-          <h3>✨ Hidden Gems</h3>
-          <button
-            className="collapse-button"
-            onClick={() => setGemsCollapsed((prev) => !prev)}
-            aria-expanded={!gemsCollapsed}
-          >
-            {gemsCollapsed ? 'Show Gems' : 'Hide Gems'}
-          </button>
-        </div>
-
-        {!gemsCollapsed && (
-          <div className="gems-grid">
-            {HIDDEN_GEMS.map((dest, index) => (
-              <div
-                key={`gem-${dest.city}-${dest.neighborhood || index}`}
-                className="gem-card"
-                style={{ animationDelay: `${index * 50}ms` }}
-                onClick={() => handleSelect(dest)}
-                title={dest.description}
-              >
-                <span className="flag" data-country={dest.country}>{dest.emoji}</span>
-                <span className="city-name">{dest.neighborhood || dest.city}</span>
-                <span className="gem-description">{dest.description}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {selectedDestination && (
-        <div className="selected-display">
-          <span>Selected: {selectedDestination.emoji} {selectedDestination.city}</span>
+        <div className="rounded-xl bg-white border border-slate-100 shadow px-3 py-2 text-sm text-slate-700">
+          Selected: {selectedDestination.emoji} {selectedDestination.city}
         </div>
       )}
     </div>

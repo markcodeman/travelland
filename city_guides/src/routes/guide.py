@@ -429,7 +429,8 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
     """
     payload = await request.get_json(silent=True) or {}
     city = (payload.get('city') or '').strip()
-    neighborhood = (payload.get('neighborhood') or '').strip()
+    raw_neighborhood = payload.get('neighborhood') or ''
+    neighborhood = raw_neighborhood.strip() if isinstance(raw_neighborhood, str) else ''
     if not city or not neighborhood:
         return jsonify({'error': 'city and neighborhood required'}), 400
 

@@ -1,10 +1,7 @@
 import { pinyin } from 'pinyin-pro';
-import './NeighborhoodPicker.css';
 
-const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, loading = false }) => {
-  // Override translations for better names (pinyin is fallback)
+const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, loading = false, inline = false }) => {
   const chineseTranslations = {
-    // Shanghai landmarks with better English names
     '外滩': 'The Bund',
     '南京路': 'Nanjing Road',
     '陆家嘴': 'Lujiazui',
@@ -14,7 +11,6 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
     '田子坊': 'Tianzifang',
     '浦东': 'Pudong',
     '浦西': 'Puxi',
-    // Common district suffixes
     '街道': 'District',
     '区': 'District',
     '镇': 'Town',
@@ -137,6 +133,16 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
     return badges.slice(0, 3); // Max 3 badges
   };
 
+  const buildDescription = (name, description, type, badges) => {
+    if (description && description.trim().length > 0) return description;
+    if (badges && badges.length > 0) {
+      const labels = badges.map(b => b.label).join(', ');
+      return `${labels} area of ${city}.`;
+    }
+    if (type) return `Notable ${type} spot in ${city}.`;
+    return `Area of ${city} worth exploring.`;
+  };
+
   const getCategoryColor = (type) => {
     const colorMap = {
       'historic': '#8B4513',
@@ -156,44 +162,32 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
     return colorMap[type] || colorMap['default'];
   };
 
-  if (loading) {
-    return (
-      <div className="neighborhood-picker-overlay">
-        <div className="neighborhood-picker">
-          <div className="picker-header">
-            <h3>🎯 Finding Best Neighborhoods</h3>
-            <p className="picker-subtitle">
-              Discovering the perfect spots for {category} in {city}...
-            </p>
-          </div>
-          
-          <div className="neighborhoods-loading" style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            padding: '40px',
-            flexDirection: 'column',
-            gap: '16px'
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              border: '4px solid #f3f3f3',
-              borderTop: '4px solid #667eea',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }} />
-            <p style={{ color: '#666', fontSize: '16px', margin: 0 }}>
-              Scanning {city}'s neighborhoods...
-            </p>
-          </div>
+  const Wrapper = ({ children }) => (
+    <div className={inline ? '' : 'fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4'}>
+      <div className="w-full max-w-4xl mx-auto">
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-lg p-4 md:p-6">
+          {children}
         </div>
       </div>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <Wrapper>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">🎯 Finding Best Neighborhoods</h3>
+          <p className="text-slate-600 text-sm">Discovering the perfect spots for {category} in {city}...</p>
+        </div>
+        <div className="flex flex-col items-center justify-center gap-3 py-10">
+          <div className="h-12 w-12 border-4 border-slate-200 border-t-brand-orange rounded-full animate-spin" />
+          <p className="text-slate-600 text-base">Scanning {city}'s neighborhoods...</p>
+        </div>
+      </Wrapper>
     );
   }
 
   if (!neighborhoods || neighborhoods.length === 0) {
-    // Generate generic directional neighborhoods instead of showing empty message
     const genericNeighborhoods = [
       { name: `${city} Centre`, description: `Downtown area of ${city}`, type: 'culture' },
       { name: `${city} North`, description: `Northern area of ${city}`, type: 'residential' },
@@ -202,117 +196,82 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
       { name: `${city} West`, description: `Western area of ${city}`, type: 'residential' },
       { name: `${city} Old Town`, description: `Historic center of ${city}`, type: 'historic' },
     ];
-    
-    return (
-      <div className="neighborhood-picker-overlay">
-        <div className="neighborhood-picker">
-          <div className="picker-header">
-            <h3>🎯 Choose Area</h3>
-            <p className="picker-subtitle">
-              Where in {city} would you like to explore {category}?
-            </p>
-          </div>
-          
-          <div className="neighborhoods-grid">
-            {genericNeighborhoods.map((hood, index) => (
-              <button
-                key={index}
-                className="neighborhood-card"
-                onClick={() => onSelect(hood)}
-                style={{ '--card-color': getCategoryColor(hood.type) }}
-              >
-                <div className="neighborhood-emoji">
-                  {getCategoryEmoji(hood.type, hood.name)}
-                </div>
-                <div className="neighborhood-info">
-                  <h4>{hood.name}</h4>
-                  <p>{hood.description}</p>
-                </div>
-                <div className="neighborhood-arrow">→</div>
-              </button>
-            ))}
-          </div>
 
-          <div className="picker-footer">
-            <button className="skip-button" onClick={onSkip}>
-              Search all of {city} anyway →
-            </button>
-          </div>
+    return (
+      <Wrapper>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">🎯 Choose Area</h3>
+          <p className="text-slate-600 text-sm">Where in {city} would you like to explore {category}?</p>
         </div>
-      </div>
+        <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3">
+          {genericNeighborhoods.map((hood, index) => (
+            <button
+              key={index}
+              className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white hover:border-brand-orange hover:bg-brand-orange/5 transition p-2.5 text-left"
+              onClick={() => onSelect(hood)}
+            >
+              <div className="text-2xl">{getCategoryEmoji(hood.type, hood.name)}</div>
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-slate-900">{hood.name}</h4>
+                <p className="text-xs text-slate-600 leading-relaxed">{hood.description}</p>
+              </div>
+              <div className="text-slate-400">→</div>
+            </button>
+          ))}
+        </div>
+        <div className="mt-4 text-right">
+          <button className="inline-flex items-center gap-2 rounded-full bg-brand-orange text-white px-4 py-2 text-sm font-semibold shadow-sm hover:bg-brand-orangeDark" onClick={onSkip}>
+            Skip — Search all of {city}
+          </button>
+        </div>
+      </Wrapper>
     );
   }
 
   return (
-    <div className="neighborhood-picker-overlay">
-      <div className="neighborhood-picker">
-        <div className="picker-header">
-          <h3>🎯 Pick a Neighborhood</h3>
-          <p className="picker-subtitle">
-            {city} has distinct neighborhoods. Choose one to explore, then select what interests you.
-          </p>
-        </div>
-
-        <div className="neighborhoods-grid">
-          {neighborhoods.map((hood, index) => {
-            // Normalize: handle both string[] and object[] formats
-            const name = typeof hood === 'string' ? hood : hood.name;
-            const description = typeof hood === 'string' ? '' : (hood.description || '');
-            const type = typeof hood === 'string' ? 'culture' : (hood.type || 'culture');
-            const badges = typeof hood === 'string' ? [] : getFeatureBadges(hood);
-            return (
-              <button
-                key={index}
-                className="neighborhood-card"
-                onClick={() => onSelect(typeof hood === 'string' ? { name: hood } : hood)}
-                style={{ '--card-color': getCategoryColor(type) }}
-              >
-                <div className="neighborhood-emoji">
-                  {getCategoryEmoji(type, name)}
-                </div>
-                <div className="neighborhood-info">
-                  <h4>{formatBilingualName(name)}</h4>
-                  <p>{description}</p>
-                  {badges.length > 0 && (
-                    <div className="neighborhood-badges" style={{ 
-                      display: 'flex', 
-                      gap: '6px', 
-                      marginTop: '8px',
-                      flexWrap: 'wrap'
-                    }}>
-                      {badges.map((badge, i) => (
-                        <span 
-                          key={i}
-                          style={{
-                            fontSize: '12px',
-                            background: '#f0f0f0',
-                            padding: '2px 8px',
-                            borderRadius: '12px',
-                            color: '#555',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '3px'
-                          }}
-                        >
-                          {badge.emoji} {badge.label}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="neighborhood-arrow">→</div>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="picker-footer">
-          <button className="skip-button" onClick={onSkip}>
-            Search all of {city} anyway →
-          </button>
-        </div>
+    <Wrapper>
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold">🎯 Pick a Neighborhood</h3>
+        <p className="text-slate-600 text-sm">{city} has distinct neighborhoods. Choose one to explore, then select what interests you.</p>
       </div>
-    </div>
+      <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3">
+        {neighborhoods.map((hood, index) => {
+          const name = typeof hood === 'string' ? hood : hood.name;
+          const descriptionRaw = typeof hood === 'string' ? '' : (hood.description || '');
+          const type = typeof hood === 'string' ? 'culture' : (hood.type || 'culture');
+          const badges = typeof hood === 'string' ? [] : getFeatureBadges(hood);
+          const description = buildDescription(name, descriptionRaw, type, badges);
+          return (
+            <button
+              key={index}
+              className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white hover:border-brand-orange hover:bg-brand-orange/5 transition p-2.5 text-left"
+              onClick={() => onSelect(typeof hood === 'string' ? { name: hood } : hood)}
+            >
+              <div className="text-2xl">{getCategoryEmoji(type, name)}</div>
+              <div className="flex-1 space-y-1">
+                <h4 className="text-sm font-semibold text-slate-900">{formatBilingualName(name)}</h4>
+                <p className="text-xs text-slate-600 leading-relaxed">{description}</p>
+                {badges.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {badges.map((badge, badgeIndex) => (
+                      <span key={badgeIndex} className="px-1.5 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700 font-semibold">
+                        {badge.emoji} {badge.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="text-slate-400">→</div>
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-4 text-right">
+        <button className="inline-flex items-center gap-2 rounded-full bg-brand-orange text-white px-4 py-2 text-sm font-semibold shadow-sm hover:bg-brand-orangeDark" onClick={onSkip}>
+          Skip for now →
+        </button>
+      </div>
+    </Wrapper>
   );
 };
 

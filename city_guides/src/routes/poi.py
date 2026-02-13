@@ -6,6 +6,7 @@ import re
 import random
 import json
 import unicodedata
+import httpx
 from quart import Blueprint, request, jsonify
 
 from ..data.seeded_facts import get_city_fun_facts
@@ -18,6 +19,67 @@ from ..services.location import (
 bp = Blueprint('poi', __name__)
 
 
+async def fetch_wikidata_fact(city: str):
+    """Fetch a single factual snippet from Wikidata (inception year + description)."""
+    if not city:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=8) as client:
+            search_resp = await client.get(
+                "https://www.wikidata.org/w/api.php",
+                params={
+                    "action": "wbsearchentities",
+                    "search": city,
+                    "language": "en",
+                    "format": "json",
+                    "limit": 1,
+                },
+            )
+            if not search_resp.is_success:
+                return None
+            search_json = search_resp.json()
+            search_results = search_json.get("search") or []
+            if not search_results:
+                return None
+            entity_id = search_results[0].get("id")
+            label = (search_results[0].get("label") or city).strip()
+            desc = (search_results[0].get("description") or "").strip()
+            if not entity_id:
+                return None
+
+            entity_resp = await client.get(f"https://www.wikidata.org/wiki/Special:EntityData/{entity_id}.json")
+            if not entity_resp.is_success:
+                return None
+            entity_json = entity_resp.json()
+            entity = (entity_json.get("entities") or {}).get(entity_id, {})
+            claims = entity.get("claims", {})
+
+            def extract_year():
+                inception = claims.get("P571", [])
+                if not inception:
+                    return None
+                try:
+                    time_val = inception[0].get("mainsnak", {}).get("datavalue", {}).get("value", {}).get("time", "")
+                    if time_val and len(time_val) >= 5 and time_val[0] == "+":
+                        return time_val[1:5]
+                except Exception:
+                    return None
+                return None
+
+            year = extract_year()
+            if year and desc:
+                return f"{label}, {desc}, was completed around {year}."
+            if desc:
+                return f"{label}: {desc}."
+            if year:
+                return f"{label} dates to around {year}."
+            return None
+    except Exception as e:
+        from city_guides.src.app import app as _app
+        _app.logger.warning(f"[FUN-FACT] Wikidata fetch failed for {city}: {e}")
+        return None
+
+
 @bp.route('/api/fun-fact', methods=['POST'])
 async def get_fun_fact():
     """Get a fun fact about a city"""
@@ -26,6 +88,7 @@ async def get_fun_fact():
         
         payload = await request.get_json(silent=True) or {}
         city = payload.get('city', '').strip()
+        country = (payload.get('country') or '').strip()
         
         app.logger.info(f"[FUN-FACT] Received request for city: '{city}'")
         
@@ -44,7 +107,7 @@ async def get_fun_fact():
         app.logger.info(f"[FUN-FACT] Normalized city name: '{city_lower}'")
         
         # Initialize city_facts to prevent UnboundLocalError
-        city_facts = []
+        fact_sentences: list[str] = []
         
         # Get seeded facts for this city
         seeded_facts = get_city_fun_facts(city_lower)
@@ -52,57 +115,138 @@ async def get_fun_fact():
         # If city not in seeded list, fetch interesting facts
         if not seeded_facts:
             try:
-                # Try DDGS for fun facts first
-                try:
-                    from city_guides.providers.ddgs_provider import ddgs_search
-                    ddgs_results = await ddgs_search(f"interesting facts about {city}", max_results=5, timeout=int(os.getenv('DDGS_TIMEOUT','5')))
-                    fun_facts_from_ddgs = []
-                    for r in ddgs_results:
-                        body = r.get('body', '')
-                        # Look for sentences with numbers or superlatives
-                        sentences = re.split(r'(?<=[.!?])\s+', body)
-                        for s in sentences:
-                            if 50 < len(s) < 180 and re.search(r'\d|largest|oldest|first|only|famous|world', s.lower()):
-                                if not re.match(r'^\w+ is a (city|town)', s.lower()):
-                                    fun_facts_from_ddgs.append(s)
-                    if fun_facts_from_ddgs:
-                        city_facts = [fun_facts_from_ddgs[0]]
-                    else:
-                        raise Exception("No fun facts from DDGS")
-                except:
-                    # Fallback to Wikipedia
-                    from city_guides.providers.wikipedia_provider import fetch_wikipedia_summary
-                    wiki_text = await fetch_wikipedia_summary(city, lang="en")
-                    if wiki_text:
-                        sentences = [s.strip() for s in wiki_text.split('.') if 40 < len(s.strip()) < 200]
-                        # Skip boring definitions
-                        filtered = [s for s in sentences if not re.match(r'^\w+ is a (city|town|commune)', s.lower())]
-                        city_facts = [filtered[0] + '.' if filtered else sentences[1] + '.']
+                # Check for special cases
+                is_landmark = any(k in city_lower for k in ["castle", "palace", "tower", "bridge", "monument", "pyramid", "colosseum"])
+                bran_bias = any(k in city_lower for k in ["bran", "dracula", "vlad"])
+                
+                # Clean up city name for Wikipedia lookup
+                # Remove country suffix if it looks like a landmark
+                wiki_lookup = city.split(',')[0].strip() if is_landmark else city
+                
+                # Try Wikipedia first for higher-quality sentences
+                from city_guides.providers.wikipedia_provider import fetch_wikipedia_summary
+                wiki_text = await fetch_wikipedia_summary(wiki_lookup, lang="en")
+                
+                if wiki_text:
+                    # Split into sentences and filter for interesting ones
+                    sentences = [s.strip() for s in wiki_text.split('.') if 40 < len(s.strip()) < 200]
+                    
+                    # PRIORITIZE sentences with numbers/dates for fun facts
+                    # These make for better "fun facts" than generic descriptions
+                    fun_fact_candidates = []
+                    generic_descriptions = []
+                    
+                    for s in sentences:
+                        s_lower = s.lower()
+                        # Check if it's a boring definition
+                        is_definition = bool(re.match(r'^\w+ is (a |an |the )?(city|town|commune|village|place|area|region|district|borough|section|castle|fortress|building|monument|landmark)', s_lower))
+                        
+                        # Check if it has interesting content (numbers, dates, unique facts)
+                        # Use \d to match numbers with or without commas
+                        has_number = bool(re.search(r'\d', s_lower))
+                        has_interest = has_number or any(pattern in s_lower for pattern in [
+                            'oldest', 'newest', 'largest', 'smallest', 'tallest',
+                            'first', 'only', 'unique', 'famous', 'world',
+                            'built in', 'founded', 'established', 'created',
+                            'known as', 'called', 'renowned', 'legend', 'history',
+                            'medieval', 'century'
+                        ])
+                        
+                        if has_interest and not is_definition:
+                            fun_fact_candidates.append(s)
+                        elif not is_definition:
+                            generic_descriptions.append(s)
+                    
+                    # Use fun fact candidates first, fall back to generic descriptions
+                    chosen_pool = fun_fact_candidates if fun_fact_candidates else generic_descriptions
+                    
+                    # For Bran, prefer Vlad/Dracula sentences
+                    if bran_bias:
+                        vlad_hits = [s for s in chosen_pool if re.search(r'vlad|dracula', s, re.IGNORECASE)]
+                        if vlad_hits:
+                            chosen_pool = vlad_hits
+                    
+                    if chosen_pool:
+                        # Prefer up to two strong sentences to build a richer fact
+                        selected = []
+                        if bran_bias:
+                            selected.extend(chosen_pool[:2])
+                        else:
+                            selected.extend(chosen_pool[:2])
+                        fact_sentences.extend([s if s.endswith('.') else s + '.' for s in selected])
+
+                # If still empty, try DDGS (with better error handling)
+                if len(fact_sentences) < 4:
+                    try:
+                        from city_guides.providers.ddgs_provider import ddgs_search
+                        ddgs_query = f"{city} interesting historical facts about {city}"
+                        if bran_bias:
+                            ddgs_query = "Bran Castle Vlad the Impaler history fact"
+                        ddgs_results = await ddgs_search(ddgs_query, max_results=5, timeout=int(os.getenv('DDGS_TIMEOUT','5')))
+                        
+                        if ddgs_results:  # Only process if we got results
+                            fun_facts_from_ddgs = []
+                            for r in ddgs_results:
+                                body = r.get('body', '')
+                                sentences = re.split(r'(?<=[.!?])\s+', body)
+                                for s in sentences:
+                                    if 50 < len(s) < 180 and re.search(r'\d|largest|oldest|first|only|famous|world', s.lower()):
+                                        if not re.match(r'^\w+ is a (city|town)', s.lower()):
+                                            fun_facts_from_ddgs.append(s)
+                            if fun_facts_from_ddgs:
+                                fact_sentences.append(random.choice(fun_facts_from_ddgs))
+                    except Exception as ddgs_err:
+                        app.logger.debug(f"DDGS fun fact fetch failed: {ddgs_err}")
+
+                # Final fallback: Wikidata
+                if len(fact_sentences) < 4:
+                    wd_fact = await fetch_wikidata_fact(wiki_lookup)
+                    if bran_bias and not wd_fact:
+                        wd_fact = await fetch_wikidata_fact("Bran Castle")
+                    if not wd_fact and bran_bias:
+                        wd_fact = await fetch_wikidata_fact("Vlad the Impaler")
+                    if wd_fact:
+                        fact_sentences.append(wd_fact if wd_fact.endswith('.') else wd_fact + '.')
             except Exception as e:
-                app.logger.warning(f"Failed to fetch Wikipedia fun fact for {city}: {e}")
-                # Fallback to a factual statement about the city name/origin if possible, or generic but data-focused
-                city_facts = [f"{city.title()} is a significant regional center with unique geographic characteristics."]
+                app.logger.warning(f"Failed to fetch fun fact for {city}: {e}")
         else:
-            city_facts = seeded_facts
+            fact_sentences = seeded_facts
         
-        # Select a random fun fact
-        if not city_facts:
-            city_facts = [f"{city.title()} features a blend of historical architecture and modern urban development."]
-        selected_fact = random.choice(city_facts)
+        # Trim and dedupe, cap at 4 sentences for a balanced quick guide-style fact
+        cleaned = []
+        seen = set()
+        for s in fact_sentences:
+            if not s:
+                continue
+            text = s.strip()
+            if not text.endswith('.'):  # enforce sentence ending
+                text += '.'
+            if text.lower() in seen:
+                continue
+            seen.add(text.lower())
+            cleaned.append(text)
+            if len(cleaned) >= 4:
+                break
+
+        # Ensure Bran/Dracula requests include Vlad/Dracula lore
+        if bran_bias:
+            has_vlad = any(re.search(r'vlad|dracula', c, re.IGNORECASE) for c in cleaned)
+            if not has_vlad:
+                try:
+                    vlad_fact = await fetch_wikidata_fact("Vlad the Impaler")
+                except Exception:
+                    vlad_fact = None
+                if vlad_fact:
+                    cleaned.append(vlad_fact if vlad_fact.endswith('.') else vlad_fact + '.')
+                else:
+                    cleaned.append("Bran Castle is famously tied to Dracula lore and Vlad the Impaler legends.")
+                # cap at 4 after insertion
+                cleaned = cleaned[:4]
+
+        if not cleaned:
+            cleaned = [f"{city.title()} offers a mix of history, culture, and local landmarks worth exploring."]
         
-        # Track the fact quality
-        source = "seeded" if seeded_facts else "dynamic"
-        try:
-            from city_guides.src.fun_fact_tracker import FunFactTracker
-            tracker = FunFactTracker()
-            tracker.track_fact(city, selected_fact, source)
-        except Exception as e:
-            app.logger.warning(f"Failed to track fun fact: {e}")
-        
-        return jsonify({
-            'city': city,
-            'funFact': selected_fact
-        })
+        return jsonify({"city": city, "country": country, "facts": cleaned})
 
     except Exception as e:
         from city_guides.src.app import app

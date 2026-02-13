@@ -1,0 +1,12 @@
+name = "travelland-r2-proxy"
+main = "src/index.js"
+compatibility_date = "2024-11-10"
+
+# Cloudflare account
+account_id = "53d97a45d647780212507c23fdbe6902"
+
+workers_dev = true
+
+[[r2_buckets]]
+binding = "TRAVELLAND"
+bucket_name = "travelland"

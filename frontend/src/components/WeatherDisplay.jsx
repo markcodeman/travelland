@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 function weatherEmoji(code) {
   // simple mapping for common weathercodes used by Open-Meteo
@@ -57,42 +57,48 @@ export default function WeatherDisplay({ weather, city }) {
   const sunrise = (weather.daily && weather.daily.sunrise && weather.daily.sunrise[0]) || null;
   const sunset = (weather.daily && weather.daily.sunset && weather.daily.sunset[0]) || null;
 
-  const dayOfWeek = current.time ? new Date(current.time).toLocaleDateString([], { weekday: 'long' }) : null;
-
   return (
-    <div className="weather-display hero-weather">
-      <div className="weather-left">
-        <div className="weather-icon">{icon}</div>
+    <div className="space-y-2 text-white">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">{icon}</span>
+          <div className="text-lg font-semibold">
+            {tempC === null ? '—' : unit === 'C' ? `${Math.round(tempC)}°C` : `${tempF}°F`}
+            {city && <span className="text-white/80"> · {city}</span>}
+          </div>
+        </div>
+        <div className="flex gap-1 text-xs font-semibold bg-white/10 rounded-full p-1">
+          <button
+            className={`px-2 py-1 rounded-full ${unit === 'C' ? 'bg-white text-slate-900' : 'text-white/80'}`}
+            onClick={() => setUnit('C')}
+          >
+            °C
+          </button>
+          <button
+            className={`px-2 py-1 rounded-full ${unit === 'F' ? 'bg-white text-slate-900' : 'text-white/80'}`}
+            onClick={() => setUnit('F')}
+          >
+            °F
+          </button>
+        </div>
       </div>
-      <div className="weather-main">
-        <div className="weather-temp">
-          {tempC === null ? (
-            '—'
-          ) : unit === 'C' ? (
-            <>{Math.round(tempC)}°C</>
-          ) : (
-            <>{tempF}°F</>
-          )}
-          {city && <span className="weather-city"> in {city}</span>}
-        </div>
 
-        {dayOfWeek && <div className="weather-day">{dayOfWeek}</div>}
+      {summary && <div className="text-sm text-white/90">{summary}</div>}
+      {current.apparent_temperature !== undefined && (
+        <div className="text-xs text-white/80">Feels like {Math.round(current.apparent_temperature)}°</div>
+      )}
 
-        <div className="weather-units">
-          <button className={`unit-btn ${unit === 'C' ? 'active' : ''}`} onClick={() => setUnit('C')}>°C</button>
-          <button className={`unit-btn ${unit === 'F' ? 'active' : ''}`} onClick={() => setUnit('F')}>°F</button>
-        </div>
-
-        {summary && <div className="weather-summary">{summary}</div>}
-        {current.time && <div className="weather-localtime">Local time: {formatLocal(current.time)}</div>}
-        {sunrise && <div className="weather-sun">Sunrise: {formatTimeOnly(sunrise)}</div>}
-        {sunset && <div className="weather-sun">Sunset: {formatTimeOnly(sunset)}</div>}
-        {windKph !== null && (
-          <div className="weather-wind">Wind: {unit === 'C' ? `${Math.round(windKph)} km/h` : `${windMph} mph`}</div>
+      <div className="flex flex-wrap gap-2 text-xs">
+        {sunrise && (
+          <span className="px-2 py-1 rounded-full bg-white/15 border border-white/10">Sunrise {formatTimeOnly(sunrise)}</span>
         )}
-        {/* optional additions: feels_like, humidity, precipitation if available */}
-        {current.apparent_temperature !== undefined && (
-          <div className="weather-feels">Feels like: {Math.round(current.apparent_temperature)}°</div>
+        {sunset && (
+          <span className="px-2 py-1 rounded-full bg-white/15 border border-white/10">Sunset {formatTimeOnly(sunset)}</span>
+        )}
+        {windKph !== null && (
+          <span className="px-2 py-1 rounded-full bg-white/15 border border-white/10">
+            Wind {unit === 'C' ? `${Math.round(windKph)} km/h` : `${windMph} mph`}
+          </span>
         )}
       </div>
     </div>

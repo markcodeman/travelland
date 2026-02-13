@@ -19,7 +19,7 @@ import re
 import time
 
 # Third-party imports
-from quart import Quart, request, jsonify
+from quart import Quart, request, jsonify, g
 from quart_cors import cors
 import aiohttp
 from aiohttp import ClientTimeout
@@ -28,7 +28,12 @@ from redis import asyncio as aioredis
 # Load environment variables from .env file
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    # Load from project root (parent.parent.parent of this file)
+    env_path = Path(__file__).parent.parent.parent / ".env"
+    if env_path.exists():
+        load_dotenv(env_path)
+    else:
+        load_dotenv()  # Fallback to cwd
 except ImportError:
     pass
 
@@ -96,6 +101,48 @@ redis_client: aioredis.Redis | None = None
 
 # Attach active_searches to app context to avoid global mutable state
 app.active_searches = {}
+
+
+# --- Request metrics middleware ---
+def _normalize_metric_path(path: str) -> str:
+    if not path:
+        return "root"
+    p = path.split('?')[0].strip('/')
+    if not p:
+        return "root"
+    # Replace non-alnum with dots and collapse repeats
+    p = re.sub(r'[^a-zA-Z0-9]+', '.', p)
+    p = re.sub(r'\.\.+', '.', p).strip('.')
+    return p or "root"
+
+
+@app.before_request
+async def _metrics_start():
+    try:
+        g._req_start = time.time()
+    except Exception:
+        g._req_start = None
+
+
+@app.after_request
+async def _metrics_end(response):
+    try:
+        name = _normalize_metric_path(request.path)
+        # Count by endpoint and status
+        await increment(f"req.{name}.count")
+        await increment(f"req.{name}.status.{response.status_code}")
+        await increment("req.all.count")
+        await increment(f"req.all.status.{response.status_code}")
+
+        start = getattr(g, '_req_start', None)
+        if start:
+            ms = (time.time() - start) * 1000
+            await observe_latency(f"req.{name}.latency_ms", ms)
+            await observe_latency("req.all.latency_ms", ms)
+    except Exception:
+        # Don't break responses due to metrics
+        pass
+    return response
 
 # Configuration constants
 CACHE_TTL_NEIGHBORHOOD = config.get_int("CACHE_TTL_NEIGHBORHOOD", 3600)  # 1 hour

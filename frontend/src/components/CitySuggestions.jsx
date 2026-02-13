@@ -1,5 +1,3 @@
-import './CitySuggestions.css';
-
 const CitySuggestions = ({ city, neighborhood, onCategorySelect, searchResults }) => {
   console.log('CitySuggestions DEBUG:', { 
     city, 
@@ -10,6 +8,19 @@ const CitySuggestions = ({ city, neighborhood, onCategorySelect, searchResults }
     firstCategory: searchResults?.categories?.[0]
   });
   
+  const pickIcon = (label) => {
+    const text = (label || '').toLowerCase();
+    if (text.includes('food') || text.includes('dining') || text.includes('cuisine')) return '🍴';
+    if (text.includes('culture') || text.includes('art') || text.includes('museum')) return '🎨';
+    if (text.includes('nightlife') || text.includes('bar') || text.includes('club')) return '🌙';
+    if (text.includes('shopping') || text.includes('market')) return '🛍️';
+    if (text.includes('park') || text.includes('nature') || text.includes('garden')) return '🌳';
+    if (text.includes('historic') || text.includes('heritage') || text.includes('castle')) return '🏛️';
+    if (text.includes('beach') || text.includes('water') || text.includes('coast')) return '🏖️';
+    if (text.includes('music') || text.includes('theatre') || text.includes('shows')) return '🎭';
+    return '📍';
+  };
+
   // Map categories from backend into usable suggestions
   const suggestions = (searchResults?.categories || [])
     .map((c) => {
@@ -18,7 +29,7 @@ const CitySuggestions = ({ city, neighborhood, onCategorySelect, searchResults }
         return {
           label: c,
           intent: c.toLowerCase(),
-          icon: '📍',
+          icon: pickIcon(c),
         };
       }
       const label = c.label || c.category || c.name || '';
@@ -26,7 +37,7 @@ const CitySuggestions = ({ city, neighborhood, onCategorySelect, searchResults }
       return {
         label,
         intent: c.intent || label.toLowerCase(),
-        icon: c.icon || '📍',
+        icon: c.icon || pickIcon(label),
       };
     })
     .filter(Boolean);
@@ -45,19 +56,19 @@ const CitySuggestions = ({ city, neighborhood, onCategorySelect, searchResults }
   };
 
   return (
-    <div className="city-suggestions">
-      <h3 className="suggestions-title">
+    <div className="text-center space-y-4">
+      <h3 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-brand-orange to-brand-aqua">
         ✨ What interests you in {getLocationText()}?
       </h3>
-      <div className="suggestions-grid">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-w-4xl mx-auto">
         {suggestions.map((suggestion, index) => (
           <button
             key={index}
-            className="suggestion-card"
+            className="flex flex-col items-center gap-1 px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-brand-orange hover:shadow-md transition"
             onClick={() => onCategorySelect(suggestion.intent, suggestion.label)}
           >
-            <span className="suggestion-icon">{suggestion.icon}</span>
-            <span className="suggestion-label">{suggestion.label}</span>
+            <span className="text-2xl">{suggestion.icon}</span>
+            <span className="text-sm font-semibold text-slate-800">{suggestion.label}</span>
           </button>
         ))}
       </div>

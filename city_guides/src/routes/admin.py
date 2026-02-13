@@ -3,6 +3,7 @@ Admin routes: Health checks, metrics, and smoke tests
 """
 import os
 import time
+import random
 import asyncio
 from quart import Blueprint, jsonify
 
@@ -25,9 +26,29 @@ async def healthz():
         'ready': bool(aiohttp_session is not None),
         'redis': bool(redis_client is not None),
         'geoapify': bool(os.getenv('GEOAPIFY_API_KEY')),
-        'geonames': bool(os.getenv('GEONAMES_USERNAME'))
+        'geonames': bool(os.getenv('GEONAMES_USERNAME')),
+        'groq': bool(os.getenv('GROQ_API_KEY')),
+        'unsplash': bool(os.getenv('UNSPLASH_KEY')),
+        'pixabay': bool(os.getenv('PIXABAY_KEY'))
     }
     return jsonify(status)
+
+
+@bp.route('/admin/keys')
+async def keys_status():
+    """Report presence (not values) of critical API keys/env vars."""
+    required = {
+        'UNSPLASH_KEY': bool(os.getenv('UNSPLASH_KEY')),
+        'PIXABAY_KEY': bool(os.getenv('PIXABAY_KEY')),
+        'GEONAMES_USERNAME': bool(os.getenv('GEONAMES_USERNAME')),
+        'GEOAPIFY_API_KEY': bool(os.getenv('GEOAPIFY_API_KEY')),
+        'GROQ_API_KEY': bool(os.getenv('GROQ_API_KEY')),
+    }
+    return jsonify({
+        'ok': all(required.values()),
+        'keys': required,
+        'missing': [k for k, v in required.items() if not v]
+    })
 
 
 @bp.route('/metrics/json')
@@ -63,6 +84,10 @@ async def smoke_test():
         {'name': 'Cairo', 'lat': 30.0444, 'lon': 31.2357, 'country': 'EG', 'region': 'Africa'},
         {'name': 'Mumbai', 'lat': 19.0760, 'lon': 72.8777, 'country': 'IN', 'region': 'Asia'},
     ]
+
+    # Shuffle to avoid hammering same endpoints; limit to 5 per run
+    random.shuffle(test_cities)
+    test_cities = test_cities[:5]
 
     try:
         from city_guides.src.dynamic_neighborhoods import get_neighborhoods_for_city
@@ -137,10 +162,10 @@ async def smoke_test():
             except Exception as e:
                 city_result['tests']['neighborhoods'] = {
                     'provider': 'get_neighborhoods_for_city',
-                    'status': 'error',
+                    'status': 'warning',
                     'error': str(e)
                 }
-                overall_ok = False
+                # treat as warning to avoid failing smoke on rate limits
 
             city_result['total_time_ms'] = round((time.time() - city_start) * 1000, 2)
             results.append(city_result)

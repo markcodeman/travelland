@@ -9,14 +9,40 @@ import SearchResults from './components/SearchResults';
 import SimpleLocationSelector from './components/SimpleLocationSelector';
 import WeatherDisplay from './components/WeatherDisplay';
 import { getHeroImage, getHeroImageMeta } from './services/imageService';
-import './styles/app.css';
 
 // Constants moved outside component to avoid recreation
 const CITY_LIST = ['Rio de Janeiro', 'London', 'New York', 'Lisbon'];
 const COUNTRIES = ['USA', 'Mexico', 'Spain', 'UK', 'France', 'Germany', 'Italy', 'Canada', 'Australia', 'Japan', 'China', 'India', 'Brazil', 'Argentina', 'South Africa', 'Netherlands', 'Portugal', 'Sweden', 'Norway', 'Denmark', 'Iceland'];
 
 // Reduced popular cities list
-const POPULAR_CITIES = ['New York', 'London', 'Paris', 'Tokyo', 'Sydney', 'Rio de Janeiro', 'Lisbon', 'Reykjavik', 'Berlin', 'Rome', 'Barcelona', 'Amsterdam', 'Vienna', 'Prague', 'Budapest'];
+const POPULAR_CITIES = [
+  'New York', 'London', 'Paris', 'Tokyo', 'Sydney', 'Rio de Janeiro', 'Lisbon', 'Reykjavik', 'Berlin', 'Rome', 'Barcelona', 'Amsterdam', 'Vienna', 'Prague', 'Budapest'
+];
+
+// Hidden gem inspirations (fetching dynamic images, no static assets)
+const HIDDEN_GEM_CITIES = [
+  'Bran Castle Romania',
+  'Mostar Bosnia',
+  'Kotor Montenegro',
+  'Oaxaca Mexico',
+  'Puglia Italy',
+  'Chefchaouen Morocco',
+  'Svalbard Norway',
+  'Isle of Skye Scotland'
+];
+
+const FEATURE_PALETTE = [
+  ['#1db6e0', '#0f172a'],
+  ['#e8751a', '#0f172a'],
+  ['#7c3aed', '#1db6e0'],
+  ['#10b981', '#0f172a'],
+  ['#f59e0b', '#1e293b'],
+];
+
+const gradientForName = (label = '') => {
+  const idx = Math.abs(label.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)) % FEATURE_PALETTE.length;
+  return FEATURE_PALETTE[idx];
+};
 
 // Moved to constant to avoid recreation
 const NEIGHBORHOOD_FALLBACKS = {
@@ -126,7 +152,7 @@ function App() {
   const [synthResults, setSynthResults] = useState(null);
   const [synthLoading, setSynthLoading] = useState(false);
   const [synthError, setSynthError] = useState(null);
-  const [selectedSuggestion, setSelectedSuggestion] = useState('');
+  const [selectedSuggestion, setSelectedSuggestion] = useState('hidden');
   const [marcoOpen, setMarcoOpen] = useState(false);
   const [marcoWebRAG, setMarcoWebRAG] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -136,12 +162,33 @@ function App() {
   const [venues, setVenues] = useState([]);
   const [heroImage, setHeroImage] = useState('');
   const [heroImageMeta, setHeroImageMeta] = useState({});
-  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [showCitySuggestions, setShowCitySuggestions] = useState(true);
   const [showNeighborhoodPicker, setShowNeighborhoodPicker] = useState(false);
   const [smartNeighborhoods, setSmartNeighborhoods] = useState([]);
   const [pendingCategory, setPendingCategory] = useState(null);
   const [neighborhoodsLoading, setNeighborhoodsLoading] = useState(false);
+  const [featuredImages, setFeaturedImages] = useState({});
+  const [showPopular, setShowPopular] = useState(false);
+  const [activePanel, setActivePanel] = useState('categories');
+  const [isDesktop, setIsDesktop] = useState(false);
   const marcoOpenTimerRef = useRef(null);
+  const citySuggestionsRef = useRef(null);
+  const cityGuideRef = useRef(null);
+
+  const scrollToCitySuggestions = useCallback(() => {
+    const el = cityGuideRef.current || citySuggestionsRef.current;
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e) => setIsDesktop(e.matches);
+    handler(mq);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const clearMarcoOpenTimer = useCallback(() => {
     if (marcoOpenTimerRef.current) {
@@ -175,6 +222,32 @@ function App() {
       console.error(`API call to ${endpoint} failed:`, error);
       throw error;
     }
+  }, []);
+
+  // Prefetch imagery + credit for hidden-gem featured cities
+  useEffect(() => {
+    let cancelled = false;
+    const loadDefaultImages = async () => {
+      const targets = HIDDEN_GEM_CITIES.filter((city) => !featuredImages[city]);
+      if (targets.length === 0) return;
+      const promises = targets.map(async (city) => {
+        try {
+          const meta = await getHeroImageMeta(city, 'hidden gems');
+          return { city, img: meta?.url || '', credit: meta?.photographer, profile: meta?.profileUrl };
+        } catch (e) {
+          return { city, img: '', credit: '', profile: '' };
+        }
+      });
+      const results = await Promise.all(promises);
+      if (cancelled) return;
+      setFeaturedImages((prev) => {
+        const next = { ...prev };
+        results.forEach(({ city, img, credit, profile }) => { next[city] = { img, credit, profile }; });
+        return next;
+      });
+    };
+    loadDefaultImages();
+    return () => { cancelled = true; };
   }, []);
 
   // Fetch hero image when city changes
@@ -231,16 +304,10 @@ function App() {
     // Show city suggestions when a city is selected
     if (normalizedCity) {
       setShowCitySuggestions(true);
-      
-      // Auto-scroll to categories after city selection
+
+      // Auto-scroll to guide stack after city selection
       setTimeout(() => {
-        const categoriesElement = document.querySelector('.city-suggestions');
-        if (categoriesElement) {
-          categoriesElement.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-          });
-        }
+        scrollToCitySuggestions();
       }, 100);
     }
 
@@ -326,24 +393,36 @@ function App() {
   // Fetch smart neighborhood suggestions for large cities with a timeout
   const fetchSmartNeighborhoods = useCallback(async (city, category = '') => {
     if (!city) return { is_large_city: false, neighborhoods: [] };
-    
+
     setNeighborhoodsLoading(true);
-    
+
     try {
-      // Set a timeout of 5 seconds for better UX - fallback if too slow
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout fetching neighborhoods')), 5000);
-      });
-      
-      const responsePromise = fetch(`${API_BASE}/api/smart-neighborhoods?city=${encodeURIComponent(city)}&category=${encodeURIComponent(category)}`);
-      
-      const response = await Promise.race([responsePromise, timeoutPromise]);
-      if (!response.ok) {
-        console.error('Failed to fetch smart neighborhoods: HTTP error', response.status, response.statusText);
-        return { is_large_city: true, neighborhoods: [] };
-      }
-      const data = await response.json();
-      return data;
+      const attempt = async (label) => {
+        const started = performance.now();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        try {
+          const resp = await fetch(`${API_BASE}/api/smart-neighborhoods?city=${encodeURIComponent(city)}&category=${encodeURIComponent(category)}`, { signal: controller.signal });
+          const elapsed = Math.round(performance.now() - started);
+          console.log('[SMART-NHOOD]', label, 'ms=', elapsed, 'status=', resp.status);
+          if (!resp.ok) {
+            return null;
+          }
+          return await resp.json();
+        } catch (err) {
+          console.warn('[SMART-NHOOD]', label, 'error:', err?.message || err);
+          return null;
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      };
+
+      const first = await attempt('primary');
+      if (first && first.neighborhoods) return first;
+      const retry = await attempt('retry');
+      if (retry && retry.neighborhoods) return retry;
+
+      return { is_large_city: true, neighborhoods: [] };
     } catch (error) {
       console.error('Failed to fetch smart neighborhoods:', error.message, error.stack);
       // Fallback to any cached neighborhoods or empty list with large city flag to show picker if possible
@@ -697,6 +776,43 @@ function App() {
     }, 100);
   }, [location.city, handleSearch, fetchSmartNeighborhoods]);
 
+  const debouncedHandleSearch = useCallback(() => {
+    if (!location.city) return;
+    debouncedSearchRef.current?.();
+  }, [location.city, handleSearch, fetchSmartNeighborhoods]);
+
+  // Auto-fetch neighborhoods whenever city changes to keep UI unified
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadNeighborhoods = async () => {
+      if (!location.city) {
+        setSmartNeighborhoods([]);
+        setShowNeighborhoodPicker(false);
+        return;
+      }
+
+      try {
+        setShowNeighborhoodPicker(true);
+        const smartData = await fetchSmartNeighborhoods(location.city, categoryLabel || category || '');
+        if (!cancelled) {
+          setSmartNeighborhoods(smartData?.neighborhoods || []);
+        }
+      } catch (err) {
+        console.error('Auto-fetch neighborhoods failed:', err);
+        if (!cancelled) {
+          setSmartNeighborhoods([]);
+        }
+      }
+    };
+
+    loadNeighborhoods();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.city, category, categoryLabel, fetchSmartNeighborhoods]);
+
   // Memoized suggestion handler with toggle behavior
   const handleSuggestion = useCallback(async (id) => {
     // Toggle: deselect if already selected
@@ -769,118 +885,230 @@ function App() {
   }), [weather, location.city]);
 
   return (
-    <div>
-      <Header city={location.city} neighborhood={location.neighborhood} />
-      
-      {location.city && (
-        <div style={{ minWidth: 220, margin: '0 auto', maxWidth: 600 }}>
-          <WeatherDisplay {...weatherDisplayProps} />
-          {weatherError && (
-            <div style={{ marginTop: 8, color: '#9b2c2c', fontSize: 13 }}>
-              {weatherError}
+    <div className="min-h-screen text-slate-900">
+      <Header 
+        city={location.city} 
+        neighborhood={location.neighborhood}
+        weather={weather}
+        weatherError={weatherError}
+      />
+
+      {/* Hero / welcome */}
+      <section
+        className="relative max-w-6xl mx-auto mt-6 px-4"
+      >
+        <div
+          className="relative overflow-visible rounded-3xl bg-gradient-to-r from-brand-orange/90 via-brand-orange to-brand-aqua/80 text-white shadow-2xl min-h-[360px] lg:min-h-[420px]"
+          style={heroImage ? {
+            backgroundImage: `linear-gradient(90deg, rgba(59,130,246,0.9), rgba(59,130,246,0.6)), url(${heroImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          } : {}}
+        >
+          <div className="absolute inset-0 backdrop-blur-sm" style={heroImage ? { background: 'linear-gradient(90deg, rgba(232,117,26,0.82), rgba(29,182,224,0.68))' } : {}} />
+          <div className="relative grid gap-8 lg:grid-cols-[1.2fr,0.8fr] p-6 lg:p-10 max-w-5xl mx-auto">
+            <div className="space-y-3">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight">Discover your next adventure</h1>
+              <p className="text-white/90 text-base sm:text-lg">Pick a city to unlock categories, neighborhoods, guides, and Marco chat.</p>
+              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl p-4 sm:p-5 text-slate-100 backdrop-blur">
+                <SimpleLocationSelector 
+                  onLocationChange={handleSimpleLocationChange}
+                  onCityGuide={(city) => handleSearch(categoryLabel || category || '', city)}
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-white/90">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10">🌍 Popular cities</span>
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10">⚡ Categories & neighborhoods</span>
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10">💬 Marco chat</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start" />
+          </div>
+        </div>
+      </section>
+
+      <div className="max-w-6xl mx-auto px-4 pb-16 space-y-10">
+
+        {/* Popular (toggle) + Featured */}
+        <div className="mt-10 space-y-5">
+          <div className="rounded-2xl bg-white/90 border border-slate-200 shadow-lg backdrop-blur p-4 text-slate-900">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-slate-700 font-semibold"><span>🌐</span> Popular destinations</div>
+              <button
+                className="text-sm text-brand-orange font-semibold hover:underline"
+                onClick={() => setShowPopular(!showPopular)}
+              >
+                {showPopular ? 'Hide' : 'Browse'}
+              </button>
+            </div>
+            {showPopular && (
+              <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {POPULAR_CITIES.map(city => (
+                  <button
+                    key={city}
+                    onClick={() => handleSimpleLocationChange({ city, cityName: city })}
+                    className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800 shadow hover:shadow-md hover:bg-brand-orange/10 transition"
+                  >
+                    {city}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl bg-gradient-to-br from-brand-orange/90 via-brand-orange to-brand-aqua/80 text-white shadow-lg p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xl font-semibold">Featured vibes</h2>
+              <span className="text-sm text-white/80">Swipe</span>
+            </div>
+            <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory">
+              {((category || (selectedSuggestion && venues.length > 0))
+                ? venues.slice(0, 6).map((v, idx) => ({ key: v.id || idx, name: v.name, description: v.description || 'Obscure local gem with atmosphere.' }))
+                : HIDDEN_GEM_CITIES.map((city) => ({ key: city, name: city, description: `Hidden corners of ${city}`, img: featuredImages[city]?.img || '', credit: featuredImages[city]?.credit, profile: featuredImages[city]?.profile })))
+                .map((item) => {
+                  const [from, to] = gradientForName(item.name);
+                  const card = (
+                    <div
+                      className="min-w-[340px] min-h-[280px] snap-start rounded-2xl p-6 shadow-2xl text-left text-white border border-white/10 overflow-hidden"
+                      style={{ backgroundImage: item.img ? `linear-gradient(135deg, rgba(0,0,0,0.35), rgba(0,0,0,0.6)), url(${item.img})` : `linear-gradient(135deg, ${from}, ${to})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                    >
+                      <p className="text-2xl font-semibold leading-tight drop-shadow-sm">{item.name}</p>
+                      {item.credit && (
+                        <p className="mt-3 text-[12px] text-white/85">Photo: <a className="underline" href={item.profile || '#'} target="_blank" rel="noreferrer">{item.credit}</a></p>
+                      )}
+                    </div>
+                  );
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      className="text-left w-full max-w-[340px]"
+                      onClick={() => {
+                        handleSimpleLocationChange({ city: item.name, cityName: item.name });
+                        scrollToCitySuggestions();
+                      }}
+                    >
+                      {card}
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+        </div>
+
+        <div ref={cityGuideRef}>
+          {weather && (
+            <div className="mt-6 rounded-2xl border border-white/20 bg-gradient-to-br from-brand-ink/85 via-brand-orange/85 to-brand-aqua/80 text-white shadow-2xl p-5 backdrop-blur">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">🌤️</span>
+                  <div className="text-sm font-semibold">{location.city}</div>
+                </div>
+                <span className="text-xs uppercase tracking-wide text-white/80">Weather</span>
+              </div>
+              <div className="mt-3">
+                <WeatherDisplay {...weatherDisplayProps} />
+              </div>
+            </div>
+          )}
+
+          {/* Mobile panel toggles */}
+          {location.city && (
+            <div className="mt-6 flex flex-wrap gap-2 md:hidden">
+              {[
+                { key: 'categories', label: 'Categories' },
+                { key: 'neighborhoods', label: 'Neighborhoods' },
+                { key: 'guide', label: 'Guide' },
+                { key: 'fun', label: 'Fun Fact' },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActivePanel(tab.key)}
+                  className={`px-3 py-2 rounded-full text-sm font-semibold border transition ${activePanel === tab.key ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white border-slate-200 text-slate-800'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* City Suggestions - Controlled Context */}
+          {showCitySuggestions && location.city && (
+            <div className={`mt-6 ${activePanel === 'categories' || isDesktop ? '' : 'hidden md:block'}`} ref={citySuggestionsRef}>
+              <CitySuggestions 
+                city={location.city}
+                onCategorySelect={handleCategorySelect}
+                searchResults={results}
+              />
+            </div>
+          )}
+
+          {/* Inline neighborhoods pane to keep unified experience */}
+          {(smartNeighborhoods.length > 0 || neighborhoodsLoading) && (
+            <div className={`mt-6 rounded-2xl border border-slate-200 bg-white shadow-lg p-4 text-slate-900 ${activePanel === 'neighborhoods' || isDesktop ? '' : 'hidden md:block'}`}>
+              <NeighborhoodPicker
+                inline
+                city={location.city}
+                category={pendingCategory?.label || categoryLabel}
+                neighborhoods={smartNeighborhoods}
+                onSelect={handleNeighborhoodSelect}
+                onSkip={handleSkipNeighborhood}
+                loading={neighborhoodsLoading}
+              />
+            </div>
+          )}
+
+          {/* Hero Image - Visual Payoff */}
+          {(location.city || cityGuideLoading) && (
+            <div className={`${activePanel === 'guide' || isDesktop ? '' : 'hidden md:block'}`}>
+              <HeroImage 
+                city={location.cityName}
+                intent={parsedIntent || selectedSuggestion}
+                loading={cityGuideLoading}
+                heroImage={heroImage}
+                heroImageMeta={heroImageMeta}
+              />
+            </div>
+          )}
+
+          {/* Fun Fact - Display below hero image */}
+          {location.city && !category && !selectedSuggestion && (
+            <div className={`mt-6 rounded-2xl border border-slate-200 bg-white shadow-lg p-4 text-slate-900 ${activePanel === 'fun' || isDesktop ? '' : 'hidden md:block'}`}>
+              <FunFact city={location.city} />
+            </div>
+          )}
+
+          {/* City Guide with Fun Facts - Display below hero image */}
+          {location.city && results && !category && !selectedSuggestion && (
+            <div className={`mt-6 rounded-2xl border border-slate-200 bg-white shadow-lg p-4 text-slate-900 ${activePanel === 'guide' || isDesktop ? '' : 'hidden md:block'}`}>
+              <SearchResults 
+                results={results} 
+              />
             </div>
           )}
         </div>
-      )}
-
-      <div className="app-container">
-        <SimpleLocationSelector 
-          onLocationChange={handleSimpleLocationChange}
-          onCityGuide={(city) => handleSearch(categoryLabel || category || '', city)}
-        />
-
-        {/* City Suggestions - Controlled Context */}
-        {showCitySuggestions && location.city && (
-          <CitySuggestions 
-            city={location.city}
-            onCategorySelect={handleCategorySelect}
-            searchResults={results}
-          />
-        )}
-
-        {/* Smart Neighborhood Picker for Large Cities */}
-        {showNeighborhoodPicker && (
-          <NeighborhoodPicker
-            city={location.city}
-            category={pendingCategory?.label || categoryLabel}
-            neighborhoods={smartNeighborhoods}
-            onSelect={handleNeighborhoodSelect}
-            onSkip={handleSkipNeighborhood}
-            loading={neighborhoodsLoading}
-          />
-        )}
-
-        {/* Hero Image - Visual Payoff */}
-        {(location.city || cityGuideLoading) && (
-          <HeroImage 
-            city={location.cityName}
-            intent={parsedIntent || selectedSuggestion}
-            loading={cityGuideLoading}
-            heroImage={heroImage}
-            heroImageMeta={heroImageMeta}
-          />
-        )}
-
-        {/* Fun Fact - Display below hero image */}
-        {location.city && !category && !selectedSuggestion && (
-          <FunFact city={location.city} />
-        )}
-
-        {/* City Guide with Fun Facts - Display below hero image */}
-        {location.city && results && !category && !selectedSuggestion && (
-          <SearchResults 
-            results={results} 
-          />
-        )}
 
         {location.city && cityGuideLoading && (
-          <div className="quick-guide quick-guide--loading" aria-live="polite" aria-busy="true">
-            <div className="loading-pill" />
-            <div className="loading-title loading-pulse" />
-            <div className="loading-line loading-pulse" />
-            <div className="loading-line loading-pulse" style={{ maxWidth: '85%' }} />
-            <div className="loading-footnote">Gathering highlights for {location.city}…</div>
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg" aria-live="polite" aria-busy="true">
+            <div className="h-3 w-24 rounded-full bg-gradient-to-r from-brand-orange/70 via-brand-orange/40 to-brand-aqua/70 animate-pulse" />
+            <div className="mt-3 h-5 w-48 rounded-full bg-slate-200 animate-pulse" />
+            <div className="mt-3 h-4 w-full rounded-full bg-slate-200 animate-pulse" />
+            <div className="mt-2 h-4 w-5/6 rounded-full bg-slate-200 animate-pulse" />
+            <div className="mt-4 text-sm text-slate-600">Gathering highlights for {location.city}…</div>
           </div>
         )}
 
-        {/* {location.city && location.neighborhood && generating && (
-          <div style={{ margin: '8px 0 12px 0', color: '#3b556f' }}>
-            Generating quick guide…
-          </div>
-        )} */}
 
-        
-                
         {/* Category Results - Show venues when category selected */}
         {(category || selectedSuggestion) && venues.length > 0 && !loading && (
-          <div className="category-results" style={{ 
-            marginTop: 32, 
-            padding: '0 16px',
-            animation: 'fadeInUp 0.5s ease-out'
-          }}>
+          <div className="mt-12 space-y-6">
             {/* Dynamic city-specific blurb */}
-            <div style={{
-              background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-              borderRadius: 16,
-              padding: '24px',
-              marginBottom: 24,
-              color: 'white',
-              boxShadow: '0 8px 32px rgba(33, 150, 243, 0.3)'
-            }}>
-              <h3 style={{ 
-                fontSize: 24, 
-                marginBottom: 12, 
-                color: 'white',
-                fontWeight: 700
-              }}>
+            <div className="rounded-2xl bg-gradient-to-r from-brand-orange via-brand-orange to-brand-aqua text-white p-6 shadow-xl">
+              <h3 className="text-2xl font-bold mb-2">
                 {categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category} in {location.city}
               </h3>
-              <p style={{ 
-                color: 'rgba(255,255,255,0.9)', 
-                fontSize: 16, 
-                lineHeight: 1.6,
-                margin: 0
-              }}>
+              <p className="text-white/90 text-base md:text-lg leading-relaxed">
                 {(categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category)?.toLowerCase() === 'nightlife' 
                   ? `${location.city} comes alive after dark. From hidden speakeasies to rooftop bars with skyline views, discover where locals actually spend their evenings. Whether you're after craft cocktails, live music, or dancing until dawn, these spots capture the city's true evening energy.`
                   : (categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category)?.toLowerCase().includes('food') || (categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category)?.toLowerCase().includes('dining')
@@ -888,197 +1116,121 @@ function App() {
                   : `Discover the best ${(categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category)?.toLowerCase()} spots ${location.neighborhood ? `in ${location.neighborhood}` : `across ${location.city}`}. Hand-picked venues that capture what makes this city special.`}
               </p>
             </div>
-            
-            <div className="venues-grid" style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-              gap: 20,
-              marginTop: 24
-            }}>
+
+            <div className="grid gap-6 md:grid-cols-2">
               {venues.slice(0, 6).map((venue, index) => (
-                <div key={venue.id || index} className="venue-card" style={{
-                  background: 'white',
-                  borderRadius: 12,
-                  padding: 20,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                  border: '1px solid #e8e8e8',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12
-                }}>
+                <div key={venue.id || index} className="bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden flex flex-col">
                   {venue.image_url && (
                     <img 
                       src={venue.image_url} 
                       alt={venue.name}
-                      style={{
-                        width: '100%',
-                        height: 180,
-                        objectFit: 'cover',
-                        borderRadius: 8,
-                        marginBottom: 4
-                      }}
+                      className="w-full h-48 object-cover"
                     />
                   )}
-                  
-                  {/* Venue Name */}
-                  <h4 style={{ margin: 0, fontSize: 18, color: '#1a1a1a', fontWeight: 600 }}>
-                    {venue.name}
-                  </h4>
-                  
-                  {/* Address with Google Maps link */}
-                  {(venue.address || venue.latitude || venue.lat) && (
-                    <a 
-                      href={(() => {
-                        const lat = venue.latitude || venue.lat;
-                        const lon = venue.longitude || venue.lon;
-                        // Check if address is real or just coordinates placeholder
-                        const hasRealAddress = venue.address && 
-                          !venue.address.includes('Approximate location') && 
-                          !venue.address.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/);
-                        
-                        if (hasRealAddress) {
-                          // Use venue name + real address for search
-                          return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.name)}+${encodeURIComponent(venue.address)}`;
-                        } else if (lat && lon) {
-                          // Use coordinates directly - shows exact location
-                          return `https://www.google.com/maps/?q=${lat},${lon}`;
-                        } else {
+
+                  <div className="p-4 flex flex-col gap-3">
+                    {/* Venue Name */}
+                    <h4 className="text-lg font-semibold text-slate-900">{venue.name}</h4>
+
+                    {/* Address with Google Maps link */}
+                    {(venue.address || venue.latitude || venue.lat) && (
+                      <a 
+                        href={(() => {
+                          const lat = venue.latitude || venue.lat;
+                          const lon = venue.longitude || venue.lon;
+                          const hasRealAddress = venue.address && 
+                            !venue.address.includes('Approximate location') && 
+                            !venue.address.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/);
+                          if (hasRealAddress) {
+                            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.name)}+${encodeURIComponent(venue.address)}`;
+                          } else if (lat && lon) {
+                            return `https://www.google.com/maps/?q=${lat},${lon}`;
+                          }
                           return '#';
-                        }
-                      })()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        color: '#667eea',
-                        fontSize: 14,
-                        textDecoration: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6
-                      }}
-                    >
-                      📍 {(() => {
-                        const hasRealAddress = venue.address && 
-                          !venue.address.includes('Approximate location') && 
-                          !venue.address.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/);
-                        if (hasRealAddress) {
-                          return venue.address;
-                        }
-                        const lat = venue.latitude || venue.lat;
-                        const lon = venue.longitude || venue.lon;
-                        if (lat && lon) {
-                          return `${parseFloat(lat).toFixed(4)}, ${parseFloat(lon).toFixed(4)}`;
-                        }
-                        return location.city;
-                      })()}
-                    </a>
-                  )}
-                  
-                  {/* Description */}
-                  {venue.description && (
-                    <p style={{ 
-                      margin: 0, 
-                      fontSize: 14, 
-                      color: '#555', 
-                      lineHeight: 1.5 
-                    }}>
-                      {venue.description}
-                    </p>
-                  )}
-                  
-                  {/* Opening Hours */}
-                  {(venue.opening_hours || venue.opening_hours_pretty) && (
-                    <div style={{ fontSize: 13, color: '#666' }}>
-                      🕒 {venue.opening_hours_pretty || venue.opening_hours}
-                    </div>
-                  )}
-                  
-                  {/* Tags */}
-                  {venue.tags && typeof venue.tags === 'object' && !Array.isArray(venue.tags) && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      {Object.entries(venue.tags).slice(0, 3).map(([key, value]) => (
-                        <span key={key} style={{
-                          fontSize: 11,
-                          padding: '4px 8px',
-                          background: '#f0f4f8',
-                          borderRadius: 12,
-                          color: '#667eea'
-                        }}>
-                          {typeof value === 'string' ? value.replace(/_/g, ' ') : key}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {/* Action Buttons */}
-                  <div style={{ 
-                    display: 'flex', 
-                    gap: 10, 
-                    marginTop: 'auto',
-                    paddingTop: 12,
-                    borderTop: '1px solid #eee'
-                  }}>
-                    {(venue.latitude || venue.lat) && (
-                      <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(venue.name)},${venue.latitude || venue.lat},${venue.longitude || venue.lon}`}
+                        })()}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{
-                          flex: 1,
-                          padding: '10px 16px',
-                          background: '#667eea',
-                          color: 'white',
-                          borderRadius: 8,
-                          textDecoration: 'none',
-                          fontSize: 13,
-                          fontWeight: 600,
-                          textAlign: 'center'
-                        }}
+                        className="text-brand-aqua text-sm font-medium inline-flex items-center gap-2"
                       >
-                        Get Directions
+                        📍 {(() => {
+                          const hasRealAddress = venue.address && 
+                            !venue.address.includes('Approximate location') && 
+                            !venue.address.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/);
+                          if (hasRealAddress) {
+                            return venue.address;
+                          }
+                          const lat = venue.latitude || venue.lat;
+                          const lon = venue.longitude || venue.lon;
+                          if (lat && lon) {
+                            return `${parseFloat(lat).toFixed(4)}, ${parseFloat(lon).toFixed(4)}`;
+                          }
+                          return location.city;
+                        })()}
                       </a>
                     )}
-                    <button
-                      onClick={() => {
-                        setMarcoOpen(true);
-                        // Store the venue question to be used when Marco opens
-                        localStorage.setItem('marco_initial_question', `Tell me more about ${venue.name}${venue.description ? ' - ' + venue.description : ''}. What makes it special?`);
-                      }}
-                      style={{
-                        flex: 1,
-                        padding: '10px 16px',
-                        background: '#9c27b0',
-                        color: 'white',
-                        borderRadius: 8,
-                        border: 'none',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        textAlign: 'center',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      🤖 Ask Marco
-                    </button>
-                    {venue.website && (
-                      <a
-                        href={venue.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          flex: 1,
-                          padding: '10px 16px',
-                          background: '#f0f4f8',
-                          color: '#667eea',
-                          borderRadius: 8,
-                          textDecoration: 'none',
-                          fontSize: 13,
-                          fontWeight: 600,
-                          textAlign: 'center'
+
+                    <details className="group rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-700">
+                      <summary className="cursor-pointer select-none font-semibold text-slate-800 flex items-center justify-between">
+                        Details
+                        <span className="text-xs text-brand-aqua group-open:hidden">Show</span>
+                        <span className="text-xs text-brand-aqua hidden group-open:inline">Hide</span>
+                      </summary>
+                      <div className="mt-2 space-y-2">
+                        {/* Description */}
+                        {venue.description && (
+                          <p className="leading-relaxed text-slate-700">{venue.description}</p>
+                        )}
+
+                        {/* Opening Hours */}
+                        {(venue.opening_hours || venue.opening_hours_pretty) && (
+                          <div className="text-sm text-slate-600">🕒 {venue.opening_hours_pretty || venue.opening_hours}</div>
+                        )}
+
+                        {/* Tags */}
+                        {venue.tags && typeof venue.tags === 'object' && !Array.isArray(venue.tags) && (
+                          <div className="flex flex-wrap gap-2">
+                            {Object.entries(venue.tags).slice(0, 3).map(([key, value]) => (
+                              <span key={key} className="px-3 py-1 rounded-full bg-slate-200 text-xs font-semibold text-slate-700">
+                                {typeof value === 'string' ? value.replace(/_/g, ' ') : key}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </details>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-200">
+                      {(venue.latitude || venue.lat) && (
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(venue.name)},${venue.latitude || venue.lat},${venue.longitude || venue.lon}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 min-w-[140px] text-center rounded-lg bg-brand-aqua text-brand-ink px-4 py-2 text-sm font-semibold shadow-sm hover:bg-brand-aquaDark"
+                        >
+                          Get Directions
+                        </a>
+                      )}
+                      <button
+                        onClick={() => {
+                          setMarcoOpen(true);
+                          localStorage.setItem('marco_initial_question', `Tell me more about ${venue.name}${venue.description ? ' - ' + venue.description : ''}. What makes it special?`);
                         }}
+                        className="flex-1 min-w-[140px] text-center rounded-lg bg-brand-orange text-white px-4 py-2 text-sm font-semibold shadow-sm hover:bg-brand-orangeDark"
                       >
-                        Website
-                      </a>
-                    )}
+                        🤖 Ask Marco
+                      </button>
+                      {venue.website && (
+                        <a
+                          href={venue.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 min-w-[140px] text-center rounded-lg bg-slate-100 text-slate-800 px-4 py-2 text-sm font-semibold hover:bg-slate-200"
+                        >
+                          Website
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1086,32 +1238,23 @@ function App() {
           </div>
         )}
 
-        {/* Only show Ask Marco button after category is selected */}
+        {/* Floating Marco Chat button (visible after city + category) */}
         {location.city && (category || selectedSuggestion) && (
-        <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap', padding: '0 16px' }}>
-          <button
-            onClick={() => setMarcoOpen(true)}
-            style={{
-              padding: '12px 24px',
-              background: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: 4,
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: 'bold'
-            }}
-          >
-            💬 Ask Marco for personalized tips
-          </button>
-        </div>
-      )}
+          <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+            <button
+              onClick={() => setMarcoOpen(true)}
+              className="rounded-full bg-brand-orange text-white shadow-xl px-5 py-3 text-sm font-semibold hover:bg-brand-orangeDark hover:scale-105 transition-transform"
+            >
+              💬 Ask Marco
+            </button>
+          </div>
+        )}
 
         {marcoOpen && (
           <MarcoChat
             city={location.city}
             neighborhood={location.neighborhood}
-            venues={[]}  // Let Marco fetch fresh venues for the city
+            venues={[]}
             category={categoryLabel || SUGGESTION_MAP[selectedSuggestion] || (typeof category === 'string' ? category : '')}
             initialInput={`Tell me about ${categoryLabel || SUGGESTION_MAP[selectedSuggestion] || category} in ${location.neighborhood ? `${location.neighborhood}, ` : ''}${location.city}`}
             results={results}

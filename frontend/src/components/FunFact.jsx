@@ -1,39 +1,33 @@
 import { useEffect, useState } from 'react';
+import fallbackFactsData from '../data/fallback_facts.json';
 import './FunFact.css';
 
-// Fallback fun facts for major cities
-const FALLBACK_FACTS = {
-  'paris': [
-    "Paris was originally a Roman city called 'Lutetia'.",
-    "The Eiffel Tower was supposed to be dismantled after 20 years.",
-    "There is only one stop sign in the entire city of Paris."
-  ],
-  'london': [
-    "Big Ben is actually the name of the bell, not the clock tower.",
-    "London has been inhabited for over 2,000 years.",
-    "The London Underground is the oldest underground railway in the world."
-  ],
-  'new york': [
-    "New York City was originally called New Amsterdam.",
-    "There are over 800 languages spoken in NYC.",
-    "The Statue of Liberty was a gift from France in 1886."
-  ],
-  'tokyo': [
-    "Tokyo was formerly known as Edo.",
-    "Shibuya Crossing is the busiest pedestrian crossing in the world.",
-    "Tokyo has the most Michelin-starred restaurants of any city."
-  ],
-  'default': [
-    "Cities are complex ecosystems with layers of history, architecture, and diverse communities.",
-    "Urban geography studies how cities grow, adapt, and define their regional identity.",
-    "Every urban center has a unique topological layout influenced by its local environment."
-  ]
+const fetchWikipediaSummary = async (city) => {
+  if (!city) return null;
+  try {
+    const title = encodeURIComponent(city.trim());
+    const resp = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${title}`);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const text = data.extract || '';
+    if (text && text.length > 20) {
+      // Keep just the first couple sentences for brevity
+      const firstSentences = text.split('. ').slice(0, 2).join('. ').trim();
+      return firstSentences.endsWith('.') ? firstSentences : `${firstSentences}.`;
+    }
+    return null;
+  } catch (e) {
+    console.warn('[FUN-FACT] Wikipedia fetch failed:', e);
+    return null;
+  }
 };
 
 const getFallbackFact = (city) => {
-  const cityKey = city.toLowerCase().trim();
-  const facts = FALLBACK_FACTS[cityKey] || FALLBACK_FACTS['default'];
-  return facts[Math.floor(Math.random() * facts.length)];
+  const cityKey = (city || '').toLowerCase().trim();
+  const factsByCity = (fallbackFactsData && fallbackFactsData.cities) || {};
+  const pool = factsByCity[cityKey] || factsByCity['default'] || [];
+  if (!pool.length) return '';
+  return pool[Math.floor(Math.random() * pool.length)];
 };
 
 const FunFact = ({ city }) => {
@@ -68,7 +62,19 @@ const FunFact = ({ city }) => {
 
   // Paraphrase using Groq if available, otherwise use local spice-up
   const spiceFact = async (text) => {
-    if (!text) return;
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      setSpicedFact('');
+      setSpiceSource(null);
+      return;
+    }
+    const trimmed = text.trim();
+    // Skip network paraphrase for very short lines to avoid 422s
+    if (trimmed.length < 8) {
+      const fallback = localSpiceUp(trimmed, 'nerdy', 'A');
+      setSpicedFact(fallback);
+      setSpiceSource('local');
+      return;
+    }
     setSpiceLoading(true);
     setSpiceSource(null);
     setSpicedFact(null);
@@ -108,31 +114,30 @@ const FunFact = ({ city }) => {
         const resp = await fetch('/api/llm-paraphrase', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, style })
+          body: JSON.stringify({ text: trimmed, style: style || 'nerdy' })
         });
-<<<<<<< HEAD
 
         if (!resp.ok) {
           console.warn('[FUN-FACT] llm-paraphrase returned non-200:', resp.status);
-        } else {
-=======
-        if (resp.ok) {
->>>>>>> d22d4ab (latest component merging)
-          const j = await resp.json();
-          if (j.paraphrase) {
-            // Client-side safety: reject paraphrases that contain disallowed language
-            const badRe = /\b(?:fuck|shit|bitch|cunt|asshole|motherfucker)\b/i;
-            if (badRe.test(j.paraphrase || '')) {
-              console.warn('LLM paraphrase contained disallowed language; falling back to local template');
-              setSpicedFact(localSpiceUp(text, style, variant));
-              setSpiceSource('local');
-              return;
-            }
+          setSpicedFact(localSpiceUp(text, style, variant));
+          setSpiceSource('local');
+          return;
+        }
 
-            setSpicedFact(j.paraphrase);
-            setSpiceSource('ai');
+        const j = await resp.json();
+        if (j.paraphrase) {
+          // Client-side safety: reject paraphrases that contain disallowed language
+          const badRe = /\b(?:fuck|shit|bitch|cunt|asshole|motherfucker)\b/i;
+          if (badRe.test(j.paraphrase || '')) {
+            console.warn('LLM paraphrase contained disallowed language; falling back to local template');
+            setSpicedFact(localSpiceUp(text, style, variant));
+            setSpiceSource('local');
             return;
           }
+
+          setSpicedFact(j.paraphrase);
+          setSpiceSource('ai');
+          return;
         }
       }
 
@@ -177,10 +182,16 @@ const FunFact = ({ city }) => {
         if (response.ok) {
           const data = await response.json();
           console.log(`[FUN-FACT] Received:`, data);
-          original = data.funFact || getFallbackFact(city);
+          if (Array.isArray(data.facts) && data.facts.length) {
+            original = data.facts.join(' ');
+          } else {
+            original = data.funFact || getFallbackFact(city);
+          }
         } else {
           console.warn(`[FUN-FACT] HTTP error: ${response.status}`);
-          original = getFallbackFact(city);
+          // Try Wikipedia summary before local fallback
+          const wiki = await fetchWikipediaSummary(city);
+          original = wiki || getFallbackFact(city);
         }
 
         setFunFact(original);
@@ -189,7 +200,8 @@ const FunFact = ({ city }) => {
 
       } catch (err) {
         console.error('[FUN-FACT] Failed to fetch:', err);
-        const fallback = getFallbackFact(city);
+        // Try Wikipedia summary before local fallback
+        const fallback = (await fetchWikipediaSummary(city)) || getFallbackFact(city);
         setFunFact(fallback);
         spiceFact(fallback);
       } finally {
