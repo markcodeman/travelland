@@ -14,6 +14,10 @@ logger = logging.getLogger(__name__)
 # Cache for seed data to avoid repeated file reads
 _SEED_DATA_CACHE: Optional[Dict[str, List[Dict]]] = None
 
+# Configuration constants
+SEED_DATA_DIR = os.getenv('NEIGHBORHOOD_SEED_DIR', None)  # Allow override via env var
+EXCLUDE_FILES = ['cache', 'seeded_cities']  # Files/patterns to exclude from seed data loading
+
 async def fetch_neighborhoods_dynamic(city: str, lat: float, lon: float, radius: int = 5000) -> List[Dict]:
     """
     Dynamically fetch neighborhoods for ANY city using Overpass API
@@ -235,7 +239,12 @@ def load_seed_neighborhoods(city: str) -> List[Dict]:
     # Build cache on first call
     if _SEED_DATA_CACHE is None:
         _SEED_DATA_CACHE = {}
-        data_dir = Path(__file__).parent.parent / 'data'
+        
+        # Allow override via environment variable for testing
+        if SEED_DATA_DIR:
+            data_dir = Path(SEED_DATA_DIR)
+        else:
+            data_dir = Path(__file__).parent.parent / 'data'
         
         if not data_dir.exists():
             logger.warning(f"Seed data directory not found: {data_dir}")
@@ -243,8 +252,8 @@ def load_seed_neighborhoods(city: str) -> List[Dict]:
         
         # Recursively find all JSON files
         for json_file in data_dir.rglob('*.json'):
-            # Skip cache and non-city files
-            if 'cache' in json_file.name.lower() or json_file.name == 'seeded_cities.json':
+            # Skip files matching exclusion patterns
+            if any(pattern in json_file.name.lower() for pattern in EXCLUDE_FILES):
                 continue
             
             try:
@@ -270,15 +279,18 @@ def load_seed_neighborhoods(city: str) -> List[Dict]:
     # Look up city in cache (case-insensitive)
     city_key = city.lower().strip()
     
-    # Try exact match first
+    # Try exact match first (O(1) lookup)
     if city_key in _SEED_DATA_CACHE:
         return _SEED_DATA_CACHE[city_key]
     
-    # Try partial match (e.g., "New York" matches "New York City")
-    for cached_city, neighborhoods in _SEED_DATA_CACHE.items():
-        if city_key in cached_city or cached_city in city_key:
-            logger.debug(f"Partial match: '{city_key}' matched '{cached_city}'")
-            return neighborhoods
+    # Try partial match only if exact match fails
+    # Note: This is O(n) but only runs on cache miss, and n is limited (~50-100 cities)
+    # For larger scale, consider implementing a prefix tree or fuzzy matching index
+    if len(_SEED_DATA_CACHE) < 500:  # Only do partial matching for small caches
+        for cached_city, neighborhoods in _SEED_DATA_CACHE.items():
+            if city_key in cached_city or cached_city in city_key:
+                logger.debug(f"Partial match: '{city_key}' matched '{cached_city}'")
+                return neighborhoods
     
     return []
 
