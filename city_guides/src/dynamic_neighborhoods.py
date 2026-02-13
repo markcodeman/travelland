@@ -17,6 +17,7 @@ _SEED_DATA_CACHE: Optional[Dict[str, List[Dict]]] = None
 # Configuration constants
 SEED_DATA_DIR = os.getenv('NEIGHBORHOOD_SEED_DIR', None)  # Allow override via env var
 EXCLUDE_FILES = ['cache', 'seeded_cities']  # Files/patterns to exclude from seed data loading
+PARTIAL_MATCH_THRESHOLD = 500  # Only do partial matching for caches smaller than this
 
 async def fetch_neighborhoods_dynamic(city: str, lat: float, lon: float, radius: int = 5000) -> List[Dict]:
     """
@@ -241,7 +242,7 @@ def load_seed_neighborhoods(city: str) -> List[Dict]:
         _SEED_DATA_CACHE = {}
         
         # Allow override via environment variable for testing
-        if SEED_DATA_DIR:
+        if SEED_DATA_DIR is not None:
             data_dir = Path(SEED_DATA_DIR)
         else:
             data_dir = Path(__file__).parent.parent / 'data'
@@ -252,8 +253,9 @@ def load_seed_neighborhoods(city: str) -> List[Dict]:
         
         # Recursively find all JSON files
         for json_file in data_dir.rglob('*.json'):
-            # Skip files matching exclusion patterns
-            if any(pattern in json_file.name.lower() for pattern in EXCLUDE_FILES):
+            # Skip files matching exclusion patterns (exact stem match or pattern in name)
+            file_stem = json_file.stem.lower()
+            if any(pattern == file_stem or pattern in json_file.name.lower() for pattern in EXCLUDE_FILES):
                 continue
             
             try:
@@ -286,7 +288,7 @@ def load_seed_neighborhoods(city: str) -> List[Dict]:
     # Try partial match only if exact match fails
     # Note: This is O(n) but only runs on cache miss, and n is limited (~50-100 cities)
     # For larger scale, consider implementing a prefix tree or fuzzy matching index
-    if len(_SEED_DATA_CACHE) < 500:  # Only do partial matching for small caches
+    if len(_SEED_DATA_CACHE) < PARTIAL_MATCH_THRESHOLD:  # Only do partial matching for small caches
         for cached_city, neighborhoods in _SEED_DATA_CACHE.items():
             if city_key in cached_city or cached_city in city_key:
                 logger.debug(f"Partial match: '{city_key}' matched '{cached_city}'")
