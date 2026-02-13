@@ -1,0 +1,49 @@
+{
+  "country": "Mexico",
+  "cities": {
+    "Oaxaca": [
+      {"name": "Centro Histórico", "description": "Colonial center with Santo Domingo Church, Zócalo square, and indigenous markets", "type": "historic"},
+      {"name": "Jalatlaco", "description": "Colorful artisan neighborhood with murals, galleries, mezcal bars, and local crafts", "type": "culture"},
+      {"name": "Xochimilco", "description": "Traditional area with local markets, family-run restaurants, and authentic food", "type": "food"},
+      {"name": "Reforma", "description": "Residential area along Calzada de la República with parks and local eateries", "type": "residential"},
+      {"name": "San Felipe", "description": "Neighborhood near the ancient ruins of Monte Albán with archaeological sites", "type": "historic"},
+      {"name": "Etla", "description": "Artisan village area known for traditional cheese, textiles, and Wednesday market", "type": "culture"},
+      {"name": "Tlacolula", "description": "Market town famous for Sunday tianguis with mezcal, food, and indigenous crafts", "type": "market"},
+      {"name": "Teotitlán del Valle", "description": "Zapotec village known for wool rugs, natural dyes, and weaving traditions", "type": "culture"}
+    ],
+    "Mexico City": [
+      {"name": "Polanco", "description": "Upscale district with luxury shopping, Soumaya Museum, and fine dining", "type": "shopping"},
+      {"name": "Condesa", "description": "Trendy neighborhood with Art Deco architecture, parks, and hipster cafes", "type": "trendy"},
+      {"name": "Roma Norte", "description": "Bohemian area with galleries, vintage shops, and Avenida Álvaro Obregón", "type": "culture"},
+      {"name": "Centro Histórico", "description": "UNESCO site with Zócalo, Metropolitan Cathedral, and Aztec ruins", "type": "historic"},
+      {"name": "Coyoacán", "description": "Colonial suburb with Frida Kahlo Museum, cobblestone streets, and cafes", "type": "historic"},
+      {"name": "Xochimilco", "description": "Ancient canals with trajineras boats, floating gardens, and mariachi bands", "type": "nature"},
+      {"name": "San Ángel", "description": "Artistic neighborhood with Saturday Bazaar, Diego Rivera Museum, and colonial architecture", "type": "culture"},
+      {"name": "Juárez", "description": "Central area with Zona Rosa LGBTQ+ district, monuments, and nightlife", "type": "nightlife"}
+    ],
+    "Guadalajara": [
+      {"name": "Centro Histórico", "description": "Historic heart with Cathedral, Teatro Degollado, and colonial plazas", "type": "historic"},
+      {"name": "Tlaquepaque", "description": "Artisan suburb with pottery shops, galleries, and traditional mariachi", "type": "culture"},
+      {"name": "Zapopan", "description": "Modern area with Andares shopping, Basilica, and residential neighborhoods", "type": "modern"},
+      {"name": "Chapultepec", "description": "Trendy district with independent bookstores, cafes, and art spaces", "type": "trendy"}
+    ],
+    "Playa del Carmen": [
+      {"name": "Quinta Avenida", "description": "Main pedestrian street with shops, restaurants, and beach access", "type": "shopping"},
+      {"name": "Playacar", "description": "Residential resort area with gated communities, golf courses, and beaches", "type": "beach"},
+      {"name": "Centro", "description": "Local area away from tourists with markets, authentic taquerías, and affordable lodging", "type": "residential"},
+      {"name": "Coco Beach", "description": "Northern beach area with beach clubs, water sports, and relaxed vibe", "type": "beach"}
+    ],
+    "Cancún": [
+      {"name": "Zona Hotelera", "description": "Hotel zone on barrier island with resorts, beaches, and nightclubs", "type": "beach"},
+      {"name": "Centro (Downtown)", "description": "Local area with Parque Las Palapas, authentic food, and Mercado 28", "type": "food"},
+      {"name": "Puerto Juárez", "description": "Ferry terminal area with local seafood restaurants and Isla Mujeres departures", "type": "waterfront"},
+      {"name": "Playa Delfines", "description": "Public beach area with iconic Cancún sign and local beach culture", "type": "beach"}
+    ],
+    "Mérida": [
+      {"name": "Centro Histórico", "description": "Colonial center with Plaza Grande, Cathedral, and Paseo de Montejo mansions", "type": "historic"},
+      {"name": "Santiago", "description": "Traditional neighborhood with Santiago Park, markets, and local food", "type": "culture"},
+      {"name": "García Ginerés", "description": "Residential area with French-influenced architecture and quiet streets", "type": "residential"},
+      {"name": "Norte", "description": "Modern area with shopping plazas, restaurants, and family amenities", "type": "modern"}
+    ]
+  }
+}
