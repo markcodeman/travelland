@@ -1,0 +1,17 @@
+{
+  "country": "Brazil",
+  "cities": {
+    "Rio de Janeiro": [
+      {"name": "Copacabana", "description": "Famous beach neighborhood with iconic promenade, luxury hotels, and vibrant nightlife", "type": "beach"},
+      {"name": "Ipanema", "description": "Upscale beach neighborhood with designer boutiques, trendy restaurants, and stunning sunsets", "type": "beach"},
+      {"name": "Leblon", "description": "Elegant residential area with beachfront dining, family-friendly parks, and upscale apartments", "type": "residential"},
+      {"name": "Botafogo", "description": "Waterfront neighborhood with Sugarloaf Mountain views, shopping centers, and historic sites", "type": "waterfront"},
+      {"name": "Lapa", "description": "Historic bohemian district with samba clubs, colonial architecture, and vibrant nightlife", "type": "nightlife"},
+      {"name": "Santa Teresa", "description": "Hillside bohemian neighborhood with colonial mansions, art galleries, and panoramic city views", "type": "culture"},
+      {"name": "Centro", "description": "Historic city center with colonial buildings, theaters, and cultural institutions", "type": "historic"},
+      {"name": "Flamengo", "description": "Bayfront neighborhood with Flamengo Park, museums, and sweeping Guanabara Bay views", "type": "waterfront"},
+      {"name": "Urca", "description": "Seaside enclave at the base of Sugarloaf with quiet streets and small beaches", "type": "waterfront"},
+      {"name": "Tijuca", "description": "North Zone district with Tijuca National Park trails, markets, and local eateries", "type": "nature"}
+    ]
+  }
+}

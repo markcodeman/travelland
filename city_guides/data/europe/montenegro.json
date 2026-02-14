@@ -1,0 +1,15 @@
+{
+  "country": "Montenegro",
+  "cities": {
+    "Kotor": [
+      {"name": "Stari Grad (Old Town)", "description": "Walled medieval core with stone alleys, squares, and fortress views", "type": "historic"},
+      {"name": "Dobrota Waterfront", "description": "Bayside promenade with stone palazzos, swimming jetties, and cafes", "type": "waterfront"},
+      {"name": "Muo", "description": "Quiet fishing village opposite the old town with bay views and local konobas", "type": "residential"},
+      {"name": "Prčanj", "description": "Seaside strip with baroque villas, boat docks, and calm swimming spots", "type": "waterfront"},
+      {"name": "Perast (nearby)", "description": "UNESCO bay town with island churches, baroque palaces, and boat trips", "type": "historic"},
+      {"name": "Stoliv", "description": "Lime tree-lined waterfront with stone houses and views to Vrmac ridge", "type": "residential"},
+      {"name": "Sveti Stasije", "description": "Harbor area with small beaches, seafood restaurants, and sunset views", "type": "waterfront"},
+      {"name": "Kotor Fortress Trail", "description": "Hillside ascent to San Giovanni fortress with panoramic bay vistas", "type": "viewpoint"}
+    ]
+  }
+}

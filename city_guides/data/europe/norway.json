@@ -11,6 +11,16 @@
     "Bergen": [
       {"name": "Bryggen", "description": "UNESCO Hanseatic wharf with colorful wooden warehouses and fish market", "type": "historic"},
       {"name": "Fisketorget", "description": "Fish market area with fresh seafood, restaurants, and harbor views", "type": "food"}
+    ],
+    "Svalbard": [
+      {"name": "Longyearbyen Town Center", "description": "Arctic main street with museums, cafes, gear shops, and colorful houses", "type": "culture"},
+      {"name": "Adventfjorden Waterfront", "description": "Harbor edge with polar ship history, sea views, and midnight sun walks", "type": "waterfront"},
+      {"name": "Nybyen", "description": "Historic miners’ barracks area with guesthouses, mountainside views, and quiet streets", "type": "historic"},
+      {"name": "Huset & Svalbard Church", "description": "Cultural hill with iconic church, social house, and panoramic valley views", "type": "culture"},
+      {"name": "Gruve 3/7 Approaches", "description": "Old mine approaches with industrial heritage, viewpoints, and fox/ptarmigan spotting", "type": "historic"},
+      {"name": "Eiscat Ridge Viewpoint", "description": "Hilltop by research antennas with sweeping views over Longyearbyen and Adventdalen", "type": "viewpoint"},
+      {"name": "Adventdalen Valley", "description": "Valley floor with dog sled kennels, tundra trails, and light Arctic wilderness feel", "type": "nature"},
+      {"name": "Plateau Mountain Trailhead", "description": "Popular hike start with glacier vistas, coal history, and reindeer sightings", "type": "nature"}
     ]
   }
 }

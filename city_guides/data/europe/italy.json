@@ -38,6 +38,16 @@
       {"name": "Chiaia", "description": "Upscale waterfront district with designer shops, Lungomare promenade, and elegant cafes", "type": "shopping"},
       {"name": "Vomero", "description": "Hilltop residential area with Castel Sant'Elmo, panoramic views, and art nouveau architecture", "type": "residential"},
       {"name": "Posillipo", "description": "Prestigious coastal area with Roman ruins, sea views, and exclusive villas", "type": "residential"}
+    ],
+    "Puglia": [
+      {"name": "Polignano a Mare", "description": "Clifftop old town with dramatic sea views, pebble beach cove, and whitewashed lanes", "type": "waterfront"},
+      {"name": "Alberobello", "description": "UNESCO trulli district with conical stone houses, craft shops, and olive groves", "type": "historic"},
+      {"name": "Ostuni", "description": "White city hilltown with labyrinth alleys, cathedral, and Adriatic views", "type": "culture"},
+      {"name": "Lecce Centro Storico", "description": "Baroque capital with ornate churches, Roman amphitheater, and lively piazzas", "type": "historic"},
+      {"name": "Gallipoli Old Town", "description": "Island old town with sea walls, fish market, and sunset promenades", "type": "waterfront"},
+      {"name": "Monopoli Centro", "description": "Harbor quarter with castle, fishing boats, and beach coves", "type": "waterfront"},
+      {"name": "Martina Franca", "description": "Valle d'Itria baroque town with palazzi, piazzas, and summer festivals", "type": "culture"},
+      {"name": "Matera (nearby)", "description": "Ancient cave city Sassi district with rock churches and canyon views", "type": "historic"}
     ]
   }
 }

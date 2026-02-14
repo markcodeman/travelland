@@ -21,12 +21,20 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
         return None
 
     def _candidates():
-        base = city.strip()
+        raw_base = city.strip()
+        parts = raw_base.split()
+        primary = parts[0] if parts else raw_base  # e.g., "Mostar" from "Mostar Bosnia"
+        # Strip a trailing country token if present
+        base = raw_base
+        if country and raw_base.lower().endswith(country.lower()):
+            base = raw_base[: -len(country)].strip().strip(',').strip()
         seen = set()
         for candidate in [
+            primary,
             base,
-            f"{base}, {state}" if state else None,
+            f"{primary}, {country}" if country else None,
             f"{base}, {country}" if country else None,
+            f"{base}, {state}" if state else None,
             f"{base}, {state}, {country}" if state and country else None,
         ]:
             if candidate:
@@ -113,7 +121,14 @@ async def search():
     # Keep alphanumeric and spaces, remove other punctuation
     city = ''.join(c for c in normalized if c.isalnum() or c.isspace()).strip()
     q = (payload.get("category") or payload.get("intent") or "").strip().lower()
-    neighborhood = payload.get("neighborhood")
+    raw_neighborhood = payload.get("neighborhood") or ""
+    # Normalize neighborhood: keep alnum/space, drop generic suffixes for wiki lookups
+    nh_norm = ''.join(c for c in unicodedata.normalize('NFKD', raw_neighborhood) if c.isalnum() or c.isspace()).strip()
+    # Strip generic trailing words that hurt wiki hits
+    for suffix in ["waterfront", "bay", "area", "district", "neighborhood", "quarter"]:
+        if nh_norm.lower().endswith(suffix):
+            nh_norm = nh_norm[: -len(suffix)].strip()
+    neighborhood = nh_norm
     state_name = (payload.get("state") or payload.get("stateName") or "").strip()
     country_name = (payload.get("country") or payload.get("countryName") or "").strip()
     should_cache = False  # disabled for testing
@@ -195,6 +210,28 @@ async def search():
                     preferred_langs = ["es", "en"]
 
                 wikivoyage_summary = None
+                # Neighborhood-level Wikipedia attempt first
+                wikipedia_summary = None
+                wikipedia_url = None
+                if neighborhood:
+                    try:
+                        # Try both raw and normalized neighborhoods, with and without country
+                        raw_neighborhood = (payload.get("neighborhood") or "").strip()
+                        nh_candidates = []
+                        for nh in [raw_neighborhood, neighborhood]:
+                            if nh:
+                                nh_candidates.append(nh)
+                                if country_name:
+                                    nh_candidates.append(f"{nh}, {country_name}")
+                        for nh_title in nh_candidates:
+                            nh_slug = nh_title.replace(' ', '_')
+                            nh_summary = await fetch_wikipedia_summary(nh_title, lang="en", city=city, country=country_name or None, debug_logs=[])
+                            if nh_summary:
+                                wikipedia_summary = nh_summary.strip()
+                                wikipedia_url = f"https://en.wikipedia.org/wiki/{nh_slug}"
+                                break
+                    except Exception:
+                        pass
                 for lang in preferred_langs:
                     try:
                         wikivoyage_summary = await fetch_wikivoyage_summary(city, lang=lang, city=city, country=country_name or None)
@@ -202,8 +239,9 @@ async def search():
                             break
                     except Exception:
                         continue
-                wiki_data = await fetch_city_wikipedia(city, state_name or None, country_name or None)
-                wikipedia_summary, wikipedia_url = (wiki_data if wiki_data else (None, None))
+                if not wikipedia_summary:
+                    wiki_data = await fetch_city_wikipedia(city, state_name or None, country_name or None)
+                    wikipedia_summary, wikipedia_url = (wiki_data if wiki_data else (None, None))
                 merged = None
                 sources = []
                 source_urls = []

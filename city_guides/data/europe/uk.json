@@ -35,6 +35,16 @@
       {"name": "Harbourside", "description": "Waterfront area with SS Great Britain, museums, and modern apartment developments", "type": "waterfront"},
       {"name": "Southville", "description": "Trendy neighborhood with independent cinema, community gardens, and North Street vibe", "type": "trendy"},
       {"name": "Redland", "description": "Affluent residential area with Victorian villas, cafes, and green spaces", "type": "residential"}
+    ],
+    "Isle of Skye": [
+      {"name": "Portree Harbour", "description": "Colorful harbor village with seafood, boat trips, and Cuillin views", "type": "waterfront"},
+      {"name": "Old Man of Storr", "description": "Iconic pinnacle hike with dramatic cliffs, lochs, and sunrise vistas", "type": "nature"},
+      {"name": "Quiraing", "description": "Otherworldly landslip landscape with pinnacles, plateaus, and panoramic trails", "type": "nature"},
+      {"name": "Fairy Pools (Glen Brittle)", "description": "Crystal-clear cascades and pools beneath the Cuillin mountains", "type": "nature"},
+      {"name": "Dunvegan", "description": "Castle area with MacLeod clan history, seal trips, and walled gardens", "type": "historic"},
+      {"name": "Neist Point", "description": "Dramatic lighthouse headland for sunsets, cliffs, and sea stacks", "type": "viewpoint"},
+      {"name": "Trotternish Peninsula", "description": "Skye’s northern loop with Kilt Rock, waterfalls, and crofting villages", "type": "nature"},
+      {"name": "Elgol & Loch Coruisk", "description": "Boat trips to hidden loch, basalt cliffs, and Cuillin amphitheater views", "type": "waterfront"}
     ]
   }
 }

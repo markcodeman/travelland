@@ -1,0 +1,15 @@
+{
+  "country": "Bosnia and Herzegovina",
+  "cities": {
+    "Mostar": [
+      {"name": "Old Bridge (Stari Most)", "description": "Historic quarter around the 16th-century Ottoman bridge, bazaar streets, and river views", "type": "historic"},
+      {"name": "Kujundžiluk Bazaar", "description": "Ottoman-era market lane with artisan shops, cafes, and stone alleys by the Neretva", "type": "market"},
+      {"name": "Carina", "description": "Central area with museums, traditional restaurants, and Ottoman townhouses", "type": "culture"},
+      {"name": "Brankovac", "description": "Hillside neighborhood with panoramic city views and historic cemeteries", "type": "viewpoint"},
+      {"name": "Liska Street Area", "description": "Local cafes, murals, and student hangouts near the university", "type": "trendy"},
+      {"name": "Bisce Polje", "description": "Riverside area with parks, sports grounds, and local eateries", "type": "residential"},
+      {"name": "Rondo", "description": "Boulevard district with shopping, modern cafes, and nightlife", "type": "nightlife"},
+      {"name": "Donja Mahala", "description": "Quiet residential quarter with traditional courtyards and small mosques", "type": "residential"}
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "country": "Morocco",
+  "cities": {
+    "Chefchaouen": [
+      {"name": "Medina Blue Alleyways", "description": "Iconic indigo lanes with artisan shops, riads, and mountain views", "type": "culture"},
+      {"name": "Outa el Hammam Square", "description": "Central plaza with kasbah, Grand Mosque, cafes, and evening street life", "type": "market"},
+      {"name": "Kasbah Quarter", "description": "Fortified heart with gardens, museum, and Andalusian architecture", "type": "historic"},
+      {"name": "Ras El Maa", "description": "Waterfall area at the medina edge with river cafés and hillside trails", "type": "nature"},
+      {"name": "Souika Street", "description": "Spice shops, woven rugs, and local eateries along a bustling bazaar lane", "type": "market"},
+      {"name": "Andalusian Quarter", "description": "Quiet lanes with blue-painted homes, courtyards, and traditional fountains", "type": "residential"},
+      {"name": "Spanish Mosque Hill", "description": "Sunset viewpoint overlooking the blue city and Rif Mountains", "type": "viewpoint"},
+      {"name": "Aïn Haoua Oasis", "description": "Green belts and picnic spots along the river outside the medina", "type": "nature"}
+    ]
+  }
+}
