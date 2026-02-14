@@ -5,6 +5,7 @@ import Header from './components/Header';
 import HeroImage from './components/HeroImage';
 import MarcoChat from './components/MarcoChat';
 import NeighborhoodPicker from './components/NeighborhoodPicker';
+import NeighborhoodGuide from './components/NeighborhoodGuide';
 import SearchResults from './components/SearchResults';
 import SimpleLocationSelector from './components/SimpleLocationSelector';
 import WeatherDisplay from './components/WeatherDisplay';
@@ -140,6 +141,10 @@ function App() {
   const [smartNeighborhoods, setSmartNeighborhoods] = useState([]);
   const [pendingCategory, setPendingCategory] = useState(null);
   const [neighborhoodsLoading, setNeighborhoodsLoading] = useState(false);
+  const [showNeighborhoodGuide, setShowNeighborhoodGuide] = useState(false);
+  const [neighborhoodGuideData, setNeighborhoodGuideData] = useState(null);
+  const [neighborhoodGuideLoading, setNeighborhoodGuideLoading] = useState(false);
+  const [neighborhoodGuideError, setNeighborhoodGuideError] = useState(null);
   const marcoOpenTimerRef = useRef(null);
 
   const clearMarcoOpenTimer = useCallback(() => {
@@ -633,9 +638,50 @@ function App() {
     }
   }, [location.city, location.neighborhood, location.country, category, categoryLabel, neighborhoodOptIn, fetchAPI, fetchQuickGuide, fetchNeighborhoods, fetchWeatherData]);
 
+  // Fetch neighborhood guide from backend
+  const fetchNeighborhoodGuide = useCallback(async (neighborhood, city) => {
+    if (!neighborhood || !city) return;
+
+    setNeighborhoodGuideLoading(true);
+    setNeighborhoodGuideError(null);
+    setNeighborhoodGuideData(null);
+
+    try {
+      const response = await fetchAPI('/api/generate_quick_guide', {
+        method: 'POST',
+        body: JSON.stringify({ city, neighborhood })
+      });
+
+      if (response && response.quick_guide) {
+        setNeighborhoodGuideData(response);
+      } else {
+        setNeighborhoodGuideError('No guide information available');
+      }
+    } catch (error) {
+      console.error('Error fetching neighborhood guide:', error);
+      setNeighborhoodGuideError(error.message || 'Failed to load neighborhood guide');
+    } finally {
+      setNeighborhoodGuideLoading(false);
+    }
+  }, [fetchAPI]);
+
   // Handle neighborhood selection from picker
   const handleNeighborhoodSelect = useCallback((neighborhood) => {
     setLocation(prev => ({ ...prev, neighborhood }));
+    setShowNeighborhoodPicker(false);
+    
+    // Show neighborhood guide
+    setShowNeighborhoodGuide(true);
+    fetchNeighborhoodGuide(neighborhood, location.city);
+    
+    // Open Marco chat after guide is dismissed (handled by guide component)
+    if (pendingCategory) {
+      setPendingCategory({ ...pendingCategory, openMarcoAfterGuide: true });
+    }
+  }, [location.city, pendingCategory, fetchNeighborhoodGuide]);
+
+  // Handle skip neighborhood selection
+  const handleSkipNeighborhood = useCallback(() => {
     setShowNeighborhoodPicker(false);
     
     // Open Marco chat after a short delay to allow neighborhood picker to close
@@ -645,12 +691,12 @@ function App() {
     }
   }, [pendingCategory]);
 
-  // Handle skip neighborhood selection
-  const handleSkipNeighborhood = useCallback(() => {
-    setShowNeighborhoodPicker(false);
+  // Handle neighborhood guide close
+  const handleNeighborhoodGuideClose = useCallback(() => {
+    setShowNeighborhoodGuide(false);
     
-    // Open Marco chat after a short delay to allow neighborhood picker to close
-    if (pendingCategory) {
+    // Open Marco chat if there was a pending category
+    if (pendingCategory && pendingCategory.openMarcoAfterGuide) {
       setPendingCategory(null);
       setTimeout(() => setMarcoOpen(true), 300);
     }
@@ -806,6 +852,18 @@ function App() {
             onSelect={handleNeighborhoodSelect}
             onSkip={handleSkipNeighborhood}
             loading={neighborhoodsLoading}
+          />
+        )}
+
+        {/* Neighborhood Guide Modal */}
+        {showNeighborhoodGuide && (
+          <NeighborhoodGuide
+            neighborhood={location.neighborhood}
+            city={location.city}
+            guideData={neighborhoodGuideData}
+            loading={neighborhoodGuideLoading}
+            error={neighborhoodGuideError}
+            onClose={handleNeighborhoodGuideClose}
           />
         )}
 
