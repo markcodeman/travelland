@@ -1,0 +1,39 @@
+{
+  "country": "Romania",
+  "cities": {
+    "Brașov": [
+      {"name": "Historic Center", "description": "Medieval old town with Council Square, Black Church, and colorful baroque buildings", "type": "historic"},
+      {"name": "Șchei District", "description": "Historic Romanian quarter with St. Nicholas Church and First Romanian School Museum", "type": "historic"},
+      {"name": "Tâmpa Mountain Area", "description": "Hillside area with cable car, hiking trails, and panoramic city views", "type": "nature"},
+      {"name": "Strada Sforii", "description": "One of Europe's narrowest streets connecting Cerbului and Poarta Schei", "type": "historic"},
+      {"name": "Poiana Brașov", "description": "Mountain resort area 12km from center with skiing and outdoor activities", "type": "nature"},
+      {"name": "Bran Village", "description": "Historic village near Bran Castle with traditional markets and fortified church", "type": "historic"},
+      {"name": "Bartolomeu", "description": "Residential area with traditional Saxon architecture and local markets", "type": "residential"},
+      {"name": "Noua", "description": "Modern residential district with parks and shopping centers", "type": "residential"}
+    ],
+    "Bran": [
+      {"name": "Bran Castle Area", "description": "Historic fortress known as Dracula's Castle with Gothic architecture and museum", "type": "historic"},
+      {"name": "Bran Village Center", "description": "Traditional mountain village with craft markets, local food, and folk architecture", "type": "culture"},
+      {"name": "Moeciu", "description": "Nearby pastoral area with traditional farms, mountain views, and rural tourism", "type": "nature"},
+      {"name": "Piatra Craiului", "description": "Mountain area at the edge of Piatra Craiului National Park with hiking trails", "type": "nature"}
+    ],
+    "Bucharest": [
+      {"name": "Old Town (Lipscani)", "description": "Historic center with medieval streets, churches, and vibrant nightlife", "type": "historic"},
+      {"name": "Victoriei Calea", "description": "Grand boulevard with museums, palaces, and elegant 19th-century architecture", "type": "culture"},
+      {"name": "Herăstrău", "description": "Upscale area around Herăstrău Park with waterfront dining and Village Museum", "type": "residential"},
+      {"name": "Cotroceni", "description": "Elegant residential area with the Presidential Palace and botanical garden", "type": "residential"},
+      {"name": "Floreasca", "description": "Modern business district with lake views, parks, and shopping centers", "type": "modern"}
+    ],
+    "Cluj-Napoca": [
+      {"name": "Piața Unirii", "description": "Main square with St. Michael's Church, historic buildings, and cafes", "type": "historic"},
+      {"name": "Central Park Area", "description": "Green space with lake, casino building, and student hangouts", "type": "nature"},
+      {"name": "Mănăștur", "description": "Large residential area with markets and local amenities", "type": "residential"},
+      {"name": "Zorilor", "description": "Student district near Babeș-Bolyai University with affordable eateries", "type": "culture"}
+    ],
+    "Sibiu": [
+      {"name": "Upper Town", "description": "Medieval center with Council Tower, Lutheran Cathedral, and Brukenthal Museum", "type": "historic"},
+      {"name": "Lower Town", "description": "Historic area with the Liar's Bridge and traditional craft workshops", "type": "historic"},
+      {"name": "Sub Arini", "description": "Residential area with parks and local markets", "type": "residential"}
+    ]
+  }
+}

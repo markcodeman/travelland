@@ -32,6 +32,31 @@
       {"name": "Chinatown", "description": "Oldest Chinatown in North America with temples, herbal shops, and dim sum", "type": "culture"},
       {"name": "SOMA", "description": "Tech hub with museums, startups, nightlife, and Yerba Buena Gardens", "type": "modern"},
       {"name": "North Beach", "description": "Little Italy with City Lights Bookstore, cafes, and Beat Generation history", "type": "historic"}
+    ],
+    "Ocracoke": [
+      {"name": "Ocracoke Village", "description": "Historic fishing village with lighthouse, local shops, and island restaurants", "type": "historic"},
+      {"name": "Silver Lake Harbor", "description": "Working waterfront with ferry terminal, boat tours, and seafood markets", "type": "waterfront"},
+      {"name": "Ocracoke Beach", "description": "Pristine 16-mile beach accessible only by ferry or plane, wild horses area", "type": "beach"},
+      {"name": "Springer's Point", "description": "Coastal reserve with maritime forests, beaches, and Blackbeard history", "type": "nature"},
+      {"name": "British Cemetery", "description": "Historic WWII memorial area with quiet residential streets", "type": "historic"}
+    ],
+    "Charleston": [
+      {"name": "Historic District", "description": "Antebellum mansions, Rainbow Row houses, and cobblestone streets", "type": "historic"},
+      {"name": "King Street", "description": "Shopping corridor with boutiques, galleries, and Southern cuisine", "type": "shopping"},
+      {"name": "French Quarter", "description": "Elegant area with art galleries, historic churches, and waterfront parks", "type": "culture"},
+      {"name": "Folly Beach", "description": "Laid-back surf town 15 minutes from downtown with beach bars", "type": "beach"}
+    ],
+    "Savannah": [
+      {"name": "Historic District", "description": "22 park squares with Spanish moss, Victorian architecture, and ghost tours", "type": "historic"},
+      {"name": "River Street", "description": "Cobblestone waterfront with shops, restaurants, and Savannah River views", "type": "waterfront"},
+      {"name": "Forsyth Park", "description": "Iconic fountain area with markets, cafes, and Victorian neighborhoods", "type": "nature"},
+      {"name": "Starland District", "description": "Arts district with murals, indie shops, and trendy restaurants", "type": "trendy"}
+    ],
+    "Asheville": [
+      {"name": "Downtown", "description": "Art Deco architecture with breweries, street musicians, and local markets", "type": "culture"},
+      {"name": "River Arts District", "description": "Former industrial area with 200+ artist studios in converted warehouses", "type": "culture"},
+      {"name": "Biltmore Village", "description": "Historic village near Biltmore Estate with shops and restaurants", "type": "historic"},
+      {"name": "West Asheville", "description": "Hipster neighborhood with independent bookstores, craft bars, and vintage shops", "type": "trendy"}
     ]
   }
 }
