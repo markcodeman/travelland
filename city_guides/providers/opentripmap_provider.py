@@ -6,7 +6,7 @@ import asyncio
 
 from city_guides.providers.overpass_provider import geocode_city
 
-OPENTRIPMAP_KEY = os.getenv("OPENTRIPMAP_API_KEY") or os.getenv("OPENTRIPMAP_KEY")
+OPENTRIPMAP_KEY = os.getenv("OPENTRIPMAP_API_KEY") or os.getenv("OPENTRIPMAP_KEY") or os.getenv("OPENTRIPMAP-KEY")
 BASE = "https://api.opentripmap.com/0.1/en/places"
 # Prefer bbox endpoint for better spatial coverage and deterministic bounding
 OPENTRIPMAP_API_URL = f"{BASE}/bbox"
@@ -204,6 +204,46 @@ async def discover_restaurants(city: str, limit: int = 50, cuisine: str = None, 
     return out
 
 
+async def discover_tourist_attractions(city: str, limit: int = 50, session: aiohttp.ClientSession = None) -> List[Dict]:
+    """Discover tourist attractions via OpenTripMap.
+    
+    Uses broad tourism kinds: museums, historic, cultural, architecture, religion.
+    Good free alternative for high-quality tourist POIs.
+    
+    Returns list of dicts with keys: name, address, lat, lon, place_id, tags, rating, source
+    """
+    if not OPENTRIPMAP_KEY:
+        print("[OPENTRIPMAP] No API key, skipping")
+        return []
+    
+    # Use discover_pois with tourism-focused kinds
+    results = await discover_pois(
+        city=city,
+        kinds="museums,historic,cultural,architecture,religion,urban_environment,natural",
+        limit=limit,
+        session=session
+    )
+    
+    # Normalize output format
+    normalized = []
+    for r in results:
+        if not r.get("name"):
+            continue
+        normalized.append({
+            "name": r.get("name"),
+            "address": r.get("address", ""),
+            "lat": r.get("latitude"),
+            "lon": r.get("longitude"),
+            "place_id": r.get("place_id", ""),
+            "tags": r.get("tags", ""),
+            "rating": r.get("rating"),
+            "source": "opentripmap",
+        })
+    
+    print(f"[OPENTRIPMAP] Found {len(normalized)} tourist attractions for {city}")
+    return normalized
+
+
 async def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, session: aiohttp.ClientSession = None) -> List[Dict]:
     """Discover POIs via OpenTripMap for different kinds of places.
 
@@ -216,7 +256,7 @@ async def discover_pois(city: str, kinds: str = "restaurants", limit: int = 50, 
     """
     if not OPENTRIPMAP_KEY:
         return []
-    from overpass_provider import geocode_city
+    from .overpass_provider import geocode_city
     if session is None:
         session = aiohttp.ClientSession()
         own_session = True

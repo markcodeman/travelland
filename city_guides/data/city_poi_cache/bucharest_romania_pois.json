@@ -1,0 +1,1052 @@
+{
+  "metadata": {
+    "city": "Bucharest, Romania",
+    "version": "1.0.0",
+    "source": "seed",
+    "sources": [
+      "unknown"
+    ],
+    "last_updated": "2026-02-15T01:45:26.358913Z",
+    "count": 20,
+    "refresh_path": "scripts/refresh_city_cache.py",
+    "governance": "Controlled Seed Data - AGENTS.md compliant"
+  },
+  "pois": [
+    {
+      "id": 79139872,
+      "name": "Observatorul Astronomic Municipal \"Amiral Vasile Urseanu\" Bucuresti",
+      "lat": 44.4485255,
+      "lon": 26.0928913,
+      "address": "21 Bulevardul Lascăr Catargiu București 010662",
+      "osm_url": "https://www.openstreetmap.org/way/79139872",
+      "tags": "SIRUTA:code=179141, addr:city=București, addr:housenumber=21, addr:postcode=010662, addr:street=Bulevardul Lascăr Catargiu, building=civic, codul_entității_muzeale=7083506.0, contact:facebook=https://www.facebook.com/astrourseanu, email=dialog@astro-urseanu.ro, heritage=2, heritage:operator=lmi, image=https://photos.app.goo.gl/aWeqyc5tn1uHJ2CQA, man_made=observatory, museum=science, museum_type=Natural Sciences - Observatory, name=Observatorul Astronomic Municipal \"Amiral Vasile Urseanu\" Bucuresti, name:en=\"Admiral Vasile Urseanu\" Bucharest City Observatory, observatory:type=astronomical, opening_hours=17:00-21:00; Mo,Tu closed, phone=021/212.96.44, ref:RO:lmi=B-II-m-B-271, source=INP, source:link=http://date.gov.ro/dataset/ghidul-muzeelor-din-romania, start_date=1956, tourism=museum, tourism_survey=21.10.2013 14:39:41, website=http://www.astro-urseanu.ro, wheelchair=no, wikidata=Q18549593, wikipedia=ro:Observatorul Astronomic „Amiral Vasile Urseanu”",
+      "website": "http://www.astro-urseanu.ro",
+      "description": "",
+      "amenity": "",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "overpass",
+      "raw": {
+        "osm_id": 79139872,
+        "name": "Observatorul Astronomic Municipal \"Amiral Vasile Urseanu\" Bucuresti",
+        "website": "http://www.astro-urseanu.ro",
+        "osm_url": "https://www.openstreetmap.org/way/79139872",
+        "amenity": "",
+        "historic": "",
+        "tourism": "museum",
+        "leisure": "",
+        "cost": "",
+        "address": "21 Bulevardul Lascăr Catargiu București 010662",
+        "lat": 44.4485255,
+        "lon": 26.0928913,
+        "tags": "SIRUTA:code=179141, addr:city=București, addr:housenumber=21, addr:postcode=010662, addr:street=Bulevardul Lascăr Catargiu, building=civic, codul_entității_muzeale=7083506.0, contact:facebook=https://www.facebook.com/astrourseanu, email=dialog@astro-urseanu.ro, heritage=2, heritage:operator=lmi, image=https://photos.app.goo.gl/aWeqyc5tn1uHJ2CQA, man_made=observatory, museum=science, museum_type=Natural Sciences - Observatory, name=Observatorul Astronomic Municipal \"Amiral Vasile Urseanu\" Bucuresti, name:en=\"Admiral Vasile Urseanu\" Bucharest City Observatory, observatory:type=astronomical, opening_hours=17:00-21:00; Mo,Tu closed, phone=021/212.96.44, ref:RO:lmi=B-II-m-B-271, source=INP, source:link=http://date.gov.ro/dataset/ghidul-muzeelor-din-romania, start_date=1956, tourism=museum, tourism_survey=21.10.2013 14:39:41, website=http://www.astro-urseanu.ro, wheelchair=no, wikidata=Q18549593, wikipedia=ro:Observatorul Astronomic „Amiral Vasile Urseanu”",
+        "provider": "overpass"
+      },
+      "mapillary_images": []
+    },
+    {
+      "id": 623620164,
+      "name": "Monumentul Eroilor Căzuți în Primul și al Doilea Război Mondial",
+      "lat": 44.4125885,
+      "lon": 26.1635567,
+      "address": "44.4125885, 26.1635567",
+      "osm_url": "https://www.openstreetmap.org/node/623620164",
+      "tags": "artwork_type=statue, is_in:city=București, memorial=war_memorial, name=Monumentul Eroilor Căzuți în Primul și al Doilea Război Mondial, tourism=artwork, wikidata=Q18542037, wikimedia_commons=Category:Monument to the Heroes of the World War I and World War II, Spiridon Georgescu, Bucharest, wikipedia=ro:Monumentul eroilor căzuți în Primul și Al Doilea Război Mondial din București",
+      "website": null,
+      "description": "",
+      "amenity": "",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "overpass",
+      "raw": {
+        "osm_id": 623620164,
+        "name": "Monumentul Eroilor Căzuți în Primul și al Doilea Război Mondial",
+        "website": null,
+        "osm_url": "https://www.openstreetmap.org/node/623620164",
+        "amenity": "",
+        "historic": "",
+        "tourism": "artwork",
+        "leisure": "",
+        "cost": "",
+        "address": "44.4125885, 26.1635567",
+        "lat": 44.4125885,
+        "lon": 26.1635567,
+        "tags": "artwork_type=statue, is_in:city=București, memorial=war_memorial, name=Monumentul Eroilor Căzuți în Primul și al Doilea Război Mondial, tourism=artwork, wikidata=Q18542037, wikimedia_commons=Category:Monument to the Heroes of the World War I and World War II, Spiridon Georgescu, Bucharest, wikipedia=ro:Monumentul eroilor căzuți în Primul și Al Doilea Război Mondial din București",
+        "provider": "overpass"
+      },
+      "mapillary_images": [
+        {
+          "id": "1002503950511904",
+          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_KX-IqmjNF3Mapv7uHZf6iPHbWV-Jf5QeoNbnoK2WfYfDRgVFrF283vLk_U-Te_mYINvILXo9QhnjBlpUPjfzZ9fwWgJPV_wYxIahlG6jZR5h1zg2pE8WNiqANGg3wuDeVHEmyYVbN06vpyz32Yg?stp=s1024x577&edm=AOnQwmMEAAAA&_nc_gid=YhRNDjQyKoNKxi5wbvcDQw&_nc_oc=AdlDCXEN_GftARgrRtcXrEMtW0xmMJlciMc_-aDtghfoeK3iVXk-_m7rME3UDEiL2tGTjhp_lfBk5nwOuZVCuvIi&ccb=10-5&oh=00_AfvZ72HVBRkl_7fGD_6Iv6WmNvKDOHkWrM9a7c3n1rrY2A&oe=69B88BD0&_nc_sid=201bca",
+          "lat": 44.412285909792,
+          "lon": 26.163345357186,
+          "raw": {
+            "id": "1002503950511904",
+            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_KX-IqmjNF3Mapv7uHZf6iPHbWV-Jf5QeoNbnoK2WfYfDRgVFrF283vLk_U-Te_mYINvILXo9QhnjBlpUPjfzZ9fwWgJPV_wYxIahlG6jZR5h1zg2pE8WNiqANGg3wuDeVHEmyYVbN06vpyz32Yg?stp=s1024x577&edm=AOnQwmMEAAAA&_nc_gid=YhRNDjQyKoNKxi5wbvcDQw&_nc_oc=AdlDCXEN_GftARgrRtcXrEMtW0xmMJlciMc_-aDtghfoeK3iVXk-_m7rME3UDEiL2tGTjhp_lfBk5nwOuZVCuvIi&ccb=10-5&oh=00_AfvZ72HVBRkl_7fGD_6Iv6WmNvKDOHkWrM9a7c3n1rrY2A&oe=69B88BD0&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_KX-IqmjNF3Mapv7uHZf6iPHbWV-Jf5QeoNbnoK2WfYfDRgVFrF283vLk_U-Te_mYINvILXo9QhnjBlpUPjfzZ9fwWgJPV_wYxIahlG6jZR5h1zg2pE8WNiqANGg3wuDeVHEmyYVbN06vpyz32Yg?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=YhRNDjQyKoNKxi5wbvcDQw&_nc_oc=AdlDCXEN_GftARgrRtcXrEMtW0xmMJlciMc_-aDtghfoeK3iVXk-_m7rME3UDEiL2tGTjhp_lfBk5nwOuZVCuvIi&ccb=10-5&oh=00_Afsy80r2orAyUsf_NZzH88pMfa4Ni0_1VsM-GctJvr2Ijg&oe=69B88BD0&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.163345357186,
+                44.412285909792
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 38236017,
+      "name": "Palatul Primăverii (fosta locuință a lui Nicolae Ceaușescu)",
+      "lat": 44.4688768,
+      "lon": 26.0923244,
+      "address": "București 011971",
+      "osm_url": "https://www.openstreetmap.org/way/38236017",
+      "tags": "addr:city=București, addr:postcode=011971, fee=yes, name=Palatul Primăverii (fosta locuință a lui Nicolae Ceaușescu), name:de=Frühlingspalast, name:en=Spring Palace, opening_hours=Tu-Su 10:00-18:00, start_date=1965, tourism=museum, website=https://www.palatulprimaverii.ro, wikidata=Q28649190, wikimedia_commons=Category:Palatul Primăverii, wikipedia=ro:Palatul Primăverii",
+      "website": "https://www.palatulprimaverii.ro",
+      "description": "",
+      "amenity": "",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "overpass",
+      "raw": {
+        "osm_id": 38236017,
+        "name": "Palatul Primăverii (fosta locuință a lui Nicolae Ceaușescu)",
+        "website": "https://www.palatulprimaverii.ro",
+        "osm_url": "https://www.openstreetmap.org/way/38236017",
+        "amenity": "",
+        "historic": "",
+        "tourism": "museum",
+        "leisure": "",
+        "cost": "",
+        "address": "București 011971",
+        "lat": 44.4688768,
+        "lon": 26.0923244,
+        "tags": "addr:city=București, addr:postcode=011971, fee=yes, name=Palatul Primăverii (fosta locuință a lui Nicolae Ceaușescu), name:de=Frühlingspalast, name:en=Spring Palace, opening_hours=Tu-Su 10:00-18:00, start_date=1965, tourism=museum, website=https://www.palatulprimaverii.ro, wikidata=Q28649190, wikimedia_commons=Category:Palatul Primăverii, wikipedia=ro:Palatul Primăverii",
+        "provider": "overpass"
+      },
+      "mapillary_images": [
+        {
+          "id": "1093297354526576",
+          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_zRmhmSTique-6ZulWF7jIOpSMUgSjB08IzushxxxZTmo9LBjQFvbhs6CMB5dwDbjKkrOzYiBKqH-jM37x7OrH0RBalLctc6a3ful9ZbbTJocTG6FFE7n0fpaeQj6eFxAjPzH-nNdawiMVnO-874g?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=oBgY3z0Ksrden-pAM4v0TA&_nc_oc=Adknqbrcgz-MZGwT_H3GurGT9c9jsE1qVFLwjeo-ZNXQ3raQN-mbFbJVPwMtf13UFrhxC6xjUrMPoEqX8RkIe26f&ccb=10-5&oh=00_AfsvYmknHXGRTg8X5p74aulW1IWoSlSybh8MM9_D5kUJYQ&oe=69B8A439&_nc_sid=201bca",
+          "lat": 44.469032362953,
+          "lon": 26.091751905295,
+          "raw": {
+            "id": "1093297354526576",
+            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_zRmhmSTique-6ZulWF7jIOpSMUgSjB08IzushxxxZTmo9LBjQFvbhs6CMB5dwDbjKkrOzYiBKqH-jM37x7OrH0RBalLctc6a3ful9ZbbTJocTG6FFE7n0fpaeQj6eFxAjPzH-nNdawiMVnO-874g?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=oBgY3z0Ksrden-pAM4v0TA&_nc_oc=Adknqbrcgz-MZGwT_H3GurGT9c9jsE1qVFLwjeo-ZNXQ3raQN-mbFbJVPwMtf13UFrhxC6xjUrMPoEqX8RkIe26f&ccb=10-5&oh=00_AfsvYmknHXGRTg8X5p74aulW1IWoSlSybh8MM9_D5kUJYQ&oe=69B8A439&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_zRmhmSTique-6ZulWF7jIOpSMUgSjB08IzushxxxZTmo9LBjQFvbhs6CMB5dwDbjKkrOzYiBKqH-jM37x7OrH0RBalLctc6a3ful9ZbbTJocTG6FFE7n0fpaeQj6eFxAjPzH-nNdawiMVnO-874g?stp=s512x384&edm=AOnQwmMEAAAA&_nc_gid=oBgY3z0Ksrden-pAM4v0TA&_nc_oc=Adknqbrcgz-MZGwT_H3GurGT9c9jsE1qVFLwjeo-ZNXQ3raQN-mbFbJVPwMtf13UFrhxC6xjUrMPoEqX8RkIe26f&ccb=10-5&oh=00_Afvz20oULcCaU894nHaKoji3RiErXuth-N6DNn1jXgNqVQ&oe=69B8A439&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.091751905295,
+                44.469032362953
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 2634652153,
+      "name": "Muzeul de Artă \"Vasile Grigore - Pictor și Colecționar\"",
+      "lat": 44.4422775,
+      "lon": 26.108055,
+      "address": "29 Strada Maria Rosetti București 020482",
+      "osm_url": "https://www.openstreetmap.org/node/2634652153",
+      "tags": "SIRUTA:code=179150, addr:city=București, addr:housenumber=29, addr:postcode=020482, addr:street=Strada Maria Rosetti, codul_entității_muzeale=7300212.0, email=muzeul_v_grigore@yahoo.com, fax=021/211.54.09, name=Muzeul de Artă \"Vasile Grigore - Pictor și Colecționar\", name:en=\"Vasile Grigore - Painter and Collector\" Art Museum, opening_hours=9:00-17:00; Mo,Tu closed, phone=021/211.54.09, source=INP, source:link=http://date.gov.ro/dataset/ghidul-muzeelor-din-romania, start_date=2003, tourism=museum, tourism_survey=13.01.2014 12:24:06, website=http://www.muzeul-vasile-grigore.ro/, wikidata=Q18542200",
+      "website": "http://www.muzeul-vasile-grigore.ro/",
+      "description": "",
+      "amenity": "",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "overpass",
+      "raw": {
+        "osm_id": 2634652153,
+        "name": "Muzeul de Artă \"Vasile Grigore - Pictor și Colecționar\"",
+        "website": "http://www.muzeul-vasile-grigore.ro/",
+        "osm_url": "https://www.openstreetmap.org/node/2634652153",
+        "amenity": "",
+        "historic": "",
+        "tourism": "museum",
+        "leisure": "",
+        "cost": "",
+        "address": "29 Strada Maria Rosetti București 020482",
+        "lat": 44.4422775,
+        "lon": 26.108055,
+        "tags": "SIRUTA:code=179150, addr:city=București, addr:housenumber=29, addr:postcode=020482, addr:street=Strada Maria Rosetti, codul_entității_muzeale=7300212.0, email=muzeul_v_grigore@yahoo.com, fax=021/211.54.09, name=Muzeul de Artă \"Vasile Grigore - Pictor și Colecționar\", name:en=\"Vasile Grigore - Painter and Collector\" Art Museum, opening_hours=9:00-17:00; Mo,Tu closed, phone=021/211.54.09, source=INP, source:link=http://date.gov.ro/dataset/ghidul-muzeelor-din-romania, start_date=2003, tourism=museum, tourism_survey=13.01.2014 12:24:06, website=http://www.muzeul-vasile-grigore.ro/, wikidata=Q18542200",
+        "provider": "overpass"
+      },
+      "mapillary_images": [
+        {
+          "id": "1228658547549635",
+          "url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An9yXlqFFOxooil86ihfrWds5Y5Mw82lDyxWLnftug4QLX2mo5UQMKzFBtkmROHm7iC4UUNCmHODCQHIFv-_5Y4u-4Bg7diGGBib8IqMfpKMoRxyrV8pFfE7rrrLjwEUI5ZWeLyTCaj-GyZL2ehs7Q?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=gv7TleFjbTwyn8U2v4w-8A&_nc_oc=AdliC4V8x9MK1gdEywF3P6lJ-Mv0v82gb-YT9JaygHjujGkYk0Jh4uU6G5eTM36j2Ws&ccb=10-5&oh=00_AfuQnOO7fzuAlH60FQ6tia_Jq_n7F0_ZK2RqIATK5K8FTw&oe=69B88AB2&_nc_sid=201bca",
+          "lat": 44.44214575428,
+          "lon": 26.107595567929,
+          "raw": {
+            "id": "1228658547549635",
+            "thumb_1024_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An9yXlqFFOxooil86ihfrWds5Y5Mw82lDyxWLnftug4QLX2mo5UQMKzFBtkmROHm7iC4UUNCmHODCQHIFv-_5Y4u-4Bg7diGGBib8IqMfpKMoRxyrV8pFfE7rrrLjwEUI5ZWeLyTCaj-GyZL2ehs7Q?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=gv7TleFjbTwyn8U2v4w-8A&_nc_oc=AdliC4V8x9MK1gdEywF3P6lJ-Mv0v82gb-YT9JaygHjujGkYk0Jh4uU6G5eTM36j2Ws&ccb=10-5&oh=00_AfuQnOO7fzuAlH60FQ6tia_Jq_n7F0_ZK2RqIATK5K8FTw&oe=69B88AB2&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An9yXlqFFOxooil86ihfrWds5Y5Mw82lDyxWLnftug4QLX2mo5UQMKzFBtkmROHm7iC4UUNCmHODCQHIFv-_5Y4u-4Bg7diGGBib8IqMfpKMoRxyrV8pFfE7rrrLjwEUI5ZWeLyTCaj-GyZL2ehs7Q?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=gv7TleFjbTwyn8U2v4w-8A&_nc_oc=AdliC4V8x9MK1gdEywF3P6lJ-Mv0v82gb-YT9JaygHjujGkYk0Jh4uU6G5eTM36j2Ws&ccb=10-5&oh=00_AfvnRCiPtdUD6wkAG9sB6DnGbRSRkSY0_Dgqb-qL6PGGyA&oe=69B88AB2&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.107595567929,
+                44.44214575428
+              ]
+            }
+          }
+        },
+        {
+          "id": "1265384507651820",
+          "url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An-cPhfe8DwBkzVdq4wfpxoTnrokvQJX-E2E_tPAvIc_VEi7dCjK03ow5MZIiOi913UJQB-4P1ZKNmXzXbnZUvXb0qhFJHVBz_10IdV2iuSVqrVySSTiAfXiirW-tHNxyxlfb9v23YdxvDwcHnWU7w?stp=s1024x512&edm=AOnQwmMEAAAA&_nc_gid=gv7TleFjbTwyn8U2v4w-8A&_nc_oc=Adk_NeWNmdtT0Z0hYcWujSg3-KDNR4f1_z0t9OTHuW8Uxx-DlHJ69_ZbSHsg9DBieP8&ccb=10-5&oh=00_AfulSTIrSQTIHhKmTMaLxkr9o35ogtCGSFQWJ4Na4zc1uQ&oe=69B88CD9&_nc_sid=201bca",
+          "lat": 44.442171753896,
+          "lon": 26.10764058595,
+          "raw": {
+            "id": "1265384507651820",
+            "thumb_1024_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An-cPhfe8DwBkzVdq4wfpxoTnrokvQJX-E2E_tPAvIc_VEi7dCjK03ow5MZIiOi913UJQB-4P1ZKNmXzXbnZUvXb0qhFJHVBz_10IdV2iuSVqrVySSTiAfXiirW-tHNxyxlfb9v23YdxvDwcHnWU7w?stp=s1024x512&edm=AOnQwmMEAAAA&_nc_gid=gv7TleFjbTwyn8U2v4w-8A&_nc_oc=Adk_NeWNmdtT0Z0hYcWujSg3-KDNR4f1_z0t9OTHuW8Uxx-DlHJ69_ZbSHsg9DBieP8&ccb=10-5&oh=00_AfulSTIrSQTIHhKmTMaLxkr9o35ogtCGSFQWJ4Na4zc1uQ&oe=69B88CD9&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An-cPhfe8DwBkzVdq4wfpxoTnrokvQJX-E2E_tPAvIc_VEi7dCjK03ow5MZIiOi913UJQB-4P1ZKNmXzXbnZUvXb0qhFJHVBz_10IdV2iuSVqrVySSTiAfXiirW-tHNxyxlfb9v23YdxvDwcHnWU7w?stp=s512x256&edm=AOnQwmMEAAAA&_nc_gid=gv7TleFjbTwyn8U2v4w-8A&_nc_oc=Adk_NeWNmdtT0Z0hYcWujSg3-KDNR4f1_z0t9OTHuW8Uxx-DlHJ69_ZbSHsg9DBieP8&ccb=10-5&oh=00_Afuf2rkxiX7iC3UQJZ0IAEnf6ztxYcSLodxWV5jQJDUNTQ&oe=69B88CD9&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.10764058595,
+                44.442171753896
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 23610985,
+      "name": "Muzeul Național de Istorie Naturală \"Grigore Antipa\"",
+      "lat": 44.4531168,
+      "lon": 26.0846279,
+      "address": "1 Șoseaua Pavel Dimitrievici Kiseleff București 011341",
+      "osm_url": "https://www.openstreetmap.org/way/23610985",
+      "tags": "SIRUTA:code=179141, addr:city=București, addr:housenumber=1, addr:postcode=011341, addr:street=Șoseaua Pavel Dimitrievici Kiseleff, building=yes, building:levels=3, codul_entității_muzeale=7419300.0, description:en=The first collections, from 1834, belonging to Saint Sava College, are the basis of the museum., description:ro=Primele colectii, din 1834, apartinand Colegiului Sf. Sava, stau la baza constituirii muzeului., email=dmurariu@antipa.ro;auroras@antipa.ro (Sectia de marketing cultural si pedagogie muzeala), fax=021/312.88.63;021/312.88.86, fee=yes, heritage=2, heritage:operator=lmi, museum_type=Natural Sciences - Zoology, name=Muzeul Național de Istorie Naturală \"Grigore Antipa\", name:en=\"Grigore Antipa\" Natural History National Museum, opening_hours=Tu-Su 10:00-20:00, phone=021/312.88.63;021/312.88.26, ref:RO:lmi=B-II-m-A-18983, roof:levels=1, roof:shape=pyramidal, source=INP, source:link=http://date.gov.ro/dataset/ghidul-muzeelor-din-romania, start_date=1908, tourism=museum, tourism_survey=13.01.2014 12:23:47, website=https://antipa.ro/, wheelchair=no, wikidata=Q3330898, wikimedia_commons=Category:Grigore Antipa Natural History Museum, wikipedia=en:Grigore Antipa National Museum of Natural History",
+      "website": "https://antipa.ro/",
+      "description": "",
+      "amenity": "",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "overpass",
+      "raw": {
+        "osm_id": 23610985,
+        "name": "Muzeul Național de Istorie Naturală \"Grigore Antipa\"",
+        "website": "https://antipa.ro/",
+        "osm_url": "https://www.openstreetmap.org/way/23610985",
+        "amenity": "",
+        "historic": "",
+        "tourism": "museum",
+        "leisure": "",
+        "cost": "",
+        "address": "1 Șoseaua Pavel Dimitrievici Kiseleff București 011341",
+        "lat": 44.4531168,
+        "lon": 26.0846279,
+        "tags": "SIRUTA:code=179141, addr:city=București, addr:housenumber=1, addr:postcode=011341, addr:street=Șoseaua Pavel Dimitrievici Kiseleff, building=yes, building:levels=3, codul_entității_muzeale=7419300.0, description:en=The first collections, from 1834, belonging to Saint Sava College, are the basis of the museum., description:ro=Primele colectii, din 1834, apartinand Colegiului Sf. Sava, stau la baza constituirii muzeului., email=dmurariu@antipa.ro;auroras@antipa.ro (Sectia de marketing cultural si pedagogie muzeala), fax=021/312.88.63;021/312.88.86, fee=yes, heritage=2, heritage:operator=lmi, museum_type=Natural Sciences - Zoology, name=Muzeul Național de Istorie Naturală \"Grigore Antipa\", name:en=\"Grigore Antipa\" Natural History National Museum, opening_hours=Tu-Su 10:00-20:00, phone=021/312.88.63;021/312.88.26, ref:RO:lmi=B-II-m-A-18983, roof:levels=1, roof:shape=pyramidal, source=INP, source:link=http://date.gov.ro/dataset/ghidul-muzeelor-din-romania, start_date=1908, tourism=museum, tourism_survey=13.01.2014 12:23:47, website=https://antipa.ro/, wheelchair=no, wikidata=Q3330898, wikimedia_commons=Category:Grigore Antipa Natural History Museum, wikipedia=en:Grigore Antipa National Museum of Natural History",
+        "provider": "overpass"
+      },
+      "mapillary_images": []
+    },
+    {
+      "id": 220667665,
+      "name": "Muzeul Național Tehnic \"Prof. ing. Dimitrie Leonida\"",
+      "lat": 44.4170126,
+      "lon": 26.0965478,
+      "address": "București 040583",
+      "osm_url": "https://www.openstreetmap.org/way/220667665",
+      "tags": "SIRUTA:code=179187, addr:city=București, addr:postcode=040583, building=yes, codul_entității_muzeale=7520100.0, description:en=The museum was founded by professor engineer Dimitrie Leonida in 1909, modelled on the Technical Museum in Munich (1903), that Leonida visited during his university studies at the polytechnic institute of Charlottenburg (1903 - 1908), near Berlin. Dimitr, description:ro=Muzeul a fost infiintat de prof. ing. Dimitrie Leonida in anul 1909, avand ca model Muzeul Tehnic din M?nchen (1903), vizitat de Leonida in perioada studiilor universitare efectuate la Politehnica din Charlottenburg (1903 - 1908), langa Berlin. Dimitrie, email=mirela.pestritu@electricaserv.ro;muzel_tehnic_leonida@yahoo.com, fax=+40 21 3367777, heritage=2, heritage:operator=lmi, museum_type=Science and Technology, name=Muzeul Național Tehnic \"Prof. ing. Dimitrie Leonida\", name:en=\"Prof. Eng. Dimitrie Leonida\" National Technological Museum, phone=+40 21 3369399;+40 21 3369390, ref:RO:lmi=B-II-m-B-19461, source=INP, source:link=http://date.gov.ro/dataset/ghidul-muzeelor-din-romania, start_date=1909, toilets:wheelchair=no, tourism=museum, tourism_survey=10.12.2013 12:32:42, website=https://www.mnt-leonida.ro/, wheelchair=yes, wikidata=Q3080132, wikimedia_commons=Category:The Dimitrie Leonida National Technical Museum, wikipedia=ro:Muzeul Național Tehnic „Prof. ing. Dimitrie Leonida”",
+      "website": "https://www.mnt-leonida.ro/",
+      "description": "",
+      "amenity": "",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "overpass",
+      "raw": {
+        "osm_id": 220667665,
+        "name": "Muzeul Național Tehnic \"Prof. ing. Dimitrie Leonida\"",
+        "website": "https://www.mnt-leonida.ro/",
+        "osm_url": "https://www.openstreetmap.org/way/220667665",
+        "amenity": "",
+        "historic": "",
+        "tourism": "museum",
+        "leisure": "",
+        "cost": "",
+        "address": "București 040583",
+        "lat": 44.4170126,
+        "lon": 26.0965478,
+        "tags": "SIRUTA:code=179187, addr:city=București, addr:postcode=040583, building=yes, codul_entității_muzeale=7520100.0, description:en=The museum was founded by professor engineer Dimitrie Leonida in 1909, modelled on the Technical Museum in Munich (1903), that Leonida visited during his university studies at the polytechnic institute of Charlottenburg (1903 - 1908), near Berlin. Dimitr, description:ro=Muzeul a fost infiintat de prof. ing. Dimitrie Leonida in anul 1909, avand ca model Muzeul Tehnic din M?nchen (1903), vizitat de Leonida in perioada studiilor universitare efectuate la Politehnica din Charlottenburg (1903 - 1908), langa Berlin. Dimitrie, email=mirela.pestritu@electricaserv.ro;muzel_tehnic_leonida@yahoo.com, fax=+40 21 3367777, heritage=2, heritage:operator=lmi, museum_type=Science and Technology, name=Muzeul Național Tehnic \"Prof. ing. Dimitrie Leonida\", name:en=\"Prof. Eng. Dimitrie Leonida\" National Technological Museum, phone=+40 21 3369399;+40 21 3369390, ref:RO:lmi=B-II-m-B-19461, source=INP, source:link=http://date.gov.ro/dataset/ghidul-muzeelor-din-romania, start_date=1909, toilets:wheelchair=no, tourism=museum, tourism_survey=10.12.2013 12:32:42, website=https://www.mnt-leonida.ro/, wheelchair=yes, wikidata=Q3080132, wikimedia_commons=Category:The Dimitrie Leonida National Technical Museum, wikipedia=ro:Muzeul Național Tehnic „Prof. ing. Dimitrie Leonida”",
+        "provider": "overpass"
+      },
+      "mapillary_images": []
+    },
+    {
+      "id": 529040882,
+      "name": "Muzeul de Artă Veche Apuseană Dumitru Minovici",
+      "lat": 44.4841817,
+      "lon": 26.0746542,
+      "address": "3 Strada Dr. Nicolae Minovici București 013712",
+      "osm_url": "https://www.openstreetmap.org/way/529040882",
+      "tags": "SIRUTA:code=179141, addr:city=București, addr:housenumber=3, addr:postcode=013712, addr:postcode:source=Date de la Poșta Română, publicate sub Licența pentru Guvernare Deschisă v1.0 la http://date.gov.ro/organization/posta-romana, addr:street=Strada Dr. Nicolae Minovici, building=yes, building:levels=2, codul_entității_muzeale=7300205.0, heritage=2, heritage:operator=lmi, museum=art, name=Muzeul de Artă Veche Apuseană Dumitru Minovici, name:en=Dumitru Minovici Western Old Art Museum, opening_hours=We-Su 09:00-17:00, phone=+40 21 657 334, ref:RO:lmi=B-II-m-A-19206, roof:levels=1, source=INP, source:link=http://date.gov.ro/dataset/ghidul-muzeelor-din-romania, start_date=1946, tourism=museum, tourism_survey=05.12.2013 11:37:34, website=http://muzeuldeartavecheapuseana.blogspot.com/, wikidata=Q18542195, wikimedia_commons=Category:Western Old Art Museum Dumitru Furnică Minovici",
+      "website": "http://muzeuldeartavecheapuseana.blogspot.com/",
+      "description": "",
+      "amenity": "",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "overpass",
+      "raw": {
+        "osm_id": 529040882,
+        "name": "Muzeul de Artă Veche Apuseană Dumitru Minovici",
+        "website": "http://muzeuldeartavecheapuseana.blogspot.com/",
+        "osm_url": "https://www.openstreetmap.org/way/529040882",
+        "amenity": "",
+        "historic": "",
+        "tourism": "museum",
+        "leisure": "",
+        "cost": "",
+        "address": "3 Strada Dr. Nicolae Minovici București 013712",
+        "lat": 44.4841817,
+        "lon": 26.0746542,
+        "tags": "SIRUTA:code=179141, addr:city=București, addr:housenumber=3, addr:postcode=013712, addr:postcode:source=Date de la Poșta Română, publicate sub Licența pentru Guvernare Deschisă v1.0 la http://date.gov.ro/organization/posta-romana, addr:street=Strada Dr. Nicolae Minovici, building=yes, building:levels=2, codul_entității_muzeale=7300205.0, heritage=2, heritage:operator=lmi, museum=art, name=Muzeul de Artă Veche Apuseană Dumitru Minovici, name:en=Dumitru Minovici Western Old Art Museum, opening_hours=We-Su 09:00-17:00, phone=+40 21 657 334, ref:RO:lmi=B-II-m-A-19206, roof:levels=1, source=INP, source:link=http://date.gov.ro/dataset/ghidul-muzeelor-din-romania, start_date=1946, tourism=museum, tourism_survey=05.12.2013 11:37:34, website=http://muzeuldeartavecheapuseana.blogspot.com/, wikidata=Q18542195, wikimedia_commons=Category:Western Old Art Museum Dumitru Furnică Minovici",
+        "provider": "overpass"
+      },
+      "mapillary_images": []
+    },
+    {
+      "id": 2634652010,
+      "name": "Muzeul Militar Național \"Regele Ferdinand I\"",
+      "lat": 44.4413922,
+      "lon": 26.0764826,
+      "address": "125-127 Strada Mircea Vulcănescu București 010819",
+      "osm_url": "https://www.openstreetmap.org/node/2634652010",
+      "tags": "SIRUTA:code=179141, addr:city=București, addr:housenumber=125-127, addr:postcode=010819, addr:street=Strada Mircea Vulcănescu, codul_entității_muzeale=7510100.0, email=relatii.publice@muzeulmilitar.ro, fax=021/319.59.03, fee=yes, museum=military, name=Muzeul Militar Național \"Regele Ferdinand I\", name:en=\"King Ferdinand I\" National Military Museum, opening_hours=9:00-17:00; Mo,Tu closed, phone=021/319.59.04;021/319.60.15;021/319.59.07, source=INP, source:addr:housenumber=survey, source:addr:street=survey, source:link=http://date.gov.ro/dataset/ghidul-muzeelor-din-romania, start_date=1923, tourism=museum, tourism_survey=13.12.2013 11:40:30, website=https://www.muzeulmilitar.ro/en/, wikidata=Q3488935, wikipedia=ro:Muzeul Militar Național „Regele Ferdinand I”",
+      "website": "https://www.muzeulmilitar.ro/en/",
+      "description": "",
+      "amenity": "",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "overpass",
+      "raw": {
+        "osm_id": 2634652010,
+        "name": "Muzeul Militar Național \"Regele Ferdinand I\"",
+        "website": "https://www.muzeulmilitar.ro/en/",
+        "osm_url": "https://www.openstreetmap.org/node/2634652010",
+        "amenity": "",
+        "historic": "",
+        "tourism": "museum",
+        "leisure": "",
+        "cost": "",
+        "address": "125-127 Strada Mircea Vulcănescu București 010819",
+        "lat": 44.4413922,
+        "lon": 26.0764826,
+        "tags": "SIRUTA:code=179141, addr:city=București, addr:housenumber=125-127, addr:postcode=010819, addr:street=Strada Mircea Vulcănescu, codul_entității_muzeale=7510100.0, email=relatii.publice@muzeulmilitar.ro, fax=021/319.59.03, fee=yes, museum=military, name=Muzeul Militar Național \"Regele Ferdinand I\", name:en=\"King Ferdinand I\" National Military Museum, opening_hours=9:00-17:00; Mo,Tu closed, phone=021/319.59.04;021/319.60.15;021/319.59.07, source=INP, source:addr:housenumber=survey, source:addr:street=survey, source:link=http://date.gov.ro/dataset/ghidul-muzeelor-din-romania, start_date=1923, tourism=museum, tourism_survey=13.12.2013 11:40:30, website=https://www.muzeulmilitar.ro/en/, wikidata=Q3488935, wikipedia=ro:Muzeul Militar Național „Regele Ferdinand I”",
+        "provider": "overpass"
+      },
+      "mapillary_images": []
+    },
+    {
+      "id": 2634652840,
+      "name": "Muzeul Național al Hărților și Cărții Vechi",
+      "lat": 44.4569656,
+      "lon": 26.092772,
+      "address": "39 Strada Londra București 011762",
+      "osm_url": "https://www.openstreetmap.org/node/2634652840",
+      "tags": "SIRUTA:code=179141, addr:city=București, addr:housenumber=39, addr:postcode=011762, addr:street=Strada Londra, codul_entității_muzeale=7300800.0, email=muzeulhartilor@yahoo.com, fax=021/230.52.84, fee=yes, museum=maps, museum:type=history, name=Muzeul Național al Hărților și Cărții Vechi, name:en=National Museum of Maps and Rare Books, opening_hours=10:00-18:00; Mo; Tu closed, phone=021/230.44.68, source=INP, source:link=http://date.gov.ro/dataset/ghidul-muzeelor-din-romania, start_date=2003, tourism=museum, tourism_survey=10.12.2013 11:53:55, website=https://www.muzeulhartilor.ro/, wikidata=Q18542278, wikimedia_commons=Category:National museum of maps and rare books, Bucharest, wikipedia=ro:Muzeul Național al Hărților și Cărții Vechi",
+      "website": "https://www.muzeulhartilor.ro/",
+      "description": "",
+      "amenity": "",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "overpass",
+      "raw": {
+        "osm_id": 2634652840,
+        "name": "Muzeul Național al Hărților și Cărții Vechi",
+        "website": "https://www.muzeulhartilor.ro/",
+        "osm_url": "https://www.openstreetmap.org/node/2634652840",
+        "amenity": "",
+        "historic": "",
+        "tourism": "museum",
+        "leisure": "",
+        "cost": "",
+        "address": "39 Strada Londra București 011762",
+        "lat": 44.4569656,
+        "lon": 26.092772,
+        "tags": "SIRUTA:code=179141, addr:city=București, addr:housenumber=39, addr:postcode=011762, addr:street=Strada Londra, codul_entității_muzeale=7300800.0, email=muzeulhartilor@yahoo.com, fax=021/230.52.84, fee=yes, museum=maps, museum:type=history, name=Muzeul Național al Hărților și Cărții Vechi, name:en=National Museum of Maps and Rare Books, opening_hours=10:00-18:00; Mo; Tu closed, phone=021/230.44.68, source=INP, source:link=http://date.gov.ro/dataset/ghidul-muzeelor-din-romania, start_date=2003, tourism=museum, tourism_survey=10.12.2013 11:53:55, website=https://www.muzeulhartilor.ro/, wikidata=Q18542278, wikimedia_commons=Category:National museum of maps and rare books, Bucharest, wikipedia=ro:Muzeul Național al Hărților și Cărții Vechi",
+        "provider": "overpass"
+      },
+      "mapillary_images": []
+    },
+    {
+      "id": 29701978,
+      "name": "Muzeul Național al Satului Dimitrie Gusti",
+      "lat": 44.4713249,
+      "lon": 26.0778444,
+      "address": "28-30 Șoseaua Pavel Dimitrievici Kiseleff București 011347",
+      "osm_url": "https://www.openstreetmap.org/way/29701978",
+      "tags": "SIRUTA:code=179141, addr:city=București, addr:housenumber=28-30, addr:postcode=011347, addr:street=Șoseaua Pavel Dimitrievici Kiseleff, alt_name=Muzeul Satului, alt_name:en=Village Museum, area=yes, barrier=fence, codul_entității_muzeale=7300300.0, description:en=Professor Dimitrie Gusti, after 10 years of researches and ground aquisitions, had the idea to found the museum. The initial siting designs were executed by Victor Ion Popa. Between 1948 and 1978 the museum was managed by professor Gh. Focsa., description:ro=Ideea infiintarii a fost a prof. Dimitrie Gusti, dupa 10 ani de cercetari si achizitii pe teren. Planurile de amplasament initiale au fost executate de Victor Ion Popa. in perioada 1948 - l978, conducerea muzeului a fost asigurata de prof. Gh. Focsa., email=contact@muzeul-satului.ro, fax=+40 0213 1790 68, fee=yes, heritage=2, heritage:operator=lmi, museum=open_air, name=Muzeul Național al Satului Dimitrie Gusti, name:en=Dimitrie Gusti National Village Museum, name:ro=Muzeul Național al Satului Dimitrie Gusti, phone=+40 21 317 9068, ref:RO:lmi=B-II-a-A-18994, start_date=1936, tourism=museum, website=https://muzeul-satului.ro/, wikidata=Q1956214, wikipedia=ro:Muzeul Național al Satului „Dimitrie Gusti”",
+      "website": "https://muzeul-satului.ro/",
+      "description": "",
+      "amenity": "",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "overpass",
+      "raw": {
+        "osm_id": 29701978,
+        "name": "Muzeul Național al Satului Dimitrie Gusti",
+        "website": "https://muzeul-satului.ro/",
+        "osm_url": "https://www.openstreetmap.org/way/29701978",
+        "amenity": "",
+        "historic": "",
+        "tourism": "museum",
+        "leisure": "",
+        "cost": "",
+        "address": "28-30 Șoseaua Pavel Dimitrievici Kiseleff București 011347",
+        "lat": 44.4713249,
+        "lon": 26.0778444,
+        "tags": "SIRUTA:code=179141, addr:city=București, addr:housenumber=28-30, addr:postcode=011347, addr:street=Șoseaua Pavel Dimitrievici Kiseleff, alt_name=Muzeul Satului, alt_name:en=Village Museum, area=yes, barrier=fence, codul_entității_muzeale=7300300.0, description:en=Professor Dimitrie Gusti, after 10 years of researches and ground aquisitions, had the idea to found the museum. The initial siting designs were executed by Victor Ion Popa. Between 1948 and 1978 the museum was managed by professor Gh. Focsa., description:ro=Ideea infiintarii a fost a prof. Dimitrie Gusti, dupa 10 ani de cercetari si achizitii pe teren. Planurile de amplasament initiale au fost executate de Victor Ion Popa. in perioada 1948 - l978, conducerea muzeului a fost asigurata de prof. Gh. Focsa., email=contact@muzeul-satului.ro, fax=+40 0213 1790 68, fee=yes, heritage=2, heritage:operator=lmi, museum=open_air, name=Muzeul Național al Satului Dimitrie Gusti, name:en=Dimitrie Gusti National Village Museum, name:ro=Muzeul Național al Satului Dimitrie Gusti, phone=+40 21 317 9068, ref:RO:lmi=B-II-a-A-18994, start_date=1936, tourism=museum, website=https://muzeul-satului.ro/, wikidata=Q1956214, wikipedia=ro:Muzeul Național al Satului „Dimitrie Gusti”",
+        "provider": "overpass"
+      },
+      "mapillary_images": [
+        {
+          "id": "1003286917077702",
+          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_hEZ_R8Lk-lCocRkEExoqhnFu0B2djvPtmDx77BNLBArczji-VhbhGawkwYpwpbOGMi20wJ2FWRtqOghWy4rfYQYCj-NntV-BOLho_kG4MKT9ajb_H_zWQwubxgq05RRAnmZSpClrJg2PHoXCObw?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=HZwiKBwvXhDh_P4-4oXDlw&_nc_oc=AdlRQRaPA4tbCzsuyFFdPqgZZyQ7ZUDmAuxoTQotMuGsUlKzecA5poSvEDAFj3o0yWKeiKawSIZmIlAB3RZsP9Ar&ccb=10-5&oh=00_Aft1JecNnQ7xGAcF-Y4EZRkprD5-uVQfw4Qo6kjWaCjTgA&oe=69B88F00&_nc_sid=201bca",
+          "lat": 44.470876905645,
+          "lon": 26.078027136227,
+          "raw": {
+            "id": "1003286917077702",
+            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_hEZ_R8Lk-lCocRkEExoqhnFu0B2djvPtmDx77BNLBArczji-VhbhGawkwYpwpbOGMi20wJ2FWRtqOghWy4rfYQYCj-NntV-BOLho_kG4MKT9ajb_H_zWQwubxgq05RRAnmZSpClrJg2PHoXCObw?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=HZwiKBwvXhDh_P4-4oXDlw&_nc_oc=AdlRQRaPA4tbCzsuyFFdPqgZZyQ7ZUDmAuxoTQotMuGsUlKzecA5poSvEDAFj3o0yWKeiKawSIZmIlAB3RZsP9Ar&ccb=10-5&oh=00_Aft1JecNnQ7xGAcF-Y4EZRkprD5-uVQfw4Qo6kjWaCjTgA&oe=69B88F00&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_hEZ_R8Lk-lCocRkEExoqhnFu0B2djvPtmDx77BNLBArczji-VhbhGawkwYpwpbOGMi20wJ2FWRtqOghWy4rfYQYCj-NntV-BOLho_kG4MKT9ajb_H_zWQwubxgq05RRAnmZSpClrJg2PHoXCObw?stp=s512x384&edm=AOnQwmMEAAAA&_nc_gid=HZwiKBwvXhDh_P4-4oXDlw&_nc_oc=AdlRQRaPA4tbCzsuyFFdPqgZZyQ7ZUDmAuxoTQotMuGsUlKzecA5poSvEDAFj3o0yWKeiKawSIZmIlAB3RZsP9Ar&ccb=10-5&oh=00_Afs025DCL8lHK4aLIklLSCdaWuxUg8iOggFuR41O1d7oGQ&oe=69B88F00&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.078027136227,
+                44.470876905645
+              ]
+            }
+          }
+        },
+        {
+          "id": "1032992903773697",
+          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_n46aadlCToLXNYNrFcyzN9CHu-zqc1xINEc77ksecW5CF18VBsN1tk191eScayNki3Ovol0K6Kan9YhjfmXVJGVWRX0BrvZWULSwLhrq09DA8ITb3hvJ15e43gQ9Tl6dgl5LnPbexc2XPAh_6SA?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=HZwiKBwvXhDh_P4-4oXDlw&_nc_oc=Adnf4kz24eeErLZH5QU2ixI6WT_9ON2m-fzssgl4vq7Je4KTrb3jgANrq1tgnRavQE2IHrJGHQk03xb3YBNV6Jy_&ccb=10-5&oh=00_Afvd73jXO0i0RLW16t84s2Zm-1nBUGUQ4EuNfeGpSC8btw&oe=69B8B05F&_nc_sid=201bca",
+          "lat": 44.471084700357,
+          "lon": 26.077470264069,
+          "raw": {
+            "id": "1032992903773697",
+            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_n46aadlCToLXNYNrFcyzN9CHu-zqc1xINEc77ksecW5CF18VBsN1tk191eScayNki3Ovol0K6Kan9YhjfmXVJGVWRX0BrvZWULSwLhrq09DA8ITb3hvJ15e43gQ9Tl6dgl5LnPbexc2XPAh_6SA?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=HZwiKBwvXhDh_P4-4oXDlw&_nc_oc=Adnf4kz24eeErLZH5QU2ixI6WT_9ON2m-fzssgl4vq7Je4KTrb3jgANrq1tgnRavQE2IHrJGHQk03xb3YBNV6Jy_&ccb=10-5&oh=00_Afvd73jXO0i0RLW16t84s2Zm-1nBUGUQ4EuNfeGpSC8btw&oe=69B8B05F&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_n46aadlCToLXNYNrFcyzN9CHu-zqc1xINEc77ksecW5CF18VBsN1tk191eScayNki3Ovol0K6Kan9YhjfmXVJGVWRX0BrvZWULSwLhrq09DA8ITb3hvJ15e43gQ9Tl6dgl5LnPbexc2XPAh_6SA?stp=s512x384&edm=AOnQwmMEAAAA&_nc_gid=HZwiKBwvXhDh_P4-4oXDlw&_nc_oc=Adnf4kz24eeErLZH5QU2ixI6WT_9ON2m-fzssgl4vq7Je4KTrb3jgANrq1tgnRavQE2IHrJGHQk03xb3YBNV6Jy_&ccb=10-5&oh=00_AfuEcY64jvTvjbklMKgwZRQJbt_8J95Cn-bVPGKpRLTaiQ&oe=69B8B05F&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.077470264069,
+                44.471084700357
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "118010713920817",
+      "name": "object--traffic-light--pedestrians-front",
+      "lat": 44.484917,
+      "lon": 26.052753,
+      "address": "",
+      "osm_url": "",
+      "tags": "object--traffic-light--pedestrians-front",
+      "website": "",
+      "description": "",
+      "amenity": "restaurant",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "mapillary",
+      "raw": {
+        "osm_id": "118010713920817",
+        "name": "object--traffic-light--pedestrians-front",
+        "lat": 44.484917,
+        "lon": 26.052753,
+        "address": "",
+        "tags": "object--traffic-light--pedestrians-front",
+        "source": "mapillary-map_feature",
+        "provider": "mapillary",
+        "raw": {
+          "id": "118010713920817",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              26.052753,
+              44.484917
+            ]
+          },
+          "object_value": "object--traffic-light--pedestrians-front"
+        }
+      },
+      "mapillary_images": [
+        {
+          "id": "1123141811529436",
+          "url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An8sXferS5e5T3ppSz7oFOBeV4I16Y_W3Hi1CUZGbPowyAf6DiAdLoMu8tn2YHlPKgM4tmmJ6YuQ48R44zOUGF-b-4wgwvF9TPb5N35gEzOgmiHMD6IuQmVygxRT3OxRY5tPk5ueKi7gkRlQC0q3tA?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=zpkUOAnivpss6ua1IgRiNA&_nc_oc=AdltUXhhr-T8hEm1dOEtFTBiBuSUAgTdoU16jHmpRSSvIpG9a1cOdorbJyuTcMh9plo&ccb=10-5&oh=00_AfvWyWDZLI51MUgY9RAx8hFOk837KTM6QBELvaE7AvRncw&oe=69B898FC&_nc_sid=201bca",
+          "lat": 44.48461126638,
+          "lon": 26.052252395643,
+          "raw": {
+            "id": "1123141811529436",
+            "thumb_1024_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An8sXferS5e5T3ppSz7oFOBeV4I16Y_W3Hi1CUZGbPowyAf6DiAdLoMu8tn2YHlPKgM4tmmJ6YuQ48R44zOUGF-b-4wgwvF9TPb5N35gEzOgmiHMD6IuQmVygxRT3OxRY5tPk5ueKi7gkRlQC0q3tA?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=zpkUOAnivpss6ua1IgRiNA&_nc_oc=AdltUXhhr-T8hEm1dOEtFTBiBuSUAgTdoU16jHmpRSSvIpG9a1cOdorbJyuTcMh9plo&ccb=10-5&oh=00_AfvWyWDZLI51MUgY9RAx8hFOk837KTM6QBELvaE7AvRncw&oe=69B898FC&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An8sXferS5e5T3ppSz7oFOBeV4I16Y_W3Hi1CUZGbPowyAf6DiAdLoMu8tn2YHlPKgM4tmmJ6YuQ48R44zOUGF-b-4wgwvF9TPb5N35gEzOgmiHMD6IuQmVygxRT3OxRY5tPk5ueKi7gkRlQC0q3tA?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=zpkUOAnivpss6ua1IgRiNA&_nc_oc=AdltUXhhr-T8hEm1dOEtFTBiBuSUAgTdoU16jHmpRSSvIpG9a1cOdorbJyuTcMh9plo&ccb=10-5&oh=00_AftfMOFcrdQI7qtXH5q-I5UmPH5o3ABlILkVsrP2LP1g9A&oe=69B898FC&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.052252395643,
+                44.48461126638
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "tomtom_zpILlrsWFVYUlFOFUbp74g",
+      "name": "Japanese School in Bucharest",
+      "lat": 44.5099,
+      "lon": 26.1176,
+      "address": "📍 Bucharest, Romania",
+      "osm_url": "",
+      "tags": "",
+      "website": "",
+      "description": "school in Bucharest, Romania",
+      "amenity": "restaurant",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "web",
+      "raw": {
+        "id": "tomtom_zpILlrsWFVYUlFOFUbp74g",
+        "name": "Japanese School in Bucharest",
+        "address": "📍 Bucharest, Romania",
+        "description": "school in Bucharest, Romania",
+        "lat": 44.5099,
+        "lon": 26.1176,
+        "source": "tomtom",
+        "quality_score": 0.85,
+        "phone": "+40 21 222 1985",
+        "url": null,
+        "categories": [
+          "school"
+        ]
+      },
+      "mapillary_images": []
+    },
+    {
+      "id": "160977599314665",
+      "name": "regulatory--no-parking--g2",
+      "lat": 44.38785,
+      "lon": 26.059023,
+      "address": "",
+      "osm_url": "",
+      "tags": "regulatory--no-parking--g2",
+      "website": "",
+      "description": "",
+      "amenity": "restaurant",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "mapillary",
+      "raw": {
+        "osm_id": "160977599314665",
+        "name": "regulatory--no-parking--g2",
+        "lat": 44.38785,
+        "lon": 26.059023,
+        "address": "",
+        "tags": "regulatory--no-parking--g2",
+        "source": "mapillary-map_feature",
+        "provider": "mapillary",
+        "raw": {
+          "id": "160977599314665",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              26.059023,
+              44.38785
+            ]
+          },
+          "object_value": "regulatory--no-parking--g2"
+        }
+      },
+      "mapillary_images": [
+        {
+          "id": "1237938323290542",
+          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_TyPmmeRBVbKMvw1mPPnCeUnRUg1UmgFHO0cXISiJ3uKhQKwI7Bot6T4J0vqk2GVJCuwkj8If49Qee-2odQIAmggRrySMG2Rf4dnkaID4m9T1Ez8DJJfR15SJNge-F_4UdrG3daCt2nQjxs_zPdA?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=EQbKYQBPW3UrbEPQIYMvbw&_nc_oc=AdnDsXiFQcONTBhdH-aJbokvll1RM7mD5mZiGWf8cd5gqHDNjSkq5CwWKMuQbx3aMLhrmMs1ABFviQsUoHVwOq6S&ccb=10-5&oh=00_Afsb3CMtWNKa0S7Jt4MTaMJMt9zkgQwTyKip7bt8899GyA&oe=69B8867E&_nc_sid=201bca",
+          "lat": 44.38766124892,
+          "lon": 26.058915323957,
+          "raw": {
+            "id": "1237938323290542",
+            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_TyPmmeRBVbKMvw1mPPnCeUnRUg1UmgFHO0cXISiJ3uKhQKwI7Bot6T4J0vqk2GVJCuwkj8If49Qee-2odQIAmggRrySMG2Rf4dnkaID4m9T1Ez8DJJfR15SJNge-F_4UdrG3daCt2nQjxs_zPdA?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=EQbKYQBPW3UrbEPQIYMvbw&_nc_oc=AdnDsXiFQcONTBhdH-aJbokvll1RM7mD5mZiGWf8cd5gqHDNjSkq5CwWKMuQbx3aMLhrmMs1ABFviQsUoHVwOq6S&ccb=10-5&oh=00_Afsb3CMtWNKa0S7Jt4MTaMJMt9zkgQwTyKip7bt8899GyA&oe=69B8867E&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_TyPmmeRBVbKMvw1mPPnCeUnRUg1UmgFHO0cXISiJ3uKhQKwI7Bot6T4J0vqk2GVJCuwkj8If49Qee-2odQIAmggRrySMG2Rf4dnkaID4m9T1Ez8DJJfR15SJNge-F_4UdrG3daCt2nQjxs_zPdA?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=EQbKYQBPW3UrbEPQIYMvbw&_nc_oc=AdnDsXiFQcONTBhdH-aJbokvll1RM7mD5mZiGWf8cd5gqHDNjSkq5CwWKMuQbx3aMLhrmMs1ABFviQsUoHVwOq6S&ccb=10-5&oh=00_AfveIeXR6Gpe75GgCg3FkJfSjVQI3elix78mo8bs526i5g&oe=69B8867E&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.058915323957,
+                44.38766124892
+              ]
+            }
+          }
+        },
+        {
+          "id": "1372637789788357",
+          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An9O0S5l2Im_i7Dc-xvF2OZVz3_v9ka9CH2KVGBS7YljJWcTwgtXf-zL3jsUyALSbXAiqxOCL_ku87s5heNoPv-KyPmVvqa5lzIIkzRNHV_X7zYxeVKx5KtaSipfyK6S8XedvLDt_WlzFWikclPyBw?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=EQbKYQBPW3UrbEPQIYMvbw&_nc_oc=AdnakGIxWlcz2TsQVkx9P3E91_V2Z2hyozNEclpWaoEcXf-QE2xXBZN1rAj2Uke3YlgVQYadfzDOQ7LC6ww7HfJA&ccb=10-5&oh=00_AfuUTcyXVlAXn6y5RH3qYDktMaA-ZZCkh-1bsUk-VRY6mQ&oe=69B8AF16&_nc_sid=201bca",
+          "lat": 44.387629154895,
+          "lon": 26.058923134017,
+          "raw": {
+            "id": "1372637789788357",
+            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An9O0S5l2Im_i7Dc-xvF2OZVz3_v9ka9CH2KVGBS7YljJWcTwgtXf-zL3jsUyALSbXAiqxOCL_ku87s5heNoPv-KyPmVvqa5lzIIkzRNHV_X7zYxeVKx5KtaSipfyK6S8XedvLDt_WlzFWikclPyBw?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=EQbKYQBPW3UrbEPQIYMvbw&_nc_oc=AdnakGIxWlcz2TsQVkx9P3E91_V2Z2hyozNEclpWaoEcXf-QE2xXBZN1rAj2Uke3YlgVQYadfzDOQ7LC6ww7HfJA&ccb=10-5&oh=00_AfuUTcyXVlAXn6y5RH3qYDktMaA-ZZCkh-1bsUk-VRY6mQ&oe=69B8AF16&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An9O0S5l2Im_i7Dc-xvF2OZVz3_v9ka9CH2KVGBS7YljJWcTwgtXf-zL3jsUyALSbXAiqxOCL_ku87s5heNoPv-KyPmVvqa5lzIIkzRNHV_X7zYxeVKx5KtaSipfyK6S8XedvLDt_WlzFWikclPyBw?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=EQbKYQBPW3UrbEPQIYMvbw&_nc_oc=AdnakGIxWlcz2TsQVkx9P3E91_V2Z2hyozNEclpWaoEcXf-QE2xXBZN1rAj2Uke3YlgVQYadfzDOQ7LC6ww7HfJA&ccb=10-5&oh=00_Aftsmo6eOt24wP3mwPvYbp6gUxGyVhaKP1XFWK6fAJ0iVQ&oe=69B8AF16&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.058923134017,
+                44.387629154895
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "tomtom_xwUTKUuScF1YVj71UytLhg",
+      "name": "Best Falafel in Bucharest",
+      "lat": 44.4639,
+      "lon": 26.1262,
+      "address": "📍 Bucharest, Romania",
+      "osm_url": "",
+      "tags": "",
+      "website": "",
+      "description": "fast food in Bucharest, Romania",
+      "amenity": "restaurant",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "web",
+      "raw": {
+        "id": "tomtom_xwUTKUuScF1YVj71UytLhg",
+        "name": "Best Falafel in Bucharest",
+        "address": "📍 Bucharest, Romania",
+        "description": "fast food in Bucharest, Romania",
+        "lat": 44.4639,
+        "lon": 26.1262,
+        "source": "tomtom",
+        "quality_score": 0.85,
+        "phone": "+40 771 578 651",
+        "url": null,
+        "categories": [
+          "fast food",
+          "restaurant"
+        ]
+      },
+      "mapillary_images": [
+        {
+          "id": "1050282118831701",
+          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An-FlUJLrCAjRUartwpLFZd6l6Qjr902VzmZrzgK8h7N6tinhzzRNRvXkgBKi2vy5xKIRWNU4sQZDgb3JPZ2_x_uc8cQ8CxtmZ2Ix862MVIo8Zq0T4feFTVRmP6ZZ5cQLpFK6Kvpy2XFhi8Oxji94g?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=Rzi9ymzXY5mp1eughHvUng&_nc_oc=AdlFewY5E7wIbmBy_PuwZFkwMZDgWxqMhznukd5rLVY0F11KOU6DgASbp1-9dULnMdaTWLmgX6gxUtSYDgecUPrT&ccb=10-5&oh=00_AfupLsG9_UiCB03HkzO7QVDij5ASIoXu9yVtlNQUaPCp3A&oe=69B891C7&_nc_sid=201bca",
+          "lat": 44.463490896401,
+          "lon": 26.12616259553,
+          "raw": {
+            "id": "1050282118831701",
+            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An-FlUJLrCAjRUartwpLFZd6l6Qjr902VzmZrzgK8h7N6tinhzzRNRvXkgBKi2vy5xKIRWNU4sQZDgb3JPZ2_x_uc8cQ8CxtmZ2Ix862MVIo8Zq0T4feFTVRmP6ZZ5cQLpFK6Kvpy2XFhi8Oxji94g?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=Rzi9ymzXY5mp1eughHvUng&_nc_oc=AdlFewY5E7wIbmBy_PuwZFkwMZDgWxqMhznukd5rLVY0F11KOU6DgASbp1-9dULnMdaTWLmgX6gxUtSYDgecUPrT&ccb=10-5&oh=00_AfupLsG9_UiCB03HkzO7QVDij5ASIoXu9yVtlNQUaPCp3A&oe=69B891C7&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An-FlUJLrCAjRUartwpLFZd6l6Qjr902VzmZrzgK8h7N6tinhzzRNRvXkgBKi2vy5xKIRWNU4sQZDgb3JPZ2_x_uc8cQ8CxtmZ2Ix862MVIo8Zq0T4feFTVRmP6ZZ5cQLpFK6Kvpy2XFhi8Oxji94g?stp=s512x384&edm=AOnQwmMEAAAA&_nc_gid=Rzi9ymzXY5mp1eughHvUng&_nc_oc=AdlFewY5E7wIbmBy_PuwZFkwMZDgWxqMhznukd5rLVY0F11KOU6DgASbp1-9dULnMdaTWLmgX6gxUtSYDgecUPrT&ccb=10-5&oh=00_AfvCmVkPLvg8jAJ_moDSlSd2qRibjiALJ86_s44lFtJXOg&oe=69B891C7&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.12616259553,
+                44.463490896401
+              ]
+            }
+          }
+        },
+        {
+          "id": "1094776704341822",
+          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An8Ihes-lc6dolpzHyN2ktyGXPnrlQEyaL3TK4g55LGheVnQFW53ZxpYAwav40zPNr4bo8BO1opTalq8Fo1oCQ6m4DaQJjVyGR8BwBVBbcpEY3PESBy3vT8YZDgTvmXl78YvcZElrvfB8bgyWHLgPA?stp=s1024x577&edm=AOnQwmMEAAAA&_nc_gid=Rzi9ymzXY5mp1eughHvUng&_nc_oc=AdktRdOc5EMtgXz2FbsXIm3pwImrvvEA3gybeZULHa1jxtA0obuJCPl6qz43h-jPYWBAMovRzV5tLHyEaA9OO_jP&ccb=10-5&oh=00_AftbG3BXLhiTfvA8mg0wofJkPpkgme40lbpm_UqFeWLnXQ&oe=69B89709&_nc_sid=201bca",
+          "lat": 44.463535922452,
+          "lon": 26.126184191834,
+          "raw": {
+            "id": "1094776704341822",
+            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An8Ihes-lc6dolpzHyN2ktyGXPnrlQEyaL3TK4g55LGheVnQFW53ZxpYAwav40zPNr4bo8BO1opTalq8Fo1oCQ6m4DaQJjVyGR8BwBVBbcpEY3PESBy3vT8YZDgTvmXl78YvcZElrvfB8bgyWHLgPA?stp=s1024x577&edm=AOnQwmMEAAAA&_nc_gid=Rzi9ymzXY5mp1eughHvUng&_nc_oc=AdktRdOc5EMtgXz2FbsXIm3pwImrvvEA3gybeZULHa1jxtA0obuJCPl6qz43h-jPYWBAMovRzV5tLHyEaA9OO_jP&ccb=10-5&oh=00_AftbG3BXLhiTfvA8mg0wofJkPpkgme40lbpm_UqFeWLnXQ&oe=69B89709&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An8Ihes-lc6dolpzHyN2ktyGXPnrlQEyaL3TK4g55LGheVnQFW53ZxpYAwav40zPNr4bo8BO1opTalq8Fo1oCQ6m4DaQJjVyGR8BwBVBbcpEY3PESBy3vT8YZDgTvmXl78YvcZElrvfB8bgyWHLgPA?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=Rzi9ymzXY5mp1eughHvUng&_nc_oc=AdktRdOc5EMtgXz2FbsXIm3pwImrvvEA3gybeZULHa1jxtA0obuJCPl6qz43h-jPYWBAMovRzV5tLHyEaA9OO_jP&ccb=10-5&oh=00_AfsMRhxuyrJgKnsiw-aP9um_3lBLv6PcAfCNa-WXRSB7EQ&oe=69B89709&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.126184191834,
+                44.463535922452
+              ]
+            }
+          }
+        },
+        {
+          "id": "1104909356686181",
+          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An-g0KLLkVJAk646u9NbIX0N78hy2YRDf9OptwvWiwSbt8XPhDnGVdHc7g9fT3NqEiDW6-U1EOgVRvHPEDFO2m4b9scH9aYfVj6VTwbs5E8N0TAKIrfYkZPbT3dqgwS81fbTsOyFKMdhd0u9jagmIw?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=Rzi9ymzXY5mp1eughHvUng&_nc_oc=Admep2ZcHAZZTakZ5dRNNTdfA3P_Lp8i5NelToO61oHvXYLd8rKWr6A4UM4knANhGATWeN3uXXhjWUy4uG2e72qe&ccb=10-5&oh=00_Afv8V3L7UcbM3JMM6WSsdcN4hlAKka6slCJAzY7hMMB5Wg&oe=69B89249&_nc_sid=201bca",
+          "lat": 44.463549645216,
+          "lon": 26.126120581645,
+          "raw": {
+            "id": "1104909356686181",
+            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An-g0KLLkVJAk646u9NbIX0N78hy2YRDf9OptwvWiwSbt8XPhDnGVdHc7g9fT3NqEiDW6-U1EOgVRvHPEDFO2m4b9scH9aYfVj6VTwbs5E8N0TAKIrfYkZPbT3dqgwS81fbTsOyFKMdhd0u9jagmIw?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=Rzi9ymzXY5mp1eughHvUng&_nc_oc=Admep2ZcHAZZTakZ5dRNNTdfA3P_Lp8i5NelToO61oHvXYLd8rKWr6A4UM4knANhGATWeN3uXXhjWUy4uG2e72qe&ccb=10-5&oh=00_Afv8V3L7UcbM3JMM6WSsdcN4hlAKka6slCJAzY7hMMB5Wg&oe=69B89249&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An-g0KLLkVJAk646u9NbIX0N78hy2YRDf9OptwvWiwSbt8XPhDnGVdHc7g9fT3NqEiDW6-U1EOgVRvHPEDFO2m4b9scH9aYfVj6VTwbs5E8N0TAKIrfYkZPbT3dqgwS81fbTsOyFKMdhd0u9jagmIw?stp=s512x384&edm=AOnQwmMEAAAA&_nc_gid=Rzi9ymzXY5mp1eughHvUng&_nc_oc=Admep2ZcHAZZTakZ5dRNNTdfA3P_Lp8i5NelToO61oHvXYLd8rKWr6A4UM4knANhGATWeN3uXXhjWUy4uG2e72qe&ccb=10-5&oh=00_AfuutsO2aKIKw6h2l7obT6szk8vBwkw-i6qtGnkkNzKb4A&oe=69B89249&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.126120581645,
+                44.463549645216
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "tomtom_906aPDUEo4N9BE_dJ1WBbw",
+      "name": "Suitehome In Bucharest",
+      "lat": 44.491136,
+      "lon": 26.084887,
+      "address": "📍 Bucharest, Romania",
+      "osm_url": "",
+      "tags": "",
+      "website": "",
+      "description": "flats/apartment complex in Bucharest, Romania",
+      "amenity": "restaurant",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "web",
+      "raw": {
+        "id": "tomtom_906aPDUEo4N9BE_dJ1WBbw",
+        "name": "Suitehome In Bucharest",
+        "address": "📍 Bucharest, Romania",
+        "description": "flats/apartment complex in Bucharest, Romania",
+        "lat": 44.491136,
+        "lon": 26.084887,
+        "source": "tomtom",
+        "quality_score": 0.85,
+        "phone": "+40 745 010 202",
+        "url": "www.suitehome.ro/",
+        "categories": [
+          "flats/apartment complex",
+          "residential accommodation"
+        ]
+      },
+      "mapillary_images": [
+        {
+          "id": "1025213657882803",
+          "url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An_3K5iplcULzZT6ViGF4U2sCcwugyYzuyKWoBSuuOZGwhW60-76p4jGUTBGvBPzzZRrmYpWBaCDWhKkh4c_r0v79FzxAMt7TvanPeaNsYiPMqbLTk6D455ldesNmI03xs_hp_ZGOuW5-xnuuv5DNA?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=InJuDBLM_3aHXxaay9CkoA&_nc_oc=Adm_BGwV-tuAdLOlzR2PYugT5bif6fk1dW-6lK2INZ2KtusTtEcN2RWdkM2MfXvubkI&ccb=10-5&oh=00_AftXyolE6CWSldR4_0mtYiJoEoCHMK19EqGRmWhO8A7GsQ&oe=69B889A4&_nc_sid=201bca",
+          "lat": 44.490726639614,
+          "lon": 26.084515232953,
+          "raw": {
+            "id": "1025213657882803",
+            "thumb_1024_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An_3K5iplcULzZT6ViGF4U2sCcwugyYzuyKWoBSuuOZGwhW60-76p4jGUTBGvBPzzZRrmYpWBaCDWhKkh4c_r0v79FzxAMt7TvanPeaNsYiPMqbLTk6D455ldesNmI03xs_hp_ZGOuW5-xnuuv5DNA?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=InJuDBLM_3aHXxaay9CkoA&_nc_oc=Adm_BGwV-tuAdLOlzR2PYugT5bif6fk1dW-6lK2INZ2KtusTtEcN2RWdkM2MfXvubkI&ccb=10-5&oh=00_AftXyolE6CWSldR4_0mtYiJoEoCHMK19EqGRmWhO8A7GsQ&oe=69B889A4&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An_3K5iplcULzZT6ViGF4U2sCcwugyYzuyKWoBSuuOZGwhW60-76p4jGUTBGvBPzzZRrmYpWBaCDWhKkh4c_r0v79FzxAMt7TvanPeaNsYiPMqbLTk6D455ldesNmI03xs_hp_ZGOuW5-xnuuv5DNA?stp=s512x384&edm=AOnQwmMEAAAA&_nc_gid=InJuDBLM_3aHXxaay9CkoA&_nc_oc=Adm_BGwV-tuAdLOlzR2PYugT5bif6fk1dW-6lK2INZ2KtusTtEcN2RWdkM2MfXvubkI&ccb=10-5&oh=00_AftDPU3LUGyWPRIjYUtQ91SeHNxp_hIXQUl1Zyho4vj2AA&oe=69B889A4&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.084515232953,
+                44.490726639614
+              ]
+            }
+          }
+        },
+        {
+          "id": "1067108853778625",
+          "url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An9GHUg644mZB4IKoeHCYJ6Y_wl5CIRxBN6bZBqcNAoOSq2EQ-OP3DR7J1Y5DU9PzW5gj2-044Ii5kxwCksZYNEFy1O8HpYanrgJLROc0dimZNTnA7nz5ISBuHUQ80nfb4raMfupIpHRGaZVkMLnCg?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=InJuDBLM_3aHXxaay9CkoA&_nc_oc=Adk9bj0Oeje4w2PCL6aIfBS_zDaXKGcrJoDOeqFIPfTf7b7uL6S06-04mP5FHBYaQcY&ccb=10-5&oh=00_AfvLfDF1OaO0fjO4QeMoQ11uS3Dw88oVGW3fwuxXUuXEWw&oe=69B893F0&_nc_sid=201bca",
+          "lat": 44.490877070196,
+          "lon": 26.08491978171,
+          "raw": {
+            "id": "1067108853778625",
+            "thumb_1024_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An9GHUg644mZB4IKoeHCYJ6Y_wl5CIRxBN6bZBqcNAoOSq2EQ-OP3DR7J1Y5DU9PzW5gj2-044Ii5kxwCksZYNEFy1O8HpYanrgJLROc0dimZNTnA7nz5ISBuHUQ80nfb4raMfupIpHRGaZVkMLnCg?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=InJuDBLM_3aHXxaay9CkoA&_nc_oc=Adk9bj0Oeje4w2PCL6aIfBS_zDaXKGcrJoDOeqFIPfTf7b7uL6S06-04mP5FHBYaQcY&ccb=10-5&oh=00_AfvLfDF1OaO0fjO4QeMoQ11uS3Dw88oVGW3fwuxXUuXEWw&oe=69B893F0&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An9GHUg644mZB4IKoeHCYJ6Y_wl5CIRxBN6bZBqcNAoOSq2EQ-OP3DR7J1Y5DU9PzW5gj2-044Ii5kxwCksZYNEFy1O8HpYanrgJLROc0dimZNTnA7nz5ISBuHUQ80nfb4raMfupIpHRGaZVkMLnCg?stp=s512x384&edm=AOnQwmMEAAAA&_nc_gid=InJuDBLM_3aHXxaay9CkoA&_nc_oc=Adk9bj0Oeje4w2PCL6aIfBS_zDaXKGcrJoDOeqFIPfTf7b7uL6S06-04mP5FHBYaQcY&ccb=10-5&oh=00_Afv-esS9uTHNRi3yWjKqJ82yy0nj7F3-mf20nJTtOJW5vQ&oe=69B893F0&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.08491978171,
+                44.490877070196
+              ]
+            }
+          }
+        },
+        {
+          "id": "1101251977024906",
+          "url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An-_v0Q7s9aLApfhJbF8e50AqPjrzI5FfPZojcPOlpx1lMoCRE3GK76CSgPpZ9tHkYabJmb0judcHXgYbCyQ1Vniuml-QCp7awSvDrcvoq8_bq-SM_ah0duGNS7A3muTIKlsPyjRiv-QmBaFR0vHgA?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=InJuDBLM_3aHXxaay9CkoA&_nc_oc=AdmLEE4SqcVElFI_ujtlRoH1dSGqiEAGTUNCT6PvOroaN94_-NCByEvAnSp_9eXe618&ccb=10-5&oh=00_AftqxTMxTTJVG8WxVEV-SuN3HeMTPa6sU1enRklfu8HrQQ&oe=69B8A44E&_nc_sid=201bca",
+          "lat": 44.490897950275,
+          "lon": 26.084895953801,
+          "raw": {
+            "id": "1101251977024906",
+            "thumb_1024_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An-_v0Q7s9aLApfhJbF8e50AqPjrzI5FfPZojcPOlpx1lMoCRE3GK76CSgPpZ9tHkYabJmb0judcHXgYbCyQ1Vniuml-QCp7awSvDrcvoq8_bq-SM_ah0duGNS7A3muTIKlsPyjRiv-QmBaFR0vHgA?stp=s1024x768&edm=AOnQwmMEAAAA&_nc_gid=InJuDBLM_3aHXxaay9CkoA&_nc_oc=AdmLEE4SqcVElFI_ujtlRoH1dSGqiEAGTUNCT6PvOroaN94_-NCByEvAnSp_9eXe618&ccb=10-5&oh=00_AftqxTMxTTJVG8WxVEV-SuN3HeMTPa6sU1enRklfu8HrQQ&oe=69B8A44E&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An-_v0Q7s9aLApfhJbF8e50AqPjrzI5FfPZojcPOlpx1lMoCRE3GK76CSgPpZ9tHkYabJmb0judcHXgYbCyQ1Vniuml-QCp7awSvDrcvoq8_bq-SM_ah0duGNS7A3muTIKlsPyjRiv-QmBaFR0vHgA?stp=s512x384&edm=AOnQwmMEAAAA&_nc_gid=InJuDBLM_3aHXxaay9CkoA&_nc_oc=AdmLEE4SqcVElFI_ujtlRoH1dSGqiEAGTUNCT6PvOroaN94_-NCByEvAnSp_9eXe618&ccb=10-5&oh=00_AfuxxYDqPXodUK2z4Mi-KAnrOa9MKj8AH0DX_AInqDhZIw&oe=69B8A44E&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.084895953801,
+                44.490897950275
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "tomtom_U-TvAbAzWL3OMTDaOG43DQ",
+      "name": "Ice Cream In Bucharest",
+      "lat": 44.42,
+      "lon": 26.0418,
+      "address": "📍 Bucharest, Romania",
+      "osm_url": "",
+      "tags": "",
+      "website": "",
+      "description": "company in Bucharest, Romania",
+      "amenity": "restaurant",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "web",
+      "raw": {
+        "id": "tomtom_U-TvAbAzWL3OMTDaOG43DQ",
+        "name": "Ice Cream In Bucharest",
+        "address": "📍 Bucharest, Romania",
+        "description": "company in Bucharest, Romania",
+        "lat": 44.42,
+        "lon": 26.0418,
+        "source": "tomtom",
+        "quality_score": 0.85,
+        "phone": "+40 726 682 903",
+        "url": null,
+        "categories": [
+          "company",
+          "service"
+        ]
+      },
+      "mapillary_images": [
+        {
+          "id": "106916061482574",
+          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An-cXsTlnhhqNQEiwXDnygNT-j09QPo_Ji6i11a-ghNsOqVgby8cT8Rx4-z2Sc54c15BhDacXdPoe35OLdFuV3RPkFTpktj3b8dgNOAV4K7SHypitlXsoAqHgn6hi2c1S-1qb07YR3sDrUYdSyVc1g?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=A8H4YyuD8wrLEFL7-F6_YQ&_nc_oc=AdkJl-W2mGlBhfgYMz38y3FvqLWzq3PQMC-izPNZwKDrumh4e-sLrnuC3t5fSlXLx7WPxGz8P81QN-4v4bpGrc9E&ccb=10-5&oh=00_Afu7zLBWeHNGtx2Jmu8gbY0eaN3OS2NcFu8QXfFErv597g&oe=69B8AF77&_nc_sid=201bca",
+          "lat": 44.420363093999,
+          "lon": 26.0411769799,
+          "raw": {
+            "id": "106916061482574",
+            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An-cXsTlnhhqNQEiwXDnygNT-j09QPo_Ji6i11a-ghNsOqVgby8cT8Rx4-z2Sc54c15BhDacXdPoe35OLdFuV3RPkFTpktj3b8dgNOAV4K7SHypitlXsoAqHgn6hi2c1S-1qb07YR3sDrUYdSyVc1g?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=A8H4YyuD8wrLEFL7-F6_YQ&_nc_oc=AdkJl-W2mGlBhfgYMz38y3FvqLWzq3PQMC-izPNZwKDrumh4e-sLrnuC3t5fSlXLx7WPxGz8P81QN-4v4bpGrc9E&ccb=10-5&oh=00_Afu7zLBWeHNGtx2Jmu8gbY0eaN3OS2NcFu8QXfFErv597g&oe=69B8AF77&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An-cXsTlnhhqNQEiwXDnygNT-j09QPo_Ji6i11a-ghNsOqVgby8cT8Rx4-z2Sc54c15BhDacXdPoe35OLdFuV3RPkFTpktj3b8dgNOAV4K7SHypitlXsoAqHgn6hi2c1S-1qb07YR3sDrUYdSyVc1g?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=A8H4YyuD8wrLEFL7-F6_YQ&_nc_oc=AdkJl-W2mGlBhfgYMz38y3FvqLWzq3PQMC-izPNZwKDrumh4e-sLrnuC3t5fSlXLx7WPxGz8P81QN-4v4bpGrc9E&ccb=10-5&oh=00_AfvXRNVUpsAQxVbGMiBH1Up9JCaasDZagbFgz2If52dlkA&oe=69B8AF77&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.0411769799,
+                44.420363093999
+              ]
+            }
+          }
+        },
+        {
+          "id": "1101799576996232",
+          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_5zfLJ_trnPisHqvxUzALN6DQqNV_kgczYj3aQKmzUXNY9QRj5-fPX6faj81Z7rRoCSowT5UzIsmyoQeibY9xO7WC_YGwDWgJvEi5JPWLKUvLltdDzQ65RbzikaSIi3AGoF9yEj4Aks28ZWC8feg?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=A8H4YyuD8wrLEFL7-F6_YQ&_nc_oc=AdlCecahemlCb-jt6rWXmYnp1SFaaKArDQq3Yjv8PG59VgIh-VRBvRKkzlKxuYtevlbyVby3aByrWhKWCEQ0LP4Q&ccb=10-5&oh=00_AfvRMIrKL7pJe-3Nsz7fVj5d_CGh3DST2ccMG8wvdvhkEg&oe=69B87E00&_nc_sid=201bca",
+          "lat": 44.420356682724,
+          "lon": 26.041250129041,
+          "raw": {
+            "id": "1101799576996232",
+            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_5zfLJ_trnPisHqvxUzALN6DQqNV_kgczYj3aQKmzUXNY9QRj5-fPX6faj81Z7rRoCSowT5UzIsmyoQeibY9xO7WC_YGwDWgJvEi5JPWLKUvLltdDzQ65RbzikaSIi3AGoF9yEj4Aks28ZWC8feg?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=A8H4YyuD8wrLEFL7-F6_YQ&_nc_oc=AdlCecahemlCb-jt6rWXmYnp1SFaaKArDQq3Yjv8PG59VgIh-VRBvRKkzlKxuYtevlbyVby3aByrWhKWCEQ0LP4Q&ccb=10-5&oh=00_AfvRMIrKL7pJe-3Nsz7fVj5d_CGh3DST2ccMG8wvdvhkEg&oe=69B87E00&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_5zfLJ_trnPisHqvxUzALN6DQqNV_kgczYj3aQKmzUXNY9QRj5-fPX6faj81Z7rRoCSowT5UzIsmyoQeibY9xO7WC_YGwDWgJvEi5JPWLKUvLltdDzQ65RbzikaSIi3AGoF9yEj4Aks28ZWC8feg?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=A8H4YyuD8wrLEFL7-F6_YQ&_nc_oc=AdlCecahemlCb-jt6rWXmYnp1SFaaKArDQq3Yjv8PG59VgIh-VRBvRKkzlKxuYtevlbyVby3aByrWhKWCEQ0LP4Q&ccb=10-5&oh=00_AfvwRwle1cqswimuc1PSeTkiXpDotp5L6iDkKQbPr4QOBw&oe=69B87E00&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.041250129041,
+                44.420356682724
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "884121029204762",
+      "name": "regulatory--yield--g1",
+      "lat": 44.38863,
+      "lon": 26.05959,
+      "address": "",
+      "osm_url": "",
+      "tags": "regulatory--yield--g1",
+      "website": "",
+      "description": "",
+      "amenity": "restaurant",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "mapillary",
+      "raw": {
+        "osm_id": "884121029204762",
+        "name": "regulatory--yield--g1",
+        "lat": 44.38863,
+        "lon": 26.05959,
+        "address": "",
+        "tags": "regulatory--yield--g1",
+        "source": "mapillary-map_feature",
+        "provider": "mapillary",
+        "raw": {
+          "id": "884121029204762",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              26.05959,
+              44.38863
+            ]
+          },
+          "object_value": "regulatory--yield--g1"
+        }
+      },
+      "mapillary_images": [
+        {
+          "id": "310448497275444",
+          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An-E8DqdRoxbPxnjuCiTGmhnKJY03edM-9n6cst32vItuxWUBicGJT8QO63Sj5HkIkHGve3KJz8vws8dsmdF5bu1Di-A-_K8EuHXNBcHQKy5YlkIWHBXnliW0ctmi2obNrIFKDD50dWHex2ZLuGCfg?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=3QoNIva3MFKgm8SX-pH-xg&_nc_oc=Admcmt_AqSb89eQx6eS6BYLoufXPaY8XDn3Poo1xdNRmqAU1BEiJ823V_B0JRCQXJATGU-6eX7S0E0J-sA-9Do8H&ccb=10-5&oh=00_Afvv2HAKrApZjN4rJRBzHw9Rwa5epkawtlCTTUyVNXN2Dw&oe=69B8AC4E&_nc_sid=201bca",
+          "lat": 44.388181170186,
+          "lon": 26.05939665903,
+          "raw": {
+            "id": "310448497275444",
+            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An-E8DqdRoxbPxnjuCiTGmhnKJY03edM-9n6cst32vItuxWUBicGJT8QO63Sj5HkIkHGve3KJz8vws8dsmdF5bu1Di-A-_K8EuHXNBcHQKy5YlkIWHBXnliW0ctmi2obNrIFKDD50dWHex2ZLuGCfg?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=3QoNIva3MFKgm8SX-pH-xg&_nc_oc=Admcmt_AqSb89eQx6eS6BYLoufXPaY8XDn3Poo1xdNRmqAU1BEiJ823V_B0JRCQXJATGU-6eX7S0E0J-sA-9Do8H&ccb=10-5&oh=00_Afvv2HAKrApZjN4rJRBzHw9Rwa5epkawtlCTTUyVNXN2Dw&oe=69B8AC4E&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An-E8DqdRoxbPxnjuCiTGmhnKJY03edM-9n6cst32vItuxWUBicGJT8QO63Sj5HkIkHGve3KJz8vws8dsmdF5bu1Di-A-_K8EuHXNBcHQKy5YlkIWHBXnliW0ctmi2obNrIFKDD50dWHex2ZLuGCfg?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=3QoNIva3MFKgm8SX-pH-xg&_nc_oc=Admcmt_AqSb89eQx6eS6BYLoufXPaY8XDn3Poo1xdNRmqAU1BEiJ823V_B0JRCQXJATGU-6eX7S0E0J-sA-9Do8H&ccb=10-5&oh=00_AfsGL5pri_jma3xRrePJwkb-T_DSRtBSZnMMIlRRdqTK6Q&oe=69B8AC4E&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.05939665903,
+                44.388181170186
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "118010640587491",
+      "name": "object--junction-box",
+      "lat": 44.484913,
+      "lon": 26.052748,
+      "address": "",
+      "osm_url": "",
+      "tags": "object--junction-box",
+      "website": "",
+      "description": "",
+      "amenity": "restaurant",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "mapillary",
+      "raw": {
+        "osm_id": "118010640587491",
+        "name": "object--junction-box",
+        "lat": 44.484913,
+        "lon": 26.052748,
+        "address": "",
+        "tags": "object--junction-box",
+        "source": "mapillary-map_feature",
+        "provider": "mapillary",
+        "raw": {
+          "id": "118010640587491",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              26.052748,
+              44.484913
+            ]
+          },
+          "object_value": "object--junction-box"
+        }
+      },
+      "mapillary_images": [
+        {
+          "id": "1123141811529436",
+          "url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An8sXferS5e5T3ppSz7oFOBeV4I16Y_W3Hi1CUZGbPowyAf6DiAdLoMu8tn2YHlPKgM4tmmJ6YuQ48R44zOUGF-b-4wgwvF9TPb5N35gEzOgmiHMD6IuQmVygxRT3OxRY5tPk5ueKi7gkRlQC0q3tA?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=8S3KJw-hZwc0_ucS7_Qh9w&_nc_oc=AdltUXhhr-T8hEm1dOEtFTBiBuSUAgTdoU16jHmpRSSvIpG9a1cOdorbJyuTcMh9plo&ccb=10-5&oh=00_AftHKHRwTF7WsAKFplxM5kyuheXk02EuFM_RGfJwNZCItA&oe=69B898FC&_nc_sid=201bca",
+          "lat": 44.48461126638,
+          "lon": 26.052252395643,
+          "raw": {
+            "id": "1123141811529436",
+            "thumb_1024_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An8sXferS5e5T3ppSz7oFOBeV4I16Y_W3Hi1CUZGbPowyAf6DiAdLoMu8tn2YHlPKgM4tmmJ6YuQ48R44zOUGF-b-4wgwvF9TPb5N35gEzOgmiHMD6IuQmVygxRT3OxRY5tPk5ueKi7gkRlQC0q3tA?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=8S3KJw-hZwc0_ucS7_Qh9w&_nc_oc=AdltUXhhr-T8hEm1dOEtFTBiBuSUAgTdoU16jHmpRSSvIpG9a1cOdorbJyuTcMh9plo&ccb=10-5&oh=00_AftHKHRwTF7WsAKFplxM5kyuheXk02EuFM_RGfJwNZCItA&oe=69B898FC&_nc_sid=201bca",
+            "thumb_512_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An8sXferS5e5T3ppSz7oFOBeV4I16Y_W3Hi1CUZGbPowyAf6DiAdLoMu8tn2YHlPKgM4tmmJ6YuQ48R44zOUGF-b-4wgwvF9TPb5N35gEzOgmiHMD6IuQmVygxRT3OxRY5tPk5ueKi7gkRlQC0q3tA?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=8S3KJw-hZwc0_ucS7_Qh9w&_nc_oc=AdltUXhhr-T8hEm1dOEtFTBiBuSUAgTdoU16jHmpRSSvIpG9a1cOdorbJyuTcMh9plo&ccb=10-5&oh=00_AfvYFXR3v9IMXXZ6fgqE7vNDPrbz-OtnT7iis3hBni-RjQ&oe=69B898FC&_nc_sid=201bca",
+            "computed_geometry": {
+              "type": "Point",
+              "coordinates": [
+                26.052252395643,
+                44.48461126638
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "888614422088756",
+      "name": "object--street-light",
+      "lat": 44.38877,
+      "lon": 26.06181,
+      "address": "",
+      "osm_url": "",
+      "tags": "object--street-light",
+      "website": "",
+      "description": "",
+      "amenity": "restaurant",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "mapillary",
+      "raw": {
+        "osm_id": "888614422088756",
+        "name": "object--street-light",
+        "lat": 44.38877,
+        "lon": 26.06181,
+        "address": "",
+        "tags": "object--street-light",
+        "source": "mapillary-map_feature",
+        "provider": "mapillary",
+        "raw": {
+          "id": "888614422088756",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              26.06181,
+              44.38877
+            ]
+          },
+          "object_value": "object--street-light"
+        }
+      },
+      "mapillary_images": []
+    },
+    {
+      "id": "tomtom_WWXL9C1wR_ZHzI_s05fOVw",
+      "name": "When In Bucharest",
+      "lat": 44.439629,
+      "lon": 26.098211,
+      "address": "📍 Bucharest, Romania",
+      "osm_url": "",
+      "tags": "",
+      "website": "",
+      "description": "company in Bucharest, Romania",
+      "amenity": "restaurant",
+      "rating": null,
+      "budget": null,
+      "price_range": null,
+      "provider": "web",
+      "raw": {
+        "id": "tomtom_WWXL9C1wR_ZHzI_s05fOVw",
+        "name": "When In Bucharest",
+        "address": "📍 Bucharest, Romania",
+        "description": "company in Bucharest, Romania",
+        "lat": 44.439629,
+        "lon": 26.098211,
+        "source": "tomtom",
+        "quality_score": 0.85,
+        "phone": "+40 723 179 233",
+        "url": "www.wheninbucharest.com",
+        "categories": [
+          "company"
+        ]
+      },
+      "mapillary_images": []
+    }
+  ]
+}

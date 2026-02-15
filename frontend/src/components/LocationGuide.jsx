@@ -283,7 +283,7 @@ const LocationGuide = ({
                             onClick={neighborhoodModal.openModal}
                             aria-label="Explore neighborhoods"
                         >
-                            🏘️ Neighborhoods
+                            🏘️ Nearby Attractions
                         </button>
                     )}
                     

@@ -117,7 +117,11 @@ async def search():
     print(f"[SEARCH ROUTE] Payload: {payload}")
     
     # Normalize city name but preserve spaces for multi-word cities
-    normalized = unicodedata.normalize('NFKD', (payload.get("query") or "").strip())
+    raw_query = (payload.get("query") or "").strip()
+    # Remove any trailing country part after a comma (e.g., "Brasov, Romania" -> "Brasov")
+    city_base_raw = raw_query.split(',')[0].strip()
+    # Normalize base city name for alphanumeric processing
+    normalized = unicodedata.normalize('NFKD', city_base_raw.lower())
     # Keep alphanumeric and spaces, remove other punctuation
     city = ''.join(c for c in normalized if c.isalnum() or c.isspace()).strip()
     q = (payload.get("category") or payload.get("intent") or "").strip().lower()
@@ -180,6 +184,7 @@ async def search():
         # Add fun facts from seeded data
         if isinstance(result, dict):
             try:
+                # Add seeded fun facts using base city name
                 seeded_facts = get_city_fun_facts(city)
                 if seeded_facts:
                     import random

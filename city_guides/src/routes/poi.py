@@ -99,30 +99,42 @@ async def get_fun_fact():
         # Import tracker
         from city_guides.src.fun_fact_tracker import track_fun_fact
         
-        # Normalize city name but preserve spaces for multi-word cities
-        normalized = unicodedata.normalize('NFKD', city.lower())
+        # Extract base city name (remove country suffix) before normalization
+        city_base_raw = city.split(',')[0].strip()
+        # Normalize base city name for alphanumeric processing
+        normalized = unicodedata.normalize('NFKD', city_base_raw.lower())
         # Keep alphanumeric and spaces, remove other punctuation
         city_lower = ''.join(c for c in normalized if c.isalnum() or c.isspace()).strip()
         
-        app.logger.info(f"[FUN-FACT] Normalized city name: '{city_lower}'")
+        # CRITICAL FIX: Also try lookup with just the first word (e.g., "Mostar" from "Mostar Bosnia")
+        # This ensures seeded data is found even when country is appended without a comma
+        first_word = city_lower.split()[0] if city_lower.split() else city_lower
+        
+        # Determine if the request is for a landmark (e.g., castle) based on the original city string
+        is_landmark = any(k in city_lower for k in ["castle", "palace", "tower", "bridge", "monument", "pyramid", "colosseum"])
+        bran_bias = any(k in city_lower for k in ["bran", "dracula", "vlad"])
+        # Choose lookup name for Wikipedia: use base name for landmarks, otherwise the full city string
+        wiki_lookup = city_base_raw if is_landmark else city
+        
+        app.logger.info(f"[FUN-FACT] Normalized city name: '{city_lower}' (base: '{city_base_raw}', first_word: '{first_word}')")
         
         # Initialize variables to prevent UnboundLocalError
         fact_sentences: list[str] = []
         bran_bias = False
         
-        # Get seeded facts for this city
-        seeded_facts = get_city_fun_facts(city_lower)
+        # Get seeded facts for this city - try multiple lookup strategies
+        # 1. Try full normalized name
+        seeded_facts = get_city_fun_facts(city_base_raw)
+        # 2. If not found, try first word only (handles "Mostar Bosnia" -> "Mostar")
+        if not seeded_facts and first_word != city_lower:
+            app.logger.info(f"[FUN-FACT] Trying seeded lookup with first_word: '{first_word}'")
+            seeded_facts = get_city_fun_facts(first_word)
         
         # If city not in seeded list, fetch interesting facts
         if not seeded_facts:
             try:
-                # Check for special cases
-                is_landmark = any(k in city_lower for k in ["castle", "palace", "tower", "bridge", "monument", "pyramid", "colosseum"])
-                bran_bias = any(k in city_lower for k in ["bran", "dracula", "vlad"])
-                
-                # Clean up city name for Wikipedia lookup
-                # Remove country suffix if it looks like a landmark
-                wiki_lookup = city.split(',')[0].strip() if is_landmark else city
+                wiki_lookup = city_base_raw if is_landmark else city
+        
                 
                 # Try Wikipedia first for higher-quality sentences
                 from city_guides.providers.wikipedia_provider import fetch_wikipedia_summary

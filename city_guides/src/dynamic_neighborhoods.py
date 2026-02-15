@@ -26,6 +26,53 @@ def classify_neighborhood(tags: Dict) -> str:
     if place_type in ('neighbourhood', 'neighborhood', 'quarter', 'district', 'city_district'): return 'culture'
     return 'culture'
 
+
+async def fetch_nearby_tags(session: aiohttp.ClientSession, lat: float, lon: float) -> Dict[str, int]:
+    """Fetch nearby POI tags to infer character."""
+    nearby_query = f"""
+    [out:json][timeout:6];
+    (
+      node["tourism"](around:600,{lat},{lon});
+      node["amenity"~"restaurant|cafe|bar|pub|nightclub|theatre|cinema|marketplace"](around:600,{lat},{lon});
+      node["leisure"~"park|garden|sports_centre|stadium"](around:600,{lat},{lon});
+      node["natural"~"water|beach|coastline|cliff|wood|forest"](around:600,{lat},{lon});
+      node["shop"](around:500,{lat},{lon});
+    );
+    out tags 20;
+    """
+    counts = {'attractions': 0, 'food': 0, 'nightlife': 0, 'shopping': 0, 'nature': 0, 'entertainment': 0, 'waterfront': 0}
+    try:
+        async with session.post(overpass_endpoints[0], data={'data': nearby_query}, timeout=aiohttp.ClientTimeout(total=6)) as resp:
+            if resp.status != 200:
+                return counts
+            data = await resp.json()
+            for el in data.get('elements', [])[:25]:
+                t = el.get('tags', {})
+                tour = t.get('tourism')
+                amen = t.get('amenity')
+                leis = t.get('leisure')
+                nat = t.get('natural')
+                shop = t.get('shop')
+                if tour in ('attraction', 'museum', 'gallery', 'viewpoint'):
+                    counts['attractions'] += 1
+                if amen in ('restaurant', 'cafe', 'food_court'):
+                    counts['food'] += 1
+                if amen in ('bar', 'pub', 'nightclub'):
+                    counts['nightlife'] += 1
+                if amen in ('theatre', 'cinema'):
+                    counts['entertainment'] += 1
+                if shop:
+                    counts['shopping'] += 1
+                if leis in ('park', 'garden', 'sports_centre', 'stadium'):
+                    counts['nature'] += 1
+                if nat in ('beach', 'coastline', 'cliff', 'water'):
+                    counts['waterfront'] += 1
+                if nat in ('wood', 'forest'):
+                    counts['nature'] += 1
+    except Exception:
+        return counts
+    return counts
+
 # Cache for seed data to avoid repeated file reads
 _SEED_DATA_CACHE: Optional[Dict[str, List[Dict]]] = None
 
@@ -171,169 +218,61 @@ async def fetch_admin_names_overpass(city: str, relation_id: Optional[int]) -> L
         'https://overpass.kumi.systems/api/interpreter',
         'https://overpass.openstreetmap.fr/api/interpreter'
     ]
-    random.shuffle(overpass_endpoints)
-    overpass_headers = {"User-Agent": "TravelLand/1.0 (contact: team@travelland.local)"}
-    
-    async def fetch_nearby_tags(session: aiohttp.ClientSession, lat: float, lon: float) -> Dict[str, int]:
-        """Fetch nearby POI tags to infer character."""
-        nearby_query = f"""
-        [out:json][timeout:6];
-        (
-          node["tourism"](around:600,{lat},{lon});
-          node["amenity"~"restaurant|cafe|bar|pub|nightclub|theatre|cinema|marketplace"](around:600,{lat},{lon});
-          node["leisure"~"park|garden|sports_centre|stadium"](around:600,{lat},{lon});
-          node["natural"~"water|beach|coastline|cliff|wood|forest"](around:600,{lat},{lon});
-          node["shop"](around:500,{lat},{lon});
-        );
-        out tags 20;
-        """
-        counts = {'attractions': 0, 'food': 0, 'nightlife': 0, 'shopping': 0, 'nature': 0, 'entertainment': 0, 'waterfront': 0}
-        try:
-            async with session.post(overpass_endpoints[0], data={'data': nearby_query}, timeout=aiohttp.ClientTimeout(total=6)) as resp:
-                if resp.status != 200:
-                    return counts
-                data = await resp.json()
-                for el in data.get('elements', [])[:25]:
-                    t = el.get('tags', {})
-                    tour = t.get('tourism')
-                    amen = t.get('amenity')
-                    leis = t.get('leisure')
-                    nat = t.get('natural')
-                    shop = t.get('shop')
-                    if tour in ('attraction', 'museum', 'gallery', 'viewpoint'):
-                        counts['attractions'] += 1
-                    if amen in ('restaurant', 'cafe', 'food_court'):
-                        counts['food'] += 1
-                    if amen in ('bar', 'pub', 'nightclub'):
-                        counts['nightlife'] += 1
-                    if amen in ('theatre', 'cinema'):
-                        counts['entertainment'] += 1
-                    if shop:
-                        counts['shopping'] += 1
-                    if leis in ('park', 'garden', 'sports_centre', 'stadium'):
-                        counts['nature'] += 1
-                    if nat in ('beach', 'coastline', 'cliff', 'water'):
-                        counts['waterfront'] += 1
-                    if nat in ('wood', 'forest'):
-                        counts['nature'] += 1
-        except Exception:
-            return counts
-        return counts
 
-    elements = []
-    async def _fetch_overpass():
-        nonlocal elements
-        for endpoint in overpass_endpoints:
+
+def load_seed_neighborhoods(city: str) -> List[Dict]:
+    """Load neighborhood data from seed JSON files (supports multiple schemas)."""
+    global _SEED_DATA_CACHE
+
+    # Build cache on first call
+    if _SEED_DATA_CACHE is None:
+        _SEED_DATA_CACHE = {}
+
+        data_dir = Path(SEED_DATA_DIR) if SEED_DATA_DIR else Path(__file__).parent.parent / 'data'
+        if not data_dir.exists():
+            logger.warning(f"Seed data directory not found: {data_dir}")
+            return []
+
+        for json_file in data_dir.rglob('*.json'):
+            file_stem = json_file.stem.lower()
+            if any(pattern == file_stem or pattern in json_file.name.lower() for pattern in EXCLUDE_FILES):
+                continue
             try:
-                async with aiohttp.ClientSession(headers=overpass_headers) as session:
-                    async with session.post(
-                        endpoint,
-                        data={'data': overpass_query},
-                        timeout=aiohttp.ClientTimeout(total=20)
-                    ) as response:
-                        if response.status == 200:
-                            data = await response.json()
-                            elements = data.get('elements', [])
-                            break
-                        else:
-                            logger.warning(f"Overpass API {endpoint} returned {response.status} for {city}")
+                with open(json_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+
+                if not isinstance(data, dict):
+                    continue
+
+                # Schema 1: {"cities": {"City": [..]}}
+                cities = data.get('cities')
+                if isinstance(cities, dict):
+                    for city_name, neighborhoods in cities.items():
+                        if isinstance(neighborhoods, list) and neighborhoods:
+                            _SEED_DATA_CACHE[city_name.lower().strip()] = neighborhoods
+                    continue
+
+                # Schema 2: {"city": "Name", "neighborhoods": [...]}
+                if 'city' in data and 'neighborhoods' in data:
+                    neighborhoods = data.get('neighborhoods')
+                    if isinstance(neighborhoods, list) and neighborhoods:
+                        _SEED_DATA_CACHE[str(data['city']).lower().strip()] = neighborhoods
             except Exception as e:
-                logger.warning(f"Overpass API {endpoint} failed for {city}: {e}")
-        # elements may remain empty; caller will handle
+                logger.debug(f"Could not load seed data from {json_file}: {e}")
 
-    def classify(name: str, tags: Dict, city: str) -> tuple[str, str]:
-        place_type = tags.get('place', 'quarter')
-        boundary = tags.get('boundary')
-        if place_type == 'suburb':
-            return 'residential', f"Suburb of {city}"
-        if place_type in ('quarter', 'neighbourhood', 'neighborhood', 'district', 'city_district'):
-            return 'culture', f"Neighborhood in {city}"
-        if boundary == 'administrative':
-            return 'culture', f"District in {city}"
-        return 'culture', f"Area in {city}"
+        logger.info(f"Loaded seed data for {len(_SEED_DATA_CACHE)} cities")
 
-    def build_highlight(name: str, tags: Dict, nearby: Optional[Dict[str, int]] = None) -> str:
-        nlow = (name or '').lower()
-        tourism = tags.get('tourism')
-        natural = tags.get('natural')
-        leisure = tags.get('leisure')
-        amenity = tags.get('amenity')
+    city_key = city.lower().strip()
+    if city_key in _SEED_DATA_CACHE:
+        return _SEED_DATA_CACHE[city_key]
 
-        if tourism == 'attraction' or 'castle' in nlow or 'fort' in nlow:
-            return 'Historic landmark vibes.'
-        if natural in ('beach', 'coastline') or 'cheii' in nlow or 'gorge' in nlow:
-            return 'Scenic nature and cliffs.'
-        if leisure in ('park', 'garden') or 'forest' in nlow or 'pădure' in nlow:
-            return 'Green space and trails.'
-        if amenity in ('restaurant', 'cafe'):
-            return 'Local food cluster.'
-        if amenity in ('bar', 'pub', 'nightclub'):
-            return 'Nightlife pocket.'
-        if tags.get('shop'):
-            return 'Shops and markets nearby.'
-        if nearby:
-            if nearby.get('attractions', 0) > 1:
-                return 'Landmarks and sights nearby.'
-            if nearby.get('food', 0) > 1:
-                return 'Cluster of local eateries.'
-            if nearby.get('nightlife', 0) > 0:
-                return 'Bars and nightlife close by.'
-            if nearby.get('shopping', 0) > 1:
-                return 'Shops and markets nearby.'
-            if nearby.get('nature', 0) + nearby.get('waterfront', 0) > 0:
-                return 'Trails, parks, or water views close.'
-        return ''
-    
-    # Reuse one session for nearby tag lookups
-    # Fetch overpass data
-    await _fetch_overpass()
+    if len(_SEED_DATA_CACHE) < PARTIAL_MATCH_THRESHOLD:
+        for cached_city, neighborhoods in _SEED_DATA_CACHE.items():
+            if city_key in cached_city or cached_city in city_key:
+                logger.debug(f"Partial match: '{city_key}' matched '{cached_city}'")
+                return neighborhoods
 
-    session_nearby = None
-    try:
-        session_nearby = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=6))
-        for elem in elements:
-            tags = elem.get('tags', {})
-            name = tags.get('name')
-            
-            # Skip if no name or already seen
-            if not name or name.lower() in seen_names:
-                continue
-            
-            # Skip if name contains city name (avoid duplicates)
-            if city.lower() in name.lower() and name.lower() != city.lower():
-                continue
-            
-            seen_names.add(name.lower())
-            
-            # Fetch nearby context for richer labels
-            nearby_counts = None
-            lat_elem = elem.get('lat') or elem.get('center', {}).get('lat')
-            lon_elem = elem.get('lon') or elem.get('center', {}).get('lon')
-            if session_nearby and lat_elem and lon_elem:
-                try:
-                    nearby_counts = await fetch_nearby_tags(session_nearby, lat_elem, lon_elem)
-                except Exception:
-                    nearby_counts = None
-
-            type_cat, base_desc = classify(name, tags, city)
-            highlight = build_highlight(name, tags, nearby_counts)
-            description = f"{base_desc} {highlight}".strip()
-
-            neighborhoods.append({
-                'name': name,
-                'description': description,
-                'type': type_cat,
-                'lat': lat_elem,
-                'lon': lon_elem,
-                'tags': tags
-            })
-    finally:
-        if session_nearby:
-            await session_nearby.close()
-
-    # Sort by relevance (closer to city center first if we had distance calc)
-    # For now, just return top 15
-    return neighborhoods[:15]
+    return []
 
 
 async def fetch_neighborhoods_wikidata(city: str, lat: float, lon: float) -> List[Dict]:

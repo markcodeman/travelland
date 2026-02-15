@@ -26,6 +26,39 @@
       "Times Square is named after the New York Times building, which moved there in 1904!",
       "The city was originally called New Amsterdam when it was a Dutch colony until 1664!"
     ],
+    "brasov": [
+      "Brașov is one of the most beautiful medieval cities in Transylvania, with a historic center that looks like a fairy tale!",
+      "The city's Black Church is the largest Gothic church in Eastern Europe, built by German settlers in the 14th century!",
+      "Brașov was founded by Teutonic Knights in 1211 and still has parts of its original fortifications!",
+      "The city sits at the foot of Mount Tâmpa, where a giant flagpole honors Romanian independence!",
+      "Brașov is called the 'Gateway to Transylvania' and was a major trade center on the Saxon merchants' route!",
+      "The city's Council Square features stunning Renaissance architecture and was once the heart of Saxon guild life!",
+      "Brașov Castle is one of the few castles in Romania actually inhabited by a royal family - Vlad the Impaler lived here!",
+      "The city has a unique cable car system and is surrounded by the beautiful Piatra Craiului mountains!",
+      "Brașov is famous for its traditional Romanian crafts, including woodcarving and hand-painted ceramics!"
+    ],
+    "bucharest": [
+      "Bucharest is nicknamed 'Little Paris' for its grand boulevards, beautiful architecture, and French influences!",
+      "The city has the world's second-largest administrative building - the Palace of the Parliament is 365,000 square meters!",
+      "Bucharest was once called 'Dacian Rome' and sits on the ruins of ancient Dacian settlements from 500 BC!",
+      "The city's Old Town (Lipscani District) features cobblestone streets and was the heart of medieval Bucharest!",
+      "Bucharest has over 50 museums, including the Village Museum - the world's largest open-air museum!",
+      "The city is home to the Romanian Athenaeum, a stunning neoclassical concert hall built in 1888!",
+      "Bucharest was heavily damaged during World War II and rebuilt in socialist style, creating a unique architectural mix!",
+      "The city's Bellu Cemetery contains elaborate mausoleums and is considered one of Europe's most beautiful cemeteries!",
+      "Bucharest is Romania's cultural capital with world-class opera, ballet, and theatrical performances!"
+    ],
+    "cluj-napoca": [
+      "Cluj-Napoca is called 'Little Vienna' for its stunning Austro-Hungarian architecture and cultural refinement!",
+      "The city is home to Romania's oldest university, founded in 1581, and has the most universities per capita in Europe!",
+      "Cluj-Napoca hosted the world's first exhibition of Dada art in 1922, featuring works by Tristan Tzara!",
+      "The city's Central Park is the largest in Romania and features beautiful lake views and walking paths!",
+      "Cluj-Napoca is built on seven hills like Rome and has a unique blend of Hungarian, Romanian, and Saxon influences!",
+      "The city has the tallest church in Romania - St. Michael's Church stands at 91 meters tall!",
+      "Cluj-Napoca is Romania's tech hub with major IT companies and startup scene rivaling Budapest!",
+      "The city's Matthias Corvinus House dates back to 1463 and is one of the oldest buildings in Transylvania!",
+      "Cluj-Napoca hosts the annual Transilvania International Film Festival, one of Europe's premier film events!"
+    ],
     "tokyo": [
       "Tokyo is the world's most populous metropolitan area with over 37 million residents!",
       "Shibuya Crossing is the world's busiest pedestrian crossing with up to 3,000 people crossing at once!",
@@ -642,5 +675,8 @@
       "The Symphony of Lights show illuminates Victoria Harbour every night with music and lasers",
       "Temple Street Night Market transforms into a vibrant open-air bazaar every evening"
     ]
+  },
+  "fallbacks": {
+    "mostar": [17.68, 43.25, 17.93, 43.43]
   }
 }

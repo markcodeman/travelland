@@ -1,4 +1,4 @@
-
+ 
 """Canonical Overpass provider implementation.
 This file is the canonical implementation — DO NOT create another top-level
 `city_guides/overpass_provider.py` file with duplicated implementation.
@@ -928,51 +928,6 @@ async def _geocode_city_impl(city, params, headers, session):
     
     # Hardcoded fallback for common cities when external services are unavailable
     # Format: (west, south, east, north)
-    CITY_FALLBACKS = {
-        "london": (-0.51, 51.28, 0.33, 51.69),
-        "paris": (2.22, 48.82, 2.47, 48.90),
-        "new york": (-74.26, 40.47, -73.70, 40.92),
-        "tokyo": (139.56, 35.53, 139.92, 35.82),
-        "rome": (12.37, 41.80, 12.59, 42.00),
-        "barcelona": (2.05, 41.32, 2.23, 41.47),
-        "madrid": (-3.83, 40.31, -3.56, 40.56),
-        "berlin": (13.23, 52.40, 13.60, 52.63),
-        "amsterdam": (4.72, 52.27, 5.08, 52.43),
-        "dublin": (-6.39, 53.29, -6.11, 53.41),
-        "lisbon": (-9.23, 38.69, -9.09, 38.80),
-        "prague": (14.32, 50.00, 14.60, 50.14),
-        "vienna": (16.18, 48.12, 16.57, 48.32),
-        "budapest": (19.00, 47.42, 19.15, 47.56),
-        "athens": (23.65, 37.92, 23.80, 38.05),
-        "istanbul": (28.85, 40.96, 29.10, 41.14),
-        "moscow": (37.32, 55.58, 37.89, 55.92),
-        "stockholm": (17.87, 59.27, 18.15, 59.40),
-        "copenhagen": (12.45, 55.62, 12.65, 55.72),
-        "oslo": (10.61, 59.88, 10.85, 59.96),
-        "helsinki": (24.78, 60.13, 25.10, 60.24),
-        "sydney": (151.01, -33.95, 151.34, -33.79),
-        "melbourne": (144.87, -37.90, 145.04, -37.73),
-        "singapore": (103.61, 1.22, 104.04, 1.47),
-        "hong kong": (113.99, 22.23, 114.38, 22.51),
-        "seoul": (126.76, 37.43, 127.18, 37.70),
-        "mumbai": (72.77, 18.89, 72.98, 19.27),
-        "delhi": (77.05, 28.49, 77.34, 28.76),
-        "bangkok": (100.46, 13.65, 100.64, 13.83),
-        "dubai": (55.13, 25.06, 55.50, 25.36),
-        "cairo": (31.13, 29.95, 31.47, 30.13),
-        "johannesburg": (27.90, -26.27, 28.18, -26.08),
-        "rio de janeiro": (-43.79, -23.08, -43.11, -22.75),
-        "buenos aires": (-58.53, -34.71, -58.33, -34.52),
-        "mexico city": (-99.36, 19.25, -99.00, 19.59),
-        "toronto": (-79.64, 43.58, -79.12, 43.85),
-        "vancouver": (-123.27, 49.20, -122.98, 49.32),
-        "chicago": (-87.94, 41.64, -87.52, 42.02),
-        "los angeles": (-118.67, 33.70, -118.16, 34.34),
-        "san francisco": (-122.52, 37.70, -122.35, 37.81),
-        "seattle": (-122.44, 47.49, -122.24, 47.73),
-        "miami": (-80.32, 25.71, -80.12, 25.85),
-        "boston": (-71.19, 42.23, -71.00, 42.40),
-    }
     
     # Normalize city name for exact or prefix lookup
     city_normalized = city.lower().strip()
@@ -2204,15 +2159,18 @@ async def async_discover_pois(city: Optional[str] = None, poi_type: str = "resta
             "restaurant": '["amenity"~"restaurant|fast_food|cafe|bar|pub|food_court"]',
             "bar": '["amenity"~"bar|pub|nightclub|biergarten|wine_bar|cocktail_bar"]',
             "shopping": '["shop"]["amenity"~"marketplace|shopping_center"]',
-            "historic": '["tourism"="attraction"]',
-            "museum": '["tourism"="museum"]',
-            "park": '["leisure"="park"]',
-            "market": '["amenity"="marketplace"]',
+            "historic": '["historic"~"castle|monument|memorial|ruins|archaeological_site|fort|tower|church|cathedral|temple|palace"]["name"]',
+            "museum": '["tourism"~"museum|gallery|artwork"]["name"]',
+            "park": '["leisure"~"park|garden|nature_reserve"]["name"]',
+            "market": '["amenity"="marketplace"]["name"]',
             "transport": '["amenity"~"bus_station|train_station|subway_entrance|ferry_terminal|airport"]',
-            "family": '["leisure"~"playground|amusement_arcade|miniature_golf"]',
-            "event": '["amenity"~"theatre|cinema|arts_centre|community_centre"]',
-            "local": '["tourism"~"attraction"]',
-            "hidden": '["tourism"~"attraction"]',
+            "family": '["leisure"~"playground|amusement_arcade|miniature_golf|water_park|theme_park"]',
+            "event": '["amenity"~"theatre|cinema|arts_centre|concert_hall|opera_house"]["name"]',
+            "tourism": '["tourism"~"museum|gallery|viewpoint|zoo|aquarium|theme_park|artwork"]["name"]["wikidata"]',
+            "attraction": '["tourism"="attraction"]["name"]["wikidata"]',
+            "landmark": '["historic"~"castle|monument|memorial|ruins|archaeological_site|fort|tower|church|cathedral|temple|palace|building"]["name"]["wikidata"]',
+            "local": '["tourism"="attraction"]["name"]["wikidata"]',
+            "hidden": '["tourism"="attraction"]["name"]["wikidata"]',
             "coffee": '["amenity"~"cafe|coffee_shop"]',
         }
 

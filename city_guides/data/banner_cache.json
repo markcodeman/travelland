@@ -433,5 +433,10 @@
     "remote_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/St.-Jago-de-la-Vega.JPG/2592px-St.-Jago-de-la-Vega.JPG",
     "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=504969)",
     "generated_at": "2026-02-10T22:04:41.918375"
+  },
+  "mostar": {
+    "remote_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Stari_Most_viewed_from_North.jpg/1280px-Stari_Most_viewed_from_North.jpg",
+    "attribution": "Image via Wikimedia/Wikipedia (https://en.wikipedia.org/?curid=551361)",
+    "generated_at": "2026-02-14T08:31:00.000000"
   }
 }

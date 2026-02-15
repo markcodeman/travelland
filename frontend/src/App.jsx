@@ -4,6 +4,7 @@ import FunFact from './components/FunFact';
 import Header from './components/Header';
 import HeroImage from './components/HeroImage';
 import MarcoChat from './components/MarcoChat';
+import NeighborhoodGuide from './components/NeighborhoodGuide';
 import NeighborhoodPicker from './components/NeighborhoodPicker';
 import SearchResults from './components/SearchResults';
 import SimpleLocationSelector from './components/SimpleLocationSelector';
@@ -20,16 +21,16 @@ const POPULAR_CITIES = [
 ];
 
 // Hidden gem inspirations (fetching dynamic images, no static assets)
-const HIDDEN_GEM_CITIES = [
-  'Bran Castle Romania',
-  'Mostar Bosnia',
-  'Kotor Montenegro',
-  'Oaxaca Mexico',
-  'Puglia Italy',
-  'Chefchaouen Morocco',
-  'Svalbard Norway',
-  'Isle of Skye Scotland'
-];
+  const HIDDEN_GEM_CITIES = [
+    'Bucharest, Romania',
+    'Mostar Bosnia',
+    'Kotor Montenegro',
+    'Oaxaca Mexico',
+    'Puglia Italy',
+    'Chefchaouen Morocco',
+    'Svalbard Norway',
+    'Isle of Skye Scotland'
+  ];
 
 const FEATURE_PALETTE = [
   ['#1db6e0', '#0f172a'],
@@ -44,16 +45,7 @@ const gradientForName = (label = '') => {
   return FEATURE_PALETTE[idx];
 };
 
-// Moved to constant to avoid recreation
-const NEIGHBORHOOD_FALLBACKS = {
-  'Rio de Janeiro': ['Copacabana', 'Ipanema', 'Leblon', 'Santa Teresa', 'Barra da Tijuca', 'Lapa', 'Botafogo', 'Jardim Botânico', 'Gamboa', 'Leme', 'Vidigal'],
-  'London': ['Camden', 'Chelsea', 'Greenwich', 'Soho', 'Shoreditch'],
-  'New York': ['Manhattan', 'Brooklyn', 'Harlem', 'Queens', 'Bronx'],
-  'Paris': ['Le Marais', 'Saint-Germain-des-Prés', 'Montmartre', 'Latin Quarter', 'Champs-Élysées', 'Belleville', 'Le Marais', 'Oberkampf', 'Canal Saint-Martin', 'Palais-Royal'],
-  'Lisbon': ['Baixa', 'Chiado', 'Alfama', 'Bairro Alto', 'Belém'],
-  'Reykjavik': ['Miðborg', 'Vesturbær', 'Hlíðar', 'Laugardalur', 'Háaleiti'],
-  'Natal': ['Ponta Negra', 'Petrópolis', 'Tirol', 'Lagoa Nova', 'Cidade Alta', 'Alecrim']
-};
+// (Removed hard-coded neighborhood fallbacks – data now comes exclusively from backend seed JSON)
 
 const SUGGESTION_MAP = {
   transport: 'Public transport',
@@ -164,6 +156,10 @@ function App() {
   const [heroImageMeta, setHeroImageMeta] = useState({});
   const [showCitySuggestions, setShowCitySuggestions] = useState(true);
   const [showNeighborhoodPicker, setShowNeighborhoodPicker] = useState(false);
+  const [showNeighborhoodGuide, setShowNeighborhoodGuide] = useState(false);
+  const [neighborhoodGuideData, setNeighborhoodGuideData] = useState(null);
+  const [neighborhoodGuideLoading, setNeighborhoodGuideLoading] = useState(false);
+  const [neighborhoodGuideError, setNeighborhoodGuideError] = useState(null);
   const [smartNeighborhoods, setSmartNeighborhoods] = useState([]);
   const [pendingCategory, setPendingCategory] = useState(null);
   const [neighborhoodsLoading, setNeighborhoodsLoading] = useState(false);
@@ -223,6 +219,44 @@ function App() {
       throw error;
     }
   }, []);
+
+  const fetchWeatherData = useCallback(async (city, neighborhood = '') => {
+    if (!city) {
+      setWeather(null);
+      return;
+    }
+
+    setWeatherError(null);
+
+    try {
+      const geo = await fetchAPI('/api/geocode', {
+        method: 'POST',
+        body: JSON.stringify({ city, neighborhood })
+      });
+
+      const lat = geo?.lat ?? geo?.latitude;
+      const lon = geo?.lon ?? geo?.longitude ?? geo?.lng;
+      if (!lat || !lon) {
+        setWeather(null);
+        return;
+      }
+
+      const data = await fetchAPI('/api/weather', {
+        method: 'POST',
+        body: JSON.stringify({ city, lat, lon })
+      });
+
+      if (data?.weather) {
+        setWeather(data.weather);
+      } else {
+        setWeather(null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch weather', err);
+      setWeatherError('Unable to load weather right now.');
+      setWeather(null);
+    }
+  }, [fetchAPI]);
 
   // Prefetch imagery + credit for hidden-gem featured cities
   useEffect(() => {
@@ -316,6 +350,12 @@ function App() {
     setCategoryLabel('');
     setSelectedSuggestion('');
 
+    // Reset results to trigger fresh city guide fetch
+    setResults(null);
+
+    // Enable neighborhood opt-in for the new city
+    setNeighborhoodOptIn(true);
+
     // Store intent for visual components
     if (loc.intent) {
       setParsedIntent(loc.intent);
@@ -349,9 +389,9 @@ function App() {
           coordData = data.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
         }
       } catch {}
-      const fallbackNames = NEIGHBORHOOD_FALLBACKS[cityName] || [];
+      const fallbackNames = [];
       // Merge and deduplicate
-      return Array.from(new Set([...cityData, ...coordData, ...fallbackNames]));
+      return Array.from(new Set([...cityData, ...coordData]));
     }
 
     try {
@@ -360,8 +400,8 @@ function App() {
       if (data?.neighborhoods?.length > 0) {
         const names = data.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
         const uniqueNames = Array.from(new Set(names));
-        const fallbackNames = NEIGHBORHOOD_FALLBACKS[cityName] || [];
-        return Array.from(new Set([...uniqueNames, ...fallbackNames]));
+        const fallbackNames = [];
+        return uniqueNames;
       }
       // If city-based fetch failed or returned no results, try geocoding to get coordinates
       try {
@@ -377,8 +417,8 @@ function App() {
           if (coordData?.neighborhoods?.length > 0) {
             const names = coordData.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
             const uniqueNames = Array.from(new Set(names));
-            const fallbackNames = NEIGHBORHOOD_FALLBACKS[cityName] || [];
-            return Array.from(new Set([...uniqueNames, ...fallbackNames]));
+            const fallbackNames = [];
+            return uniqueNames;
           }
         }
       } catch (geoErr) {
@@ -387,7 +427,7 @@ function App() {
     } catch (err) {
       // Continue to fallback
     }
-    return useFallback ? NEIGHBORHOOD_FALLBACKS[cityName] || [] : [];
+    return [];
   }, [fetchAPI]);
 
   // Fetch smart neighborhood suggestions for large cities with a timeout
@@ -400,7 +440,7 @@ function App() {
       const attempt = async (label) => {
         const started = performance.now();
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
         try {
           const resp = await fetch(`${API_BASE}/api/smart-neighborhoods?city=${encodeURIComponent(city)}&category=${encodeURIComponent(category)}`, { signal: controller.signal });
           const elapsed = Math.round(performance.now() - started);
@@ -467,149 +507,77 @@ function App() {
     }
   }, [fetchAPI]);
 
-  // Quick guide effect
-  useEffect(() => {
-    let mounted = true;
+  // Fetch neighborhood guide
+  const fetchNeighborhoodGuide = useCallback(async (city, neighborhood, country = '') => {
+    if (!city || !neighborhood) return;
     
-    const getQuickGuide = async () => {
-      if (!location.city) {
-        setCityGuideLoading(false);
-        return;
-      }
-
-      setCityGuideLoading(true);
-      try {
-        const data = await fetchQuickGuide({ query: location.city, state: location.state, country: location.country, intent: location.intent });
-        if (mounted && data) {
-          setResults(data);
-        }
-      } finally {
-        if (mounted) setCityGuideLoading(false);
-      }
-    };
-
-    getQuickGuide();
-    return () => { mounted = false; };
-  }, [location.city, fetchQuickGuide]);
-
-  // Neighborhood-scoped quick guide effect
-  useEffect(() => {
-    let mounted = true;
-    let timeoutId;
-
-    const generateGuide = async () => {
-      if (!location.city || !location.neighborhood) return;
+    setNeighborhoodGuideLoading(true);
+    setNeighborhoodGuideData(null);
+    setNeighborhoodGuideError(null);
+    setShowNeighborhoodGuide(true);
+    
+    try {
+      const data = await fetchAPI('/api/generate_quick_guide', {
+        method: 'POST',
+        body: JSON.stringify({ city, neighborhood, country })
+      });
       
-      try {
-        setGenerating(true);
-        const data = await fetchAPI('/api/generate_quick_guide', {
-          method: 'POST',
-          body: JSON.stringify({ city: location.city, neighborhood: location.neighborhood })
-        });
+      if (data) {
+        setNeighborhoodGuideData(data);
         
-        if (mounted && data?.quick_guide && !category) {
+        // Also update main results so the background reflects the neighborhood guide
+        if (data.quick_guide) {
           setResults(prev => ({
             ...prev,
             quick_guide: data.quick_guide,
             source: data.source,
             cached: data.cached,
             source_url: data.source_url,
+            confidence: data.confidence,
             ...(data.mapillary_images && { mapillary_images: data.mapillary_images })
           }));
         }
-      } catch (err) {
-        console.error('Generate quick guide failed', err);
-      } finally {
-        if (mounted) setGenerating(false);
-      }
-    };
-
-    timeoutId = setTimeout(generateGuide, 250);
-    return () => { 
-      mounted = false; 
-      clearTimeout(timeoutId); 
-    };
-  }, [location.city, location.neighborhood, category, fetchAPI]);
-
-  // Weather fetch with geocoding
-  const fetchWeatherData = useCallback(async (cityName, neighborhoodName = '') => {
-    setWeather(null);
-    setWeatherError(null);
-    
-    if (!cityName) return;
-
-    try {
-      // Geocode first
-      const geoData = await fetchAPI('/api/geocode', {
-        method: 'POST',
-        body: JSON.stringify({ city: cityName, neighborhood: neighborhoodName })
-      });
-
-      if (geoData.display_name) {
-        const parts = geoData.display_name.split(', ');
-        setLocation(prev => ({ ...prev, country: parts[parts.length - 1] }));
-      }
-
-      const lat = geoData?.lat ?? geoData?.latitude;
-      const lon = geoData?.lon ?? geoData?.longitude ?? geoData?.lng;
-      
-      if (!lat || !lon) {
-        setWeatherError('Could not find coordinates for this location.');
-        return;
-      }
-
-      // Fetch weather with coordinates
-      const weatherData = await fetchAPI('/api/weather', {
-        method: 'POST',
-        body: JSON.stringify({ lat: Number(lat), lon: Number(lon) })
-      });
-
-      if (weatherData?.weather) {
-        setWeather(weatherData.weather);
       } else {
-        setWeatherError('No weather data available for this location.');
+        throw new Error('No guide data received');
       }
     } catch (err) {
-      setWeatherError('Failed to fetch weather. Check your connection or try again.');
+      console.error('Fetch neighborhood guide failed:', err);
+      setNeighborhoodGuideError('Failed to load neighborhood insights.');
+    } finally {
+      setNeighborhoodGuideLoading(false);
     }
   }, [fetchAPI]);
 
-  // Weather effect
-  useEffect(() => {
-    fetchWeatherData(location.city, location.neighborhood);
-  }, [location.city, location.neighborhood, fetchWeatherData]);
-
-
   // Main search function - defined with useCallback to avoid recreation
-  const handleSearch = useCallback(async (overrideCategory = null, cityOverride = null) => {
+  const handleSearch = useCallback(async (overrideCategory = null, cityOverride = null, neighborhoodOverride = null) => {
     const searchCity = cityOverride || location.city;
     if (!searchCity?.trim()) {
       setWeatherError('Please select a city before searching.');
       return;
     }
 
+    const neighborhood = neighborhoodOverride || location.neighborhood;
     const displayCategory = overrideCategory || categoryLabel || category;
-    const message = location.neighborhood 
-      ? `Finding ${displayCategory || 'great spots'} in ${location.neighborhood}, ${searchCity}...`
+    const message = neighborhood 
+      ? `Finding ${displayCategory || 'great spots'} in ${neighborhood}, ${searchCity}...`
       : `Finding ${displayCategory || 'great spots'} in ${searchCity}...`;
     
     setLoadingMessage(message);
     setLoading(true);
-    setWeatherError(null);
 
     try {
       // Parallel API calls for better performance
       const [geoData, quickGuideData] = await Promise.all([
         fetchAPI('/api/geocode', {
           method: 'POST',
-          body: JSON.stringify({ city: searchCity, neighborhood: '', country: location.country })
+          body: JSON.stringify({ city: searchCity, neighborhood: neighborhood || '', country: location.country })
         }).catch(() => null),
         
         fetchQuickGuide({
           query: searchCity,
           state: location.state,
           country: location.country,
-          ...(location.neighborhood && neighborhoodOptIn && { neighborhood: location.neighborhood }),
+          ...(neighborhood && neighborhoodOptIn && { neighborhood }),
           ...(displayCategory && { category: displayCategory, intent: displayCategory })
         })
       ]);
@@ -628,15 +596,15 @@ function App() {
             if (neighborhoodData.length > 0) {
               setNeighborhoodOptions(neighborhoodData);
             }
-          } catch (err) {
-            // Silently fail - we already have fallbacks
+          } catch (e) {
+            console.warn('Neighborhood fetch failed', e);
           }
         }
       }
 
       // Fetch weather if we have coordinates
       if (geoData?.lat && geoData?.lon) {
-        await fetchWeatherData(searchCity, location.neighborhood);
+        await fetchWeatherData(searchCity, neighborhood);
       }
 
       // Set results from quick guide
@@ -645,6 +613,7 @@ function App() {
           quick_guide: buildCityFallback(searchCity),
           source: 'fallback',
           cached: false,
+          categories: ['food', 'nightlife', 'culture', 'shopping', 'parks', 'historic sites', 'beaches', 'markets']
         });
       } else {
         setResults(() => {
@@ -673,11 +642,7 @@ function App() {
         // Use real venues from search results if available
         if (quickGuideData?.venues && quickGuideData.venues.length > 0) {
           setVenues(quickGuideData.venues);
-        } else if (!displayCategory && quickGuideData.quick_guide) {
-          // Don't show mock venues when just browsing city guides
-          setVenues([]);
-        } else if (displayCategory && !venues.length && quickGuideData.quick_guide) {
-          // Don't generate fake venues - wait for real API data
+        } else {
           setVenues([]);
         }
 
@@ -709,174 +674,48 @@ function App() {
       setWeatherError('Search failed. Please try again.');
     } finally {
       setLoading(false);
-      // Marco no longer auto-opens - user chooses when to chat
     }
-  }, [location.city, location.neighborhood, location.country, category, categoryLabel, neighborhoodOptIn, fetchAPI, fetchQuickGuide, fetchNeighborhoods, fetchWeatherData]);
+  }, [location.city, location.neighborhood, location.country, category, categoryLabel, neighborhoodOptIn, fetchAPI, fetchQuickGuide, fetchNeighborhoods, fetchWeatherData, buildCityFallback]);
 
-  // Handle neighborhood selection from picker
-  const handleNeighborhoodSelect = useCallback((neighborhood) => {
-    setLocation(prev => ({ ...prev, neighborhood }));
-    setShowNeighborhoodPicker(false);
-    
-    // Open Marco chat after a short delay to allow neighborhood picker to close
-    if (pendingCategory) {
-      setPendingCategory(null);
-      setTimeout(() => setMarcoOpen(true), 300);
-    }
-  }, [pendingCategory]);
-
-  // Handle skip neighborhood selection
-  const handleSkipNeighborhood = useCallback(() => {
-    setShowNeighborhoodPicker(false);
-    
-    // Open Marco chat after a short delay to allow neighborhood picker to close
-    if (pendingCategory) {
-      setPendingCategory(null);
-      setTimeout(() => setMarcoOpen(true), 300);
-    }
-  }, [pendingCategory]);
-
-  // Handle category selection from CitySuggestions
-  const handleCategorySelect = useCallback(async (intent, label) => {
-    setCategory(intent);
-    setCategoryLabel(label);
-    setParsedIntent(intent);
-    
-    // Show neighborhood picker for ALL cities
-    if (location.city) {
-      // Show picker immediately with loading state
-      setPendingCategory({ intent, label });
-      setShowNeighborhoodPicker(true);
-      
-      try {
-        const smartData = await fetchSmartNeighborhoods(location.city, label);
-        
-        // Update neighborhoods when fetch completes
-        setSmartNeighborhoods(smartData.neighborhoods || []);
-        return;
-      } catch (error) {
-        console.error('Error in category select:', error);
-        // Force showing the neighborhood picker with an empty list to prevent UI hang
-        setSmartNeighborhoods([]);
-        setPendingCategory({ intent, label });
-        setShowNeighborhoodPicker(true);
-        return;
-      }
-    }
-    
-    // Auto-scroll to hero image after category selection
-    setTimeout(() => {
-      const heroElement = document.querySelector('.hero-image-container');
-      if (heroElement) {
-        heroElement.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
-        });
-      }
-    }, 100);
-  }, [location.city, handleSearch, fetchSmartNeighborhoods]);
-
-  const debouncedHandleSearch = useCallback(() => {
-    if (!location.city) return;
-    debouncedSearchRef.current?.();
-  }, [location.city, handleSearch, fetchSmartNeighborhoods]);
-
-  // Auto-fetch neighborhoods whenever city changes to keep UI unified
+  // Initial search effect to fetch categories and quick guide on city selection
   useEffect(() => {
-    let cancelled = false;
-
-    const loadNeighborhoods = async () => {
-      if (!location.city) {
-        setSmartNeighborhoods([]);
-        setShowNeighborhoodPicker(false);
-        return;
-      }
-
-      try {
-        setShowNeighborhoodPicker(true);
-        const smartData = await fetchSmartNeighborhoods(location.city, categoryLabel || category || '');
-        if (!cancelled) {
-          setSmartNeighborhoods(smartData?.neighborhoods || []);
-        }
-      } catch (err) {
-        console.error('Auto-fetch neighborhoods failed:', err);
-        if (!cancelled) {
-          setSmartNeighborhoods([]);
-        }
-      }
-    };
-
-    loadNeighborhoods();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [location.city, category, categoryLabel, fetchSmartNeighborhoods]);
-
-  // Memoized suggestion handler with toggle behavior
-  const handleSuggestion = useCallback(async (id) => {
-    // Toggle: deselect if already selected
-    if (selectedSuggestion === id) {
-      setCategory('');
-      setCategoryLabel('');
-      setSelectedSuggestion('');
-      clearMarcoOpenTimer();
-      // Close Marco when deselected
-      setMarcoOpen(false);
-      return;
+    if (location.city && !results) {
+      handleSearch('', location.city);
     }
+  }, [location.city, handleSearch, results]);
 
-    const label = SUGGESTION_MAP[id] || id; // human label
-    setCategory(id); // keep internal id
-    setSelectedSuggestion(id);
+  const handleCategorySelect = useCallback(async (opt) => {
+    const value = (opt && (opt.value || opt.id || opt.key)) || opt || '';
+    const label = (opt && (opt.label || opt.name)) || value;
+    setPendingCategory(opt || null);
+    setCategory(value);
+    setCategoryLabel(label);
+    setActivePanel('neighborhoods');
+
+    await handleSearch(value);
+  }, [handleSearch]);
+
+  const handleNeighborhoodSelect = useCallback(async (neighborhood) => {
+    setLocation(prev => ({ ...prev, neighborhood }));
+    await fetchNeighborhoodGuide(location.city, neighborhood, location.country);
+  }, [location.city, location.country, fetchNeighborhoodGuide]);
+
+  const handleSkipNeighborhood = useCallback(async () => {
+    setLocation(prev => ({ ...prev, neighborhood: '' }));
+    await handleSearch(categoryLabel || category);
+  }, [categoryLabel, category, handleSearch]);
+
+  const handleNeighborhoodGuideClose = useCallback(() => {
+    setShowNeighborhoodGuide(false);
+    setNeighborhoodGuideData(null);
+    setNeighborhoodGuideError(null);
     
-    // Show neighborhood picker for ALL cities
-    if (location.city) {
-      // Show picker immediately with loading state
-      setPendingCategory({ intent: id, label });
-      setShowNeighborhoodPicker(true);
-      
-      try {
-        const smartData = await fetchSmartNeighborhoods(location.city, label);
-        
-        // Update neighborhoods when fetch completes
-        setSmartNeighborhoods(smartData.neighborhoods || []);
-        return;
-      } catch (error) {
-        console.error('Error in suggestion select:', error);
-        // Force showing the neighborhood picker with an empty list to prevent UI hang
-        setSmartNeighborhoods([]);
-        setPendingCategory({ intent: id, label });
-        setShowNeighborhoodPicker(true);
-        return;
-      }
+    if (location.neighborhood) {
+      handleSearch(categoryLabel || category, location.city, location.neighborhood);
     }
-  }, [location.city, selectedSuggestion, clearMarcoOpenTimer, fetchSmartNeighborhoods]);
-
-  // Memoized generate function
-  const generateQuickGuide = useCallback(async () => {
-    if (!location.city || !location.neighborhood) return;
     
-    setGenerating(true);
-    try {
-      const data = await fetchAPI('/api/generate_quick_guide', {
-        method: 'POST',
-        body: JSON.stringify({ city: location.city, neighborhood: location.neighborhood })
-      });
-      
-      if (data?.quick_guide) {
-        setResults({ 
-          quick_guide: data.quick_guide, 
-          source: data.source, 
-          cached: data.cached 
-        });
-      }
-    } catch (err) {
-      console.error('Generate quick guide failed', err);
-    } finally {
-      setGenerating(false);
-    }
-  }, [location.city, location.neighborhood, fetchAPI]);
+    scheduleMarcoOpen();
+  }, [location.city, location.neighborhood, categoryLabel, category, handleSearch, scheduleMarcoOpen]);
 
   // Memoized component values
   const weatherDisplayProps = useMemo(() => ({
@@ -1017,7 +856,7 @@ function App() {
             <div className="mt-6 flex flex-wrap gap-2 md:hidden">
               {[
                 { key: 'categories', label: 'Categories' },
-                { key: 'neighborhoods', label: 'Neighborhoods' },
+                { key: 'neighborhoods', label: 'Nearby Attractions' },
                 { key: 'guide', label: 'Guide' },
                 { key: 'fun', label: 'Fun Fact' },
               ].map((tab) => (
@@ -1100,8 +939,8 @@ function App() {
         )}
 
 
-        {/* Category Results - Show venues when category selected */}
-        {(category || selectedSuggestion) && venues.length > 0 && !loading && (
+        {/* Category Results - Show venues when category selected or Nearby Attractions active */}
+        {(activePanel === 'neighborhoods' || category || selectedSuggestion) && venues.length > 0 && !loading && (
           <div className="mt-12 space-y-6">
             {/* Dynamic city-specific blurb */}
             <div className="rounded-2xl bg-gradient-to-r from-brand-orange via-brand-orange to-brand-aqua text-white p-6 shadow-xl">
@@ -1248,6 +1087,17 @@ function App() {
               💬 Ask Marco
             </button>
           </div>
+        )}
+
+        {showNeighborhoodGuide && (
+          <NeighborhoodGuide
+            city={location.city}
+            neighborhood={location.neighborhood}
+            guideData={neighborhoodGuideData}
+            loading={neighborhoodGuideLoading}
+            error={neighborhoodGuideError}
+            onClose={handleNeighborhoodGuideClose}
+          />
         )}
 
         {marcoOpen && (

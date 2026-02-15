@@ -7,6 +7,12 @@ import unicodedata
 from typing import List, Dict, Optional
 import os
 
+# Import aiohttp for async HTTP requests
+try:
+    import aiohttp
+except ImportError:
+    aiohttp = None
+
 
 # Robust import for overpass_provider, always using absolute import
 overpass_provider = None
@@ -26,10 +32,32 @@ except Exception as e:
     logging.error(f"❌ Failed to import geonames_provider: {e}")
     geonames_provider = None
 
+# Import Wikidata provider for tourist attractions
+wikidata_provider = None
 try:
-    from city_guides.providers import opentripmap_provider
-except Exception:
-    opentripmap_provider = None
+    from city_guides.providers import wikidata_provider
+    logging.info("✅ wikidata_provider imported successfully")
+except Exception as e:
+    logging.warning(f"⚠️ Failed to import wikidata_provider: {e}")
+    wikidata_provider = None
+
+# Import TomTom provider for tourist attractions
+tomtom_provider = None
+try:
+    from city_guides.providers import tomtom_provider
+    logging.info("✅ tomtom_provider imported successfully")
+except Exception as e:
+    logging.warning(f"⚠️ Failed to import tomtom_provider: {e}")
+    tomtom_provider = None
+
+# Import Wikipedia attractions provider
+wikipedia_attractions_provider = None
+try:
+    from city_guides.providers import wikipedia_attractions_provider
+    logging.info("✅ wikipedia_attractions_provider imported successfully")
+except Exception as e:
+    logging.warning(f"⚠️ Failed to import wikipedia_attractions_provider: {e}")
+    wikipedia_attractions_provider = None
 
 
 # Curated neighborhood hints for major tourist cities
@@ -344,18 +372,38 @@ async def async_discover_pois(
     poi_type: str = "restaurant",
     limit: int = 100,
     local_only: bool = False,
-    timeout: float = 12.0,
-    bbox: Optional[tuple] = None,
-    session=None,
+    timeout: float = 10.0,
+    session: Optional = None,
+    bbox: tuple = None
 ) -> List[Dict]:
-    """Async version of discover_pois. It will call async provider functions
-    when available, otherwise offload sync providers to a thread.
+    """Async version of discover_pois with caching support.
+    
+    Will try live APIs first, then fall back to cache if available.
+    Saves results to cache for future fallback use.
     """
-    print(f"[CRITICAL] async_discover_pois called: city={city}, poi_type={poi_type}, overpass_provider={'AVAILABLE' if overpass_provider else 'NONE'}")
+    print(f"[CRITICAL] async_discover_pois called: city={city}, poi_type={poi_type}")
+    
+    # Try to load from cache as fallback
+    try:
+        from city_guides.utils.city_poi_cache import load_city_pois, save_city_pois
+        cache_available = True
+    except ImportError:
+        cache_available = False
+        load_city_pois = None
+        save_city_pois = None
+    
+    # Try live APIs
     results = []
-
+    sources_used = []
+    
     max_per_provider = max(int(limit) * 10, 200)
-    max_total_candidates = max(int(limit) * 20, 600)
+    max_total_candidates = max(limit * 5, 100)  # Cap total candidates for deduplication
+    provider_coros = []
+    close_session = False
+    
+    if session is None:
+        session = aiohttp.ClientSession()
+        close_session = True
 
     async def _call_provider(func, provider_name, *fargs, **fkwargs):
         print(f"[DEBUG] _call_provider calling {provider_name} with fargs={fargs}, fkwargs={fkwargs}")
@@ -409,28 +457,35 @@ async def async_discover_pois(
     else:
         logging.error("overpass_provider is None! Cannot fetch POIs.")
 
-    # OpenTripMap (optional)
-    if opentripmap_provider:
-        try:
-            otm_kinds = {
-                "restaurant": "restaurants",
-                "historic": "historic",
-                "museum": "museums",
-                "park": "parks",
-                "market": "marketplaces",
-                "transport": "transport",
-                "family": "amusements",
-                "event": "cultural",
-                "local": "cultural",
-                "hidden": "cultural",
-                "coffee": "cafes",
-            }.get(poi_type, poi_type)
+    # Wikidata provider for tourist attractions (free, high quality)
+    if wikidata_provider and poi_type in ("tourism", "attraction", "landmark", "historic", "museum"):
+            try:
+                print(f"[MULTI_PROVIDER] Adding Wikidata for {poi_type} in {city}")
+                func = getattr(wikidata_provider, "discover_tourist_attractions", None)
+                if func:
+                    provider_coros.append(_call_provider(func, "wikidata", city, limit, session=session))
+            except Exception as e:
+                logging.warning(f"Wikidata provider failed: {e}")
 
-            # prefer async function if available
-            func = getattr(opentripmap_provider, "async_discover_pois", opentripmap_provider.discover_pois)
-            provider_coros.append(_call_provider(func, "opentripmap", city, otm_kinds, limit))
-        except Exception:
-            pass
+    # Wikipedia attractions provider (free, curated lists)
+    if wikipedia_attractions_provider and poi_type in ("tourism", "attraction", "landmark", "historic", "museum"):
+            try:
+                print(f"[MULTI_PROVIDER] Adding Wikipedia attractions for {poi_type} in {city}")
+                func = getattr(wikipedia_attractions_provider, "discover_tourist_attractions", None)
+                if func:
+                    provider_coros.append(_call_provider(func, "wikipedia", city, limit, session=session))
+            except Exception as e:
+                logging.warning(f"Wikipedia attractions provider failed: {e}")
+
+    # TomTom provider for tourist attractions (free tier available)
+    if tomtom_provider and poi_type in ("tourism", "attraction", "landmark", "historic", "museum"):
+            try:
+                print(f"[MULTI_PROVIDER] Adding TomTom for {poi_type} in {city}")
+                func = getattr(tomtom_provider, "discover_tourist_attractions", None)
+                if func:
+                    provider_coros.append(_call_provider(func, "tomtom", city, limit, session=session))
+            except Exception as e:
+                logging.warning(f"TomTom provider failed: {e}")
 
     # Geoapify (via overpass_provider) - only if function exists. It requires bbox input.
     # Geocode city if bbox not provided
@@ -550,6 +605,29 @@ async def async_discover_pois(
                 print(f"[BBOX FILTER] Excluding {n.get('name', 'Unknown')} at {lat},{lon}")
         normalized = filtered
         print(f"[BBOX FILTER] After filtering: {len(normalized)} venues remain")
+
+    # Try cache fallback if live APIs returned no results
+    if not normalized and cache_available and load_city_pois:
+        print(f"[CACHE FALLBACK] No live results for {city}, trying cache...")
+        cached_pois = load_city_pois(city, max_age_days=90)  # Allow older cache for fallback
+        if cached_pois:
+            print(f"[CACHE FALLBACK] Using {len(cached_pois)} cached POIs for {city}")
+            normalized = cached_pois[:limit]
+            # Mark as fallback for audit
+            for poi in normalized:
+                poi['_fallback_source'] = 'cache'
+    
+    # Save results to cache for future fallback use
+    if normalized and cache_available and save_city_pois:
+        # Only cache if we got results from live APIs
+        has_live_results = any('_fallback_source' not in poi for poi in normalized[:5])
+        if has_live_results:
+            sources_used = list(set(poi.get('source', 'unknown') for poi in normalized[:10]))
+            save_city_pois(city, normalized[:20], sources_used)  # Save top 20 for fallback
+
+    # Ensure session is closed if we created it
+    if close_session and session:
+        await session.close()
 
     return normalized[:limit]
 

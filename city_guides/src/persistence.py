@@ -17,6 +17,9 @@ import asyncio
 from city_guides.utils.async_utils import AsyncRunner
 from urllib.parse import urlparse
 
+# Import multi_provider for async venue discovery
+from city_guides.providers import multi_provider
+
 def get_synthesis_enhancer(enhancer=None):
     """Return an injected SynthesisEnhancer instance or import a new one (not singleton)."""
     if enhancer is not None:
@@ -35,11 +38,14 @@ except ImportError:
     looks_like_ddgs_disambiguation_text = None
 
 try:
-    from venue_quality import filter_high_quality_venues, calculate_venue_quality_score, enhance_chinese_venue_processing
+    from city_guides.src.venue_quality import filter_high_quality_venues, calculate_venue_quality_score, enhance_chinese_venue_processing
 except ImportError:
-    filter_high_quality_venues = None
-    calculate_venue_quality_score = None
-    enhance_chinese_venue_processing = None
+    try:
+        from venue_quality import filter_high_quality_venues, calculate_venue_quality_score, enhance_chinese_venue_processing
+    except ImportError:
+        filter_high_quality_venues = None
+        calculate_venue_quality_score = None
+        enhance_chinese_venue_processing = None
 
 
 async def _persist_quick_guide(out_obj: Dict, city_name: str, neighborhood_name: str, file_path: Path) -> None:
@@ -1932,7 +1938,129 @@ def _search_impl(payload):
             print(f"[SEARCH DEBUG] Venue search error: {e}")
             result["debug_info"]["venue_search_error"] = str(e)
     else:
-        print("[SEARCH DEBUG] No category specified, skipping venue search - will return city guide only")
+        # Auto-fetch top attractions when no category specified - gives users immediate results
+        print("[SEARCH DEBUG] Auto-fetching top attractions for city (no category specified)")
+        try:
+            print("[SEARCH DEBUG] Searching for top attractions (tourism POIs)")
+            
+            async def get_top_attractions():
+                # Search for tourism/attraction POIs
+                venues = await multi_provider.async_discover_pois(
+                    city=city,
+                    poi_type="tourism",
+                    limit=min(limit, 20),  # Get more to filter
+                    bbox=tuple(bbox) if bbox else None,
+                    timeout=10.0
+                )
+                
+                # Filter - only remove obvious government offices, keep everything else
+                def is_not_government_office(venue):
+                    if not isinstance(venue, dict):
+                        return False
+                    name = venue.get("name", "").lower()
+                    gov_keywords = [
+                        "agenția", "agentia", "agency", "national", "națională", 
+                        "uniunea", "union", "cooperației", "cooperativa", "cooperative",
+                        "ministry", "ministerul", "office of", "biroul", "institute",
+                        "institutul", "authority", "autoritatea", "council", "consiliul",
+                        "administration", "administrația", "public", "publică"
+                    ]
+                    return not any(kw in name for kw in gov_keywords)
+                
+                venues = [v for v in venues if is_not_government_office(v)]
+                venues = venues[:8]  # Take top 8
+                
+                # Format venues with reverse geocoding (async)
+                formatted_attractions = []
+                for venue in venues[:min(limit, 8)]:
+                    # Skip if enhance_chinese_venue_processing unavailable or returns non-dict
+                    if enhance_chinese_venue_processing and callable(enhance_chinese_venue_processing):
+                        try:
+                            enhanced = enhance_chinese_venue_processing(venue)
+                            if isinstance(enhanced, dict):
+                                venue = enhanced
+                        except Exception:
+                            pass
+                    
+                    address = venue.get("address", "")
+                    lat = venue.get("lat")
+                    lon = venue.get("lon")
+                    
+                    if not address and (not lat or not lon):
+                        continue
+                    
+                    # Check for coordinate-only address
+                    is_coordinate_only = False
+                    if address and re.match(r'^\s*-?\d+\.?\d*\s*,\s*-?\d+\.?\d*\s*$', address.strip()):
+                        is_coordinate_only = True
+                    
+                    if not address or is_coordinate_only:
+                        if lat and lon:
+                            try:
+                                from city_guides.providers.geocoding import reverse_geocode
+                                geocoded_address = await reverse_geocode(float(lat), float(lon))
+                                if geocoded_address:
+                                    address = geocoded_address
+                            except Exception:
+                                continue
+                        else:
+                            continue
+                    
+                    if not address.startswith("📍"):
+                        address = f"📍 {address}"
+                    
+                    enriched_data = enrich_venue_data(venue, city)
+                    
+                    formatted_attraction = {
+                        "id": venue.get("id", ""),
+                        "name": venue.get("name", ""),
+                        "address": address,
+                        "description": enriched_data.get("description", ""),
+                        "venue_type": enriched_data.get("venue_type", ""),
+                        "cuisine": enriched_data.get("cuisine", ""),
+                        "price_level": enriched_data.get("price_level", ""),
+                        "price_indicator": enriched_data.get("price_indicator", ""),
+                        "features": enriched_data.get("features", []),
+                        "opening_hours": enriched_data.get("opening_hours"),
+                        "phone": enriched_data.get("phone"),
+                        "lat": venue.get("lat"),
+                        "lon": venue.get("lon"),
+                        "provider": venue.get("provider", ""),
+                        "tags": venue.get("tags", {}),
+                        "osm_url": venue.get("osm_url", ""),
+                        "website": venue.get("website", "")
+                    }
+                    formatted_attractions.append(formatted_attraction)
+                
+                return formatted_attractions
+            
+            attractions = AsyncRunner.run(get_top_attractions())
+            print(f"[SEARCH DEBUG] Found {len(attractions)} top attractions")
+            
+            # Use the formatted attractions from the async function
+            formatted_attractions = attractions
+            
+            # Apply quality filtering with lower threshold for attractions
+            try:
+                from city_guides.src.venue_quality import MINIMUM_QUALITY_SCORE
+            except:
+                from venue_quality import MINIMUM_QUALITY_SCORE
+            
+            threshold = min(MINIMUM_QUALITY_SCORE, 0.4)  # More permissive for attractions
+            filtered = filter_high_quality_venues(formatted_attractions, min_score=threshold)
+            
+            # If too few, include top-scoring anyway
+            if len(filtered) < 3 and formatted_attractions:
+                filtered = sorted(formatted_attractions, key=lambda x: x.get('quality_score', 0), reverse=True)[:5]
+            
+            result["venues"] = filtered
+            result["debug_info"]["auto_attractions"] = True
+            result["debug_info"]["attractions_found"] = len(filtered)
+            print(f"[SEARCH DEBUG] Returning {len(filtered)} auto-fetched attractions")
+            
+        except Exception as e:
+            print(f"[SEARCH DEBUG] Auto-attraction fetch error: {e}")
+            result["debug_info"]["auto_attraction_error"] = str(e)
     
     # Generate quick guide using WikiVoyage as primary, Wikipedia as fallback for CITY-level searches only
     # Neighborhood searches should use the existing /generate_quick_guide endpoint
@@ -2046,18 +2174,13 @@ def _search_impl(payload):
                             return text
 
                         cleaned = strip_boilerplate_lead(city, extract)
-                        city_image = None
-                        if city_image_search:
-                            try:
-                                image_info = await city_image_search(city, session=session)
-                                if image_info and image_info.get('image_url'):
-                                    city_image = {
-                                        'url': image_info['image_url'],
-                                        'attribution': image_info.get('attribution'),
-                                        'source': 'wikipedia',
-                                    }
-                            except Exception as e:
-                                print(f"[SEARCH DEBUG] Failed to fetch city image: {e}")
+                        city_image = _fetch_image_from_website(url_wiki)
+                        if city_image:
+                            city_image = {
+                                'url': city_image,
+                                'attribution': 'Image via Wikimedia/Wikipedia',
+                                'source': 'wikipedia',
+                            }
                         return {
                             'guide': cleaned,
                             'image': city_image,

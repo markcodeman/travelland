@@ -11,6 +11,8 @@ import json
 import hashlib
 import re
 import time
+
+from city_guides.providers.wikipedia_provider import fetch_wikipedia_summary
 from typing import Callable, Awaitable, Any
 
 from quart import Blueprint, request, jsonify, current_app as app
@@ -279,7 +281,7 @@ async def api_smart_neighborhoods():
     
     city = request.args.get('city', '').strip()
     category = request.args.get('category', '').strip()
-    enrich = request.args.get('enrich', 'true').lower() != 'false'
+    enrich = request.args.get('enrich', 'false').lower() == 'true'
     
     if not city:
         return jsonify({'is_large_city': False, 'neighborhoods': []}), 400
@@ -398,6 +400,7 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
     """
     payload = await request.get_json(silent=True) or {}
     city = (payload.get('city') or '').strip()
+    country = (payload.get('country') or '').strip()
     raw_neighborhood = payload.get('neighborhood') or ''
     neighborhood = raw_neighborhood.strip() if isinstance(raw_neighborhood, str) else ''
     if not city or not neighborhood:
@@ -410,11 +413,13 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache_file = cache_dir / (slug(neighborhood) + '.json')
 
-    # Return cached if exists (unless skip_cache is True)
+    # Return cached if exists (unless skip_cache is True). Ignore synthesized/fallback cache to force fresh fetch.
     if cache_file.exists() and not skip_cache:
         try:
             with open(cache_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
+            if data.get('source') in ('synthesized', 'fallback'):
+                raise ValueError('ignore synthesized cache')
             resp = {
                 'quick_guide': data.get('quick_guide'),
                 'source': data.get('source', 'cache'),
@@ -555,33 +560,116 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
             pass
 
     # Validate city/neighborhood combination using our disambiguator
+    # Prefer neighborhood Wikipedia, then seed, then city wiki; avoid synthesis
     try:
-        is_valid, confidence, suggested = NeighborhoodDisambiguator.validate_neighborhood(neighborhood, city)
-        if not is_valid:
-            app.logger.warning("City/neighborhood combination failed validation: %s/%s (confidence: %.2f)", city, neighborhood, confidence)
-            # Fall back to synthesized content instead of Wikipedia
-            # Use enhanced synthesis with structured content
-            from city_guides.src.synthesis_enhancer import SynthesisEnhancer
-            structured_content = SynthesisEnhancer.generate_neighborhood_content(neighborhood, city)
-            
-            resp = {
-                'quick_guide': structured_content.get('tagline', ''),
-                'tagline': structured_content.get('tagline', ''),
-                'fun_fact': structured_content.get('fun_fact', ''),
-                'exploration': structured_content.get('exploration', ''),
-                'source': 'synthesized',
-                'cached': False,
-                'source_url': None,
-                'confidence': 'low'
-            }
-            return jsonify(resp)
-    except Exception:
-        app.logger.exception("Failed to validate city/neighborhood combination")
+        wiki_summary = None
+        wiki_url = None
+        nh_candidates = [neighborhood, f"{neighborhood}, {city}", f"{neighborhood}, {country}" if country else None]
+        for cand in [c for c in nh_candidates if c]:
+            cand_slug = cand.replace(' ', '_')
+            summary = await fetch_wikipedia_summary(cand, lang="en", city=city, country=country, debug_logs=[])
+            if summary:
+                wiki_summary = summary.strip()
+                wiki_url = f"https://en.wikipedia.org/wiki/{cand_slug}"
+                break
 
-    # SKIP Wikipedia for neighborhoods - go directly to synthesis
-    # Wikipedia is unreliable for neighborhood content and often returns formal/dated info
-    wiki_summary = None
-    wiki_url = None
+        seed_desc = None
+        if not wiki_summary:
+            try:
+                from city_guides.src.dynamic_neighborhoods import load_seed_neighborhoods, _SEED_DATA_CACHE
+                # First try seeds for this city
+                seeds = load_seed_neighborhoods(city)
+                for n in seeds or []:
+                    n_name = (n.get('name') or '').lower().strip()
+                    if n_name == neighborhood_key:
+                        seed_desc = n.get('description') or n.get('name')
+                        break
+                # If not found, scan all cached seeds for a matching neighborhood name
+                if not seed_desc and _SEED_DATA_CACHE:
+                    for seeds_list in _SEED_DATA_CACHE.values():
+                        for n in seeds_list or []:
+                            n_name = (n.get('name') or '').lower().strip()
+                            if n_name == neighborhood_key:
+                                seed_desc = n.get('description') or n.get('name')
+                                break
+                        if seed_desc:
+                            break
+                # If cache empty, brute-force scan data directory for a matching neighborhood
+                if not seed_desc and (_SEED_DATA_CACHE is None or len(_SEED_DATA_CACHE) == 0):
+                    data_dir = Path(__file__).resolve().parent.parent / 'data'
+                    for json_file in data_dir.rglob('*.json'):
+                        try:
+                            with open(json_file, 'r', encoding='utf-8') as f:
+                                data = json.load(f)
+                            if isinstance(data, dict):
+                                cities = data.get('cities')
+                                if isinstance(cities, dict):
+                                    for hoods in cities.values():
+                                        if isinstance(hoods, list):
+                                            for n in hoods:
+                                                n_name = (n.get('name') or '').lower().strip()
+                                                if n_name == neighborhood_key:
+                                                    seed_desc = n.get('description') or n.get('name')
+                                                    raise StopIteration
+                        except StopIteration:
+                            break
+                        except Exception:
+                            continue
+            except Exception:
+                seed_desc = None
+
+        if wiki_summary:
+            quick_guide = wiki_summary
+            source = 'wikipedia'
+            source_url = wiki_url
+        elif seed_desc:
+            quick_guide = seed_desc
+            source = 'seed'
+            source_url = None
+        else:
+            try:
+                city_summary = await fetch_wikipedia_summary(city, lang="en", city=city, country=country, debug_logs=[])
+            except Exception:
+                city_summary = None
+            quick_guide = city_summary or f"Explore {neighborhood} in {city}."
+            source = 'wikipedia' if city_summary else 'fallback'
+            source_url = None
+
+        # Determine confidence
+        confidence = 'low'
+        if source == 'wikipedia':
+            confidence = 'high'
+        elif source == 'seed':
+            confidence = 'high'
+        elif source == 'geo-enriched':
+            confidence = 'medium'
+
+        result = {
+            'quick_guide': quick_guide,
+            'source': source,
+            'confidence': confidence,
+            'cached': False,
+            'source_url': source_url
+        }
+
+        # Cache only high-quality sources
+        if source in ('wikipedia', 'seed'):
+            try:
+                with open(cache_file, 'w', encoding='utf-8') as f:
+                    json.dump({
+                        'quick_guide': quick_guide,
+                        'source': source,
+                        'confidence': confidence,
+                        'source_url': source_url,
+                        'generated_at': time.time()
+                    }, f)
+            except Exception:
+                pass
+
+        return jsonify(result)
+    except Exception:
+        app.logger.exception("Neighborhood wiki/seed flow failed; returning fallback")
+        return jsonify({'quick_guide': f"Explore {neighborhood} in {city}.", 'source': 'fallback', 'cached': False, 'source_url': None})
 
     def _looks_like_disambiguation_text(txt: str) -> bool:
         """Return True if the wiki extract looks like a disambiguation/listing page rather than a local description.
@@ -629,40 +717,27 @@ async def generate_quick_guide(skip_cache=False, disable_quality_check=False):
         if not extract_text and not title_text:
             return False
         locality_keywords = ['neighborhood', 'neighbourhood', 'district', 'suburb', 'municipality', 'borough', 'locality']
-        event_keywords = ['fire', 'wildfire', 'hurricane', 'earthquake', 'storm', 'flood', 'tornado', 'volcano', 'massacre', 'riot', 'disaster', 'accident', 'attack']
 
-        # If page mentions the city or neighborhood explicitly, consider it relevant
-        # But be more strict when city is a country name to avoid wrong matches
-        city_lower = city.lower()
-        neighborhood_lower = neighborhood.lower()
-        
-        # Check if city is a country name (common countries)
-        country_names = {'mexico', 'united states', 'canada', 'spain', 'france', 'germany', 'italy', 'uk', 'britain', 'australia', 'japan', 'china', 'india', 'brazil', 'argentina'}
-        is_country = city_lower in country_names
-        
-        if is_country:
-            # For country names, require both city AND neighborhood to be mentioned
-            if (city_lower in extract_text or city_lower in title_text) and (neighborhood_lower in extract_text or neighborhood_lower in title_text):
-                return True
-        else:
-            # For regular cities, either city or neighborhood mention is fine
-            if city_lower in extract_text or city_lower in title_text:
-                return True
-                
-        if neighborhood_lower in extract_text or neighborhood_lower in title_text:
-            # Be careful: neighborhood may appear in the name of an event/article (e.g., "Las Conchas Fire").
-            # If the page title combines neighborhood + an event keyword (e.g., "Las Conchas Fire"), reject it unless the page also mentions the city.
-            if any(ev in title_text for ev in event_keywords):
-                if city.lower() not in extract_text and city.lower() not in title_text:
-                    app.logger.debug("Rejecting page with neighborhood in title but event-like content: %s", title_text)
-                    return False
-                else:
-                    return True
-            # Otherwise accept
-            return True
-        if any(k in extract_text for k in locality_keywords):
-            return True
-        return False
+    result = {
+        'quick_guide': quick_guide,
+        'source': source,
+        'cached': False,
+        'source_url': source_url
+    }
+
+    # Cache result
+    try:
+        with open(cache_file, 'w', encoding='utf-8') as f:
+            json.dump({
+                'quick_guide': quick_guide,
+                'source': source,
+                'source_url': source_url,
+                'generated_at': time.time()
+            }, f)
+    except Exception:
+        pass
+
+    return jsonify(result)
 
     # Delegate DDGS/web snippet filtering to a dedicated module to keep imports light for tests
     from city_guides.src.snippet_filters import looks_like_ddgs_disambiguation_text as _looks_like_ddgs_disambiguation_text

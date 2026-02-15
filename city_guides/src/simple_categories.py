@@ -979,12 +979,17 @@ async def fetch_wikipedia_full_content(city: str, state: str = "", country: str 
         search_variations = []
         if state and country:
             search_variations.append(f"{city}, {state}")
+        if state:
+            search_variations.append(f"{city}, {state}")
         if country:
             search_variations.append(f"{city}, {country}")
         search_variations.append(city)
         
         for search_title in search_variations:
-            url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&exlimit=1&titles={search_title}&format=json"
+            # URL encode the search title
+            from urllib.parse import quote
+            encoded_title = quote(search_title.replace(" ", "_"))
+            url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&exlimit=1&titles={encoded_title}&format=json"
             headers = {'User-Agent': 'TravelLand/1.0 (Educational)'}
             
             async with aiohttp.ClientSession() as session:
@@ -1010,21 +1015,34 @@ async def simple_wikipedia_fetch(city: str, state: str = "", country: str = "") 
     """Simple Wikipedia summary fetch with state/country support."""
     try:
         import aiohttp
+        from urllib.parse import quote
         
-        # Try with state first for better accuracy
+        # Try variations - city name alone first (works for Mostar)
+        search_variations = [city]
         if state:
-            url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{city}, {state}"
-        else:
-            url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{city}"
-            
+            search_variations.append(f"{city}, {state}")
+        if country:
+            search_variations.append(f"{city}, {country}")
+        
         headers = {'User-Agent': 'TravelLand/1.0 (Educational)'}
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    return data.get('extract', '')
-                else:
-                    print(f"[WIKI] HTTP {resp.status} for {city}")
+            for search_title in search_variations:
+                # Skip empty variations
+                if not search_title or search_title.endswith(', '):
+                    continue
+                    
+                encoded = quote(search_title.replace(" ", "_"))
+                url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{encoded}"
+                
+                async with session.get(url, headers=headers) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        content = data.get('extract', '')
+                        if content:
+                            print(f"[WIKI] Got summary for {search_title}")
+                            return content
+                    else:
+                        print(f"[WIKI] HTTP {resp.status} for {search_title}")
     except Exception as e:
         print(f"[WIKI] Simple fetch error: {e}")
     return ""

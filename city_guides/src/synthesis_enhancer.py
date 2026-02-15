@@ -44,16 +44,91 @@ class SynthesisEnhancer:
             'perto de': 'near',
             'conhecido por': 'known for',
             'famoso por': 'famous for',
+        },
+        'ro': {
+            'situat în': 'located in',
+            'localizat în': 'situated in',
+            'aproape de': 'near',
+            'cunoscut pentru': 'known for',
+            'faimos pentru': 'famous for',
         }
     }
 
+    # Romanian-specific content themes
+    ROMANIAN_THEMES = {
+        'transylvania': [
+            'medieval castles', 'Saxon heritage', 'Vlad the Impaler', 'Transylvanian Alps',
+            'fairy-tale architecture', 'Gothic churches', 'mountain fortresses', 'Dracula legends'
+        ],
+        'culture': [
+            'traditional crafts', 'woodcarving', 'hand-painted ceramics', 'folk costumes',
+            'Romanian Orthodox churches', 'village traditions', 'carpathian folklore'
+        ],
+        'history': [
+            'Dacian roots', 'Roman province of Dacia', 'medieval principalities',
+            'Ottoman influences', 'Austro-Hungarian legacy', 'communist era', '1989 revolution'
+        ]
+    }
+
     @staticmethod
-    def detect_language(text: str) -> str:
-        """
-        Detect language of text (returns 'en' for English, or language code)
-        """
-        if not text:
-            return 'en'
+    def is_romanian_city(city: str) -> bool:
+        """Check if a city is in Romania"""
+        romanian_cities = {
+            'brasov', 'brașov', 'bucharest', 'bucurești', 'cluj-napoca', 'cluj', 'timișoara', 'timisoara',
+            'iași', 'iasi', 'constanța', 'constanta', 'craiova', 'oradea', 'braila', 'arad',
+            'pitesti', 'sibiu', 'bacau', 'targu mures', 'baia mare', 'buzau', 'botosani',
+            'satu mare', 'ramnicu valcea', 'drobeta-turnu severin', 'suceava', 'piatra neamt',
+            'targoviste', 'focsani', 'tulcea', 'resita', 'vaslui', 'giurgiu', 'slatina'
+        }
+        return city.lower().replace('ș', 's').replace('ț', 't').replace('ă', 'a').replace('â', 'a').replace('î', 'i') in romanian_cities
+
+    @staticmethod
+    def generate_romanian_enhanced_content(city: str, base_content: str = "") -> str:
+        """Generate enhanced content for Romanian cities with cultural themes"""
+        if not SynthesisEnhancer.is_romanian_city(city):
+            return base_content
+
+        city_lower = city.lower()
+
+        # City-specific enhancements
+        enhancements = {
+            'brasov': [
+                "Brașov, the fairy-tale city of Transylvania, features stunning medieval architecture and Saxon heritage.",
+                "Founded by Teutonic Knights in 1211, Brașov was a key trading post on ancient merchant routes.",
+                "The city's Black Church, the largest Gothic church between Vienna and Istanbul, towers over the historic center.",
+                "Brașov Castle, once home to Vlad the Impaler, stands as a testament to Romania's turbulent history."
+            ],
+            'bucharest': [
+                "Bucharest, Romania's vibrant capital, blends French elegance with Eastern European charm.",
+                "Known as 'Little Paris', Bucharest features grand boulevards and stunning neoclassical architecture.",
+                "The Palace of the Parliament, the world's second-largest administrative building, dominates the city skyline.",
+                "Bucharest's Old Town pulses with energy, featuring cobblestone streets and historic guild houses."
+            ],
+            'cluj-napoca': [
+                "Cluj-Napoca, called 'Little Vienna', showcases Austro-Hungarian architectural splendor.",
+                "Romania's oldest university city, Cluj-Napoca is a center of learning and innovation.",
+                "The city's Matthias Corvinus House, dating to 1463, represents Transylvania's rich medieval heritage.",
+                "Cluj-Napoca's blend of Romanian, Hungarian, and Saxon cultures creates a uniquely vibrant atmosphere."
+            ]
+        }
+
+        city_enhancements = enhancements.get(city_lower, [])
+
+        # General Romanian themes if no specific city match
+        if not city_enhancements:
+            city_enhancements = [
+                f"{city} showcases Romania's rich cultural heritage and architectural diversity.",
+                "From medieval castles to communist-era buildings, Romanian cities tell stories of centuries of history.",
+                "Traditional crafts, folk costumes, and local cuisine reflect Romania's deep cultural roots."
+            ]
+
+        # Combine base content with Romanian enhancements
+        if base_content:
+            enhanced = base_content.rstrip('. ') + '. ' + ' '.join(city_enhancements[:2])
+        else:
+            enhanced = ' '.join(city_enhancements[:3])
+
+        return SynthesisEnhancer.safe_trim(enhanced, 500)
 
         text_lower = text.lower()
 
@@ -416,6 +491,9 @@ class SynthesisEnhancer:
         if neighborhood:
             base = SynthesisEnhancer.ensure_includes_term(base, base, neighborhood, fallback_sentence=f"{neighborhood} is a neighborhood in {city or ''}.")
 
+        # Romanian city enhancement - add rich cultural content
+        if city and SynthesisEnhancer.is_romanian_city(city):
+            base = SynthesisEnhancer.generate_romanian_enhanced_content(city, base)
 
         # Replace generic praise clauses with a neutral paraphrase even if keywords exist
         low = (text or '').lower()
