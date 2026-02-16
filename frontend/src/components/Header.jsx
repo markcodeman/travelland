@@ -1,5 +1,5 @@
 
-export default function Header({ city, neighborhood }) {
+export default function Header({ city, neighborhood, neighborhoodOptIn = false, onToggleNeighborhood = () => {} }) {
   return (
     <header className="bg-transparent">
       <div className="max-w-6xl mx-auto px-4 pt-4 flex items-center justify-between gap-4">
@@ -14,6 +14,19 @@ export default function Header({ city, neighborhood }) {
               <span className="text-sm font-semibold text-slate-800">{neighborhood ? `${neighborhood}, ${city}` : city}</span>
             </div>
           )}
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onToggleNeighborhood}
+              className={`text-sm px-3 py-2 rounded-full border ${neighborhoodOptIn ? 'bg-green-100 border-green-300 text-green-900' : 'bg-white border-slate-200 text-slate-800'}`}
+              aria-pressed={neighborhoodOptIn}
+              title="Toggle neighborhood suggestions"
+            >
+              Neighborhoods: {neighborhoodOptIn ? 'On' : 'Off'}
+            </button>
+          </div>
+
           <button
             type="button"
             className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:shadow-md transition"

@@ -2001,9 +2001,10 @@ async def discover_pois(city: Optional[str] = None, poi_type: str = "restaurant"
     deduped = deduplicate_venues(all_pois, name_threshold=0.85, coord_threshold_meters=100)
     print(f"[DEDUPLICATION] Removed {len(all_pois) - len(deduped)} duplicates, returning {len(deduped)} unique venues")
 
-    # Enrich with Mapillary images if token is set
+    # Enrich with Mapillary images only when explicitly enabled (ENV: ENABLE_MAPILLARY)
     try:
-        if os.getenv("MAPILLARY_TOKEN") and deduped:
+        enable_mapillary = os.getenv("ENABLE_MAPILLARY", "false").lower() == "true"
+        if enable_mapillary and os.getenv("MAPILLARY_TOKEN") and deduped:
             import importlib
             mapillary_provider = None
             try:

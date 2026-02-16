@@ -111,14 +111,17 @@ async def _persist_quick_guide(out_obj: Dict, city_name: str, neighborhood_name:
         logging.exception('Failed to persist quick_guide: %s', e)
 
 
-def build_search_cache_key(city: str, q: str, neighborhood: Dict | None = None) -> str:
+def build_search_cache_key(city: str, q: str, neighborhood: str | Dict | None = None) -> str:
     """Build cache key for search results"""
     import hashlib
     
     nh_key = ""
     if neighborhood:
-        nh_id = neighborhood.get("id", "")
-        nh_key = f":{nh_id}"
+        if isinstance(neighborhood, dict):
+            nh_id = neighborhood.get("id", "")
+            nh_key = f":{nh_id}"
+        elif isinstance(neighborhood, str):
+            nh_key = f":{neighborhood.strip().lower()}"
     raw = f"search:{(city or '').strip().lower()}:{(q or '').strip().lower()}{nh_key}"
     return "travelland:" + hashlib.sha1(raw.encode()).hexdigest()
 
@@ -1370,6 +1373,7 @@ def _search_impl(payload):
     
     city_input = (payload.get("query") or "").strip()
     city = city_input
+    country = (payload.get("country") or "").strip()
     if not city:
         return {"error": "City not found or invalid", "debug_info": {"city_input": city_input}}
     
@@ -1387,10 +1391,12 @@ def _search_impl(payload):
         "quick_guide": "",
         "summary": "",
         "city": city,
+        "country": country,
         "category": q,
         "neighborhood": neighborhood,
         "debug_info": {
             "city": city,
+            "country": country,
             "category": q,
             "neighborhood": neighborhood,
             "limit": limit
@@ -1480,7 +1486,7 @@ def _search_impl(payload):
                 print(f"[SEARCH DEBUG] Failed to use selected candidate: {e}")
         else:
             # geocode_city returns a coroutine, so we need to run it in an event loop
-            city_coords = AsyncRunner.run(geocode_city(city))
+            city_coords = AsyncRunner.run(geocode_city(city, country=country))
             if city_coords:
                 print(f"[SEARCH DEBUG] City coordinates: {city_coords}")
                 # If city_coords has a bbox, use it, but if it's too large, tighten it
@@ -1608,10 +1614,34 @@ def _search_impl(payload):
                     bbox=tuple(bbox) if bbox else None,
                     timeout=10.0
                 )
+                # If provider returns no venues for this specific poi_type, try a small
+                # sequence of broader/adjacent poi types as a graceful fallback so
+                # categories like 'historic' still surface attractions available
+                # under more general provider types (e.g., 'tourism' or 'attraction').
+                if not venues:
+                    for alt_type in ("tourism", "attraction", "historic"):
+                        if alt_type == poi_type:
+                            continue
+                        try:
+                            print(f"[SEARCH DEBUG] Fallback: trying alt_type={alt_type} for city={city}")
+                            alt_res = await multi_provider.async_discover_pois(
+                                city=city,
+                                poi_type=alt_type,
+                                limit=limit,
+                                bbox=tuple(bbox) if bbox else None,
+                                timeout=10.0,
+                            )
+                            if alt_res:
+                                print(f"[SEARCH DEBUG] Fallback success: got {len(alt_res)} venues for alt_type={alt_type}")
+                                venues = alt_res
+                                break
+                        except Exception as e:
+                            print(f"[SEARCH DEBUG] Fallback {alt_type} failed: {e}")
                 print(f"[SEARCH DEBUG] multi_provider returned {len(venues)} venues")
                 
-                # Format venues for response and add images
+                # Format venues for response (build core venue objects first)
                 formatted_venues = []
+                mapillary_tasks = []  # collect (index, lat, lon) for concurrent enrichment
                 for venue in venues[:limit]:
                     # Apply Chinese venue processing first
                     venue = enhance_chinese_venue_processing(venue)
@@ -1619,18 +1649,18 @@ def _search_impl(payload):
                     address = venue.get("address", "")
                     lat = venue.get("lat")
                     lon = venue.get("lon")
-                    
+
                     # Skip venues with no address or coordinates
                     if not address and (not lat or not lon):
                         print(f"[SEARCH DEBUG] Skipping venue '{venue.get('name', 'Unknown')}' - no address or coordinates")
                         continue
-                    
+
                     # Check if address is just coordinates (e.g., "48.8449, 2.3487")
                     import re
                     is_coordinate_only = False
                     if address and re.match(r'^\s*-?\d+\.?\d*\s*,\s*-?\d+\.?\d*\s*$', address.strip()):
                         is_coordinate_only = True
-                    
+
                     # If no address or coordinate-only, try reverse geocoding
                     if not address or is_coordinate_only:
                         if lat and lon:
@@ -1650,14 +1680,14 @@ def _search_impl(payload):
                         else:
                             print(f"[SEARCH DEBUG] Skipping venue '{venue.get('name', 'Unknown')}' - no coordinates for reverse geocoding")
                             continue
-                    
+
                     # Standardize address presentation
                     if not address.startswith("📍"):
                         address = f"📍 {address}"
-                    
+
                     # Enrich venue with human-readable context
                     enriched_data = enrich_venue_data(venue, city)
-                    
+
                     formatted_venue = {
                         "id": venue.get("id", ""),
                         "name": venue.get("name", ""),
@@ -1677,31 +1707,33 @@ def _search_impl(payload):
                         "osm_url": venue.get("osm_url", ""),
                         "website": venue.get("website", "")
                     }
-                    
-                    # Add images if Mapillary is available and venue has coordinates
-                    if mapillary_search and formatted_venue.get("lat") and formatted_venue.get("lon"):
-                        try:
-                            images = await mapillary_search(
-                                lat=formatted_venue["lat"],
-                                lon=formatted_venue["lon"],
-                                radius_m=50,
-                                limit=2
-                            )
-                            if images:
-                                formatted_venue["images"] = [
-                                    {
-                                        "id": img.get("id"),
-                                        "url": img.get("url"),
-                                        "lat": img.get("lat"),
-                                        "lon": img.get("lon")
-                                    }
-                                    for img in images
-                                ]
-                        except Exception as e:
-                            print(f"[SEARCH DEBUG] Mapillary error: {e}")
-                    
+
+                    # Queue Mapillary enrichment (do not await here) - limit to first 4 venues to bound cost
+                    if mapillary_search and formatted_venue.get("lat") and formatted_venue.get("lon") and len(mapillary_tasks) < 4:
+                        mapillary_tasks.append((len(formatted_venues), formatted_venue["lat"], formatted_venue["lon"]))
+
                     formatted_venues.append(formatted_venue)
-                
+
+                # Enrich venues with Mapillary images concurrently (bounded timeout)
+                if mapillary_search and mapillary_tasks:
+                    try:
+                        coros = [mapillary_search(lat=lat, lon=lon, radius_m=50, limit=2) for _, lat, lon in mapillary_tasks]
+                        # Bound the total enrichment time to 3s so slow Mapillary calls don't stall the search
+                        gathered = await asyncio.wait_for(asyncio.gather(*coros, return_exceptions=True), timeout=3.0)
+                    except Exception:
+                        gathered = []
+
+                    for idx, res in enumerate(gathered):
+                        task_info = mapillary_tasks[idx]
+                        venue_index = task_info[0]
+                        try:
+                            if isinstance(res, list) and res:
+                                formatted_venues[venue_index]["images"] = [
+                                    {"id": img.get("id"), "url": img.get("url"), "lat": img.get("lat"), "lon": img.get("lon")} for img in res
+                                ]
+                        except Exception:
+                            continue
+
                 return formatted_venues
                 
             # Run in event loop

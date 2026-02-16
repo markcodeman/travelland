@@ -150,6 +150,31 @@ async def pixabay_search():
         return jsonify({'error': 'pixabay_search_failed'}), 500
 
 
+@bp.route('/api/wiki/section', methods=['GET'])
+async def wiki_section():
+    """Return rendered HTML for a named Wikipedia section (cached, fast).
+
+    Query params: page (required), section (required), lang (optional, default 'en')
+    Example: /api/wiki/section?page=Mostar&section=Tourism
+    """
+    try:
+        page = (request.args.get('page') or '').strip()
+        section = (request.args.get('section') or '').strip()
+        lang = (request.args.get('lang') or 'en').strip()
+        if not page or not section:
+            return jsonify({'error': 'missing page or section'}), 400
+
+        from city_guides.providers.wikipedia_provider import async_fetch_wikipedia_section
+        html = await async_fetch_wikipedia_section(page, section, lang=lang)
+        if not html:
+            return jsonify({'found': False, 'html': None}), 404
+        return jsonify({'found': True, 'html': html})
+    except Exception as e:
+        from city_guides.src.app import app
+        app.logger.exception('wiki_section proxy failed')
+        return jsonify({'error': 'wiki_section_failed'}), 500
+
+
 def register(app):
     """Register media blueprint with app"""
     app.register_blueprint(bp)

@@ -29,6 +29,45 @@ except ImportError:
 # Redis for caching
 redis_client = None  # Will be set from routes.py
 
+# Country name normalizations for Wikipedia lookups
+COUNTRY_NORMALIZATIONS = {
+    'bosnia': 'Bosnia and Herzegovina',
+    'czech republic': 'Czech Republic',
+    'czech': 'Czech Republic',
+    'uk': 'United Kingdom',
+    'usa': 'United States',
+    'us': 'United States',
+    'uae': 'United Arab Emirates',
+    'south korea': 'South Korea',
+    'north korea': 'North Korea',
+    'russia': 'Russia',
+    'china': 'China',
+    'india': 'India',
+    'brazil': 'Brazil',
+    'mexico': 'Mexico',
+    'canada': 'Canada',
+    'australia': 'Australia',
+    'japan': 'Japan',
+    'germany': 'Germany',
+    'france': 'France',
+    'italy': 'Italy',
+    'spain': 'Spain',
+    'portugal': 'Portugal',
+    'netherlands': 'Netherlands',
+    'belgium': 'Belgium',
+    'switzerland': 'Switzerland',
+    'austria': 'Austria',
+    'poland': 'Poland',
+    'sweden': 'Sweden',
+    'norway': 'Norway',
+    'denmark': 'Denmark',
+    'finland': 'Finland',
+    'ireland': 'Ireland',
+    'scotland': 'United Kingdom',
+    'wales': 'United Kingdom',
+    'england': 'United Kingdom'
+}
+
 # Cache settings - REDUCED TTL for faster iteration
 CACHE_TTL = 30  # 30 seconds for rapid testing
 CACHE_VERSION = "v2"  # Increment when logic changes
@@ -975,15 +1014,17 @@ async def fetch_wikipedia_full_content(city: str, state: str = "", country: str 
     try:
         import aiohttp
         
-        # Try variations with state/country for disambiguation
-        search_variations = []
-        if state and country:
+        # Normalize country names for Wikipedia
+        normalized_country = COUNTRY_NORMALIZATIONS.get(country.lower(), country) if country else ""
+        
+        # Try variations with BASE CITY FIRST, then disambiguation
+        search_variations = [city]  # Try base city name first
+        if state and normalized_country:
             search_variations.append(f"{city}, {state}")
         if state:
             search_variations.append(f"{city}, {state}")
-        if country:
-            search_variations.append(f"{city}, {country}")
-        search_variations.append(city)
+        if normalized_country:
+            search_variations.append(f"{city}, {normalized_country}")
         
         for search_title in search_variations:
             # URL encode the search title
@@ -1049,51 +1090,41 @@ async def simple_wikipedia_fetch(city: str, state: str = "", country: str = "") 
 
 
 async def extract_from_city_guide(city: str, state: str = "", country: str = "") -> List[Dict[str, Any]]:
-    """Extract categories from the Wikipedia city guide content."""
+    """Extract categories from the Wikipedia city guide content using keyword enrichment."""
     categories = []
     city_lower = city.lower().strip()
     
     try:
+        import os
+        import json
+        
+        # Load keyword mapping from JSON (DDD-compliant)
+        mapping_path = os.path.join(os.path.dirname(__file__), '../data/category_keywords.json')
+        with open(mapping_path, 'r') as f:
+            keyword_map = json.load(f)
+        
         # Use FULL Wikipedia content for better extraction
         content = await fetch_wikipedia_full_content(city, state, country)
         if content:
             guide_text = content.lower()
             print(f"[WIKI] Analyzing {len(content)} chars for {city}")
             
-            # Extract based on full article content
-            if any(word in guide_text for word in ['museum', 'art', 'gallery', 'culture', 'exhibition']):
-                categories.append({'category': 'Art & Culture', 'confidence': 0.8, 'source': 'city_guide'})
-            
-            # Beaches validation - must have actual beach/coastal evidence, not just harbor/river
-            beach_keywords = ['beach', 'beaches', 'coastline', 'seaside', 'oceanfront', 'sandy beach']
-            harbor_mentions = guide_text.count('harbor') + guide_text.count('harbour') + guide_text.count('port')
-            beach_mentions = sum(guide_text.count(word) for word in beach_keywords)
-            
-            # Only add beaches if strong beach evidence AND not a lake city
-            lake_keywords = ['lake', 'inland', 'freshwater']
-            is_lake_city = any(word in guide_text[:3000] for word in lake_keywords) and 'ocean' not in guide_text[:5000]
-            
-            if not is_lake_city and (beach_mentions >= 3 or any(word in guide_text for word in ['coastal city', 'seaside resort', 'beach resort', 'popular beaches'])):
-                categories.append({'category': 'Beaches & Coast', 'confidence': 0.8, 'source': 'city_guide'})
-            
-            if any(word in guide_text for word in ['park', 'garden', 'nature', 'green', 'forest', 'mountain']):
-                categories.append({'category': 'Parks & Nature', 'confidence': 0.8, 'source': 'city_guide'})
-            if any(word in guide_text for word in ['food', 'dining', 'restaurant', 'cuisine', 'eat', 'gastronomy', 'pub', 'bar']):
-                categories.append({'category': 'Food & Dining', 'confidence': 0.8, 'source': 'city_guide'})
-            if any(word in guide_text for word in ['shopping', 'market', 'store', 'boutique', 'retail', 'mall']):
-                categories.append({'category': 'Shopping', 'confidence': 0.7, 'source': 'city_guide'})
-            if any(word in guide_text for word in ['nightlife', 'bar', 'pub', 'club', 'entertainment', 'music']):
-                categories.append({'category': 'Nightlife', 'confidence': 0.7, 'source': 'city_guide'})
-            if any(word in guide_text for word in ['historic', 'history', 'monument', 'castle', 'heritage', 'ancient']):
-                categories.append({'category': 'Historic Sites', 'confidence': 0.8, 'source': 'city_guide'})
-            if any(word in guide_text for word in ['university', 'education', 'college', 'school', 'academic']):
-                categories.append({'category': 'Education', 'confidence': 0.6, 'source': 'city_guide'})
-            if any(word in guide_text for word in ['theatre', 'theater', 'opera', 'concert', 'performance']):
-                categories.append({'category': 'Theatre & Shows', 'confidence': 0.75, 'source': 'city_guide'})
-            if any(word in guide_text for word in ['sports', 'stadium', 'football', 'soccer', 'rugby', 'gaa']):
-                categories.append({'category': 'Sports', 'confidence': 0.7, 'source': 'city_guide'})
+            # DDD-compliant keyword enrichment from Wikipedia content
+            for cat, keywords in keyword_map.items():
+                for kw in keywords:
+                    if kw.lower() in guide_text:
+                        categories.append({
+                            'category': cat.title(),
+                            'confidence': 0.8,
+                            'source': 'city_guide',
+                            'matched': kw
+                        })
+                        break  # One match per category is enough
         else:
             print(f"[WIKI] No content found for {city}")
+            # Fallback to category page extraction
+            category_cats = await extract_from_wikipedia_category(city, state, country)
+            categories.extend(category_cats)
         
         print(f"[WIKI] Extracted {len(categories)} categories for {city}: {[c['category'] for c in categories]}")
             
@@ -1103,8 +1134,56 @@ async def extract_from_city_guide(city: str, state: str = "", country: str = "")
     return categories
 
 
-async def extract_from_wikipedia_sections(city: str, state: str = "") -> List[Dict[str, Any]]:
-    """Extract categories from Wikipedia page with comprehensive analysis."""
+async def extract_from_wikipedia_category(city: str, state: str = "", country: str = "") -> List[Dict[str, Any]]:
+    """Extract categories from Wikipedia category page subcategories."""
+    categories = []
+    try:
+        import aiohttp
+        from urllib.parse import quote
+        import os
+        # Load keyword mapping from JSON (DDD-compliant)
+        mapping_path = os.path.join(os.path.dirname(__file__), '../data/category_keywords.json')
+        with open(mapping_path, 'r') as f:
+            keyword_map = json.load(f)
+
+        # Use categorymembers API to get subcategories
+        category_title = f"Category:{city}"
+        encoded_title = quote(category_title)
+        url = f"https://en.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle={encoded_title}&cmtype=subcat&format=json&origin=*"
+        headers = {'User-Agent': 'TravelLand/1.0 (Educational)'}
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    members = data.get('query', {}).get('categorymembers', [])
+                    print(f"[WIKI_CATEGORY] Found {len(members)} subcategories for {city}")
+                    for member in members:
+                        subcat_name = member.get('title', '').replace('Category:', '').strip()
+                        # DDD-compliant keyword enrichment
+                        enriched = False
+                        for cat, keywords in keyword_map.items():
+                            for kw in keywords:
+                                if kw.lower() in subcat_name.lower():
+                                    categories.append({'category': cat.title(), 'confidence': 0.8, 'source': 'keyword_enrichment', 'matched': subcat_name})
+                                    enriched = True
+                                    break
+                            if enriched:
+                                break
+                        if not enriched:
+                            categories.append({'category': subcat_name, 'confidence': 0.7, 'source': 'wikipedia_category'})
+                    print(f"[WIKI_CATEGORY] Extracted {len(categories)} categories (enriched+raw) from Wikipedia for {city}")
+    except Exception as e:
+        print(f"[WIKI_CATEGORY] Error: {e}")
+    return categories
+
+
+async def extract_from_wikipedia_sections(city: str, state: str = "", country: str = "") -> List[Dict[str, Any]]:
+    """Extract categories from Wikipedia page with comprehensive analysis.
+
+    Extended behavior:
+    - If the city page is sparse, also search for 'Tourism in <country>' pages and parse any section that mentions the city.
+    - Additionally query `Category:Tourist attractions in <city>` for complementary signals.
+    """
     categories = []
     
     try:
@@ -1112,9 +1191,9 @@ async def extract_from_wikipedia_sections(city: str, state: str = "") -> List[Di
             title = f"{city}"
             if state:
                 title += f", {state}"
-                
+
             async with aiohttp.ClientSession() as session:
-                # Get full page content with sections
+                # Primary: Get full page content with sections for the city page
                 params = {
                     'action': 'parse',
                     'page': title,
@@ -1122,16 +1201,16 @@ async def extract_from_wikipedia_sections(city: str, state: str = "") -> List[Di
                     'format': 'json',
                     'origin': '*'
                 }
-                async with session.get('https://en.wikipedia.org/w/api.php', params=params) as resp:
+                async with session.get('https://en.wikipedia.org/w/api.php', params=params, timeout=10) as resp:
                     if resp.status == 200:
                         data = await resp.json()
-                        
-                        # Extract from section headers
+
+                        # Extract categories from the city's own page (existing heuristics)
                         sections = data.get('parse', {}).get('sections', [])
                         for section in sections:
                             line = section.get('line', '').lower()
-                            
-                            # Comprehensive category mapping
+
+                            # Comprehensive category mapping (unchanged heuristics)
                             if any(word in line for word in ['culture', 'art', 'museum', 'theatre', 'gallery']):
                                 categories.append({'category': 'Art & Culture', 'confidence': 0.8, 'source': 'wikipedia'})
                             if any(word in line for word in ['history', 'historic', 'heritage', 'medieval']):
@@ -1152,37 +1231,34 @@ async def extract_from_wikipedia_sections(city: str, state: str = "") -> List[Di
                                 categories.append({'category': 'Nightlife', 'confidence': 0.7, 'source': 'wikipedia'})
                             if any(word in line for word in ['education', 'university', 'schools', 'academic']):
                                 categories.append({'category': 'Education', 'confidence': 0.6, 'source': 'wikipedia'})
-                            # Note: Beaches & Coast is handled in content text extraction with stricter validation
                             if any(word in line for word in ['wine', 'vineyard', 'winery', 'viticulture']):
                                 categories.append({'category': 'Wine & Vineyards', 'confidence': 0.9, 'source': 'wikipedia'})
-                        
+
                         # Extract from page content text
                         page_text = data.get('parse', {}).get('text', {}).get('*', '').lower()
-                        
-                        # Look for key phrases in content
+
+                        # Look for key phrases in content (existing heuristics)
                         if any(phrase in page_text for phrase in ['world heritage site', 'unesco', 'historic monument']):
                             categories.append({'category': 'Historic Sites', 'confidence': 0.8, 'source': 'wikipedia'})
                         if any(phrase in page_text for phrase in ['art gallery', 'museum', 'cultural center']):
                             categories.append({'category': 'Art & Culture', 'confidence': 0.8, 'source': 'wikipedia'})
                         if any(phrase in page_text for phrase in ['wine region', 'vineyard', 'winery', 'wine production']):
                             categories.append({'category': 'Wine & Vineyards', 'confidence': 0.9, 'source': 'wikipedia'})
-                        
+
                         # Beaches validation - stricter criteria
                         beach_phrases = ['beaches', 'coastline', 'seaside', 'oceanfront', 'beach resort', 'popular beaches']
                         beach_mentions = sum(page_text.count(phrase) for phrase in beach_phrases)
-                        # Exclude lake cities
                         is_lake = any(word in page_text[:3000] for word in ['lake', 'inland', 'freshwater']) and 'ocean' not in page_text[:5000]
                         if not is_lake and beach_mentions >= 2:
                             categories.append({'category': 'Beaches & Coast', 'confidence': 0.8, 'source': 'wikipedia'})
-                        
+
                         if any(phrase in page_text for phrase in ['park', 'garden', 'green space', 'nature reserve']):
                             categories.append({'category': 'Parks & Nature', 'confidence': 0.7, 'source': 'wikipedia'})
-                        
+
                         # Extract from Wikipedia categories
                         wiki_cats = data.get('parse', {}).get('categories', [])
                         for cat in wiki_cats:
                             cat_title = cat.get('title', '').lower()
-                            
                             if any(word in cat_title for word in ['culture', 'art', 'museums']):
                                 categories.append({'category': 'Art & Culture', 'confidence': 0.8, 'source': 'wikipedia'})
                             if any(word in cat_title for word in ['history', 'historic', 'heritage']):
@@ -1191,7 +1267,71 @@ async def extract_from_wikipedia_sections(city: str, state: str = "") -> List[Di
                                 categories.append({'category': 'Architecture', 'confidence': 0.8, 'source': 'wikipedia'})
                             if any(word in cat_title for word in ['wine', 'vineyards', 'viticulture']):
                                 categories.append({'category': 'Wine & Vineyards', 'confidence': 0.9, 'source': 'wikipedia'})
-                                
+
+                # --- Extended behavior: if the city's page is sparse or doesn't include tourism text,
+                # check for country-level 'Tourism in <country>' pages and category members.
+                need_additional = len(categories) < 3
+
+                # 1) Search for 'tourism <city>' or 'Tourism in <country>' pages that mention the city
+                if need_additional:
+                    try:
+                        search_params = {
+                            'action': 'query',
+                            'list': 'search',
+                            'srsearch': f'tourism {city}',
+                            'srlimit': 8,
+                            'format': 'json',
+                            'origin': '*'
+                        }
+                        async with session.get('https://en.wikipedia.org/w/api.php', params=search_params, timeout=8) as sresp:
+                            if sresp.status == 200:
+                                sdata = await sresp.json()
+                                hits = sdata.get('query', {}).get('search', [])
+                                for hit in hits:
+                                    title_hit = hit.get('title')
+                                    # Parse the candidate page and look for sections mentioning the city
+                                    pparams = {'action': 'parse', 'page': title_hit, 'prop': 'sections|text', 'format': 'json', 'origin': '*'}
+                                    async with session.get('https://en.wikipedia.org/w/api.php', params=pparams, timeout=8) as ph:
+                                        if ph.status != 200:
+                                            continue
+                                        pjson = await ph.json()
+                                        sections = pjson.get('parse', {}).get('sections', [])
+                                        for section in sections:
+                                            sec_line = section.get('line', '')
+                                            if city.lower() in sec_line.lower():
+                                                # reuse header heuristics
+                                                line = sec_line.lower()
+                                                if any(word in line for word in ['history', 'heritage', 'historic', 'museum', 'landmark']):
+                                                    categories.append({'category': 'Historic Sites', 'confidence': 0.8, 'source': 'wikipedia_tourism_page', 'matched_section': sec_line})
+                                                if any(word in line for word in ['culture', 'art', 'gallery', 'museum']):
+                                                    categories.append({'category': 'Art & Culture', 'confidence': 0.8, 'source': 'wikipedia_tourism_page', 'matched_section': sec_line})
+                                        # Also inspect the section text body for city mentions and key phrases
+                                        page_text = pjson.get('parse', {}).get('text', {}).get('*', '').lower()
+                                        if city.lower() in page_text and any(kw in page_text for kw in ['museum', 'mosque', 'bridge', 'castle', 'historic']):
+                                            categories.append({'category': 'Historic Sites', 'confidence': 0.8, 'source': 'wikipedia_tourism_page', 'matched_page': title_hit})
+                    except Exception:
+                        pass
+
+                # 2) Query Category:Tourist attractions in <city>
+                try:
+                    from urllib.parse import quote
+                    cat_title = f"Category:Tourist attractions in {city}"
+                    encoded_title = quote(cat_title)
+                    cm_url = f"https://en.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle={encoded_title}&cmtype=page&cmlimit=50&format=json&origin=*"
+                    async with session.get(cm_url, timeout=8) as cmr:
+                        if cmr.status == 200:
+                            cmdata = await cmr.json()
+                            members = cmdata.get('query', {}).get('categorymembers', [])
+                            if members:
+                                # If the category exists and contains pages, it's a strong signal for attractions
+                                categories.append({'category': 'Historic Sites', 'confidence': 0.85, 'source': 'wikipedia_category_tourist_attractions', 'count': len(members)})
+                                # Inspect member titles for additional signals
+                                for mem in members[:20]:
+                                    title_mem = (mem.get('title') or '').lower()
+                                    if any(k in title_mem for k in ['museum', 'gallery', 'church', 'mosque', 'bridge', 'fort', 'castle', 'palace']):
+                                        categories.append({'category': 'Historic Sites', 'confidence': 0.8, 'source': 'wikipedia_category_member', 'matched': title_mem})
+                except Exception:
+                    pass
     except Exception as e:
         print(f"[WIKIPEDIA] Error: {e}")
     
@@ -1209,7 +1349,8 @@ async def extract_distinctive_categories(city: str, state: str = "", country: st
         # Fetch Wikipedia content with state/country for small towns
         content = await fetch_wikipedia_full_content(city, state, country)
         if not content or len(content) < 200:
-            print(f"[DISTINCTIVE] No Wikipedia content for {city}")
+            normalized_country = COUNTRY_NORMALIZATIONS.get(country.lower(), country) if country else ""
+            print(f"[DISTINCTIVE] No Wikipedia content for {city}{', ' + state if state else ''}{', ' + normalized_country if normalized_country else ''}")
             return categories
             
         text_lower = content.lower()
@@ -1747,7 +1888,7 @@ async def get_dynamic_categories(city: str, state: str = "", country: str = "US"
         all_categories.extend(guide_cats)
         
         # 3. Wikipedia sections and categories
-        wiki_cats = await extract_from_wikipedia_sections(city, state)
+        wiki_cats = await extract_from_wikipedia_sections(city, state, country)
         all_categories.extend(wiki_cats)
         
         # 4. DDGS current trends
@@ -1793,6 +1934,66 @@ def get_generic_categories() -> list:
 
 def register_category_routes(app):
     """Register dynamic categories endpoint."""
+    # Country-level tourism POI extractor
+    @app.route('/api/extract_country_tourism', methods=['GET'])
+    async def extract_country_tourism():
+        """Discover cities from a country's tourism page and return POIs per city.
+
+        Query parameters:
+        - country: country name (required)
+        - per_city_limit: int (optional)
+        - concurrency: int (optional)
+        - nocache: true/false (optional)
+        """
+        country = request.args.get('country') or request.args.get('q')
+        if not country:
+            return {'error': 'country parameter required'}, 400
+
+        per_city_limit = int(request.args.get('per_city_limit', 50))
+        concurrency = int(request.args.get('concurrency', 4))
+        max_cities = int(request.args.get('max_cities', 8))
+        per_city_timeout = float(request.args.get('per_city_timeout', 20))
+        cities_raw = request.args.get('cities', '')
+        forced_cities = [c.strip() for c in cities_raw.split(',') if c.strip()] if cities_raw else None
+        nocache = request.args.get('nocache', '').lower() == 'true'
+
+        cache_key = f"country_pois:v1:{country.lower()}"
+        # Return cached result if available unless nocache
+        if redis_client and not nocache:
+            try:
+                cached = await asyncio.to_thread(redis_client.get, cache_key)
+                if cached:
+                    return json.loads(cached)
+            except Exception:
+                pass
+
+        try:
+            from city_guides.src.wiki_country_extractor import extract_pois_for_country
+        except Exception as e:
+            return {'error': f'Extractor unavailable: {e}'}, 500
+
+        try:
+            async with aiohttp.ClientSession(headers={"User-Agent": "city-guides-bot/1.0"}) as session:
+                data = await extract_pois_for_country(
+                    country,
+                    per_city_limit=per_city_limit,
+                    concurrency=concurrency,
+                    max_cities=max_cities,
+                    per_city_timeout=per_city_timeout,
+                    forced_cities=forced_cities,
+                    session=session,
+                )
+        except Exception as e:
+            return {'error': str(e)}, 500
+
+        # Cache results for a day
+        if redis_client and data:
+            try:
+                await asyncio.to_thread(redis_client.setex, cache_key, 60 * 60 * 24, json.dumps(data))
+            except Exception:
+                pass
+
+        return data
     @app.route('/api/categories/<city>', methods=['GET'])
     async def get_categories(city):
         # Use the request context for query params

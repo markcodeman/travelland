@@ -400,6 +400,11 @@ async def async_discover_pois(
     max_total_candidates = max(limit * 5, 100)  # Cap total candidates for deduplication
     provider_coros = []
     close_session = False
+
+    # Feature flags: enable/disable certain providers via env
+    enable_wikidata = os.getenv("ENABLE_WIKIDATA", "false").lower() == "true"
+    enable_tomtom = os.getenv("ENABLE_TOMTOM", "false").lower() == "true"
+    # Mapillary is OFF by default. Set ENABLE_MAPILLARY=true to opt in (requires MAPILLARY_TOKEN).
     
     if session is None:
         session = aiohttp.ClientSession()
@@ -446,26 +451,68 @@ async def async_discover_pois(
 
     provider_coros = []
 
-    # Overpass (OSM) - supports different POI types
-    if overpass_provider is not None:
-        if poi_type == "restaurant":
-            func = getattr(overpass_provider, "async_discover_restaurants", overpass_provider.discover_restaurants)
-            provider_coros.append(_call_provider(func, "overpass", city, limit, None, local_only, bbox=bbox))
-        else:
-            func = getattr(overpass_provider, "async_discover_pois", overpass_provider.discover_pois)
-            provider_coros.append(_call_provider(func, "overpass", city, poi_type, limit, local_only, bbox=bbox))
-    else:
+    # Overpass (OSM) - run in background to avoid blocking the primary response
+    # We schedule an independent background task that will populate the cache
+    # so the main request path does not wait on heavy OSM queries.
+    if overpass_provider is None:
         logging.error("overpass_provider is None! Cannot fetch POIs.")
+    else:
+        try:
+            async def _bg_overpass_task(city_name, poi_kind, per_provider_limit, bbox_arg):
+                try:
+                    import aiohttp as _aiohttp
+                    session_bg = _aiohttp.ClientSession()
+                    start_bg = time.time()
+                    try:
+                        if poi_kind == "restaurant":
+                            func = getattr(overpass_provider, "async_discover_restaurants", None) or getattr(overpass_provider, "discover_restaurants", None)
+                            res = await func(city_name, limit=per_provider_limit, local_only=local_only, session=session_bg)
+                        else:
+                            func = getattr(overpass_provider, "async_discover_pois", None) or getattr(overpass_provider, "discover_pois", None)
+                            # prefer async signature that accepts session
+                            try:
+                                res = await func(city_name, poi_kind, per_provider_limit, local_only, bbox=bbox_arg, session=session_bg)
+                            except TypeError:
+                                # fallback to older signatures
+                                res = await func(city_name, poi_kind, per_provider_limit, local_only, bbox=bbox_arg)
+                    except Exception as e:
+                        logging.warning(f"[BACKGROUND OVERPASS] provider call failed: {e}")
+                        res = []
+                    finally:
+                        try:
+                            await session_bg.close()
+                        except Exception:
+                            pass
 
-    # Wikidata provider for tourist attractions (free, high quality)
-    if wikidata_provider and poi_type in ("tourism", "attraction", "landmark", "historic", "museum"):
+                    dur_bg = time.time() - start_bg
+                    logging.info(f"[BACKGROUND OVERPASS] Completed for {city_name} ({poi_kind}) in {dur_bg:.2f}s, got {len(res) if res else 0} items")
+
+                    # Save to cache for future fast responses
+                    try:
+                        if cache_available and save_city_pois and res:
+                            save_city_pois(city_name, res[:20], ["overpass"])
+                    except Exception as e:
+                        logging.warning(f"[BACKGROUND OVERPASS] Failed to save cache: {e}")
+                except Exception as e:
+                    logging.warning(f"[BACKGROUND OVERPASS] Unexpected error: {e}")
+
+            # Schedule background overpass task but do NOT await it here
             try:
-                print(f"[MULTI_PROVIDER] Adding Wikidata for {poi_type} in {city}")
-                func = getattr(wikidata_provider, "discover_tourist_attractions", None)
-                if func:
-                    provider_coros.append(_call_provider(func, "wikidata", city, limit, session=session))
+                asyncio.create_task(_bg_overpass_task(city, poi_type, max_per_provider, bbox))
             except Exception as e:
-                logging.warning(f"Wikidata provider failed: {e}")
+                logging.warning(f"Failed to schedule background overpass task: {e}")
+        except Exception as e:
+            logging.warning(f"Failed preparing background overpass task: {e}")
+
+    # Wikidata provider for tourist attractions (disabled by default due to variable latency)
+    if enable_wikidata and wikidata_provider and poi_type in ("tourism", "attraction", "landmark", "historic", "museum"):
+        try:
+            print(f"[MULTI_PROVIDER] Adding Wikidata for {poi_type} in {city}")
+            func = getattr(wikidata_provider, "discover_tourist_attractions", None)
+            if func:
+                provider_coros.append(_call_provider(func, "wikidata", city, limit, session=session))
+        except Exception as e:
+            logging.warning(f"Wikidata provider failed: {e}")
 
     # Wikipedia attractions provider (free, curated lists)
     if wikipedia_attractions_provider and poi_type in ("tourism", "attraction", "landmark", "historic", "museum"):
@@ -477,15 +524,15 @@ async def async_discover_pois(
             except Exception as e:
                 logging.warning(f"Wikipedia attractions provider failed: {e}")
 
-    # TomTom provider for tourist attractions (free tier available)
-    if tomtom_provider and poi_type in ("tourism", "attraction", "landmark", "historic", "museum"):
-            try:
-                print(f"[MULTI_PROVIDER] Adding TomTom for {poi_type} in {city}")
-                func = getattr(tomtom_provider, "discover_tourist_attractions", None)
-                if func:
-                    provider_coros.append(_call_provider(func, "tomtom", city, limit, session=session))
-            except Exception as e:
-                logging.warning(f"TomTom provider failed: {e}")
+    # TomTom provider for tourist attractions (optional - disabled by default to preserve quota)
+    if enable_tomtom and tomtom_provider and poi_type in ("tourism", "attraction", "landmark", "historic", "museum"):
+        try:
+            print(f"[MULTI_PROVIDER] Adding TomTom for {poi_type} in {city}")
+            func = getattr(tomtom_provider, "discover_tourist_attractions", None)
+            if func:
+                provider_coros.append(_call_provider(func, "tomtom", city, limit, session=session))
+        except Exception as e:
+            logging.warning(f"TomTom provider failed: {e}")
 
     # Geoapify (via overpass_provider) - only if function exists. It requires bbox input.
     # Geocode city if bbox not provided
@@ -508,7 +555,9 @@ async def async_discover_pois(
     except Exception:
         mapillary_mod = None
 
-    if mapillary_mod and os.getenv("MAPILLARY_TOKEN"):
+    # Mapillary: require explicit opt-in via ENABLE_MAPILLARY and a valid token
+    enable_mapillary = os.getenv("ENABLE_MAPILLARY", "false").lower() == "true"
+    if mapillary_mod and enable_mapillary and os.getenv("MAPILLARY_TOKEN"):
         func = getattr(mapillary_mod, "async_discover_places", None)
         if func:
             # Geocode city if bbox not provided for Mapillary too
@@ -578,7 +627,8 @@ async def async_discover_pois(
 
     # Optionally enrich async results with Mapillary thumbnails if configured and session provided.
     try:
-        if session and os.getenv("MAPILLARY_TOKEN"):
+        enable_mapillary = os.getenv("ENABLE_MAPILLARY", "false").lower() == "true"
+        if session and enable_mapillary and os.getenv("MAPILLARY_TOKEN"):
             try:
                 import providers.mapillary_provider as mapillary_provider
                 try:

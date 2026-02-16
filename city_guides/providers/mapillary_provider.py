@@ -21,6 +21,8 @@ for _env_file in _env_paths:
         break
 
 # Updated with user-provided implementation
+# Global opt-in guard: Mapillary is disabled by default; set ENABLE_MAPILLARY=true to opt in
+ENABLE_MAPILLARY = os.getenv("ENABLE_MAPILLARY", "false").lower() == "true"
 
 def _meters_to_degree_lat(meters: float) -> float:
     # approx conversion: 1 deg lat ~ 111320 meters
@@ -45,7 +47,8 @@ async def async_search_images_near(
     If MAPILLARY_TOKEN not set or request fails, returns empty list.
     """
     token = os.getenv("MAPILLARY_TOKEN")
-    if not token:
+    # Require explicit opt-in (ENABLE_MAPILLARY) in addition to token
+    if not ENABLE_MAPILLARY or not token:
         return []
 
     own_session = False
@@ -115,8 +118,8 @@ async def async_enrich_venues(
     a `mapillary_images` list (may be empty).
     Modifies venue dicts in-place and also returns the list for convenience.
     """
-    # Quick bail if no token
-    if not os.getenv("MAPILLARY_TOKEN"):
+    # Quick bail if no explicit opt-in or no token
+    if not ENABLE_MAPILLARY or not os.getenv("MAPILLARY_TOKEN"):
         for v in venues:
             v.setdefault("mapillary_images", [])
         return venues
@@ -164,6 +167,9 @@ async def async_search_places(
     Returns a list of dicts with keys: id, name, type, lat, lon
     If request fails, returns empty list.
     """
+    # Respect explicit opt-in
+    if not ENABLE_MAPILLARY:
+        return []
     own_session = False
     if session is None:
         session = aiohttp.ClientSession(headers={"User-Agent": "city-guides-mapillary"})
@@ -239,7 +245,8 @@ async def async_discover_map_features(
     Returns normalized entries with keys similar to other providers (osm_id, name, lat, lon, tags, source, raw).
     """
     token = os.getenv("MAPILLARY_TOKEN")
-    if not token:
+    # Respect explicit opt-in flag
+    if not ENABLE_MAPILLARY or not token:
         return []
     if not bbox or len(bbox) != 4:
         return []
@@ -310,7 +317,8 @@ async def async_discover_images_in_bbox(
     Returns entries with source 'mapillary-image' and includes thumbnail urls when available.
     """
     token = os.getenv("MAPILLARY_TOKEN")
-    if not token:
+    # Respect explicit opt-in flag
+    if not ENABLE_MAPILLARY or not token:
         return []
     if not bbox or len(bbox) != 4:
         return []
@@ -386,7 +394,7 @@ async def async_discover_places(
     Returns normalized entries similar to other providers.
     """
     token = os.getenv("MAPILLARY_TOKEN")
-    if not token:
+    if not ENABLE_MAPILLARY or not token:
         return []
 
     if not bbox or len(bbox) != 4:

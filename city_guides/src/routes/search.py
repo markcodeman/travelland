@@ -20,22 +20,37 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
         debug_logs.append("[WIKI] Not available or city missing")
         return None
 
+    # Normalize country names for Wikipedia
+    country_normalizations = {
+        'bosnia': 'Bosnia and Herzegovina',
+        'czech republic': 'Czech Republic', 
+        'czech': 'Czech Republic',
+        'uk': 'United Kingdom',
+        'usa': 'United States',
+        'us': 'United States',
+        'uae': 'United Arab Emirates',
+        'south korea': 'South Korea',
+        'north korea': 'North Korea'
+    }
+    
+    normalized_country = country_normalizations.get(country.lower(), country) if country else None
+
     def _candidates():
         raw_base = city.strip()
         parts = raw_base.split()
         primary = parts[0] if parts else raw_base  # e.g., "Mostar" from "Mostar Bosnia"
         # Strip a trailing country token if present
         base = raw_base
-        if country and raw_base.lower().endswith(country.lower()):
-            base = raw_base[: -len(country)].strip().strip(',').strip()
+        if normalized_country and raw_base.lower().endswith(normalized_country.lower()):
+            base = raw_base[: -len(normalized_country)].strip().strip(',').strip()
         seen = set()
         for candidate in [
             primary,
             base,
-            f"{primary}, {country}" if country else None,
-            f"{base}, {country}" if country else None,
+            f"{primary}, {normalized_country}" if normalized_country else None,
+            f"{base}, {normalized_country}" if normalized_country else None,
             f"{base}, {state}" if state else None,
-            f"{base}, {state}, {country}" if state and country else None,
+            f"{base}, {state}, {normalized_country}" if state and normalized_country else None,
         ]:
             if candidate:
                 normalized = candidate.strip()
@@ -59,7 +74,7 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
     for title in _candidates():
         try:
             # Pass country for better disambiguation handling
-            result = await _fetch_for_title(title, country)
+            result = await _fetch_for_title(title, normalized_country)
             if result:
                 debug_logs.append(f"[WIKI] Success for candidate {title}")
                 print("\n".join(debug_logs))
@@ -86,7 +101,7 @@ async def fetch_city_wikipedia(city: str, state: str | None = None, country: str
                     if isinstance(data, list) and len(data) >= 2 and data[1]:
                         best_title = data[1][0]
                         try:
-                            result = await _fetch_for_title(best_title, country)
+                            result = await _fetch_for_title(best_title, normalized_country)
                             if result:
                                 debug_logs.append(f"[WIKI] OpenSearch success for {best_title}")
                                 print("\n".join(debug_logs))
@@ -118,12 +133,41 @@ async def search():
     
     # Normalize city name but preserve spaces for multi-word cities
     raw_query = (payload.get("query") or "").strip()
+    
+    # Parse country from query if not explicitly provided
+    parsed_city = raw_query
+    parsed_country = ""
+    
+    # Check if query contains a country name
+    country_keywords = [
+        'bosnia', 'herzegovina', 'croatia', 'serbia', 'montenegro', 'macedonia', 'kosovo', 'albania',
+        'bulgaria', 'romania', 'hungary', 'slovenia', 'austria', 'czech', 'slovakia', 'poland',
+        'germany', 'france', 'italy', 'spain', 'portugal', 'netherlands', 'belgium', 'switzerland',
+        'usa', 'united states', 'canada', 'mexico', 'brazil', 'argentina', 'chile', 'peru',
+        'colombia', 'venezuela', 'ecuador', 'bolivia', 'paraguay', 'uruguay', 'china', 'japan',
+        'korea', 'india', 'thailand', 'vietnam', 'malaysia', 'indonesia', 'philippines', 'australia',
+        'new zealand', 'egypt', 'morocco', 'tunisia', 'algeria', 'turkey', 'greece', 'uk', 'england',
+        'scotland', 'wales', 'ireland', 'norway', 'sweden', 'denmark', 'finland', 'iceland'
+    ]
+    
+    query_lower = raw_query.lower()
+    for country in country_keywords:
+        if f' {country.lower()}' in query_lower or query_lower.endswith(f' {country.lower()}'):
+            # Found country at the end of the query
+            parsed_country = country
+            # Remove country from city name
+            parsed_city = raw_query.rsplit(f' {country}', 1)[0].strip()
+            break
+    
     # Remove any trailing country part after a comma (e.g., "Brasov, Romania" -> "Brasov")
-    city_base_raw = raw_query.split(',')[0].strip()
+    if ',' in parsed_city:
+        parsed_city = parsed_city.split(',')[0].strip()
+    
     # Normalize base city name for alphanumeric processing
-    normalized = unicodedata.normalize('NFKD', city_base_raw.lower())
+    normalized = unicodedata.normalize('NFKD', parsed_city.lower())
     # Keep alphanumeric and spaces, remove other punctuation
     city = ''.join(c for c in normalized if c.isalnum() or c.isspace()).strip()
+    
     q = (payload.get("category") or payload.get("intent") or "").strip().lower()
     raw_neighborhood = payload.get("neighborhood") or ""
     # Normalize neighborhood: keep alnum/space, drop generic suffixes for wiki lookups
@@ -134,8 +178,8 @@ async def search():
             nh_norm = nh_norm[: -len(suffix)].strip()
     neighborhood = nh_norm
     state_name = (payload.get("state") or payload.get("stateName") or "").strip()
-    country_name = (payload.get("country") or payload.get("countryName") or "").strip()
-    should_cache = False  # disabled for testing
+    country_name = (payload.get("country") or payload.get("countryName") or parsed_country).strip()
+    should_cache = True  # enabled for performance
     
     if not city:
         return jsonify({"error": "city required"}), 400

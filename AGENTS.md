@@ -43,10 +43,21 @@ You are prohibited from guessing. If any of the following triggers occur, you **
 - **VISUAL INTEGRITY:** Dynamic Wikipedia/API image fetching only. Zero stock image tolerance.
 - **GLOBAL REACH:** Native multilingual support is default, not an add-on.
 
+### Category Extraction (simple_categories.py)
+EXISTING DDD (Data-Driven Design) SYSTEMS - Do not remove or duplicate:
+- `extract_from_fun_facts()` - keyword→category pattern matching from curated facts
+- `extract_from_distinctive_categories()` - distinctive feature detection via content analysis
+- `extract_from_wikipedia_sections()` - Wikipedia section header pattern analysis
+- `extract_from_ddgs_trends()` - DDGS search result category extraction
+- `extract_from_wikipedia_category()` - raw Wikipedia category page subcategory fetching
+
+These provide category extraction when content IS found. Removing causes regression.
+
 ## VI. Pre-Flight Checklist (Internal Monologue)
 1. Is there a single line of hardcoded data? (If yes, rewrite)
 2. Did I use an acknowledgment phrase? (If yes, delete)
 3. Am I guessing on a technical detail? (If yes, trigger EOP)
 4. Would a "pissed off user" find this response helpful? (If no, rethink)
+5. Did I provide concrete proof (test output, screenshot, or log) that my change works as intended? (If not, do it now)
 
 **MANTRA:** Mediocrity is a bug. Fix it. Don't ask.

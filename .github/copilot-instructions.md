@@ -30,6 +30,7 @@ TravelLand is a full-stack travel exploration app with:
 - Navigate to `http://localhost:5174`, test location selection → search → chat flow
 - Check console for errors, verify data flows correctly
 - **STRICT REQUIREMENT**: Always perform these tests immediately after proposing any frontend changes
+- **ALWAYS PROVIDE PROOF**: For every code or config change, you must show concrete proof that the change works as intended (e.g., test output, screenshots, logs, or API responses). No change is complete without this evidence.
 
 ### Server Restart Policy
 - **ALWAYS** restart the relevant server (backend, frontend, Next.js, etc.) automatically after making changes that require a restart (code, config, env, or proxy changes).

@@ -625,6 +625,33 @@ async def geonames_search():
         return jsonify({'error': 'geonames_search_failed'}), 500
 
 
+@locations_bp.route("/api/country-tourism", methods=["GET"])
+async def get_country_tourism():
+    """Extract tourist attractions for cities in a country using curated providers."""
+    from city_guides.src.wiki_country_extractor import extract_pois_for_country
+    from city_guides.src.app import aiohttp_session
+    
+    country = request.args.get("country")
+    forced_cities = request.args.get("forced_cities")
+    
+    if not country:
+        return jsonify({"error": "country parameter required"}), 400
+    
+    if forced_cities:
+        forced_cities = [c.strip() for c in forced_cities.split(",") if c.strip()]
+    
+    try:
+        result = await extract_pois_for_country(
+            country=country,
+            forced_cities=forced_cities,
+            session=aiohttp_session
+        )
+        return jsonify(result)
+    except Exception as e:
+        current_app.logger.exception(f'Country tourism extraction failed for {country}: {e}')
+        return jsonify({'error': 'extraction_failed'}), 500
+
+
 def register(app):
     """Register locations blueprint with the app"""
     app.register_blueprint(locations_bp)

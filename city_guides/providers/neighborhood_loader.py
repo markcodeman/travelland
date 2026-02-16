@@ -12,8 +12,14 @@ import re
 from .utils import get_session
 
 def load_seeded_neighborhoods(city: str) -> Optional[List[Dict]]:
-    """Load seeded neighborhoods for a city if available, filtered to major divisions."""
-    city_slug = city.lower().replace(' ', '_')
+    """Load seeded neighborhoods for a city if available, filtered to major divisions.
+
+    Normalizes incoming `city` so values like "Bucharest, Romania" will still
+    match a seed file named `bucharest.json`.
+    """
+    # Normalize input: strip trailing country/token (e.g. "City, Country" -> "City")
+    base_city = city.split(',')[0].strip() if city else ''
+    city_slug = base_city.lower().replace(' ', '_')
     seed_dir = Path(__file__).parent.parent / 'data' / 'seeded_neighborhoods'
     # Try to find by country, but for now, search all subdirs
     for country_dir in seed_dir.iterdir():

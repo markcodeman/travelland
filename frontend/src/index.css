@@ -118,6 +118,8 @@
     overflow: hidden;
     transition-property: all;
     transition-duration: 300ms;
+    display: flex;
+    flex-direction: column;
   }
 
   .venue-card:hover {
@@ -125,24 +127,51 @@
     transform: translateY(-0.25rem);
   }
 
+  .venue-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+  }
+
+  .venue-content {
+    padding: 1rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .venue-content h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .venue-content p {
+    margin: 0 0 1rem 0;
+    color: #6b7280;
+    line-height: 1.5;
+    flex: 1;
+  }
+
   .venue-btn {
-    padding-left: 1rem;
-    padding-right: 1rem;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
+    padding: 0.5rem 1rem;
     border-radius: 9999px;
     font-weight: 600;
     transition-property: all;
     transition-duration: 200ms;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
   }
 
   .venue-btn.primary {
-    background-image: linear-gradient(to right, #a855f7, #9333ea);
+    background-image: linear-gradient(to right, #f97316, #06b6d4);
     color: white;
   }
 
   .venue-btn.primary:hover {
-    background-image: linear-gradient(to right, #9333ea, #7e22ce);
+    background-image: linear-gradient(to right, #ea580c, #0891b2);
   }
 
   .venue-btn.secondary {
@@ -152,5 +181,113 @@
 
   .venue-btn.secondary:hover {
     background-color: #e5e7eb;
+  }
+
+  .venues-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .wiki-section {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid #e2e8f0;
+    border-radius: 0.85rem;
+    padding: 0.95rem 1rem;
+    box-shadow: 0 6px 16px rgba(2, 6, 23, 0.06);
+  }
+
+  .wiki-section h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .wiki-html {
+    color: #334155;
+    line-height: 1.62;
+    font-size: 0.96rem;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+
+  .wiki-html.collapsed {
+    max-height: 200px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .wiki-html.collapsed::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.92));
+  }
+
+  .wiki-html.expanded {
+    max-height: none;
+  }
+
+  .read-more-btn {
+    display: block;
+    margin: 0.5rem 0;
+    padding: 0.5rem 1rem;
+    background-image: linear-gradient(to right, #f97316, #06b6d4);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+  }
+
+  .read-more-btn:hover {
+    background-image: linear-gradient(to right, #ea580c, #0891b2);
+  }
+
+  .wiki-html p {
+    margin: 0.5rem 0 0.8rem;
+  }
+
+  .wiki-html h2,
+  .wiki-html h3,
+  .wiki-html h4 {
+    margin-top: 0.9rem;
+    margin-bottom: 0.45rem;
+    color: #0f172a;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .wiki-html ul,
+  .wiki-html ol {
+    margin: 0.35rem 0 0.85rem 1.1rem;
+  }
+
+  .wiki-html li {
+    margin: 0.2rem 0;
+  }
+
+  .wiki-html img {
+    display: block;
+    max-width: min(100%, 480px);
+    height: auto;
+    margin: 0.5rem 0 0.85rem;
+    border-radius: 0.6rem;
+    border: 1px solid #e2e8f0;
+  }
+
+  .wiki-html a {
+    color: #0369a1;
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(3, 105, 161, 0.35);
+  }
+
+  .wiki-html a:hover {
+    color: #0c4a6e;
+    border-bottom-color: rgba(12, 74, 110, 0.5);
   }
 }

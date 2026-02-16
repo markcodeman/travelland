@@ -1,6 +1,81 @@
 import { pinyin } from 'pinyin-pro';
+import { useMemo, useState } from 'react';
+
+// Neighborhood categorization for smart grouping
+const NEIGHBORHOOD_CATEGORIES = {
+  'downtown': ['downtown', 'city center', 'centro', 'centre', 'central', 'cbd', 'business district'],
+  'historic': ['historic', 'old town', 'old city', 'historic center', 'centro storico', 'altstadt', 'medina'],
+  'artsy': ['arts', 'art', 'creative', 'bohemian', 'hipster', 'arts district', 'gallery', 'museum'],
+  'foodie': ['food', 'culinary', 'restaurant', 'cafe', 'coffee', 'dining', 'eat', 'bistro', 'brunch'],
+  'nightlife': ['nightlife', 'bars', 'clubs', 'pubs', 'night', 'entertainment', 'theater', 'cinema'],
+  'shopping': ['shopping', 'mall', 'market', 'boutique', 'commercial', 'retail', 'stores'],
+  'residential': ['residential', 'suburb', 'neighborhood', 'residence', 'housing', 'family'],
+  'waterfront': ['waterfront', 'beach', 'coastal', 'harbor', 'port', 'river', 'lake', 'ocean'],
+  'nature': ['park', 'garden', 'green', 'forest', 'mountain', 'nature', 'outdoors', 'trail']
+};
+
+const getNeighborhoodCategory = (name, description, tags) => {
+  const text = `${name} ${description || ''}`.toLowerCase();
+  const tagText = Object.keys(tags || {}).join(' ').toLowerCase();
+  
+  for (const [category, keywords] of Object.entries(NEIGHBORHOOD_CATEGORIES)) {
+    for (const keyword of keywords) {
+      if (text.includes(keyword) || tagText.includes(keyword)) {
+        return category;
+      }
+    }
+  }
+  
+  // Default categorization based on tags
+  const tagKeys = Object.keys(tags || {});
+  if (tagKeys.includes('historic') || tagKeys.includes('heritage')) return 'historic';
+  if (tagKeys.includes('leisure') || tagKeys.includes('park')) return 'nature';
+  if (tagKeys.includes('amenity') && (tagKeys.includes('restaurant') || tagKeys.includes('cafe'))) return 'foodie';
+  if (tagKeys.includes('amenity') && (tagKeys.includes('bar') || tagKeys.includes('pub'))) return 'nightlife';
+  if (tagKeys.includes('shop') || tagKeys.includes('marketplace')) return 'shopping';
+  if (tagKeys.includes('natural') && (tagKeys.includes('beach') || tagKeys.includes('waterway'))) return 'waterfront';
+  
+  return 'residential';
+};
+
+const getCategoryDisplayName = (category) => {
+  const displayNames = {
+    'downtown': 'Downtown & Business',
+    'historic': 'Historic & Cultural',
+    'artsy': 'Arts & Creative',
+    'foodie': 'Food & Dining',
+    'nightlife': 'Nightlife & Entertainment',
+    'shopping': 'Shopping & Markets',
+    'residential': 'Residential & Local',
+    'waterfront': 'Waterfront & Beach',
+    'nature': 'Nature & Parks'
+  };
+  return displayNames[category] || category;
+};
+
+const getCategoryEmoji = (category) => {
+  const emojis = {
+    'downtown': '🏙️',
+    'historic': '🏛️',
+    'artsy': '🎨',
+    'foodie': '🍽️',
+    'nightlife': '🌙',
+    'shopping': '🛍️',
+    'residential': '🏘️',
+    'waterfront': '🏖️',
+    'nature': '🌳'
+  };
+  return emojis[category] || '📍';
+};
 
 const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, loading = false, inline = false }) => {
+  // State for filtering and grouping
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showAll, setShowAll] = useState(false);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+
+  // Helper data and functions
   const chineseTranslations = {
     '外滩': 'The Bund',
     '南京路': 'Nanjing Road',
@@ -58,43 +133,65 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
     }
   };
 
-  const getCategoryEmoji = (type, name) => {
-    const emojiMap = {
-      'historic': '🏛️',
-      'culture': '🎨',
-      'nightlife': '🌙',
-      'shopping': '🛍️',
-      'food': '🍽️',
-      'bar': '🍸',
-      'pub': '🍺',
-      'residential': '🏘️',
-      'nature': '🌳',
-      'beach': '🏖️',
-      'waterfront': '🌊',
-      'market': '🛒',
-      'default': '📍'
-    };
+  // Process neighborhoods with categorization
+  const processedNeighborhoods = useMemo(() => {
+    return (neighborhoods || []).map((hood) => {
+      const name = typeof hood === 'string' ? hood : hood.name;
+      const descriptionRaw = typeof hood === 'string' ? '' : (hood.description || '');
+      const tags = typeof hood === 'string' ? {} : (hood.tags || {});
+      const category = getNeighborhoodCategory(name, descriptionRaw, tags);
+      
+      return {
+        ...hood,
+        name,
+        descriptionRaw,
+        category,
+        displayName: formatBilingualName(name),
+        categoryDisplayName: getCategoryDisplayName(category),
+        categoryEmoji: getCategoryEmoji(category)
+      };
+    });
+  }, [neighborhoods]);
+
+  // Filter neighborhoods based on search and category
+  const filteredNeighborhoods = useMemo(() => {
+    let filtered = processedNeighborhoods;
     
-    // Check for specific neighborhood names
-    const lowerName = (name || '').toLowerCase();
-    if (lowerName.includes('beach') || lowerName.includes('coastal') || lowerName.includes('waterfront')) {
-      return '🏖️';
-    }
-    if (lowerName.includes('park') || lowerName.includes('garden') || lowerName.includes('nature')) {
-      return '🌳';
-    }
-    if (lowerName.includes('historic') || lowerName.includes('old town')) {
-      return '🏛️';
-    }
-    if (lowerName.includes('market') || lowerName.includes('shopping')) {
-      return '🛍️';
-    }
-    if (lowerName.includes('wine') || lowerName.includes('vineyard')) {
-      return '🍷';
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(hood => 
+        hood.name.toLowerCase().includes(query) ||
+        hood.descriptionRaw.toLowerCase().includes(query) ||
+        hood.category.toLowerCase().includes(query) ||
+        hood.categoryDisplayName.toLowerCase().includes(query)
+      );
     }
     
-    return emojiMap[type] || emojiMap['default'];
-  };
+    // Apply category filter
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(hood => hood.category === selectedCategory);
+    }
+    
+    return filtered;
+  }, [processedNeighborhoods, searchQuery, selectedCategory]);
+
+  // Get unique categories for filtering
+  const categories = useMemo(() => {
+    const categorySet = new Set(processedNeighborhoods.map(hood => hood.category));
+    return Array.from(categorySet).sort();
+  }, [processedNeighborhoods]);
+
+  // Determine which neighborhoods to show
+  const neighborhoodsToShow = useMemo(() => {
+    if (showAll) return filteredNeighborhoods;
+    
+    // Show top 6 neighborhoods by default for better UX
+    return filteredNeighborhoods.slice(0, 6);
+  }, [filteredNeighborhoods, showAll]);
+
+  // Check if we should show "View All" button
+  const shouldShowViewAll = filteredNeighborhoods.length > 6 && !showAll;
 
   // Extract feature badges from OSM tags
   const getFeatureBadges = (hood) => {
@@ -248,59 +345,145 @@ const NeighborhoodPicker = ({ city, category, neighborhoods, onSelect, onSkip, l
 
   return (
     <Wrapper>
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">🎯 Pick a Neighborhood</h3>
-        <p className="text-slate-600 text-sm">{city} has distinct neighborhoods. Choose one to explore, then select what interests you.</p>
-      </div>
-      <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3">
-        {neighborhoods.map((hood, index) => {
-          const name = typeof hood === 'string' ? hood : hood.name;
-          const descriptionRaw = typeof hood === 'string' ? '' : (hood.description || '');
-          const rawType = typeof hood === 'string' ? 'culture' : (hood.type || 'culture');
-          const categoryChips = typeof hood === 'string' ? [] : getCategoryChips(hood);
-          const primaryChip = categoryChips[0];
-          const displayType = primaryChip?.label || rawType;
-          const displayEmoji = primaryChip?.emoji || getCategoryEmoji(rawType, name);
-          const badges = typeof hood === 'string' ? [] : getFeatureBadges(hood);
-          const description = buildDescription(name, descriptionRaw, displayType, badges);
-          return (
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">🎯 Pick a Neighborhood</h3>
+          <p className="text-slate-600 text-sm">{city} has distinct neighborhoods. Choose one to explore, then select what interests you.</p>
+        </div>
+
+        {/* Search and Filter Controls */}
+        <div className="space-y-3">
+          {/* Search Input */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search neighborhoods..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent"
+            />
+            <div className="absolute left-3 top-2.5 text-slate-400">🔍</div>
+          </div>
+
+          {/* Category Filters */}
+          <div className="flex flex-wrap gap-2">
             <button
-              key={index}
-              className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white hover:border-brand-orange hover:bg-brand-orange/5 transition p-2.5 text-left"
-              onClick={() => onSelect(typeof hood === 'string' ? { name: hood } : hood)}
+              onClick={() => setSelectedCategory('all')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
+                selectedCategory === 'all'
+                  ? 'bg-brand-orange text-white'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
             >
-              <div className="text-2xl">{displayEmoji}</div>
-              <div className="flex-1 space-y-1">
-                <h4 className="text-sm font-semibold text-slate-900">{formatBilingualName(name)}</h4>
-                <p className="text-xs text-slate-600 leading-relaxed">{description}</p>
-                {categoryChips.length > 0 && (
+              All Types
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition flex items-center gap-1 ${
+                  selectedCategory === cat
+                    ? 'bg-brand-orange text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <span>{getCategoryEmoji(cat)}</span>
+                <span>{getCategoryDisplayName(cat)}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Results Info */}
+          <div className="flex items-center justify-between text-sm text-slate-600">
+            <span>
+              {filteredNeighborhoods.length} neighborhood{filteredNeighborhoods.length !== 1 ? 's' : ''} found
+              {selectedCategory !== 'all' && ` in ${getCategoryDisplayName(selectedCategory)}`}
+              {searchQuery && ` matching "${searchQuery}"`}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`px-2 py-1 rounded text-xs ${
+                  viewMode === 'grid' ? 'bg-slate-200' : 'text-slate-500'
+                }`}
+              >
+                Grid
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-2 py-1 rounded text-xs ${
+                  viewMode === 'list' ? 'bg-slate-200' : 'text-slate-500'
+                }`}
+              >
+                List
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Neighborhood Grid */}
+        <div className={`grid gap-2 ${
+          viewMode === 'grid' 
+            ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3' 
+            : 'grid-cols-1'
+        }`}>
+          {neighborhoodsToShow.map((hood, index) => {
+            const name = hood.name;
+            const descriptionRaw = hood.descriptionRaw;
+            const category = hood.category;
+            const categoryDisplayName = hood.categoryDisplayName;
+            const categoryEmoji = hood.categoryEmoji;
+            
+            // Get feature badges from OSM tags
+            const tags = typeof hood === 'string' ? {} : (hood.tags || {});
+            const badges = getFeatureBadges(hood);
+            const description = buildDescription(name, descriptionRaw, category, badges);
+            
+            return (
+              <button
+                key={index}
+                className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white hover:border-brand-orange hover:bg-brand-orange/5 transition p-2.5 text-left"
+                onClick={() => onSelect(typeof hood === 'string' ? { name: hood } : hood)}
+              >
+                <div className="text-2xl">{categoryEmoji}</div>
+                <div className="flex-1 space-y-1">
+                  <h4 className="text-sm font-semibold text-slate-900">{hood.displayName}</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">{description}</p>
                   <div className="flex flex-wrap gap-1">
-                    {categoryChips.map((chip, chipIndex) => (
-                      <span key={chipIndex} className="px-1.5 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700 font-semibold">
-                        {chip.emoji} {chip.label}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {badges.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {badges.map((badge, badgeIndex) => (
+                    <span className="px-1.5 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700 font-semibold">
+                      {categoryEmoji} {categoryDisplayName}
+                    </span>
+                    {badges.length > 0 && badges.slice(0, 2).map((badge, badgeIndex) => (
                       <span key={badgeIndex} className="px-1.5 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700 font-semibold">
                         {badge.emoji} {badge.label}
                       </span>
                     ))}
                   </div>
-                )}
-              </div>
-              <div className="text-slate-400">→</div>
+                </div>
+                <div className="text-slate-400">→</div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* View All Button */}
+        {shouldShowViewAll && (
+          <div className="flex justify-center">
+            <button
+              onClick={() => setShowAll(true)}
+              className="inline-flex items-center gap-2 rounded-full bg-slate-100 text-slate-700 px-4 py-2 text-sm font-semibold hover:bg-slate-200"
+            >
+              View All {filteredNeighborhoods.length} Neighborhoods
             </button>
-          );
-        })}
-      </div>
-      <div className="mt-4 text-right">
-        <button className="inline-flex items-center gap-2 rounded-full bg-brand-orange text-white px-4 py-2 text-sm font-semibold shadow-sm hover:bg-brand-orangeDark" onClick={onSkip}>
-          Skip for now →
-        </button>
+          </div>
+        )}
+
+        {/* Skip Button */}
+        <div className="mt-4 text-right">
+          <button className="inline-flex items-center gap-2 rounded-full bg-brand-orange text-white px-4 py-2 text-sm font-semibold shadow-sm hover:bg-brand-orangeDark" onClick={onSkip}>
+            Skip for now →
+          </button>
+        </div>
       </div>
     </Wrapper>
   );

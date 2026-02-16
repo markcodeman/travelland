@@ -6,585 +6,173 @@
     "sources": [
       "unknown"
     ],
-    "last_updated": "2026-02-15T01:45:57.197858Z",
-    "count": 11,
+    "last_updated": "2026-02-16T00:53:22.698804Z",
+    "count": 6,
     "refresh_path": "scripts/refresh_city_cache.py",
     "governance": "Controlled Seed Data - AGENTS.md compliant"
   },
   "pois": [
     {
-      "id": "307572327607220",
-      "name": "information--pedestrians-crossing--g1",
-      "lat": 43.35582,
-      "lon": 17.774101,
-      "address": "",
+      "id": "wikipedia_31903844",
+      "name": "National Theatre Mostar",
+      "lat": 43.34013889,
+      "lon": 17.81527778,
+      "address": "National Theatre Mostar, Mostar Bosnia",
       "osm_url": "",
-      "tags": "information--pedestrians-crossing--g1",
+      "tags": "wikipedia,tourism,attraction,entertainment",
       "website": "",
-      "description": "",
+      "description": "(Bosnian: Narodno pozorište Mostar) is the largest public theatre in Mostar, Bosnia and Herzegovina, where performances are held, as well as other arts",
       "amenity": "restaurant",
       "rating": null,
       "budget": null,
       "price_range": null,
-      "provider": "mapillary",
+      "provider": "web",
       "raw": {
-        "osm_id": "307572327607220",
-        "name": "information--pedestrians-crossing--g1",
-        "lat": 43.35582,
-        "lon": 17.774101,
-        "address": "",
-        "tags": "information--pedestrians-crossing--g1",
-        "source": "mapillary-map_feature",
-        "provider": "mapillary",
-        "raw": {
-          "id": "307572327607220",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [
-              17.774101,
-              43.35582
-            ]
-          },
-          "object_value": "information--pedestrians-crossing--g1"
-        }
-      },
-      "mapillary_images": []
+        "name": "National Theatre Mostar",
+        "address": "National Theatre Mostar, Mostar Bosnia",
+        "lat": 43.34013889,
+        "lon": 17.81527778,
+        "place_id": "wikipedia_31903844",
+        "tags": "wikipedia,tourism,attraction,entertainment",
+        "source": "wikipedia",
+        "description": "(Bosnian: Narodno pozorište Mostar) is the largest public theatre in Mostar, Bosnia and Herzegovina, where performances are held, as well as other arts",
+        "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/National_Theatre_Mostar.jpg/500px-National_Theatre_Mostar.jpg"
+      }
     },
     {
-      "id": "301542198291405",
-      "name": "object--support--utility-pole",
-      "lat": 43.3576,
-      "lon": 17.77314,
-      "address": "",
+      "id": "wikipedia_32314737",
+      "name": "Cultural Center Mostar",
+      "lat": 43.33888889,
+      "lon": 17.81083333,
+      "address": "Cultural Center Mostar, Mostar Bosnia",
       "osm_url": "",
-      "tags": "object--support--utility-pole",
+      "tags": "wikipedia,tourism,attraction",
       "website": "",
-      "description": "",
+      "description": "(Bosnian: Centar za kulturu) is a city-sponsored art institution in Mostar, Bosnia and Herzegovina. During the month of July, the Centre organizes the",
       "amenity": "restaurant",
       "rating": null,
       "budget": null,
       "price_range": null,
-      "provider": "mapillary",
+      "provider": "web",
       "raw": {
-        "osm_id": "301542198291405",
-        "name": "object--support--utility-pole",
-        "lat": 43.3576,
-        "lon": 17.77314,
-        "address": "",
-        "tags": "object--support--utility-pole",
-        "source": "mapillary-map_feature",
-        "provider": "mapillary",
-        "raw": {
-          "id": "301542198291405",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [
-              17.77314,
-              43.3576
-            ]
-          },
-          "object_value": "object--support--utility-pole"
-        }
-      },
-      "mapillary_images": [
-        {
-          "id": "1026781554520949",
-          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_Ld26cAlP1QgPrnCD0-yWjNiCZkLrXA6LHXuEBcVzwqh-9OLp4xmmfJoAEjUyuEDtu42ZWbIontiQeahPou4qsHHuEclpNP6gKVc8SS59qtFvUM3pYomuPqo962lJbr7mzr47A-1k2rJLckZiTSA?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=AzwFaj-imUfoSuxyrD2V6g&_nc_oc=AdnCyBUK1Zcm_gVw6NO62XIpcjQZX2dTnnlVh_Riyf_sH5lPz4KwpJsIGK6qEEdnVsOSmSNZsWQOavuSdaX0r4Ak&ccb=10-5&oh=00_AfvihUb2hHeYLdAuMvSr8JF1u9oVVKA4TwnDmzVd25mE8Q&oe=69B87BF0&_nc_sid=201bca",
-          "lat": 43.357263412919,
-          "lon": 17.773153279707,
-          "raw": {
-            "id": "1026781554520949",
-            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_Ld26cAlP1QgPrnCD0-yWjNiCZkLrXA6LHXuEBcVzwqh-9OLp4xmmfJoAEjUyuEDtu42ZWbIontiQeahPou4qsHHuEclpNP6gKVc8SS59qtFvUM3pYomuPqo962lJbr7mzr47A-1k2rJLckZiTSA?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=AzwFaj-imUfoSuxyrD2V6g&_nc_oc=AdnCyBUK1Zcm_gVw6NO62XIpcjQZX2dTnnlVh_Riyf_sH5lPz4KwpJsIGK6qEEdnVsOSmSNZsWQOavuSdaX0r4Ak&ccb=10-5&oh=00_AfvihUb2hHeYLdAuMvSr8JF1u9oVVKA4TwnDmzVd25mE8Q&oe=69B87BF0&_nc_sid=201bca",
-            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_Ld26cAlP1QgPrnCD0-yWjNiCZkLrXA6LHXuEBcVzwqh-9OLp4xmmfJoAEjUyuEDtu42ZWbIontiQeahPou4qsHHuEclpNP6gKVc8SS59qtFvUM3pYomuPqo962lJbr7mzr47A-1k2rJLckZiTSA?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=AzwFaj-imUfoSuxyrD2V6g&_nc_oc=AdnCyBUK1Zcm_gVw6NO62XIpcjQZX2dTnnlVh_Riyf_sH5lPz4KwpJsIGK6qEEdnVsOSmSNZsWQOavuSdaX0r4Ak&ccb=10-5&oh=00_AfsW3cgbIkXGmE-uHMx8FB0THDvielXXeCRAtQWgSZfhdw&oe=69B87BF0&_nc_sid=201bca",
-            "computed_geometry": {
-              "type": "Point",
-              "coordinates": [
-                17.773153279707,
-                43.357263412919
-              ]
-            }
-          }
-        },
-        {
-          "id": "1108798906269268",
-          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An8y4mw4ZWnN2dQeZhLFJDewN3MmgVVp0ycQqLORCxPRVaUsAw9nlrwqqslDroIZHeF8WLm0PzEHOgCFYrndUvq8xTRT2mgjGPs8vAE5pklINFRhHS0pPupWgfb3lpPtc3tRAX5v_DaM9kJf7qSmENk?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=AzwFaj-imUfoSuxyrD2V6g&_nc_oc=AdmlhEPILfJU8jWxO5N8jPr2cdaPZkdcgRqrVUGp4gMthYuMFUPgwTHrbjWHqBOveBkqS0OY2v_DAtFKaS3KOKft&ccb=10-5&oh=00_AftE98ZDTPlukZEwG9p7XfaslKTEgcAnjHhwnMV3SOpa_w&oe=69B8ACA6&_nc_sid=201bca",
-          "lat": 43.357268111903,
-          "lon": 17.772579883194,
-          "raw": {
-            "id": "1108798906269268",
-            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An8y4mw4ZWnN2dQeZhLFJDewN3MmgVVp0ycQqLORCxPRVaUsAw9nlrwqqslDroIZHeF8WLm0PzEHOgCFYrndUvq8xTRT2mgjGPs8vAE5pklINFRhHS0pPupWgfb3lpPtc3tRAX5v_DaM9kJf7qSmENk?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=AzwFaj-imUfoSuxyrD2V6g&_nc_oc=AdmlhEPILfJU8jWxO5N8jPr2cdaPZkdcgRqrVUGp4gMthYuMFUPgwTHrbjWHqBOveBkqS0OY2v_DAtFKaS3KOKft&ccb=10-5&oh=00_AftE98ZDTPlukZEwG9p7XfaslKTEgcAnjHhwnMV3SOpa_w&oe=69B8ACA6&_nc_sid=201bca",
-            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An8y4mw4ZWnN2dQeZhLFJDewN3MmgVVp0ycQqLORCxPRVaUsAw9nlrwqqslDroIZHeF8WLm0PzEHOgCFYrndUvq8xTRT2mgjGPs8vAE5pklINFRhHS0pPupWgfb3lpPtc3tRAX5v_DaM9kJf7qSmENk?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=AzwFaj-imUfoSuxyrD2V6g&_nc_oc=AdmlhEPILfJU8jWxO5N8jPr2cdaPZkdcgRqrVUGp4gMthYuMFUPgwTHrbjWHqBOveBkqS0OY2v_DAtFKaS3KOKft&ccb=10-5&oh=00_AfvQLLLnhx7BUy8CkakETS0I3sTOXWjGwWKGeuNB4FG8nA&oe=69B8ACA6&_nc_sid=201bca",
-            "computed_geometry": {
-              "type": "Point",
-              "coordinates": [
-                17.772579883194,
-                43.357268111903
-              ]
-            }
-          }
-        },
-        {
-          "id": "1303635726697219",
-          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_TMM1Or40coUvwfl4r-H0q6skli4BwmPb4KY-OYCkjue09LmgeDNQAxbjQvvS8I1GdSAzbWS8DJS9DKlpLalGgWnwuaKQ6AJXykdKdL8LiCh86UK2ZdXTq6pJcGaFG6bRCLy42OXBBtlLrhEvgIA?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=AzwFaj-imUfoSuxyrD2V6g&_nc_oc=AdmsS5olh7M7i9nsap9ey_E_jC_Djbpe03dhK4dOyLNIt1e2nTtjnY7x-UFR52pO9IZRVExYvRRs2bZoGd4Ww4yX&ccb=10-5&oh=00_AfujEv4oxcdNXWwEFFtojlbrw8ikdENHWaWN3JixvW1PEg&oe=69B8A8B5&_nc_sid=201bca",
-          "lat": 43.357253736684,
-          "lon": 17.772740612961,
-          "raw": {
-            "id": "1303635726697219",
-            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_TMM1Or40coUvwfl4r-H0q6skli4BwmPb4KY-OYCkjue09LmgeDNQAxbjQvvS8I1GdSAzbWS8DJS9DKlpLalGgWnwuaKQ6AJXykdKdL8LiCh86UK2ZdXTq6pJcGaFG6bRCLy42OXBBtlLrhEvgIA?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=AzwFaj-imUfoSuxyrD2V6g&_nc_oc=AdmsS5olh7M7i9nsap9ey_E_jC_Djbpe03dhK4dOyLNIt1e2nTtjnY7x-UFR52pO9IZRVExYvRRs2bZoGd4Ww4yX&ccb=10-5&oh=00_AfujEv4oxcdNXWwEFFtojlbrw8ikdENHWaWN3JixvW1PEg&oe=69B8A8B5&_nc_sid=201bca",
-            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An_TMM1Or40coUvwfl4r-H0q6skli4BwmPb4KY-OYCkjue09LmgeDNQAxbjQvvS8I1GdSAzbWS8DJS9DKlpLalGgWnwuaKQ6AJXykdKdL8LiCh86UK2ZdXTq6pJcGaFG6bRCLy42OXBBtlLrhEvgIA?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=AzwFaj-imUfoSuxyrD2V6g&_nc_oc=AdmsS5olh7M7i9nsap9ey_E_jC_Djbpe03dhK4dOyLNIt1e2nTtjnY7x-UFR52pO9IZRVExYvRRs2bZoGd4Ww4yX&ccb=10-5&oh=00_AftOqA32-HzmtxLJrLZm1gSXVACL_PJ8a-k8KfSi3pxvRQ&oe=69B8A8B5&_nc_sid=201bca",
-            "computed_geometry": {
-              "type": "Point",
-              "coordinates": [
-                17.772740612961,
-                43.357253736684
-              ]
-            }
-          }
-        }
-      ]
+        "name": "Cultural Center Mostar",
+        "address": "Cultural Center Mostar, Mostar Bosnia",
+        "lat": 43.33888889,
+        "lon": 17.81083333,
+        "place_id": "wikipedia_32314737",
+        "tags": "wikipedia,tourism,attraction",
+        "source": "wikipedia",
+        "description": "(Bosnian: Centar za kulturu) is a city-sponsored art institution in Mostar, Bosnia and Herzegovina. During the month of July, the Centre organizes the",
+        "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Cultural_Center_Mostar.jpg/500px-Cultural_Center_Mostar.jpg"
+      }
     },
     {
-      "id": "493971335151199",
-      "name": "object--support--utility-pole",
-      "lat": 43.357914,
-      "lon": 17.772919,
-      "address": "",
+      "id": "wikipedia_31952184",
+      "name": "Herzegovina Museum",
+      "lat": 43.33902778,
+      "lon": 17.81611111,
+      "address": "Herzegovina Museum, Mostar Bosnia",
       "osm_url": "",
-      "tags": "object--support--utility-pole",
+      "tags": "wikipedia,tourism,attraction,historic,museum",
       "website": "",
-      "description": "",
+      "description": "The Herzegovina Museum (Bosnian: Muzej Hercegovine) is a museum in Mostar, Bosnia and Herzegovina containing items associated with the history of the area",
       "amenity": "restaurant",
       "rating": null,
       "budget": null,
       "price_range": null,
-      "provider": "mapillary",
+      "provider": "web",
       "raw": {
-        "osm_id": "493971335151199",
-        "name": "object--support--utility-pole",
-        "lat": 43.357914,
-        "lon": 17.772919,
-        "address": "",
-        "tags": "object--support--utility-pole",
-        "source": "mapillary-map_feature",
-        "provider": "mapillary",
-        "raw": {
-          "id": "493971335151199",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [
-              17.772919,
-              43.357914
-            ]
-          },
-          "object_value": "object--support--utility-pole"
-        }
-      },
-      "mapillary_images": []
+        "name": "Herzegovina Museum",
+        "address": "Herzegovina Museum, Mostar Bosnia",
+        "lat": 43.33902778,
+        "lon": 17.81611111,
+        "place_id": "wikipedia_31952184",
+        "tags": "wikipedia,tourism,attraction,historic,museum",
+        "source": "wikipedia",
+        "description": "The Herzegovina Museum (Bosnian: Muzej Hercegovine) is a museum in Mostar, Bosnia and Herzegovina containing items associated with the history of the area",
+        "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Muzej_Hercegovine_-_panoramio.jpg/500px-Muzej_Hercegovine_-_panoramio.jpg"
+      }
     },
     {
-      "id": "943190916445140",
-      "name": "object--support--utility-pole",
-      "lat": 43.35771,
-      "lon": 17.772947,
-      "address": "",
+      "id": "wikipedia_75401895",
+      "name": "Kriva Ćuprija",
+      "lat": 43.3367648,
+      "lon": 17.8131293,
+      "address": "Kriva Ćuprija, Mostar Bosnia",
       "osm_url": "",
-      "tags": "object--support--utility-pole",
+      "tags": "wikipedia,tourism,attraction,historic",
       "website": "",
-      "description": "",
+      "description": " Crooked Bridge) is a small stone bridge across the Radobolja river in Mostar, Bosnia and Herzegovina. The bridge is oldest one arch bridge in Mostar, built",
       "amenity": "restaurant",
       "rating": null,
       "budget": null,
       "price_range": null,
-      "provider": "mapillary",
+      "provider": "web",
       "raw": {
-        "osm_id": "943190916445140",
-        "name": "object--support--utility-pole",
-        "lat": 43.35771,
-        "lon": 17.772947,
-        "address": "",
-        "tags": "object--support--utility-pole",
-        "source": "mapillary-map_feature",
-        "provider": "mapillary",
-        "raw": {
-          "id": "943190916445140",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [
-              17.772947,
-              43.35771
-            ]
-          },
-          "object_value": "object--support--utility-pole"
-        }
-      },
-      "mapillary_images": []
+        "name": "Kriva Ćuprija",
+        "address": "Kriva Ćuprija, Mostar Bosnia",
+        "lat": 43.3367648,
+        "lon": 17.8131293,
+        "place_id": "wikipedia_75401895",
+        "tags": "wikipedia,tourism,attraction,historic",
+        "source": "wikipedia",
+        "description": " Crooked Bridge) is a small stone bridge across the Radobolja river in Mostar, Bosnia and Herzegovina. The bridge is oldest one arch bridge in Mostar, built",
+        "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Stone_Bridge_Kriva_%C4%86uprija.jpg/500px-Stone_Bridge_Kriva_%C4%86uprija.jpg"
+      }
     },
     {
-      "id": "216660286932898",
-      "name": "object--support--utility-pole",
-      "lat": 43.356995,
-      "lon": 17.772146,
-      "address": "",
+      "id": "wikipedia_2110211",
+      "name": "Stari Most",
+      "lat": 43.3372636,
+      "lon": 17.8150367,
+      "address": "Stari Most, Mostar Bosnia",
       "osm_url": "",
-      "tags": "object--support--utility-pole",
+      "tags": "wikipedia,tourism,attraction,historic,museum",
       "website": "",
-      "description": "",
+      "description": "Bosnia and Herzegovina List of National Monuments of Bosnia and Herzegovina Tourism in Bosnia and Herzegovina Museum of the Old Bridge History of Bosnia and",
       "amenity": "restaurant",
       "rating": null,
       "budget": null,
       "price_range": null,
-      "provider": "mapillary",
+      "provider": "web",
       "raw": {
-        "osm_id": "216660286932898",
-        "name": "object--support--utility-pole",
-        "lat": 43.356995,
-        "lon": 17.772146,
-        "address": "",
-        "tags": "object--support--utility-pole",
-        "source": "mapillary-map_feature",
-        "provider": "mapillary",
-        "raw": {
-          "id": "216660286932898",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [
-              17.772146,
-              43.356995
-            ]
-          },
-          "object_value": "object--support--utility-pole"
-        }
-      },
-      "mapillary_images": []
+        "name": "Stari Most",
+        "address": "Stari Most, Mostar Bosnia",
+        "lat": 43.3372636,
+        "lon": 17.8150367,
+        "place_id": "wikipedia_2110211",
+        "tags": "wikipedia,tourism,attraction,historic,museum",
+        "source": "wikipedia",
+        "description": "Bosnia and Herzegovina List of National Monuments of Bosnia and Herzegovina Tourism in Bosnia and Herzegovina Museum of the Old Bridge History of Bosnia and",
+        "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Mostar_Old_Town_Panorama_2007.jpg/500px-Mostar_Old_Town_Panorama_2007.jpg"
+      }
     },
     {
-      "id": "401899054162847",
-      "name": "object--support--utility-pole",
-      "lat": 43.357403,
-      "lon": 17.773563,
-      "address": "",
+      "id": "wikipedia_551361",
+      "name": "Mostar",
+      "lat": 43.34361111,
+      "lon": 17.8075,
+      "address": "Mostar, Mostar Bosnia",
       "osm_url": "",
-      "tags": "object--support--utility-pole",
+      "tags": "wikipedia,tourism,attraction",
       "website": "",
-      "description": "",
+      "description": " One of three largest banks in the country has its headquarters in Mostar. Bosnia &amp; Herzegovina has three national electric, postal &amp; telecommunication",
       "amenity": "restaurant",
       "rating": null,
       "budget": null,
       "price_range": null,
-      "provider": "mapillary",
+      "provider": "web",
       "raw": {
-        "osm_id": "401899054162847",
-        "name": "object--support--utility-pole",
-        "lat": 43.357403,
-        "lon": 17.773563,
-        "address": "",
-        "tags": "object--support--utility-pole",
-        "source": "mapillary-map_feature",
-        "provider": "mapillary",
-        "raw": {
-          "id": "401899054162847",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [
-              17.773563,
-              43.357403
-            ]
-          },
-          "object_value": "object--support--utility-pole"
-        }
-      },
-      "mapillary_images": [
-        {
-          "id": "1026781554520949",
-          "url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An_Ld26cAlP1QgPrnCD0-yWjNiCZkLrXA6LHXuEBcVzwqh-9OLp4xmmfJoAEjUyuEDtu42ZWbIontiQeahPou4qsHHuEclpNP6gKVc8SS59qtFvUM3pYomuPqo962lJbr7mzr47A-1k2rJLckZiTSA?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=fxk3xsEDDC0ZJM4C95_4jw&_nc_oc=AdlHLsS3QsoWKGJ4tvUDHMpYNq02Q1mioaF0z93y5B_3GYupUPc-cftFHDjTm9BsRHg&ccb=10-5&oh=00_Afvi-X4aU_b6VSvl2caNxa9ITpIEFYcLbfhRC64zi-Y7DQ&oe=69B87BF0&_nc_sid=201bca",
-          "lat": 43.357263412919,
-          "lon": 17.773153279707,
-          "raw": {
-            "id": "1026781554520949",
-            "thumb_1024_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An_Ld26cAlP1QgPrnCD0-yWjNiCZkLrXA6LHXuEBcVzwqh-9OLp4xmmfJoAEjUyuEDtu42ZWbIontiQeahPou4qsHHuEclpNP6gKVc8SS59qtFvUM3pYomuPqo962lJbr7mzr47A-1k2rJLckZiTSA?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=fxk3xsEDDC0ZJM4C95_4jw&_nc_oc=AdlHLsS3QsoWKGJ4tvUDHMpYNq02Q1mioaF0z93y5B_3GYupUPc-cftFHDjTm9BsRHg&ccb=10-5&oh=00_Afvi-X4aU_b6VSvl2caNxa9ITpIEFYcLbfhRC64zi-Y7DQ&oe=69B87BF0&_nc_sid=201bca",
-            "thumb_512_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An_Ld26cAlP1QgPrnCD0-yWjNiCZkLrXA6LHXuEBcVzwqh-9OLp4xmmfJoAEjUyuEDtu42ZWbIontiQeahPou4qsHHuEclpNP6gKVc8SS59qtFvUM3pYomuPqo962lJbr7mzr47A-1k2rJLckZiTSA?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=fxk3xsEDDC0ZJM4C95_4jw&_nc_oc=AdlHLsS3QsoWKGJ4tvUDHMpYNq02Q1mioaF0z93y5B_3GYupUPc-cftFHDjTm9BsRHg&ccb=10-5&oh=00_AftZELIHNA9ubc0bipCpNlijUDMVAN2lElm5Qw5y8qzXNg&oe=69B87BF0&_nc_sid=201bca",
-            "computed_geometry": {
-              "type": "Point",
-              "coordinates": [
-                17.773153279707,
-                43.357263412919
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": "917289598815001",
-      "name": "object--support--utility-pole",
-      "lat": 43.35649,
-      "lon": 17.772316,
-      "address": "",
-      "osm_url": "",
-      "tags": "object--support--utility-pole",
-      "website": "",
-      "description": "",
-      "amenity": "restaurant",
-      "rating": null,
-      "budget": null,
-      "price_range": null,
-      "provider": "mapillary",
-      "raw": {
-        "osm_id": "917289598815001",
-        "name": "object--support--utility-pole",
-        "lat": 43.35649,
-        "lon": 17.772316,
-        "address": "",
-        "tags": "object--support--utility-pole",
-        "source": "mapillary-map_feature",
-        "provider": "mapillary",
-        "raw": {
-          "id": "917289598815001",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [
-              17.772316,
-              43.35649
-            ]
-          },
-          "object_value": "object--support--utility-pole"
-        }
-      },
-      "mapillary_images": []
-    },
-    {
-      "id": "309650994066020",
-      "name": "object--support--utility-pole",
-      "lat": 43.356182,
-      "lon": 17.773815,
-      "address": "",
-      "osm_url": "",
-      "tags": "object--support--utility-pole",
-      "website": "",
-      "description": "",
-      "amenity": "restaurant",
-      "rating": null,
-      "budget": null,
-      "price_range": null,
-      "provider": "mapillary",
-      "raw": {
-        "osm_id": "309650994066020",
-        "name": "object--support--utility-pole",
-        "lat": 43.356182,
-        "lon": 17.773815,
-        "address": "",
-        "tags": "object--support--utility-pole",
-        "source": "mapillary-map_feature",
-        "provider": "mapillary",
-        "raw": {
-          "id": "309650994066020",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [
-              17.773815,
-              43.356182
-            ]
-          },
-          "object_value": "object--support--utility-pole"
-        }
-      },
-      "mapillary_images": [
-        {
-          "id": "1044825269259190",
-          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An9sBzVyrZClQl7UNm1wKkxW1jwCOlQ7Rugs4onLs41X_U_0xhnhh6YBSeABtOmPZfHI3AXoUG6EvBnBUX5gwLJYuv6SSEDhNCg7JEpwD1_cuGL30rT4MOrAqQ7wHDgkQ5ZpOklZxTr8GEF2o2-QHA?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=A0y2nkhtQKyOmWjd0iJI7w&_nc_oc=AdlNX78sdQZ-rz3mGCqyOKe1v9_wykisfGM4cRYDOjQiHLB8EQX7aaqznSIndbs2VnFx3zVLxKaKUUox29ry20Ls&ccb=10-5&oh=00_Afva-ySF4-4RocG7Dxc39yCeVrKxWiyVJCF4PXWNfQLiZQ&oe=69B87D78&_nc_sid=201bca",
-          "lat": 43.355863712829,
-          "lon": 17.774042697492,
-          "raw": {
-            "id": "1044825269259190",
-            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An9sBzVyrZClQl7UNm1wKkxW1jwCOlQ7Rugs4onLs41X_U_0xhnhh6YBSeABtOmPZfHI3AXoUG6EvBnBUX5gwLJYuv6SSEDhNCg7JEpwD1_cuGL30rT4MOrAqQ7wHDgkQ5ZpOklZxTr8GEF2o2-QHA?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=A0y2nkhtQKyOmWjd0iJI7w&_nc_oc=AdlNX78sdQZ-rz3mGCqyOKe1v9_wykisfGM4cRYDOjQiHLB8EQX7aaqznSIndbs2VnFx3zVLxKaKUUox29ry20Ls&ccb=10-5&oh=00_Afva-ySF4-4RocG7Dxc39yCeVrKxWiyVJCF4PXWNfQLiZQ&oe=69B87D78&_nc_sid=201bca",
-            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An9sBzVyrZClQl7UNm1wKkxW1jwCOlQ7Rugs4onLs41X_U_0xhnhh6YBSeABtOmPZfHI3AXoUG6EvBnBUX5gwLJYuv6SSEDhNCg7JEpwD1_cuGL30rT4MOrAqQ7wHDgkQ5ZpOklZxTr8GEF2o2-QHA?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=A0y2nkhtQKyOmWjd0iJI7w&_nc_oc=AdlNX78sdQZ-rz3mGCqyOKe1v9_wykisfGM4cRYDOjQiHLB8EQX7aaqznSIndbs2VnFx3zVLxKaKUUox29ry20Ls&ccb=10-5&oh=00_Afua1Zw72vtmW1dFURBbfaGEcE1RvsH7LauULPlsHbO2LA&oe=69B87D78&_nc_sid=201bca",
-            "computed_geometry": {
-              "type": "Point",
-              "coordinates": [
-                17.774042697492,
-                43.355863712829
-              ]
-            }
-          }
-        },
-        {
-          "id": "1136152326897151",
-          "url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An8ZGMA3dAV4C5Wu12hGDeu2O-MExp5_YYIs5o2Xh-7o9L2NCr2kvAYuKoEyFSr5rwkaRh2QUyUmCE_ws29sNwXD0c3E9CpSDwm9QZ8i5O-RlUFyTPPlJoNzkiCKk_yMGKcRUqS3Ew-eaw5Hi98_Vw?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=A0y2nkhtQKyOmWjd0iJI7w&_nc_oc=Adm_Y6y4LmieMkbDWCvZV31SyqUJmDvxgYf0Sv3P4ilAMd0WwBR2_L0zvz2F0z-OgT_pLpaGRqjCEmOsf_FJTuJr&ccb=10-5&oh=00_Afuijc5ei2DhFxCVjhtgF5_MDzT4ldzkXETr3fcBXSg4Qw&oe=69B89958&_nc_sid=201bca",
-          "lat": 43.35584150461,
-          "lon": 17.774076763103,
-          "raw": {
-            "id": "1136152326897151",
-            "thumb_1024_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An8ZGMA3dAV4C5Wu12hGDeu2O-MExp5_YYIs5o2Xh-7o9L2NCr2kvAYuKoEyFSr5rwkaRh2QUyUmCE_ws29sNwXD0c3E9CpSDwm9QZ8i5O-RlUFyTPPlJoNzkiCKk_yMGKcRUqS3Ew-eaw5Hi98_Vw?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=A0y2nkhtQKyOmWjd0iJI7w&_nc_oc=Adm_Y6y4LmieMkbDWCvZV31SyqUJmDvxgYf0Sv3P4ilAMd0WwBR2_L0zvz2F0z-OgT_pLpaGRqjCEmOsf_FJTuJr&ccb=10-5&oh=00_Afuijc5ei2DhFxCVjhtgF5_MDzT4ldzkXETr3fcBXSg4Qw&oe=69B89958&_nc_sid=201bca",
-            "thumb_512_url": "https://scontent.fagc3-1.fna.fbcdn.net/m1/v/t6/An8ZGMA3dAV4C5Wu12hGDeu2O-MExp5_YYIs5o2Xh-7o9L2NCr2kvAYuKoEyFSr5rwkaRh2QUyUmCE_ws29sNwXD0c3E9CpSDwm9QZ8i5O-RlUFyTPPlJoNzkiCKk_yMGKcRUqS3Ew-eaw5Hi98_Vw?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=A0y2nkhtQKyOmWjd0iJI7w&_nc_oc=Adm_Y6y4LmieMkbDWCvZV31SyqUJmDvxgYf0Sv3P4ilAMd0WwBR2_L0zvz2F0z-OgT_pLpaGRqjCEmOsf_FJTuJr&ccb=10-5&oh=00_Afs4pEZcKZ29lxdb3_Jy6JxVePyThgFGuCwYz-Fcm2GJ7A&oe=69B89958&_nc_sid=201bca",
-            "computed_geometry": {
-              "type": "Point",
-              "coordinates": [
-                17.774076763103,
-                43.35584150461
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": "309660490731737",
-      "name": "object--support--utility-pole",
-      "lat": 43.35569,
-      "lon": 17.773993,
-      "address": "",
-      "osm_url": "",
-      "tags": "object--support--utility-pole",
-      "website": "",
-      "description": "",
-      "amenity": "restaurant",
-      "rating": null,
-      "budget": null,
-      "price_range": null,
-      "provider": "mapillary",
-      "raw": {
-        "osm_id": "309660490731737",
-        "name": "object--support--utility-pole",
-        "lat": 43.35569,
-        "lon": 17.773993,
-        "address": "",
-        "tags": "object--support--utility-pole",
-        "source": "mapillary-map_feature",
-        "provider": "mapillary",
-        "raw": {
-          "id": "309660490731737",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [
-              17.773993,
-              43.35569
-            ]
-          },
-          "object_value": "object--support--utility-pole"
-        }
-      },
-      "mapillary_images": [
-        {
-          "id": "1081646542329658",
-          "url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An-zQVbEL5xRtaTB8z1WQk0VzIdnL6zVvLEjty5VnNM5XcTvdOK8oZGgYFxt9dI5JZA0FJDY6RilyDBCzgdQelq-c4Lbu7sn-_EgpLg-LxisbTBixOx0h7deWg3gKbEDWxxllYQKwb5GHxYKTfem8w?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=ov9PSsilmDGlqHiWktpGyg&_nc_oc=AdmACu4D39LY7jcUnc1DXHQMO7qyVH1U179yvI5Q9iGtPL5af6L9X48jZ_TOo3UVgeY&ccb=10-5&oh=00_AfsKbXSv2PzQG394WUu1UkCecCkDhad8aRtVHwngWc7GmQ&oe=69B87BAB&_nc_sid=201bca",
-          "lat": 43.355350755589,
-          "lon": 17.774348622417,
-          "raw": {
-            "id": "1081646542329658",
-            "thumb_1024_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An-zQVbEL5xRtaTB8z1WQk0VzIdnL6zVvLEjty5VnNM5XcTvdOK8oZGgYFxt9dI5JZA0FJDY6RilyDBCzgdQelq-c4Lbu7sn-_EgpLg-LxisbTBixOx0h7deWg3gKbEDWxxllYQKwb5GHxYKTfem8w?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=ov9PSsilmDGlqHiWktpGyg&_nc_oc=AdmACu4D39LY7jcUnc1DXHQMO7qyVH1U179yvI5Q9iGtPL5af6L9X48jZ_TOo3UVgeY&ccb=10-5&oh=00_AfsKbXSv2PzQG394WUu1UkCecCkDhad8aRtVHwngWc7GmQ&oe=69B87BAB&_nc_sid=201bca",
-            "thumb_512_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An-zQVbEL5xRtaTB8z1WQk0VzIdnL6zVvLEjty5VnNM5XcTvdOK8oZGgYFxt9dI5JZA0FJDY6RilyDBCzgdQelq-c4Lbu7sn-_EgpLg-LxisbTBixOx0h7deWg3gKbEDWxxllYQKwb5GHxYKTfem8w?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=ov9PSsilmDGlqHiWktpGyg&_nc_oc=AdmACu4D39LY7jcUnc1DXHQMO7qyVH1U179yvI5Q9iGtPL5af6L9X48jZ_TOo3UVgeY&ccb=10-5&oh=00_Afub579l9cLgmdSLc5VeAj99RQdNhMcO4wDb_ehEoHa2jQ&oe=69B87BAB&_nc_sid=201bca",
-            "computed_geometry": {
-              "type": "Point",
-              "coordinates": [
-                17.774348622417,
-                43.355350755589
-              ]
-            }
-          }
-        },
-        {
-          "id": "1150077722082258",
-          "url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An8HPHKKUaB51_fpw-bmdS0aVMKVqrgX1WkneOiEwzizR9tqtzJMDYs3_fRY2CKyNtWXKXqPI8XkobP4ZT_hFW1-lKBnrZxR66EGHLbS1hf7wOsNMCOKJ-_2cFrHaJs1TZ610A8j7JcZI7iqlxBPApE?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=ov9PSsilmDGlqHiWktpGyg&_nc_oc=Adns60J5Y6nIgXboTfTN3mReQO8EIbr6u-OlmvvuvYdWnotK12Q6giXQoKBTVT2yx9Y&ccb=10-5&oh=00_AfveHiUlITBsmnE2ToR_RwggwFtvEF9weRX_BONlEUcCYQ&oe=69B89E21&_nc_sid=201bca",
-          "lat": 43.355314947447,
-          "lon": 17.77442116112,
-          "raw": {
-            "id": "1150077722082258",
-            "thumb_1024_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An8HPHKKUaB51_fpw-bmdS0aVMKVqrgX1WkneOiEwzizR9tqtzJMDYs3_fRY2CKyNtWXKXqPI8XkobP4ZT_hFW1-lKBnrZxR66EGHLbS1hf7wOsNMCOKJ-_2cFrHaJs1TZ610A8j7JcZI7iqlxBPApE?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=ov9PSsilmDGlqHiWktpGyg&_nc_oc=Adns60J5Y6nIgXboTfTN3mReQO8EIbr6u-OlmvvuvYdWnotK12Q6giXQoKBTVT2yx9Y&ccb=10-5&oh=00_AfveHiUlITBsmnE2ToR_RwggwFtvEF9weRX_BONlEUcCYQ&oe=69B89E21&_nc_sid=201bca",
-            "thumb_512_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An8HPHKKUaB51_fpw-bmdS0aVMKVqrgX1WkneOiEwzizR9tqtzJMDYs3_fRY2CKyNtWXKXqPI8XkobP4ZT_hFW1-lKBnrZxR66EGHLbS1hf7wOsNMCOKJ-_2cFrHaJs1TZ610A8j7JcZI7iqlxBPApE?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=ov9PSsilmDGlqHiWktpGyg&_nc_oc=Adns60J5Y6nIgXboTfTN3mReQO8EIbr6u-OlmvvuvYdWnotK12Q6giXQoKBTVT2yx9Y&ccb=10-5&oh=00_AftJ-1glJk_hmVJNhxsSn-NWPf3nM9vvZUVdHiir6g_lJA&oe=69B89E21&_nc_sid=201bca",
-            "computed_geometry": {
-              "type": "Point",
-              "coordinates": [
-                17.77442116112,
-                43.355314947447
-              ]
-            }
-          }
-        },
-        {
-          "id": "1169598496888694",
-          "url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An_Y_mAPAylHlH-MjfYrSnK-8GmSO4QsS6glZRstiKkT87yMaFwVUqzOmh6-V_HrQ9sOvChIHnJe7GR1Ez3oO8P-wVwXeZPmNIIbasM4Ef-LjclDFRmoR2rCSbZQT7hY4ACfNbf4SK0-1WKsVAYfB34?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=ov9PSsilmDGlqHiWktpGyg&_nc_oc=AdmhCNyb2lrplDI2HjDWJWLEd4QEKyXh-exIMVCKe5n2IwoR7UE9enhzMcWil4U3w-I&ccb=10-5&oh=00_AfuLBpKaMRRHQ82zYGbz0EmpuvGnDbxlngbYhaGe5Uu0IQ&oe=69B8966E&_nc_sid=201bca",
-          "lat": 43.35536887703,
-          "lon": 17.774470969306,
-          "raw": {
-            "id": "1169598496888694",
-            "thumb_1024_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An_Y_mAPAylHlH-MjfYrSnK-8GmSO4QsS6glZRstiKkT87yMaFwVUqzOmh6-V_HrQ9sOvChIHnJe7GR1Ez3oO8P-wVwXeZPmNIIbasM4Ef-LjclDFRmoR2rCSbZQT7hY4ACfNbf4SK0-1WKsVAYfB34?stp=s1024x576&edm=AOnQwmMEAAAA&_nc_gid=ov9PSsilmDGlqHiWktpGyg&_nc_oc=AdmhCNyb2lrplDI2HjDWJWLEd4QEKyXh-exIMVCKe5n2IwoR7UE9enhzMcWil4U3w-I&ccb=10-5&oh=00_AfuLBpKaMRRHQ82zYGbz0EmpuvGnDbxlngbYhaGe5Uu0IQ&oe=69B8966E&_nc_sid=201bca",
-            "thumb_512_url": "https://scontent.fagc3-2.fna.fbcdn.net/m1/v/t6/An_Y_mAPAylHlH-MjfYrSnK-8GmSO4QsS6glZRstiKkT87yMaFwVUqzOmh6-V_HrQ9sOvChIHnJe7GR1Ez3oO8P-wVwXeZPmNIIbasM4Ef-LjclDFRmoR2rCSbZQT7hY4ACfNbf4SK0-1WKsVAYfB34?stp=s512x288&edm=AOnQwmMEAAAA&_nc_gid=ov9PSsilmDGlqHiWktpGyg&_nc_oc=AdmhCNyb2lrplDI2HjDWJWLEd4QEKyXh-exIMVCKe5n2IwoR7UE9enhzMcWil4U3w-I&ccb=10-5&oh=00_AfuiTxlxUyQS1Z8llU0TU9VyhAp4GG2HjjZPe5QflkAAVg&oe=69B8966E&_nc_sid=201bca",
-            "computed_geometry": {
-              "type": "Point",
-              "coordinates": [
-                17.774470969306,
-                43.35536887703
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": 387178927,
-      "name": "Koski Mehmed Pašina džamija",
-      "lat": 43.338677,
-      "lon": 17.8147879,
-      "address": "Minaret, Mala Tepa, Stari Grad, Tepa, Mostar, City of Mostar, Herzegovina-Neretva Canton, Federation of Bosnia and Herzegovina, 88000, Bosnia and Herzegovina",
-      "osm_url": "https://www.openstreetmap.org/way/387178927",
-      "tags": "amenity=place_of_worship, building=yes, fee=yes, name=Koski Mehmed Pašina džamija, name:en=Koski Mehmed Pasha Mosque, name:he=מסגד קוסקי מחמד פאשה, name:hr=Koski Mehmed Pašina džamija, name:tr=Koski Mehmet Paşa Camii, religion=muslim, tourism=museum, wikidata=Q19951166, wikimedia_commons=Category:Koski Mehmed Pasha Mosque (Mostar)",
-      "website": null,
-      "description": "",
-      "amenity": "place_of_worship",
-      "rating": null,
-      "budget": null,
-      "price_range": null,
-      "provider": "overpass",
-      "raw": {
-        "osm_id": 387178927,
-        "name": "Koski Mehmed Pašina džamija",
-        "website": null,
-        "osm_url": "https://www.openstreetmap.org/way/387178927",
-        "amenity": "place_of_worship",
-        "historic": "",
-        "tourism": "museum",
-        "leisure": "",
-        "cost": "",
-        "address": "Minaret, Mala Tepa, Stari Grad, Tepa, Mostar, City of Mostar, Herzegovina-Neretva Canton, Federation of Bosnia and Herzegovina, 88000, Bosnia and Herzegovina",
-        "lat": 43.338677,
-        "lon": 17.8147879,
-        "tags": "amenity=place_of_worship, building=yes, fee=yes, name=Koski Mehmed Pašina džamija, name:en=Koski Mehmed Pasha Mosque, name:he=מסגד קוסקי מחמד פאשה, name:hr=Koski Mehmed Pašina džamija, name:tr=Koski Mehmet Paşa Camii, religion=muslim, tourism=museum, wikidata=Q19951166, wikimedia_commons=Category:Koski Mehmed Pasha Mosque (Mostar)",
-        "provider": "overpass"
-      },
-      "mapillary_images": []
-    },
-    {
-      "id": 1350464721,
-      "name": "Muzej Stari most",
-      "lat": 43.3372443,
-      "lon": 17.8156002,
-      "address": "Old bridge Museum, Kujundžiluk, Stari Grad, Konak, Mostar, City of Mostar, Herzegovina-Neretva Canton, Federation of Bosnia and Herzegovina, 88104, Bosnia and Herzegovina",
-      "osm_url": "https://www.openstreetmap.org/node/1350464721",
-      "tags": "check_date=2023-07-31, fee=yes, museum=history, name=Muzej Stari most, name:ar=متحف جسر موستار, name:en=Old bridge Museum, name:it=Museo del Ponte Vecchio, name:lt=Senojo tilto muziejus, name:pl=Muzeum Starego Mostu, name:tr=Eski Köprü Müzesi, opening_hours=PH,Mo-Su 10:00-18:00, tourism=museum, wheelchair=no, wikidata=Q6941108, wikipedia=en:Museum of the Old Bridge",
-      "website": null,
-      "description": "",
-      "amenity": "",
-      "rating": null,
-      "budget": null,
-      "price_range": null,
-      "provider": "overpass",
-      "raw": {
-        "osm_id": 1350464721,
-        "name": "Muzej Stari most",
-        "website": null,
-        "osm_url": "https://www.openstreetmap.org/node/1350464721",
-        "amenity": "",
-        "historic": "",
-        "tourism": "museum",
-        "leisure": "",
-        "cost": "",
-        "address": "Old bridge Museum, Kujundžiluk, Stari Grad, Konak, Mostar, City of Mostar, Herzegovina-Neretva Canton, Federation of Bosnia and Herzegovina, 88104, Bosnia and Herzegovina",
-        "lat": 43.3372443,
-        "lon": 17.8156002,
-        "tags": "check_date=2023-07-31, fee=yes, museum=history, name=Muzej Stari most, name:ar=متحف جسر موستار, name:en=Old bridge Museum, name:it=Museo del Ponte Vecchio, name:lt=Senojo tilto muziejus, name:pl=Muzeum Starego Mostu, name:tr=Eski Köprü Müzesi, opening_hours=PH,Mo-Su 10:00-18:00, tourism=museum, wheelchair=no, wikidata=Q6941108, wikipedia=en:Museum of the Old Bridge",
-        "provider": "overpass"
-      },
-      "mapillary_images": []
+        "name": "Mostar",
+        "address": "Mostar, Mostar Bosnia",
+        "lat": 43.34361111,
+        "lon": 17.8075,
+        "place_id": "wikipedia_551361",
+        "tags": "wikipedia,tourism,attraction",
+        "source": "wikipedia",
+        "description": " One of three largest banks in the country has its headquarters in Mostar. Bosnia &amp; Herzegovina has three national electric, postal &amp; telecommunication",
+        "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Stari_Most_viewed_from_North.jpg/500px-Stari_Most_viewed_from_North.jpg"
+      }
     }
   ]
 }

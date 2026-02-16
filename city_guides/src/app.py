@@ -45,6 +45,13 @@ except Exception:
     fetch_wikipedia_summary = None
     WIKI_CITY_AVAILABLE = False
 
+try:
+    from city_guides.providers.geocoding import geocode_city
+    GEOCODING_AVAILABLE = True
+except Exception:
+    geocode_city = None
+    GEOCODING_AVAILABLE = False
+
 # Service imports
 from city_guides.src.services.location import (
     city_mappings,
@@ -99,8 +106,8 @@ aiohttp_session: aiohttp.ClientSession | None = None
 aiohttp_session: aiohttp.ClientSession | None = None
 redis_client: aioredis.Redis | None = None
 
-# Attach active_searches to app context to avoid global mutable state
-app.active_searches = {}
+# Attach active_searches to app.config to avoid global mutable state
+app.config['active_searches'] = {}
 
 
 # --- Request metrics middleware ---
@@ -463,31 +470,51 @@ async def prewarm_rag_responses(top_n: int | None = None):
     if not redis_client:
         app.logger.info('Redis not available, skipping RAG prewarm')
         return
+    if not GEOCODING_AVAILABLE:
+        app.logger.info('Geocoding not available, skipping RAG prewarm')
+        return
     try:
         seed_path = Path(__file__).parent.parent / 'data' / 'seeded_cities.json'
         if not seed_path.exists():
             app.logger.info('No seeded_cities.json found; skipping RAG prewarm')
             return
         data = json.loads(seed_path.read_text())
-        cities = data.get('cities', [])
-        if not cities:
+        cities_data = data.get('cities', [])
+        if not cities_data:
             app.logger.info('No cities in seed; skipping RAG prewarm')
             return
-        top_n = int(top_n or PREWARM_RAG_TOP_N)
-        # Choose top N by population (descending)
-        cities = sorted(cities, key=lambda c: int(c.get('population', 0) or 0), reverse=True)[:top_n]
+        
+        # Handle different data structures
+        if isinstance(cities_data, dict):
+            # cities is a dict with city names as keys
+            cities = list(cities_data.keys())[:top_n]
+        elif isinstance(cities_data, list):
+            # cities is a list
+            if cities_data and isinstance(cities_data[0], str):
+                # If cities are strings, use them as-is (no population sorting)
+                cities = cities_data[:top_n]
+            else:
+                # If cities are dicts, sort by population
+                cities = sorted(cities_data, key=lambda c: int(c.get('population', 0) or 0), reverse=True)[:top_n]
+        else:
+            app.logger.info('Unexpected cities data structure; skipping RAG prewarm')
+            return
         queries = DEFAULT_PREWARM_QUERIES or ["Top food"]
         sem = asyncio.Semaphore(config.get_int('PREWARM_RAG_CONCURRENCY', 4))
 
-        async def _warm_city(city_entry):
+        async def _warm_city(city_name):
             async with sem:
-                city_name = city_entry.get('name')
-                lat = city_entry.get('lat')
-                lon = city_entry.get('lon')
+                # Geocode the city to get coordinates
+                geo = await geocode_city(city_name)
+                if not geo:
+                    app.logger.warning(f'Could not geocode {city_name}, skipping RAG prewarm')
+                    return
+                lat = geo.get('lat')
+                lon = geo.get('lon')
                 for q in queries:
                     try:
                         # Build cache key consistent with runtime
-                        ck_input = f"{q}|{city_name}|{''}|{city_entry.get('countryCode') or ''}|{lat or ''}|{lon or ''}"
+                        ck_input = f"{q}|{city_name}|{''}|{''}|{lat or ''}|{lon or ''}"
                         ck = "rag:" + hashlib.sha256(ck_input.encode('utf-8')).hexdigest()
                         try:
                             existing = None
@@ -575,6 +602,31 @@ async def prewarm_neighborhood(city: str, lang: str = "en"):
     except Exception as exc:
         app.logger.debug("Neighborhood prewarm failed for %s: %s", city, exc)
 
+async def prewarm_wiki_section(city: str, section: str = "Tourism", lang: str = "en"):
+    """Prewarm and cache a named Wikipedia section for a city in Redis."""
+    if not redis_client or not city:
+        return
+    slug = re.sub(r"[^a-z0-9]+", "_", city.lower())
+    cache_key = f"wiki:section:{lang}:{slug}:{section}"
+    try:
+        existing = await redis_client.get(cache_key)
+        if existing:
+            await redis_client.expire(cache_key, PREWARM_TTL)
+            return
+    except Exception:
+        pass
+
+    try:
+        # Use our provider helper which itself has fallbacks/caching
+        from city_guides.providers.wikipedia_provider import async_fetch_wikipedia_section
+        html = await async_fetch_wikipedia_section(city, section, lang=lang)
+        if html:
+            await redis_client.set(cache_key, html, ex=PREWARM_TTL)
+            app.logger.info("Prewarmed wiki section '%s' for %s", section, city)
+    except Exception:
+        app.logger.exception("prewarm_wiki_section failed for %s", city)
+
+
 async def prewarm_neighborhoods():
     """Background task to cache popular city neighborhoods"""
     if DISABLE_PREWARM:
@@ -586,6 +638,11 @@ async def prewarm_neighborhoods():
             app.logger.info("✓ Prewarmed: %s", city)
         except Exception as e:
             app.logger.exception("Prewarm failed for %s: %s", city, e)
+        # also prewarm the Wikipedia 'Tourism' section for the city
+        try:
+            await prewarm_wiki_section(city, section="Tourism", lang="en")
+        except Exception:
+            app.logger.exception('prewarm_wiki_section failed for %s', city)
         try:
             await asyncio.sleep(float(os.getenv("NEIGHBORHOOD_PREWARM_PAUSE", 1.0)))
         except Exception:
@@ -593,7 +650,9 @@ async def prewarm_neighborhoods():
 
 # Import and register routes from routes module
 from city_guides.src.routes import register_routes  # noqa: E402
+from city_guides.src.simple_categories import register_category_routes  # noqa: E402
 register_routes(app)
+register_category_routes(app)
 
 if __name__ == "__main__":
     # Load environment variables from .env file manually

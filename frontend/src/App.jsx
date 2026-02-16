@@ -170,6 +170,9 @@ function App() {
   const marcoOpenTimerRef = useRef(null);
   const citySuggestionsRef = useRef(null);
   const cityGuideRef = useRef(null);
+  const neighborhoodRef = useRef(null);
+  const funRef = useRef(null);
+  const categoryResultsRef = useRef(null);
 
   const scrollToCitySuggestions = useCallback(() => {
     const el = cityGuideRef.current || citySuggestionsRef.current;
@@ -204,6 +207,13 @@ function App() {
   useEffect(() => {
     return () => clearMarcoOpenTimer();
   }, [clearMarcoOpenTimer]);
+
+  // Auto-scroll to category results when they appear
+  useEffect(() => {
+    if ((activePanel === 'neighborhoods' || category || selectedSuggestion) && venues.length > 0 && !loading && categoryResultsRef.current) {
+      categoryResultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [activePanel, category, selectedSuggestion, venues, loading]);
 
   // Memoized API call functions
   const fetchAPI = useCallback(async (endpoint, options = {}) => {
@@ -284,16 +294,21 @@ function App() {
     return () => { cancelled = true; };
   }, []);
 
-  // Fetch hero image when city changes
+  // Fetch hero image when city changes (debounced to prevent rapid calls)
   useEffect(() => {
     let cancelled = false;
+    let timeoutId = null;
+    
     if (!location.city) {
       setHeroImage('');
       setHeroImageMeta({});
       return;
     }
 
-    (async () => {
+    // Debounce the hero image fetch to prevent multiple rapid calls
+    timeoutId = setTimeout(async () => {
+      if (cancelled) return;
+      
       try {
         const imageUrl = await getHeroImage(location.city, parsedIntent || categoryLabel || category);
         const imageMeta = await getHeroImageMeta(location.city, parsedIntent || categoryLabel || category);
@@ -307,9 +322,12 @@ function App() {
           setHeroImageMeta({});
         }
       }
-    })();
+    }, 100); // 100ms debounce
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [location.city, parsedIntent, categoryLabel, category]);
 
   const normalizeCityName = useCallback((cityValue) => {
@@ -367,9 +385,24 @@ function App() {
     }
   }, [normalizeCityName, venues]);
 
-  // Consolidated fetch neighborhoods function
+  // Cache for neighborhood API calls to prevent duplicates
+  const neighborhoodCache = useRef(new Map());
+
+  // Consolidated fetch neighborhoods function with caching
   const fetchNeighborhoods = useCallback(async (cityName, useFallback = true) => {
     if (!cityName) return [];
+
+    const cacheKey = cityName.toLowerCase();
+    
+    // Return cached result if available
+    if (neighborhoodCache.current.has(cacheKey)) {
+      console.log('Neighborhood API check (cached):', cityName);
+      return neighborhoodCache.current.get(cacheKey);
+    }
+
+    console.log('Neighborhood API check (live):', cityName);
+    
+    let result = [];
 
     // Always try both city and coordinate-based for Tlaquepaque
     if (cityName.toLowerCase() === 'tlaquepaque') {
@@ -389,45 +422,44 @@ function App() {
           coordData = data.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
         }
       } catch {}
-      const fallbackNames = [];
       // Merge and deduplicate
-      return Array.from(new Set([...cityData, ...coordData]));
-    }
-
-    try {
-      // First try fetching by city name
-      const data = await fetchAPI(`/api/neighborhoods?city=${encodeURIComponent(cityName)}&lang=en`);
-      if (data?.neighborhoods?.length > 0) {
-        const names = data.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
-        const uniqueNames = Array.from(new Set(names));
-        const fallbackNames = [];
-        return uniqueNames;
-      }
-      // If city-based fetch failed or returned no results, try geocoding to get coordinates
+      result = Array.from(new Set([...cityData, ...coordData]));
+    } else {
       try {
-        const geoData = await fetchAPI('/api/geocode', {
-          method: 'POST',
-          body: JSON.stringify({ city: cityName })
-        });
-        const lat = geoData?.lat ?? geoData?.latitude;
-        const lon = geoData?.lon ?? geoData?.longitude ?? geoData?.lng;
-        if (lat && lon) {
-          // Try fetching by coordinates
-          const coordData = await fetchAPI(`/api/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
-          if (coordData?.neighborhoods?.length > 0) {
-            const names = coordData.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
-            const uniqueNames = Array.from(new Set(names));
-            const fallbackNames = [];
-            return uniqueNames;
+        // First try fetching by city name
+        const data = await fetchAPI(`/api/neighborhoods?city=${encodeURIComponent(cityName)}&lang=en`);
+        if (data?.neighborhoods?.length > 0) {
+          const names = data.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
+          result = Array.from(new Set(names));
+        } else {
+          // If city-based fetch failed or returned no results, try geocoding to get coordinates
+          try {
+            const geoData = await fetchAPI('/api/geocode', {
+              method: 'POST',
+              body: JSON.stringify({ city: cityName })
+            });
+            const lat = geoData?.lat ?? geoData?.latitude;
+            const lon = geoData?.lon ?? geoData?.longitude ?? geoData?.lng;
+            if (lat && lon) {
+              // Try fetching by coordinates
+              const coordData = await fetchAPI(`/api/neighborhoods?lat=${lat}&lon=${lon}&lang=en`);
+              if (coordData?.neighborhoods?.length > 0) {
+                const names = coordData.neighborhoods.map(n => n.name || n.display_name || n.label || n.id).filter(Boolean);
+                result = Array.from(new Set(names));
+              }
+            }
+          } catch (geoErr) {
+            // Continue to fallback
           }
         }
-      } catch (geoErr) {
+      } catch (err) {
         // Continue to fallback
       }
-    } catch (err) {
-      // Continue to fallback
     }
-    return [];
+
+    // Cache the result
+    neighborhoodCache.current.set(cacheKey, result);
+    return result;
   }, [fetchAPI]);
 
   // Fetch smart neighborhood suggestions for large cities with a timeout
@@ -692,8 +724,14 @@ function App() {
     setCategoryLabel(label);
     setActivePanel('neighborhoods');
 
+    // Fetch smart neighborhoods when category is selected
+    if (location.city) {
+      const smartData = await fetchSmartNeighborhoods(location.city, value);
+      setSmartNeighborhoods(smartData.neighborhoods || []);
+    }
+
     await handleSearch(value);
-  }, [handleSearch]);
+  }, [handleSearch, location.city, fetchSmartNeighborhoods]);
 
   const handleNeighborhoodSelect = useCallback(async (neighborhood) => {
     setLocation(prev => ({ ...prev, neighborhood }));
@@ -728,6 +766,8 @@ function App() {
       <Header 
         city={location.city} 
         neighborhood={location.neighborhood}
+        neighborhoodOptIn={neighborhoodOptIn}
+        onToggleNeighborhood={() => setNeighborhoodOptIn(prev => !prev)}
         weather={weather}
         weatherError={weatherError}
       />
@@ -802,7 +842,7 @@ function App() {
             </div>
             <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory">
               {((category || (selectedSuggestion && venues.length > 0))
-                ? venues.slice(0, 6).map((v, idx) => ({ key: v.id || idx, name: v.name, description: v.description || 'Obscure local gem with atmosphere.' }))
+                ? venues.slice(0, 10).map((v, idx) => ({ key: v.id || idx, name: v.name, description: v.description || 'Obscure local gem with atmosphere.' }))
                 : HIDDEN_GEM_CITIES.map((city) => ({ key: city, name: city, description: `Hidden corners of ${city}`, img: featuredImages[city]?.img || '', credit: featuredImages[city]?.credit, profile: featuredImages[city]?.profile })))
                 .map((item) => {
                   const [from, to] = gradientForName(item.name);
@@ -851,20 +891,53 @@ function App() {
             </div>
           )}
 
-          {/* Mobile panel toggles */}
+          {/* Panel toggles for mobile and desktop */}
           {location.city && (
-            <div className="mt-6 flex flex-wrap gap-2 md:hidden">
+            <div className="mt-6 flex flex-wrap gap-2">
               {[
                 { key: 'categories', label: 'Categories' },
                 { key: 'neighborhoods', label: 'Nearby Attractions' },
+                { key: 'neighborhoods_toggle', label: neighborhoodOptIn ? 'Neighborhoods: ON' : 'Neighborhoods: OFF' },
                 { key: 'guide', label: 'Guide' },
                 { key: 'fun', label: 'Fun Fact' },
               ].map((tab) => (
                 <button
                   key={tab.key}
                   type="button"
-                  onClick={() => setActivePanel(tab.key)}
-                  className={`px-3 py-2 rounded-full text-sm font-semibold border transition ${activePanel === tab.key ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white border-slate-200 text-slate-800'}`}
+                  onClick={() => {
+                    if (tab.key === 'neighborhoods_toggle') {
+                      // Toggle neighborhood opt-in
+                      setNeighborhoodOptIn(prev => !prev);
+                      // If turning on, show neighborhoods panel
+                      if (!neighborhoodOptIn) {
+                        setActivePanel('neighborhoods');
+                      }
+                      return;
+                    }
+                    
+                    setActivePanel(tab.key);
+                    if (isDesktop) {
+                      const refs = {
+                        categories: citySuggestionsRef,
+                        neighborhoods: neighborhoodRef,
+                        guide: cityGuideRef,
+                        fun: funRef
+                      };
+                      const ref = refs[tab.key];
+                      if (ref?.current) {
+                        ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }
+                  }}
+                  className={`px-3 py-2 rounded-full text-sm font-semibold border transition ${
+                    tab.key === 'neighborhoods_toggle' 
+                      ? neighborhoodOptIn 
+                        ? 'bg-green-500 text-white border-green-600 hover:bg-green-600' 
+                        : 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300'
+                      : activePanel === tab.key 
+                        ? 'bg-brand-orange text-white border-brand-orange' 
+                        : 'bg-white border-slate-200 text-slate-800'
+                  }`}
                 >
                   {tab.label}
                 </button>
@@ -884,13 +957,13 @@ function App() {
           )}
 
           {/* Inline neighborhoods pane to keep unified experience */}
-          {(smartNeighborhoods.length > 0 || neighborhoodsLoading) && (
-            <div className={`mt-6 rounded-2xl border border-slate-200 bg-white shadow-lg p-4 text-slate-900 ${activePanel === 'neighborhoods' || isDesktop ? '' : 'hidden md:block'}`}>
+          {(smartNeighborhoods.length > 0 || neighborhoodsLoading || (neighborhoodOptions.length > 0 && neighborhoodOptIn)) && (
+            <div ref={neighborhoodRef} className={`mt-6 rounded-2xl border border-slate-200 bg-white shadow-lg p-4 text-slate-900 ${activePanel === 'neighborhoods' || isDesktop ? '' : 'hidden md:block'}`}>
               <NeighborhoodPicker
                 inline
                 city={location.city}
                 category={pendingCategory?.label || categoryLabel}
-                neighborhoods={smartNeighborhoods}
+                neighborhoods={smartNeighborhoods.length > 0 ? smartNeighborhoods : neighborhoodOptions}
                 onSelect={handleNeighborhoodSelect}
                 onSkip={handleSkipNeighborhood}
                 loading={neighborhoodsLoading}
@@ -913,7 +986,7 @@ function App() {
 
           {/* Fun Fact - Display below hero image */}
           {location.city && !category && !selectedSuggestion && (
-            <div className={`mt-6 rounded-2xl border border-slate-200 bg-white shadow-lg p-4 text-slate-900 ${activePanel === 'fun' || isDesktop ? '' : 'hidden md:block'}`}>
+            <div ref={funRef} className={`mt-6 rounded-2xl border border-slate-200 bg-white shadow-lg p-4 text-slate-900 ${activePanel === 'fun' || isDesktop ? '' : 'hidden md:block'}`}>
               <FunFact city={location.city} />
             </div>
           )}
@@ -923,6 +996,7 @@ function App() {
             <div className={`mt-6 rounded-2xl border border-slate-200 bg-white shadow-lg p-4 text-slate-900 ${activePanel === 'guide' || isDesktop ? '' : 'hidden md:block'}`}>
               <SearchResults 
                 results={results} 
+                city={location.city}
               />
             </div>
           )}
@@ -942,6 +1016,7 @@ function App() {
         {/* Category Results - Show venues when category selected or Nearby Attractions active */}
         {(activePanel === 'neighborhoods' || category || selectedSuggestion) && venues.length > 0 && !loading && (
           <div className="mt-12 space-y-6">
+            <h2 className="text-3xl font-bold text-slate-900">Nearby Attractions</h2>
             {/* Dynamic city-specific blurb */}
             <div className="rounded-2xl bg-gradient-to-r from-brand-orange via-brand-orange to-brand-aqua text-white p-6 shadow-xl">
               <h3 className="text-2xl font-bold mb-2">
@@ -957,7 +1032,7 @@ function App() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-              {venues.slice(0, 6).map((venue, index) => (
+              {venues.slice(0, 15).map((venue, index) => (
                 <div key={venue.id || index} className="bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden flex flex-col">
                   {venue.image_url && (
                     <img 
@@ -1097,6 +1172,7 @@ function App() {
             loading={neighborhoodGuideLoading}
             error={neighborhoodGuideError}
             onClose={handleNeighborhoodGuideClose}
+            heroImage={heroImage}
           />
         )}
 

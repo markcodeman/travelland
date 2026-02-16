@@ -737,11 +737,21 @@ const LocationSelector = ({
       )}
 
       {selectedCity && !neighborhoodOptIn && onToggleNeighborhood && (
-        <div className="neighborhood-optin">
-          <div>
-            Want a hyper-local guide? Enable neighborhoods to pick a specific area once options load.
+        <div className="neighborhood-optin block sm:flex items-center justify-between gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm" role="region" aria-label="Enable neighborhoods" title="Enable neighborhoods to choose a neighborhood and get a hyper-local quick guide">
+          <div className="flex items-center gap-2">
+            <strong className="text-slate-800">Want a hyper-local guide?</strong>
+            <span className="text-slate-600">Enable neighborhoods to pick a specific area.</span>
+            <span className="ml-2 text-xs text-slate-500" title="Neighborhood suggestions are optional and cached">ℹ️</span>
           </div>
-          <button type="button" onClick={onToggleNeighborhood}>Go deeper</button>
+          <button
+            type="button"
+            onClick={onToggleNeighborhood}
+            className="ml-2 rounded-full bg-brand-orange/90 text-white px-3 py-2 text-sm font-semibold shadow-sm hover:opacity-95"
+            aria-expanded="false"
+            aria-controls="neighborhood-input"
+          >
+            Enable neighborhoods
+          </button>
         </div>
       )}
 
@@ -758,6 +768,7 @@ const LocationSelector = ({
             )}
           </label>
           <input
+            id="neighborhood-input"
             type="text"
             value={neighborhoodInput}
             onChange={handleNeighborhoodInputChange}

@@ -316,7 +316,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
         query: city,
         category: useCategory,
         neighborhood: neighborhood,
-        limit: 5 // Reduce venue count for faster response
+        limit: 10 // Fetch up to 10 venues for richer assistant responses
       };
       
       const venuePromise = fetch('/api/search', {
@@ -328,7 +328,7 @@ export default function MarcoChat({ city, neighborhood, venues, category, initia
       // Race between venue fetch and timeout
       const resp = await Promise.race([venuePromise, timeoutPromise]);
       const data = await resp.json();
-      const fetchedVenues = (data.venues || []).filter(v => v.provider !== 'wikivoyage').slice(0, 5); // Limit to 5 venues
+      const fetchedVenues = (data.venues || []).filter(v => v.provider !== 'wikivoyage').slice(0, 10); // Limit to 10 venues
       console.log('Fetched venues:', fetchedVenues.length, fetchedVenues.slice(0, 3));
       
       if (fetchedVenues.length > 0) {

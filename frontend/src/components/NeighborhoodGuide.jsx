@@ -2,27 +2,11 @@ import { useEffect, useState } from 'react';
 import { fetchCityHeroImage } from '../services/imageService';
 import './NeighborhoodGuide.css';
 
-const NeighborhoodGuide = ({ neighborhood, city, guideData, loading, error, onClose }) => {
-  const [heroImage, setHeroImage] = useState('');
-  const [imgLoading, setImgLoading] = useState(true);
+const NeighborhoodGuide = ({ neighborhood, city, guideData, loading, error, onClose, heroImage }) => {
+  const [imgLoading, setImgLoading] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    const loadHero = async () => {
-      if (!city || !neighborhood) return;
-      setImgLoading(true);
-      try {
-        const url = await fetchCityHeroImage(city, neighborhood);
-        if (!cancelled) setHeroImage(url || '');
-      } catch (err) {
-        console.error('Failed to fetch neighborhood guide image:', err);
-      } finally {
-        if (!cancelled) setImgLoading(false);
-      }
-    };
-    loadHero();
-    return () => { cancelled = true; };
-  }, [city, neighborhood]);
+  // Use the heroImage passed from parent component instead of making another API call
+  const displayHeroImage = heroImage || 'https://images.unsplash.com/photo-1505060280389-60df856a37e0?auto=format&fit=crop&w=800&q=80';
 
   if (!neighborhood) return null;
 
