@@ -19,7 +19,7 @@ services:
       cp public/marcos.png ../city_guides/static/ || true
     envVars:
       - key: NODE_VERSION
-        value: "18"
+        value: "22"
       - key: REDIS_URL
         fromService:
           name: travelland-redis
@@ -27,7 +27,6 @@ services:
           property: connectionString
     startCommand: |
       bash start_server.sh
-    # Environment variables are configured in the Render dashboard; keep secrets out of the manifest
     healthCheckPath: /health
     services:
       - name: web
