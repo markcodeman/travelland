@@ -1,0 +1,3613 @@
+{
+  "city": "Paris",
+  "country": "FR",
+  "source": "overpass",
+  "last_updated": 1770752290,
+  "neighborhoods": [
+    {
+      "id": "node/442197",
+      "name": "Porte de Versailles",
+      "name_local": "Porte de Versailles",
+      "slug": "porte_de_versailles",
+      "center": {
+        "lat": 48.8326696,
+        "lon": 2.2883696
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Versailles",
+        "place": "locality",
+        "unsigned": "no"
+      }
+    },
+    {
+      "id": "node/34909797",
+      "name": "Porte Didot",
+      "name_local": "Porte Didot",
+      "slug": "porte_didot",
+      "center": {
+        "lat": 48.8260188,
+        "lon": 2.3125631
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte Didot",
+        "place": "locality",
+        "unsigned": "yes"
+      }
+    },
+    {
+      "id": "node/34909804",
+      "name": "Porte de Montrouge",
+      "name_local": "Porte de Montrouge",
+      "slug": "porte_de_montrouge",
+      "center": {
+        "lat": 48.8236762,
+        "lon": 2.3231609
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Montrouge",
+        "place": "locality",
+        "unsigned": "yes",
+        "wikidata": "Q3399062"
+      }
+    },
+    {
+      "id": "node/88201210",
+      "name": "Porte de Vanves",
+      "name_local": "Porte de Vanves",
+      "slug": "porte_de_vanves",
+      "center": {
+        "lat": 48.827674,
+        "lon": 2.3051252
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Vanves",
+        "place": "locality",
+        "unsigned": "no"
+      }
+    },
+    {
+      "id": "node/125385951",
+      "name": "Porte de Plaisance",
+      "name_local": "Porte de Plaisance",
+      "slug": "porte_de_plaisance",
+      "center": {
+        "lat": 48.8297783,
+        "lon": 2.2955363
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Plaisance",
+        "place": "locality",
+        "unsigned": "yes"
+      }
+    },
+    {
+      "id": "node/148950780",
+      "name": "15th Arrondissement",
+      "name_local": "15e Arrondissement",
+      "slug": "15th_arrondissement",
+      "center": {
+        "lat": 48.8411228,
+        "lon": 2.2927657
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75015",
+        "alt_name": "XVe Arrondissement",
+        "name": "15e Arrondissement",
+        "name:ar": "الدائرة الخامسة عشرة",
+        "name:br": "15vet arondisamant",
+        "name:en": "15th Arrondissement",
+        "name:eo": "15-a arondismento",
+        "name:fr": "15e Arrondissement",
+        "name:ja": "15区",
+        "name:ko": "15구",
+        "name:ru": "XV округ",
+        "name:zh": "第十五区",
+        "place": "suburb",
+        "population": "227746",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q191066",
+        "wikipedia": "fr:15e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/161608370",
+      "name": "6th Arrondissement",
+      "name_local": "6e Arrondissement",
+      "slug": "6th_arrondissement",
+      "center": {
+        "lat": 48.8504333,
+        "lon": 2.3329507
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75006",
+        "alt_name": "VIe Arrondissement",
+        "name": "6e Arrondissement",
+        "name:ar": "الدائرة السادسة",
+        "name:br": "6vet arondisamant",
+        "name:en": "6th Arrondissement",
+        "name:eo": "6-a arondismento",
+        "name:fr": "6e Arrondissement",
+        "name:ja": "6区",
+        "name:ko": "6구",
+        "name:ru": "VI округ",
+        "name:zh": "第六区",
+        "place": "suburb",
+        "population": "40209",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q245546",
+        "wikipedia": "fr:6e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/175517170",
+      "name": "14th Arrondissement",
+      "name_local": "14e Arrondissement",
+      "slug": "14th_arrondissement",
+      "center": {
+        "lat": 48.8328514,
+        "lon": 2.3267231
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75014",
+        "admin_level": "9",
+        "alt_name": "XIVe Arrondissement",
+        "name": "14e Arrondissement",
+        "name:ar": "الدائرة الرابعة عشرة",
+        "name:br": "14vet arondisamant",
+        "name:en": "14th Arrondissement",
+        "name:eo": "14-a arondismento",
+        "name:fr": "14e Arrondissement",
+        "name:ja": "14区",
+        "name:ko": "14구",
+        "name:ru": "XIV округ",
+        "name:zh": "第十四区",
+        "place": "suburb",
+        "population": "136368",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikipedia": "fr:14e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/237417884",
+      "name": "5th Arrondissement",
+      "name_local": "5e Arrondissement",
+      "slug": "5th_arrondissement",
+      "center": {
+        "lat": 48.8459728,
+        "lon": 2.3443504
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75005",
+        "alt_name": "Ve Arrondissement",
+        "name": "5e Arrondissement",
+        "name:ar": "الدائرة الخامسة",
+        "name:br": "5vet arondisamant",
+        "name:en": "5th Arrondissement",
+        "name:eo": "5-a arondismento",
+        "name:fr": "5e Arrondissement",
+        "name:ja": "5区",
+        "name:ko": "5구",
+        "name:ru": "V округ",
+        "name:zh": "第五区",
+        "place": "suburb",
+        "population": "56841",
+        "population:date": "2021",
+        "source:name:br": "ofis publik ar brezhoneg",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q238723",
+        "wikipedia": "fr:5e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/237422047",
+      "name": "13th Arrondissement",
+      "name_local": "13e Arrondissement",
+      "slug": "13th_arrondissement",
+      "center": {
+        "lat": 48.8290105,
+        "lon": 2.3636124
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75013",
+        "alt_name": "XIIIe Arrondissement",
+        "name": "13e Arrondissement",
+        "name:ar": "الدائرة الثالثة عشرة",
+        "name:br": "13vet arondisamant",
+        "name:en": "13th Arrondissement",
+        "name:eo": "13-a arondismento",
+        "name:fr": "13e Arrondissement",
+        "name:ja": "13区",
+        "name:ko": "13구",
+        "name:ru": "XIII округ",
+        "name:zh": "第十三区",
+        "place": "suburb",
+        "population": "178350",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q175129",
+        "wikipedia": "fr:13e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/241092821",
+      "name": "17th Arrondissement",
+      "name_local": "17e Arrondissement",
+      "slug": "17th_arrondissement",
+      "center": {
+        "lat": 48.8869265,
+        "lon": 2.3065472
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75017",
+        "alt_name": "XVIIe Arrondissement",
+        "name": "17e Arrondissement",
+        "name:ar": "الدائرة السابعة عشرة",
+        "name:br": "17vet arondisamant",
+        "name:en": "17th Arrondissement",
+        "name:eo": "17-a arondismento",
+        "name:fr": "17e Arrondissement",
+        "name:ja": "17区",
+        "name:ko": "17구",
+        "name:ru": "XVII округ",
+        "name:zh": "第十七区",
+        "place": "suburb",
+        "population": "164413",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q197297",
+        "wikipedia": "fr:17e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/241099674",
+      "name": "8th Arrondissement",
+      "name_local": "8e Arrondissement",
+      "slug": "8th_arrondissement",
+      "center": {
+        "lat": 48.8737284,
+        "lon": 2.3103932
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75008",
+        "alt_name": "VIIIe Arrondissement",
+        "name": "8e Arrondissement",
+        "name:ar": "الدائرة الثامنة",
+        "name:br": "8vet arondisamant",
+        "name:en": "8th Arrondissement",
+        "name:eo": "8-a arondismento",
+        "name:fr": "8e Arrondissement",
+        "name:ja": "8区",
+        "name:ko": "8구",
+        "name:ru": "VIII округ",
+        "name:zh": "第八区",
+        "place": "suburb",
+        "population": "35123",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q270230",
+        "wikipedia": "fr:8e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/248177663",
+      "name": "7th Arrondissement",
+      "name_local": "7e Arrondissement",
+      "slug": "7th_arrondissement",
+      "center": {
+        "lat": 48.8564911,
+        "lon": 2.3128
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75007",
+        "alt_name": "VIIe Arrondissement",
+        "name": "7e Arrondissement",
+        "name:ar": "الدائرة السابعة",
+        "name:br": "7vet arondisamant",
+        "name:en": "7th Arrondissement",
+        "name:eo": "7-a arondismento",
+        "name:fr": "7e Arrondissement",
+        "name:ja": "7区",
+        "name:ko": "7구",
+        "name:ru": "VII округ",
+        "name:zh": "第七区",
+        "place": "suburb",
+        "population": "47947",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q259463",
+        "wikipedia": "fr:7e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/252815182",
+      "name": "Butte-aux-Cailles",
+      "name_local": "Butte-aux-Cailles",
+      "slug": "butte_aux_cailles",
+      "center": {
+        "lat": 48.8277114,
+        "lon": 2.3496759
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Butte-aux-Cailles",
+        "name:zh": "鹌鹑之丘",
+        "place": "suburb"
+      }
+    },
+    {
+      "id": "node/253456008",
+      "name": "1st Arrondissement",
+      "name_local": "1er Arrondissement",
+      "slug": "1st_arrondissement",
+      "center": {
+        "lat": 48.8646144,
+        "lon": 2.334396
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75001",
+        "alt_name": "Ier Arrondissement",
+        "name": "1er Arrondissement",
+        "name:ar": "الدائرة الأولى",
+        "name:br": "1añ arondisamant",
+        "name:en": "1st Arrondissement",
+        "name:eo": "1-a arondismento",
+        "name:fr": "1er Arrondissement",
+        "name:ja": "1区",
+        "name:ko": "1구",
+        "name:ru": "I округ",
+        "name:zh": "第一区",
+        "place": "suburb",
+        "population": "15919",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q161741",
+        "wikipedia": "fr:1er arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/277586281",
+      "name": "Porte des Poissonniers",
+      "name_local": "Porte des Poissonniers",
+      "slug": "porte_des_poissonniers",
+      "center": {
+        "lat": 48.8982605,
+        "lon": 2.3525065
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte des Poissonniers",
+        "place": "locality",
+        "unsigned": "yes",
+        "wikidata": "Q3399165"
+      }
+    },
+    {
+      "id": "node/317476952",
+      "name": "18th Arrondissement",
+      "name_local": "18e Arrondissement",
+      "slug": "18th_arrondissement",
+      "center": {
+        "lat": 48.8900117,
+        "lon": 2.3464668
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75018",
+        "alt_name": "XVIIIe Arrondissement",
+        "name": "18e Arrondissement",
+        "name:ar": "الدائرة الثامنة عشرة",
+        "name:br": "18vet arondisamant",
+        "name:en": "18th Arrondissement",
+        "name:eo": "18-a arondismento",
+        "name:fr": "18e Arrondissement",
+        "name:ja": "18区",
+        "name:ko": "18구",
+        "name:ru": "XVIII округ",
+        "name:zh": "第十八区",
+        "place": "suburb",
+        "population": "188446",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q200126",
+        "wikipedia": "fr:18e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/517969463",
+      "name": "16th Arrondissement",
+      "name_local": "16e Arrondissement",
+      "slug": "16th_arrondissement",
+      "center": {
+        "lat": 48.8636341,
+        "lon": 2.276485
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75016",
+        "alt_name": "XVIe Arrondissement",
+        "alt_name:en": "16th Arrondissement",
+        "name": "16e Arrondissement",
+        "name:ar": "الدائرة السادسة عشرة",
+        "name:br": "16vet arondisamant",
+        "name:en": "16th Arrondissement",
+        "name:eo": "16-a arondismento",
+        "name:fr": "16e Arrondissement",
+        "name:ja": "16区",
+        "name:ko": "16구",
+        "name:ru": "XVI округ",
+        "name:zh": "第十六区",
+        "place": "suburb",
+        "population": "162061",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q194420",
+        "wikipedia": "fr:16e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/568456762",
+      "name": "Porte de Châtillon",
+      "name_local": "Porte de Châtillon",
+      "slug": "porte_de_ch_tillon",
+      "center": {
+        "lat": 48.8245392,
+        "lon": 2.3192424
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Châtillon",
+        "place": "locality",
+        "unsigned": "no"
+      }
+    },
+    {
+      "id": "node/938320028",
+      "name": "2nd Arrondissement",
+      "name_local": "2e Arrondissement",
+      "slug": "2nd_arrondissement",
+      "center": {
+        "lat": 48.868743,
+        "lon": 2.341688
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75002",
+        "alt_name": "IIe Arrondissement",
+        "name": "2e Arrondissement",
+        "name:ar": "الدائرة الثانية",
+        "name:br": "2l arondisamant",
+        "name:en": "2nd Arrondissement",
+        "name:eo": "2-a arondismento",
+        "name:fr": "2e Arrondissement",
+        "name:ja": "2区",
+        "name:ko": "2구",
+        "name:ru": "II округ",
+        "name:zh": "第二区",
+        "place": "suburb",
+        "population": "21119",
+        "population:date": "2021",
+        "source:name:br": "ofis publik ar brezhoneg",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q209549",
+        "wikipedia": "fr:2e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/938321858",
+      "name": "3rd Arrondissement",
+      "name_local": "3e Arrondissement",
+      "slug": "3rd_arrondissement",
+      "center": {
+        "lat": 48.864212,
+        "lon": 2.360936
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75003",
+        "alt_name": "IIIe Arrondissement",
+        "name": "3e Arrondissement",
+        "name:ar": "الدائرة الثالثة",
+        "name:br": "3e arondisamant",
+        "name:en": "3rd Arrondissement",
+        "name:eo": "3-a arondismento",
+        "name:fr": "3e Arrondissement",
+        "name:ja": "3区",
+        "name:ko": "3구",
+        "name:ru": "III округ",
+        "name:zh": "第三区",
+        "place": "suburb",
+        "population": "32793",
+        "population:date": "2021",
+        "source:name:br": "ofis publik ar brezhoneg",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q223140",
+        "wikipedia": "fr:3e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/938323516",
+      "name": "4th Arrondissement",
+      "name_local": "4e Arrondissement",
+      "slug": "4th_arrondissement",
+      "center": {
+        "lat": 48.8562021,
+        "lon": 2.3556193
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75004",
+        "alt_name": "IVe Arrondissement",
+        "name": "4e Arrondissement",
+        "name:ar": "الدائرة الرابعة",
+        "name:br": "4e arondisamant",
+        "name:en": "4th Arrondissement",
+        "name:eo": "4-a arondismento",
+        "name:fr": "4e Arrondissement",
+        "name:ja": "4区",
+        "name:ko": "4구",
+        "name:ru": "IV округ",
+        "name:zh": "第四区",
+        "place": "suburb",
+        "population": "28324",
+        "population:date": "2021",
+        "source:name:br": "ofis publik ar brezhoneg",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q230127",
+        "wikipedia": "fr:4e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/938334959",
+      "name": "9th Arrondissement",
+      "name_local": "9e Arrondissement",
+      "slug": "9th_arrondissement",
+      "center": {
+        "lat": 48.876019,
+        "lon": 2.339962
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75009",
+        "alt_name": "IXe Arrondissement",
+        "name": "9e Arrondissement",
+        "name:ar": "الدائرة التاسعة",
+        "name:br": "9vet arondisamant",
+        "name:en": "9th Arrondissement",
+        "name:eo": "9-a arondismento",
+        "name:fr": "9e Arrondissement",
+        "name:ja": "9区",
+        "name:ko": "9구",
+        "name:ru": "IX округ",
+        "name:zh": "第九区",
+        "place": "suburb",
+        "population": "58951",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q275118",
+        "wikipedia": "fr:9e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/938336881",
+      "name": "10th Arrondissement",
+      "name_local": "10e Arrondissement",
+      "slug": "10th_arrondissement",
+      "center": {
+        "lat": 48.876225,
+        "lon": 2.3595209
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75010",
+        "alt_name": "Xe Arrondissement",
+        "name": "10e Arrondissement",
+        "name:ar": "الدائرة العاشرة",
+        "name:br": "10vet arondisamant",
+        "name:en": "10th Arrondissement",
+        "name:eo": "10-a arondismento",
+        "name:fr": "10e Arrondissement",
+        "name:ja": "10区",
+        "name:ko": "10구",
+        "name:ru": "X округ",
+        "name:zh": "第十区",
+        "place": "suburb",
+        "population": "83543",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q163948",
+        "wikipedia": "fr:10e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/938338196",
+      "name": "11th Arrondissement",
+      "name_local": "11e Arrondissement",
+      "slug": "11th_arrondissement",
+      "center": {
+        "lat": 48.858416,
+        "lon": 2.379703
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75011",
+        "alt_name": "XIe Arrondissement",
+        "name": "11e Arrondissement",
+        "name:ar": "الدائرة الحادية عشرة",
+        "name:br": "11vet arondisamant",
+        "name:en": "11th Arrondissement",
+        "name:eo": "11-a arondismento",
+        "name:fr": "11e Arrondissement",
+        "name:ja": "11区",
+        "name:ko": "11구",
+        "name:ru": "XI округ",
+        "name:zh": "第十一区",
+        "place": "suburb",
+        "population": "142583",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q169293",
+        "wikipedia": "fr:11e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/938387959",
+      "name": "12th Arrondissement",
+      "name_local": "12e Arrondissement",
+      "slug": "12th_arrondissement",
+      "center": {
+        "lat": 48.8396154,
+        "lon": 2.3957517
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75012",
+        "alt_name": "XIIe Arrondissement",
+        "name": "12e Arrondissement",
+        "name:ar": "الدائرة الثانية عشرة",
+        "name:br": "12vet arondisamant",
+        "name:en": "12th Arrondissement",
+        "name:eo": "12-a arondismento",
+        "name:fr": "12e Arrondissement",
+        "name:ja": "12区",
+        "name:ko": "12구",
+        "name:ru": "XII округ",
+        "name:zh": "第十二区",
+        "place": "suburb",
+        "population": "140954",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q171689",
+        "wikipedia": "fr:12e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/938394241",
+      "name": "19th Arrondissement",
+      "name_local": "19e Arrondissement",
+      "slug": "19th_arrondissement",
+      "center": {
+        "lat": 48.889343,
+        "lon": 2.38436
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75019",
+        "alt_name": "XIXe Arrondissement",
+        "name": "19e Arrondissement",
+        "name:ar": "الدائرة التاسعة عشرة",
+        "name:br": "19vet arondisamant",
+        "name:en": "19th Arrondissement",
+        "name:eo": "19-a arondismento",
+        "name:fr": "19e Arrondissement",
+        "name:ja": "19区",
+        "name:ko": "19구",
+        "name:ru": "XIX округ",
+        "name:zh": "第十九区",
+        "place": "suburb",
+        "population": "181616",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q204622",
+        "wikipedia": "fr:19e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/938396405",
+      "name": "20th Arrondissement",
+      "name_local": "20e Arrondissement",
+      "slug": "20th_arrondissement",
+      "center": {
+        "lat": 48.865042,
+        "lon": 2.398929
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75020",
+        "alt_name": "XXe Arrondissement",
+        "name": "20e Arrondissement",
+        "name:ar": "الدائرة العشرون",
+        "name:br": "20vet arondisamant",
+        "name:en": "20th Arrondissement",
+        "name:eo": "20-a arondismento",
+        "name:fr": "20e Arrondissement",
+        "name:ja": "20区",
+        "name:ko": "20구",
+        "name:ru": "XX округ",
+        "name:zh": "第二十区",
+        "place": "suburb",
+        "population": "189805",
+        "population:date": "2021",
+        "source:name:br": "proper translation",
+        "source:population": "INSEE 2024",
+        "wikidata": "Q210720",
+        "wikipedia": "fr:20e arrondissement de Paris"
+      }
+    },
+    {
+      "id": "node/977194644",
+      "name": "Amphithéâtre Rouelle",
+      "name_local": "Amphithéâtre Rouelle",
+      "slug": "amphith_tre_rouelle",
+      "center": {
+        "lat": 48.8448816,
+        "lon": 2.357889
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Amphithéâtre Rouelle",
+        "place": "locality",
+        "website": "https://isyeb.mnhn.fr/fr/plan-dacces-pour-lamphitheatre-rouelle-428"
+      }
+    },
+    {
+      "id": "node/1863573689",
+      "name": "Le Marais",
+      "name_local": "Le Marais",
+      "slug": "le_marais",
+      "center": {
+        "lat": 48.8603823,
+        "lon": 2.360742
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Le Marais",
+        "name:ar": "حي ماريه",
+        "name:zh": "玛莱",
+        "place": "suburb",
+        "wikidata": "Q749573"
+      }
+    },
+    {
+      "id": "node/1863664714",
+      "name": "Montmartre",
+      "name_local": "Montmartre",
+      "slug": "montmartre",
+      "center": {
+        "lat": 48.8867054,
+        "lon": 2.3415715
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Montmartre",
+        "name:sr": "Монмартр",
+        "name:zh": "蒙马特",
+        "place": "suburb",
+        "wikidata": "Q186115"
+      }
+    },
+    {
+      "id": "node/1863664715",
+      "name": "Montparnasse",
+      "name_local": "Montparnasse",
+      "slug": "montparnasse",
+      "center": {
+        "lat": 48.8434755,
+        "lon": 2.3282995
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Montparnasse",
+        "name:ar": "مونبارناس",
+        "name:el": "Μονπαρνάς",
+        "name:sr": "Монпарнас",
+        "name:zh": "蒙帕纳斯",
+        "place": "suburb",
+        "wikidata": "Q211604"
+      }
+    },
+    {
+      "id": "node/1863666222",
+      "name": "Pigalle",
+      "name_local": "Pigalle",
+      "slug": "pigalle",
+      "center": {
+        "lat": 48.8821842,
+        "lon": 2.3370861
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Pigalle",
+        "name:ar": "بيكال",
+        "name:zh": "皮加勒",
+        "place": "suburb",
+        "wikidata": "Q576507"
+      }
+    },
+    {
+      "id": "node/1980084566",
+      "name": "Le Village Saint-Paul",
+      "name_local": "Le Village Saint-Paul",
+      "slug": "le_village_saint_paul",
+      "center": {
+        "lat": 48.8533959,
+        "lon": 2.3610703
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Le Village Saint-Paul",
+        "place": "neighbourhood",
+        "source": "survey",
+        "tourism": "yes",
+        "website": "https://levillagesaintpaul.com",
+        "wikidata": "Q109046505",
+        "wikipedia": "fr:Village Saint-Paul"
+      }
+    },
+    {
+      "id": "node/2038017580",
+      "name": "Latin Quarter",
+      "name_local": "Quartier latin",
+      "slug": "latin_quarter",
+      "center": {
+        "lat": 48.8486028,
+        "lon": 2.3425156
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Quartier latin",
+        "name:ar": "الحي اللاتيني",
+        "name:de": "Lateinisches Viertel",
+        "name:en": "Latin Quarter",
+        "name:eo": "Latina Kvartalo",
+        "name:es": "Barrio Latino",
+        "name:fr": "Quartier latin",
+        "name:ru": "Латинский квартал",
+        "name:zh": "拉丁区",
+        "place": "suburb",
+        "wikidata": "Q321621",
+        "wikipedia": "en:Latin Quarter, Paris"
+      }
+    },
+    {
+      "id": "node/2137503425",
+      "name": "Saint-Germain-des-Prés",
+      "name_local": "Saint-Germain-des-Prés",
+      "slug": "saint_germain_des_pr_s",
+      "center": {
+        "lat": 48.8544286,
+        "lon": 2.3337071
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Saint-Germain-des-Prés",
+        "name:zh": "圣日耳曼代普雷",
+        "place": "quarter",
+        "wikidata": "Q604717"
+      }
+    },
+    {
+      "id": "node/2140578004",
+      "name": "Belleville",
+      "name_local": "Belleville",
+      "slug": "belleville",
+      "center": {
+        "lat": 48.8717265,
+        "lon": 2.385085
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name:zh": "贝尔维尔",
+        "name": "Belleville",
+        "name:zh": "美丽城",
+        "place": "quarter",
+        "wikidata": "Q815949",
+        "wikipedia": "fr:Quartier de Belleville"
+      }
+    },
+    {
+      "id": "node/2140595430",
+      "name": "Sentier",
+      "name_local": "Sentier",
+      "slug": "sentier",
+      "center": {
+        "lat": 48.8681704,
+        "lon": 2.3486199
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Sentier",
+        "place": "suburb",
+        "wikidata": "Q3478657"
+      }
+    },
+    {
+      "id": "node/2140597251",
+      "name": "Les Halles",
+      "name_local": "Les Halles",
+      "slug": "les_halles",
+      "center": {
+        "lat": 48.8623728,
+        "lon": 2.3453129
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Les Halles",
+        "name:de": "Viertel der Hallen",
+        "name:el": "Λε Αλ",
+        "name:fr": "Les Halles",
+        "name:zh": "大堂",
+        "place": "quarter",
+        "wikidata": "Q387285"
+      }
+    },
+    {
+      "id": "node/2141212990",
+      "name": "Bastille",
+      "name_local": "Bastille",
+      "slug": "bastille",
+      "center": {
+        "lat": 48.8535713,
+        "lon": 2.3699734
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Bastille",
+        "name:ar": "الباستيل",
+        "name:zh": "巴士底",
+        "place": "suburb"
+      }
+    },
+    {
+      "id": "node/2141218571",
+      "name": "Champs-Elysées",
+      "name_local": "Champs-Elysées",
+      "slug": "champs_elys_es",
+      "center": {
+        "lat": 48.8708299,
+        "lon": 2.3034859
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "Champs Élysées",
+        "name": "Champs-Elysées",
+        "name:ar": "الشانزلزيه",
+        "name:zh": "香榭丽舍",
+        "place": "quarter",
+        "wikidata": "Q3413229"
+      }
+    },
+    {
+      "id": "node/2141222510",
+      "name": "Triangle de Choisy",
+      "name_local": "Triangle de Choisy",
+      "slug": "triangle_de_choisy",
+      "center": {
+        "lat": 48.8232909,
+        "lon": 2.3642436
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Triangle de Choisy",
+        "note": "Potentiellement inclure la dalle d'Olympiade",
+        "place": "locality"
+      }
+    },
+    {
+      "id": "node/2141387602",
+      "name": "Batignolles",
+      "name_local": "Batignolles",
+      "slug": "batignolles",
+      "center": {
+        "lat": 48.8863552,
+        "lon": 2.321457
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Batignolles",
+        "name:el": "Μπατινιόλ",
+        "name:zh": "巴蒂尼奥勒",
+        "place": "suburb",
+        "wikidata": "Q575565"
+      }
+    },
+    {
+      "id": "node/2142316639",
+      "name": "Opéra",
+      "name_local": "Opéra",
+      "slug": "op_ra",
+      "center": {
+        "lat": 48.8707492,
+        "lon": 2.3324542
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Opéra",
+        "name:ar": "أوبرا",
+        "name:ja": "オペラ",
+        "name:zh": "歌剧院",
+        "place": "suburb"
+      }
+    },
+    {
+      "id": "node/2142322000",
+      "name": "République",
+      "name_local": "République",
+      "slug": "r_publique",
+      "center": {
+        "lat": 48.868001,
+        "lon": 2.3635154
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "République",
+        "name:de": "Republik",
+        "name:fr": "République",
+        "name:ru": "Репюблик",
+        "name:zh": "共和",
+        "place": "suburb"
+      }
+    },
+    {
+      "id": "node/2142377353",
+      "name": "Bercy",
+      "name_local": "Bercy",
+      "slug": "bercy",
+      "center": {
+        "lat": 48.8367988,
+        "lon": 2.380847
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Bercy",
+        "name:ar": "برسي",
+        "name:el": "Μπερσί",
+        "name:zh": "贝尔西",
+        "place": "quarter",
+        "wikidata": "Q773318"
+      }
+    },
+    {
+      "id": "node/2142387526",
+      "name": "Les Gobelins",
+      "name_local": "Les Gobelins",
+      "slug": "les_gobelins",
+      "center": {
+        "lat": 48.8336415,
+        "lon": 2.3539386
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Les Gobelins",
+        "name:zh": "戈布兰",
+        "place": "suburb"
+      }
+    },
+    {
+      "id": "node/2142394338",
+      "name": "Auteuil",
+      "name_local": "Auteuil",
+      "slug": "auteuil",
+      "center": {
+        "lat": 48.8477221,
+        "lon": 2.2667376
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Auteuil",
+        "name:ar": "أوتوي",
+        "name:el": "Ωτέιγ",
+        "name:zh": "欧特伊",
+        "place": "suburb",
+        "wikidata": "Q784536"
+      }
+    },
+    {
+      "id": "node/2142401571",
+      "name": "Passy",
+      "name_local": "Passy",
+      "slug": "passy",
+      "center": {
+        "lat": 48.8575047,
+        "lon": 2.2809828
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Passy",
+        "name:ar": "باسي",
+        "name:zh": "帕西",
+        "place": "suburb",
+        "wikidata": "Q1241308",
+        "wikipedia": "fr:Passy (Seine)"
+      }
+    },
+    {
+      "id": "node/2142414234",
+      "name": "La Goutte d'Or",
+      "name_local": "La Goutte d'Or",
+      "slug": "la_goutte_d_or",
+      "center": {
+        "lat": 48.8868305,
+        "lon": 2.3531436
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "La Goutte d'Or",
+        "name:zh": "古特多尔",
+        "place": "suburb"
+      }
+    },
+    {
+      "id": "node/2142739937",
+      "name": "Beaubourg",
+      "name_local": "Beaubourg",
+      "slug": "beaubourg",
+      "center": {
+        "lat": 48.8605948,
+        "lon": 2.3516451
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Beaubourg",
+        "name:el": "Μπωμπούρ",
+        "name:zh": "博堡",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/2142769871",
+      "name": "Vaugirard",
+      "name_local": "Vaugirard",
+      "slug": "vaugirard",
+      "center": {
+        "lat": 48.8405799,
+        "lon": 2.3003828
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Vaugirard",
+        "name:el": "Βωζιράρ",
+        "name:zh": "沃吉拉尔",
+        "place": "suburb"
+      }
+    },
+    {
+      "id": "node/2143873485",
+      "name": "Grenelle",
+      "name_local": "Grenelle",
+      "slug": "grenelle",
+      "center": {
+        "lat": 48.8465079,
+        "lon": 2.290703
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Grenelle",
+        "name:zh": "格勒纳勒",
+        "place": "quarter",
+        "wikidata": "Q376896"
+      }
+    },
+    {
+      "id": "node/2143877660",
+      "name": "Charonne",
+      "name_local": "Charonne",
+      "slug": "charonne",
+      "center": {
+        "lat": 48.8551451,
+        "lon": 2.3976375
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "Quartier de Charonne",
+        "name": "Charonne",
+        "name:zh": "夏罗讷",
+        "place": "suburb",
+        "wikidata": "Q728591",
+        "wikipedia": "fr:Quartier de Charonne"
+      }
+    },
+    {
+      "id": "node/2143885542",
+      "name": "La Villette",
+      "name_local": "La Villette",
+      "slug": "la_villette",
+      "center": {
+        "lat": 48.8904889,
+        "lon": 2.3800721
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "La Villette",
+        "name:zh": "拉维莱特",
+        "place": "suburb",
+        "wikidata": "Q1463559"
+      }
+    },
+    {
+      "id": "node/2143927022",
+      "name": "Invalides",
+      "name_local": "Invalides",
+      "slug": "invalides",
+      "center": {
+        "lat": 48.8583684,
+        "lon": 2.3128852
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Invalides",
+        "name:zh": "荣军院",
+        "place": "quarter",
+        "wikidata": "Q3413242"
+      }
+    },
+    {
+      "id": "node/2143992989",
+      "name": "Alésia",
+      "name_local": "Alésia",
+      "slug": "al_sia",
+      "center": {
+        "lat": 48.8279122,
+        "lon": 2.3268316
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Alésia",
+        "name:zh": "阿莱西亚",
+        "place": "suburb"
+      }
+    },
+    {
+      "id": "node/2144014466",
+      "name": "Monceau",
+      "name_local": "Monceau",
+      "slug": "monceau",
+      "center": {
+        "lat": 48.8796307,
+        "lon": 2.3081562
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Monceau",
+        "name:ar": "مونسو",
+        "name:zh": "蒙索平原",
+        "place": "suburb"
+      }
+    },
+    {
+      "id": "node/2146848454",
+      "name": "Cité Florale",
+      "name_local": "Cité Florale",
+      "slug": "cit_florale",
+      "center": {
+        "lat": 48.822703,
+        "lon": 2.3448195
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Cité Florale",
+        "place": "neighbourhood",
+        "tourism": "attraction",
+        "wikidata": "Q2974809"
+      }
+    },
+    {
+      "id": "node/2147641769",
+      "name": "Ménilmontant",
+      "name_local": "Ménilmontant",
+      "slug": "m_nilmontant",
+      "center": {
+        "lat": 48.8686092,
+        "lon": 2.3898241
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Ménilmontant",
+        "name:el": "Μενιλμοντάν",
+        "name:zh": "梅尼尔蒙唐",
+        "place": "suburb",
+        "wikidata": "Q2701404",
+        "wikipedia": "fr:Ménilmontant (quartier parisien)"
+      }
+    },
+    {
+      "id": "node/2155711675",
+      "name": "Barbès",
+      "name_local": "Barbès",
+      "slug": "barb_s",
+      "center": {
+        "lat": 48.8839388,
+        "lon": 2.3493707
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Barbès",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/2311259836",
+      "name": "La Chapelle",
+      "name_local": "La Chapelle",
+      "slug": "la_chapelle",
+      "center": {
+        "lat": 48.8904375,
+        "lon": 2.3619391
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75018",
+        "name": "La Chapelle",
+        "name:el": "Λα Σαπέλ",
+        "name:zh": "拉沙佩勒",
+        "place": "suburb",
+        "wikidata": "Q3413190",
+        "wikipedia": "fr:Quartier de la Chapelle"
+      }
+    },
+    {
+      "id": "node/2721076748",
+      "name": "Porte de la Chapelle",
+      "name_local": "Porte de la Chapelle",
+      "slug": "porte_de_la_chapelle",
+      "center": {
+        "lat": 48.8986181,
+        "lon": 2.3591824
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de la Chapelle",
+        "place": "locality",
+        "unsigned": "no",
+        "wikidata": "Q2125122",
+        "wikipedia": "fr:Porte de la Chapelle"
+      }
+    },
+    {
+      "id": "node/2736114069",
+      "name": "Porte de la Plaine",
+      "name_local": "Porte de la Plaine",
+      "slug": "porte_de_la_plaine",
+      "center": {
+        "lat": 48.8309453,
+        "lon": 2.2925737
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de la Plaine",
+        "place": "locality",
+        "unsigned": "no"
+      }
+    },
+    {
+      "id": "node/2789976684",
+      "name": "Clignancourt",
+      "name_local": "Clignancourt",
+      "slug": "clignancourt",
+      "center": {
+        "lat": 48.8940584,
+        "lon": 2.345678
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Clignancourt",
+        "name:zh": "克利尼昂库尔",
+        "place": "suburb",
+        "wikidata": "Q3413163"
+      }
+    },
+    {
+      "id": "node/2789983153",
+      "name": "Montsouris",
+      "name_local": "Montsouris",
+      "slug": "montsouris",
+      "center": {
+        "lat": 48.8227828,
+        "lon": 2.3348768
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Montsouris",
+        "name:zh": "蒙苏里",
+        "place": "suburb",
+        "wikidata": "Q3413285"
+      }
+    },
+    {
+      "id": "node/2789987755",
+      "name": "Saint-Blaise",
+      "name_local": "Saint-Blaise",
+      "slug": "saint_blaise",
+      "center": {
+        "lat": 48.8585673,
+        "lon": 2.4063236
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "Quartier Saint-Blaise",
+        "name": "Saint-Blaise",
+        "place": "neighbourhood",
+        "wikidata": "Q3413099",
+        "wikipedia": "fr:Quartier Saint-Blaise"
+      }
+    },
+    {
+      "id": "node/3234185968",
+      "name": "Campagne à Paris",
+      "name_local": "Campagne à Paris",
+      "slug": "campagne_paris",
+      "center": {
+        "lat": 48.8658208,
+        "lon": 2.4076218
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "75020",
+        "name": "Campagne à Paris",
+        "place": "neighbourhood",
+        "wikidata": "Q2935428",
+        "wikipedia": "fr:Campagne à Paris"
+      }
+    },
+    {
+      "id": "node/4965001708",
+      "name": "Porte de Clignancourt",
+      "name_local": "Porte de Clignancourt",
+      "slug": "porte_de_clignancourt",
+      "center": {
+        "lat": 48.8980264,
+        "lon": 2.3442462
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Clignancourt",
+        "name:zh": "克利尼昂库尔门",
+        "place": "locality",
+        "wikidata": "Q3399039",
+        "wikipedia": "fr:Porte de Clignancourt"
+      }
+    },
+    {
+      "id": "node/4965001709",
+      "name": "Porte de Saint-Ouen",
+      "name_local": "Porte de Saint-Ouen",
+      "slug": "porte_de_saint_ouen",
+      "center": {
+        "lat": 48.8976905,
+        "lon": 2.3290742
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Saint-Ouen",
+        "place": "locality",
+        "wikidata": "Q3399088",
+        "wikipedia": "fr:Porte de Saint-Ouen"
+      }
+    },
+    {
+      "id": "node/4965001711",
+      "name": "Porte de Clichy",
+      "name_local": "Porte de Clichy",
+      "slug": "porte_de_clichy",
+      "center": {
+        "lat": 48.8950766,
+        "lon": 2.312017
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Clichy",
+        "place": "locality",
+        "wikidata": "Q3399028",
+        "wikipedia": "fr:Porte de Clichy"
+      }
+    },
+    {
+      "id": "node/4965001712",
+      "name": "Porte d'Asnières",
+      "name_local": "Porte d'Asnières",
+      "slug": "porte_d_asni_res",
+      "center": {
+        "lat": 48.8911345,
+        "lon": 2.3025955
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte d'Asnières",
+        "place": "locality",
+        "wikidata": "Q3398992",
+        "wikipedia": "fr:Porte d'Asnières"
+      }
+    },
+    {
+      "id": "node/4965006831",
+      "name": "Porte d'Aubervilliers",
+      "name_local": "Porte d'Aubervilliers",
+      "slug": "porte_d_aubervilliers",
+      "center": {
+        "lat": 48.8987192,
+        "lon": 2.3707089
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte d'Aubervilliers",
+        "place": "locality",
+        "wikidata": "Q3398993",
+        "wikipedia": "fr:Porte d'Aubervilliers"
+      }
+    },
+    {
+      "id": "node/4965006832",
+      "name": "Porte de la Villette",
+      "name_local": "Porte de la Villette",
+      "slug": "porte_de_la_villette",
+      "center": {
+        "lat": 48.8982521,
+        "lon": 2.3861701
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de la Villette",
+        "place": "locality",
+        "wikidata": "Q14352277",
+        "wikipedia": "fr:Porte de la Villette"
+      }
+    },
+    {
+      "id": "node/4965006833",
+      "name": "Porte de Pantin",
+      "name_local": "Porte de Pantin",
+      "slug": "porte_de_pantin",
+      "center": {
+        "lat": 48.8896078,
+        "lon": 2.395936
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Pantin",
+        "place": "locality",
+        "wikidata": "Q2105022",
+        "wikipedia": "fr:Porte de Pantin"
+      }
+    },
+    {
+      "id": "node/5009455425",
+      "name": "Porte de Montmartre",
+      "name_local": "Porte de Montmartre",
+      "slug": "porte_de_montmartre",
+      "center": {
+        "lat": 48.8978415,
+        "lon": 2.3372791
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Montmartre",
+        "name:zh": "蒙马特门",
+        "place": "locality",
+        "wikidata": "Q3399057",
+        "wikipedia": "fr:Porte de Montmartre"
+      }
+    },
+    {
+      "id": "node/5019366038",
+      "name": "Porte Chaumont",
+      "name_local": "Porte Chaumont",
+      "slug": "porte_chaumont",
+      "center": {
+        "lat": 48.8862571,
+        "lon": 2.396462
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte Chaumont",
+        "place": "locality"
+      }
+    },
+    {
+      "id": "node/5089434675",
+      "name": "Porte Maillot",
+      "name_local": "Porte Maillot",
+      "slug": "porte_maillot",
+      "center": {
+        "lat": 48.8778042,
+        "lon": 2.2823789
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte Maillot",
+        "place": "locality",
+        "wikidata": "Q2319870",
+        "wikipedia": "fr:Porte Maillot"
+      }
+    },
+    {
+      "id": "node/5089497863",
+      "name": "Porte des Ternes",
+      "name_local": "Porte des Ternes",
+      "slug": "porte_des_ternes",
+      "center": {
+        "lat": 48.8810602,
+        "lon": 2.2840135
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte des Ternes",
+        "name:zh": "泰尔讷门",
+        "place": "locality",
+        "wikipedia": "fr:Porte des Ternes"
+      }
+    },
+    {
+      "id": "node/5100254930",
+      "name": "Porte de Boulogne",
+      "name_local": "Porte de Boulogne",
+      "slug": "porte_de_boulogne",
+      "center": {
+        "lat": 48.8481845,
+        "lon": 2.2420291
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Boulogne",
+        "place": "locality"
+      }
+    },
+    {
+      "id": "node/5216524173",
+      "name": "Porte Jaune",
+      "name_local": "Porte Jaune",
+      "slug": "porte_jaune",
+      "center": {
+        "lat": 48.8389849,
+        "lon": 2.4597874
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte Jaune",
+        "place": "locality"
+      }
+    },
+    {
+      "id": "node/5314725291",
+      "name": "Butte Mortemart",
+      "name_local": "Butte Mortemart",
+      "slug": "butte_mortemart",
+      "center": {
+        "lat": 48.8525373,
+        "lon": 2.2540393
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Butte Mortemart",
+        "place": "locality",
+        "wikidata": "Q21098037"
+      }
+    },
+    {
+      "id": "node/5314725292",
+      "name": "Carrefour des Cascades",
+      "name_local": "Carrefour des Cascades",
+      "slug": "carrefour_des_cascades",
+      "center": {
+        "lat": 48.858485,
+        "lon": 2.2579505
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Carrefour des Cascades",
+        "place": "locality",
+        "wikidata": "Q21098051"
+      }
+    },
+    {
+      "id": "node/5314725293",
+      "name": "Carrefour du Bout des Lacs",
+      "name_local": "Carrefour du Bout des Lacs",
+      "slug": "carrefour_du_bout_des_lacs",
+      "center": {
+        "lat": 48.8684192,
+        "lon": 2.2655451
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Carrefour du Bout des Lacs",
+        "place": "locality",
+        "wikidata": "Q21098054"
+      }
+    },
+    {
+      "id": "node/5314725294",
+      "name": "Porte de Madrid",
+      "name_local": "Porte de Madrid",
+      "slug": "porte_de_madrid",
+      "center": {
+        "lat": 48.8741198,
+        "lon": 2.2551476
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Madrid",
+        "place": "locality"
+      }
+    },
+    {
+      "id": "node/5354702378",
+      "name": "Carrefour de Longchamp",
+      "name_local": "Carrefour de Longchamp",
+      "slug": "carrefour_de_longchamp",
+      "center": {
+        "lat": 48.8635573,
+        "lon": 2.239387
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Carrefour de Longchamp",
+        "place": "locality",
+        "wikidata": "Q21098047"
+      }
+    },
+    {
+      "id": "node/5363759830",
+      "name": "Porte de Villiers",
+      "name_local": "Porte de Villiers",
+      "slug": "porte_de_villiers",
+      "center": {
+        "lat": 48.8840452,
+        "lon": 2.2863306
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Villiers",
+        "place": "locality",
+        "wikidata": "Q3399104",
+        "wikipedia": "fr:Porte de Villiers"
+      }
+    },
+    {
+      "id": "node/5363759831",
+      "name": "Porte de Champerret",
+      "name_local": "Porte de Champerret",
+      "slug": "porte_de_champerret",
+      "center": {
+        "lat": 48.8859348,
+        "lon": 2.2892039
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Champerret",
+        "place": "locality",
+        "wikidata": "Q3399020",
+        "wikipedia": "fr:Porte de Champerret"
+      }
+    },
+    {
+      "id": "node/5367816992",
+      "name": "Porte de Courcelles",
+      "name_local": "Porte de Courcelles",
+      "slug": "porte_de_courcelles",
+      "center": {
+        "lat": 48.888359,
+        "lon": 2.294024
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Courcelles",
+        "place": "locality",
+        "wikidata": "Q3399031",
+        "wikipedia": "fr:Porte de Courcelles"
+      }
+    },
+    {
+      "id": "node/5372877037",
+      "name": "Porte Dauphine",
+      "name_local": "Porte Dauphine",
+      "slug": "porte_dauphine",
+      "center": {
+        "lat": 48.8721946,
+        "lon": 2.2740097
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte Dauphine",
+        "place": "locality",
+        "wikidata": "Q3398906",
+        "wikipedia": "fr:Porte Dauphine"
+      }
+    },
+    {
+      "id": "node/5372877038",
+      "name": "Porte de la Muette",
+      "name_local": "Porte de la Muette",
+      "slug": "porte_de_la_muette",
+      "center": {
+        "lat": 48.8629941,
+        "lon": 2.2677512
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de la Muette",
+        "place": "locality",
+        "wikidata": "Q3399129",
+        "wikipedia": "fr:Porte de la Muette"
+      }
+    },
+    {
+      "id": "node/5372877039",
+      "name": "Porte de Passy",
+      "name_local": "Porte de Passy",
+      "slug": "porte_de_passy",
+      "center": {
+        "lat": 48.8576056,
+        "lon": 2.263706
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Passy",
+        "place": "locality",
+        "wikidata": "Q3399078",
+        "wikipedia": "fr:Porte de Passy"
+      }
+    },
+    {
+      "id": "node/5372877040",
+      "name": "Porte d'Auteuil",
+      "name_local": "Porte d'Auteuil",
+      "slug": "porte_d_auteuil",
+      "center": {
+        "lat": 48.848037,
+        "lon": 2.2585625
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte d'Auteuil",
+        "place": "locality",
+        "wikidata": "Q3398997",
+        "wikipedia": "fr:Porte d'Auteuil"
+      }
+    },
+    {
+      "id": "node/5372877041",
+      "name": "Porte Molitor",
+      "name_local": "Porte Molitor",
+      "slug": "porte_molitor",
+      "center": {
+        "lat": 48.8452974,
+        "lon": 2.257416
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte Molitor",
+        "place": "locality",
+        "wikidata": "Q3398925",
+        "wikipedia": "fr:Porte Molitor"
+      }
+    },
+    {
+      "id": "node/5372877042",
+      "name": "Porte de Saint-Cloud",
+      "name_local": "Porte de Saint-Cloud",
+      "slug": "porte_de_saint_cloud",
+      "center": {
+        "lat": 48.8380544,
+        "lon": 2.2574079
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Saint-Cloud",
+        "place": "locality",
+        "wikidata": "Q1974824",
+        "wikipedia": "fr:Porte de Saint-Cloud"
+      }
+    },
+    {
+      "id": "node/5372877043",
+      "name": "Porte de Sèvres",
+      "name_local": "Porte de Sèvres",
+      "slug": "porte_de_s_vres",
+      "center": {
+        "lat": 48.8362188,
+        "lon": 2.2782922
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Sèvres",
+        "place": "locality",
+        "wikidata": "Q3399094",
+        "wikipedia": "fr:Porte de Sèvres"
+      }
+    },
+    {
+      "id": "node/5372877044",
+      "name": "Porte Brancion",
+      "name_local": "Porte Brancion",
+      "slug": "porte_brancion",
+      "center": {
+        "lat": 48.8284954,
+        "lon": 2.3013841
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte Brancion",
+        "place": "locality",
+        "wikidata": "Q3398898",
+        "wikipedia": "fr:Porte Brancion"
+      }
+    },
+    {
+      "id": "node/5372877045",
+      "name": "Porte d'Orléans",
+      "name_local": "Porte d'Orléans",
+      "slug": "porte_d_orl_ans",
+      "center": {
+        "lat": 48.8231932,
+        "lon": 2.3254679
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte d'Orléans",
+        "place": "locality",
+        "wikidata": "Q2537524",
+        "wikipedia": "fr:Porte d'Orléans"
+      }
+    },
+    {
+      "id": "node/5383122130",
+      "name": "Porte de Gentilly",
+      "name_local": "Porte de Gentilly",
+      "slug": "porte_de_gentilly",
+      "center": {
+        "lat": 48.8193972,
+        "lon": 2.3445315
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Gentilly",
+        "place": "locality",
+        "wikidata": "Q3399046",
+        "wikipedia": "fr:Porte de Gentilly"
+      }
+    },
+    {
+      "id": "node/5434798119",
+      "name": "Quartier de l'Odéon",
+      "name_local": "Quartier de l'Odéon",
+      "slug": "quartier_de_l_od_on",
+      "center": {
+        "lat": 48.8505503,
+        "lon": 2.3387425
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Quartier de l'Odéon",
+        "name:zh": "奥德翁街区",
+        "place": "quarter",
+        "source": "Connaissance locale"
+      }
+    },
+    {
+      "id": "node/5434798120",
+      "name": "Popincourt",
+      "name_local": "Popincourt",
+      "slug": "popincourt",
+      "center": {
+        "lat": 48.8604299,
+        "lon": 2.3755351
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Popincourt",
+        "name:zh": "波潘库尔",
+        "place": "suburb",
+        "source": "Connaissance locale"
+      }
+    },
+    {
+      "id": "node/5434803821",
+      "name": "Faubourg Saint-Antoine",
+      "name_local": "Faubourg Saint-Antoine",
+      "slug": "faubourg_saint_antoine",
+      "center": {
+        "lat": 48.8507175,
+        "lon": 2.378531
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Faubourg Saint-Antoine",
+        "name:zh": "圣安东郊区",
+        "place": "suburb",
+        "source": "Connaissance locale",
+        "wikipedia": "fr:Faubourg Saint-Antoine"
+      }
+    },
+    {
+      "id": "node/5441362236",
+      "name": "Faubourg du Temple",
+      "name_local": "Faubourg du Temple",
+      "slug": "faubourg_du_temple",
+      "center": {
+        "lat": 48.8705681,
+        "lon": 2.3728648
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Faubourg du Temple",
+        "name:zh": "圣殿市郊",
+        "place": "suburb",
+        "source": "Connaissance locale"
+      }
+    },
+    {
+      "id": "node/5441362237",
+      "name": "Faubourg Saint-Denis",
+      "name_local": "Faubourg Saint-Denis",
+      "slug": "faubourg_saint_denis",
+      "center": {
+        "lat": 48.8758397,
+        "lon": 2.3560675
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Faubourg Saint-Denis",
+        "name:zh": "圣丹尼斯郊区",
+        "place": "suburb",
+        "source": "Connaissance locale"
+      }
+    },
+    {
+      "id": "node/5441362238",
+      "name": "Faubourg Saint-Martin",
+      "name_local": "Faubourg Saint-Martin",
+      "slug": "faubourg_saint_martin",
+      "center": {
+        "lat": 48.8743673,
+        "lon": 2.3585822
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Faubourg Saint-Martin",
+        "name:zh": "圣马丁郊区",
+        "place": "suburb",
+        "source": "Connaissance locale"
+      }
+    },
+    {
+      "id": "node/5445287714",
+      "name": "Faubourg Saint-Honoré",
+      "name_local": "Faubourg Saint-Honoré",
+      "slug": "faubourg_saint_honor",
+      "center": {
+        "lat": 48.8729792,
+        "lon": 2.3080921
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Faubourg Saint-Honoré",
+        "name:zh": "圣奥诺雷郊区",
+        "place": "quarter",
+        "source": "Connaissance locale",
+        "wikipedia": "fr:Faubourg Saint-Honoré"
+      }
+    },
+    {
+      "id": "node/5445762388",
+      "name": "Château Rouge",
+      "name_local": "Château Rouge",
+      "slug": "ch_teau_rouge",
+      "center": {
+        "lat": 48.8873865,
+        "lon": 2.3495212
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "Château-Rouge",
+        "name": "Château Rouge",
+        "place": "neighbourhood",
+        "source": "Connaissance locale",
+        "wikipedia": "fr:Château Rouge (quartier de Paris)"
+      }
+    },
+    {
+      "id": "node/5445762389",
+      "name": "Faubourg Poissonnière",
+      "name_local": "Faubourg Poissonnière",
+      "slug": "faubourg_poissonni_re",
+      "center": {
+        "lat": 48.875775,
+        "lon": 2.3482224
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Faubourg Poissonnière",
+        "name:zh": "普瓦松尼埃郊区",
+        "place": "suburb",
+        "source": "Connaissance locale"
+      }
+    },
+    {
+      "id": "node/5445762390",
+      "name": "Faubourg Montmartre",
+      "name_local": "Faubourg Montmartre",
+      "slug": "faubourg_montmartre",
+      "center": {
+        "lat": 48.8767743,
+        "lon": 2.3392691
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Faubourg Montmartre",
+        "name:zh": "蒙马特郊区",
+        "place": "suburb",
+        "source": "Connaissance locale"
+      }
+    },
+    {
+      "id": "node/5445762391",
+      "name": "Quartier Saint-Georges",
+      "name_local": "Quartier Saint-Georges",
+      "slug": "quartier_saint_georges",
+      "center": {
+        "lat": 48.8787985,
+        "lon": 2.3382801
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Quartier Saint-Georges",
+        "place": "neighbourhood",
+        "source": "Connaissance locale"
+      }
+    },
+    {
+      "id": "node/5445762392",
+      "name": "Quartier de l'Europe",
+      "name_local": "Quartier de l'Europe",
+      "slug": "quartier_de_l_europe",
+      "center": {
+        "lat": 48.8791535,
+        "lon": 2.3232963
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Quartier de l'Europe",
+        "name:zh": "欧罗巴街区",
+        "place": "suburb",
+        "source": "Connaissance locale",
+        "wikipedia": "fr:Quartier de l'Europe"
+      }
+    },
+    {
+      "id": "node/5451831769",
+      "name": "Faubourg Saint-Marcel",
+      "name_local": "Faubourg Saint-Marcel",
+      "slug": "faubourg_saint_marcel",
+      "center": {
+        "lat": 48.8368875,
+        "lon": 2.3518665
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "Faubourg Saint-Marceau",
+        "name": "Faubourg Saint-Marcel",
+        "name:zh": "圣马塞尔郊区",
+        "place": "suburb",
+        "source": "Connaissance locale",
+        "wikipedia": "fr:Faubourg Saint-Marcel (quartier de Paris)"
+      }
+    },
+    {
+      "id": "node/5454287408",
+      "name": "Faubourg Saint-Jacques",
+      "name_local": "Faubourg Saint-Jacques",
+      "slug": "faubourg_saint_jacques",
+      "center": {
+        "lat": 48.8389905,
+        "lon": 2.3395936
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Faubourg Saint-Jacques",
+        "name:zh": "圣雅克郊区",
+        "place": "suburb",
+        "source": "Connaissance locale",
+        "wikipedia": "fr:Faubourg Saint-Jacques"
+      }
+    },
+    {
+      "id": "node/5470091861",
+      "name": "Petit-Montrouge",
+      "name_local": "Petit-Montrouge",
+      "slug": "petit_montrouge",
+      "center": {
+        "lat": 48.8301569,
+        "lon": 2.330965
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Petit-Montrouge",
+        "name:zh": "小蒙鲁日",
+        "place": "suburb",
+        "source": "Connaissance locale"
+      }
+    },
+    {
+      "id": "node/5470091862",
+      "name": "Maison-Blanche",
+      "name_local": "Maison-Blanche",
+      "slug": "maison_blanche",
+      "center": {
+        "lat": 48.8222621,
+        "lon": 2.3586758
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "Quartier de la Maison-Blanche;Quartier de Maison-Blanche",
+        "name": "Maison-Blanche",
+        "name:zh": "梅森布朗什",
+        "place": "quarter",
+        "source": "Connaissance locale",
+        "wikipedia": "fr:Quartier de la Maison-Blanche"
+      }
+    },
+    {
+      "id": "node/5470091863",
+      "name": "Quartier de la Glacière",
+      "name_local": "Quartier de la Glacière",
+      "slug": "quartier_de_la_glaci_re",
+      "center": {
+        "lat": 48.8287545,
+        "lon": 2.3429167
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Quartier de la Glacière",
+        "name:zh": "冰库街区",
+        "place": "suburb",
+        "source": "Connaissance locale"
+      }
+    },
+    {
+      "id": "node/5470091864",
+      "name": "Gros-Caillou",
+      "name_local": "Gros-Caillou",
+      "slug": "gros_caillou",
+      "center": {
+        "lat": 48.8592535,
+        "lon": 2.3051147
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "Quartier du Gros-Caillou",
+        "name": "Gros-Caillou",
+        "name:zh": "格罗斯卡尤",
+        "place": "quarter",
+        "source": "Connaissance locale",
+        "wikidata": "Q3413275",
+        "wikipedia": "fr:Quartier du Gros-Caillou"
+      }
+    },
+    {
+      "id": "node/5470091865",
+      "name": "Plaisance",
+      "name_local": "Plaisance",
+      "slug": "plaisance",
+      "center": {
+        "lat": 48.8332851,
+        "lon": 2.3193972
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "check_date": "2024-04-08",
+        "name": "Plaisance",
+        "name:zh": "普莱桑斯",
+        "place": "suburb",
+        "source": "Connaissance locale"
+      }
+    },
+    {
+      "id": "node/5522394697",
+      "name": "Les Ternes",
+      "name_local": "Les Ternes",
+      "slug": "les_ternes",
+      "center": {
+        "lat": 48.8807219,
+        "lon": 2.2944263
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Les Ternes",
+        "name:zh": "泰尔讷",
+        "place": "suburb"
+      }
+    },
+    {
+      "id": "node/5522690122",
+      "name": "Reuilly",
+      "name_local": "Reuilly",
+      "slug": "reuilly",
+      "center": {
+        "lat": 48.8443144,
+        "lon": 2.3898419
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Reuilly",
+        "name:ar": "رويي",
+        "name:zh": "勒伊",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5522821334",
+      "name": "Les Épinettes",
+      "name_local": "Les Épinettes",
+      "slug": "les_pinettes",
+      "center": {
+        "lat": 48.8932062,
+        "lon": 2.3228373
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Les Épinettes",
+        "name:zh": "埃皮内特",
+        "place": "suburb"
+      }
+    },
+    {
+      "id": "node/5523199155",
+      "name": "Javel",
+      "name_local": "Javel",
+      "slug": "javel",
+      "center": {
+        "lat": 48.8412483,
+        "lon": 2.2781575
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Javel",
+        "name:zh": "贾维尔",
+        "place": "suburb"
+      }
+    },
+    {
+      "id": "node/5585862997",
+      "name": "Porte de Charenton",
+      "name_local": "Porte de Charenton",
+      "slug": "porte_de_charenton",
+      "center": {
+        "lat": 48.8317285,
+        "lon": 2.397905
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Charenton",
+        "place": "locality",
+        "wikidata": "Q2085027",
+        "wikipedia": "fr:Porte de Charenton"
+      }
+    },
+    {
+      "id": "node/5585862998",
+      "name": "Porte de Reuilly",
+      "name_local": "Porte de Reuilly",
+      "slug": "porte_de_reuilly",
+      "center": {
+        "lat": 48.8333388,
+        "lon": 2.4023521
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Reuilly",
+        "place": "locality",
+        "wikidata": "Q3399081",
+        "wikipedia": "fr:Porte de Reuilly"
+      }
+    },
+    {
+      "id": "node/5585862999",
+      "name": "Porte Dorée",
+      "name_local": "Porte Dorée",
+      "slug": "porte_dor_e",
+      "center": {
+        "lat": 48.8354662,
+        "lon": 2.406708
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte Dorée",
+        "place": "locality",
+        "wikidata": "Q2081081",
+        "wikipedia": "fr:Porte Dorée"
+      }
+    },
+    {
+      "id": "node/5585863000",
+      "name": "Porte de Montempoivre",
+      "name_local": "Porte de Montempoivre",
+      "slug": "porte_de_montempoivre",
+      "center": {
+        "lat": 48.8406837,
+        "lon": 2.4092126
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Montempoivre",
+        "place": "locality",
+        "wikidata": "Q3399059",
+        "wikipedia": "fr:Porte de Montempoivre"
+      }
+    },
+    {
+      "id": "node/5585863001",
+      "name": "Porte de Saint-Mandé",
+      "name_local": "Porte de Saint-Mandé",
+      "slug": "porte_de_saint_mand",
+      "center": {
+        "lat": 48.8442913,
+        "lon": 2.410395
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Saint-Mandé",
+        "place": "locality",
+        "wikidata": "Q3399085",
+        "wikipedia": "fr:Porte de Saint-Mandé"
+      }
+    },
+    {
+      "id": "node/5585863002",
+      "name": "Porte de Vincennes",
+      "name_local": "Porte de Vincennes",
+      "slug": "porte_de_vincennes",
+      "center": {
+        "lat": 48.847035,
+        "lon": 2.4112508
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Vincennes",
+        "place": "locality",
+        "wikidata": "Q3399110",
+        "wikipedia": "fr:Porte de Vincennes"
+      }
+    },
+    {
+      "id": "node/5596086993",
+      "name": "Porte de Montreuil",
+      "name_local": "Porte de Montreuil",
+      "slug": "porte_de_montreuil",
+      "center": {
+        "lat": 48.8534928,
+        "lon": 2.410747
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Montreuil",
+        "place": "locality",
+        "wikidata": "Q3399061",
+        "wikipedia": "fr:Porte de Montreuil"
+      }
+    },
+    {
+      "id": "node/5596086994",
+      "name": "Porte de Bagnolet",
+      "name_local": "Porte de Bagnolet",
+      "slug": "porte_de_bagnolet",
+      "center": {
+        "lat": 48.8645047,
+        "lon": 2.4087407
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Bagnolet",
+        "place": "locality",
+        "wikidata": "Q3399017",
+        "wikipedia": "fr:Porte de Bagnolet"
+      }
+    },
+    {
+      "id": "node/5596086995",
+      "name": "Porte de Ménilmontant",
+      "name_local": "Porte de Ménilmontant",
+      "slug": "porte_de_m_nilmontant",
+      "center": {
+        "lat": 48.8705699,
+        "lon": 2.4088199
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Ménilmontant",
+        "place": "locality",
+        "wikidata": "Q3399063",
+        "wikipedia": "fr:Porte de Ménilmontant"
+      }
+    },
+    {
+      "id": "node/5596086996",
+      "name": "Porte des Lilas",
+      "name_local": "Porte des Lilas",
+      "slug": "porte_des_lilas",
+      "center": {
+        "lat": 48.8771264,
+        "lon": 2.4067181
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte des Lilas",
+        "place": "locality",
+        "wikidata": "Q3399160",
+        "wikipedia": "fr:Porte des Lilas"
+      }
+    },
+    {
+      "id": "node/5596086997",
+      "name": "Porte du Pré-Saint-Gervais",
+      "name_local": "Porte du Pré-Saint-Gervais",
+      "slug": "porte_du_pr_saint_gervais",
+      "center": {
+        "lat": 48.8790609,
+        "lon": 2.4015509
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte du Pré-Saint-Gervais",
+        "place": "locality",
+        "wikidata": "Q3399189",
+        "wikipedia": "fr:Porte du Pré-Saint-Gervais"
+      }
+    },
+    {
+      "id": "node/5596086998",
+      "name": "Porte Brunet",
+      "name_local": "Porte Brunet",
+      "slug": "porte_brunet",
+      "center": {
+        "lat": 48.8836981,
+        "lon": 2.3971947
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte Brunet",
+        "place": "locality",
+        "wikidata": "Q3398901",
+        "wikipedia": "fr:Porte Brunet"
+      }
+    },
+    {
+      "id": "node/5617403614",
+      "name": "Hameau Boileau",
+      "name_local": "Hameau Boileau",
+      "slug": "hameau_boileau",
+      "center": {
+        "lat": 48.8446715,
+        "lon": 2.2623042
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Hameau Boileau",
+        "place": "neighbourhood",
+        "wikidata": "Q3126384",
+        "wikipedia": "fr:Hameau Boileau"
+      }
+    },
+    {
+      "id": "node/5632630319",
+      "name": "Grille des Sablons",
+      "name_local": "Grille des Sablons",
+      "slug": "grille_des_sablons",
+      "center": {
+        "lat": 48.8787085,
+        "lon": 2.2706093
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Grille des Sablons",
+        "place": "locality"
+      }
+    },
+    {
+      "id": "node/5632630320",
+      "name": "Grille de Neuilly",
+      "name_local": "Grille de Neuilly",
+      "slug": "grille_de_neuilly",
+      "center": {
+        "lat": 48.8801435,
+        "lon": 2.2586963
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Grille de Neuilly",
+        "place": "locality"
+      }
+    },
+    {
+      "id": "node/5647388719",
+      "name": "Porte d'Arcueil",
+      "name_local": "Porte d'Arcueil",
+      "slug": "porte_d_arcueil",
+      "center": {
+        "lat": 48.8212829,
+        "lon": 2.3343544
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte d'Arcueil",
+        "place": "locality",
+        "wikidata": "Q3398988",
+        "wikipedia": "fr:Porte d'Arcueil"
+      }
+    },
+    {
+      "id": "node/5705677431",
+      "name": "Poterne des Peupliers",
+      "name_local": "Poterne des Peupliers",
+      "slug": "poterne_des_peupliers",
+      "center": {
+        "lat": 48.8210362,
+        "lon": 2.352568
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Poterne des Peupliers",
+        "place": "locality",
+        "wikidata": "Q13404",
+        "wikipedia": "fr:Poterne des Peupliers"
+      }
+    },
+    {
+      "id": "node/5705677432",
+      "name": "Porte d'Italie",
+      "name_local": "Porte d'Italie",
+      "slug": "porte_d_italie",
+      "center": {
+        "lat": 48.8190367,
+        "lon": 2.3594102
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte d'Italie",
+        "place": "locality",
+        "wikidata": "Q2284885",
+        "wikipedia": "fr:Porte d'Italie"
+      }
+    },
+    {
+      "id": "node/5705677433",
+      "name": "Porte de Choisy",
+      "name_local": "Porte de Choisy",
+      "slug": "porte_de_choisy",
+      "center": {
+        "lat": 48.8200137,
+        "lon": 2.364801
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "check_date": "2024-04-20",
+        "name": "Porte de Choisy",
+        "place": "locality",
+        "wikidata": "Q3399030",
+        "wikipedia": "fr:Porte de Choisy"
+      }
+    },
+    {
+      "id": "node/5705677434",
+      "name": "Porte d'Ivry",
+      "name_local": "Porte d'Ivry",
+      "slug": "porte_d_ivry",
+      "center": {
+        "lat": 48.8214565,
+        "lon": 2.3693909
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte d'Ivry",
+        "place": "locality",
+        "wikidata": "Q3399010",
+        "wikipedia": "fr:Porte d'Ivry"
+      }
+    },
+    {
+      "id": "node/5705677435",
+      "name": "Porte de Vitry",
+      "name_local": "Porte de Vitry",
+      "slug": "porte_de_vitry",
+      "center": {
+        "lat": 48.8241519,
+        "lon": 2.3766803
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Vitry",
+        "place": "locality",
+        "wikidata": "Q3399107",
+        "wikipedia": "fr:Porte de Vitry"
+      }
+    },
+    {
+      "id": "node/5705677436",
+      "name": "Porte de la Gare",
+      "name_local": "Porte de la Gare",
+      "slug": "porte_de_la_gare",
+      "center": {
+        "lat": 48.8274065,
+        "lon": 2.3856609
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de la Gare",
+        "place": "locality",
+        "wikidata": "Q3399126",
+        "wikipedia": "fr:Porte de la Gare"
+      }
+    },
+    {
+      "id": "node/5705677437",
+      "name": "Porte de Bercy",
+      "name_local": "Porte de Bercy",
+      "slug": "porte_de_bercy",
+      "center": {
+        "lat": 48.8285279,
+        "lon": 2.3879579
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte de Bercy",
+        "place": "locality",
+        "wikidata": "Q930323",
+        "wikipedia": "fr:Porte de Bercy"
+      }
+    },
+    {
+      "id": "node/5882127454",
+      "name": "Porte du Bas-Meudon",
+      "name_local": "Porte du Bas-Meudon",
+      "slug": "porte_du_bas_meudon",
+      "center": {
+        "lat": 48.8387201,
+        "lon": 2.2697807
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte du Bas-Meudon",
+        "place": "locality",
+        "wikidata": "Q3399172",
+        "wikipedia": "fr:Porte du Bas-Meudon"
+      }
+    },
+    {
+      "id": "node/5882127455",
+      "name": "Porte du Point-du-Jour",
+      "name_local": "Porte du Point-du-Jour",
+      "slug": "porte_du_point_du_jour",
+      "center": {
+        "lat": 48.8370833,
+        "lon": 2.2600084
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte du Point-du-Jour",
+        "place": "locality",
+        "wikidata": "Q3399184",
+        "wikipedia": "fr:Porte du Point-du-Jour"
+      }
+    },
+    {
+      "id": "node/8827155720",
+      "name": "Faubourg Saint-Germain",
+      "name_local": "Faubourg Saint-Germain",
+      "slug": "faubourg_saint_germain",
+      "center": {
+        "lat": 48.856257,
+        "lon": 2.32331
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Faubourg Saint-Germain",
+        "name:zh": "圣日耳曼郊区",
+        "place": "quarter",
+        "wikidata": "Q255910",
+        "wikipedia": "fr:Faubourg Saint-Germain"
+      }
+    },
+    {
+      "id": "node/8830167357",
+      "name": "Grange aux Belles",
+      "name_local": "Grange aux Belles",
+      "slug": "grange_aux_belles",
+      "center": {
+        "lat": 48.8778014,
+        "lon": 2.3678866
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Grange aux Belles",
+        "place": "neighbourhood",
+        "wikipedia": "fr:Quartier de la Grange-aux-Belles"
+      }
+    },
+    {
+      "id": "node/8894992392",
+      "name": "Grille de Saint-Cloud",
+      "name_local": "Grille de Saint-Cloud",
+      "slug": "grille_de_saint_cloud",
+      "center": {
+        "lat": 48.8529593,
+        "lon": 2.2263608
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Grille de Saint-Cloud",
+        "place": "locality",
+        "wikidata": "Q21098084"
+      }
+    },
+    {
+      "id": "node/8895031901",
+      "name": "Carrefour de Norvège",
+      "name_local": "Carrefour de Norvège",
+      "slug": "carrefour_de_norv_ge",
+      "center": {
+        "lat": 48.8640487,
+        "lon": 2.2362153
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Carrefour de Norvège",
+        "place": "locality",
+        "wikidata": "Q21098048"
+      }
+    },
+    {
+      "id": "node/8898718425",
+      "name": "Porte Pouchet",
+      "name_local": "Porte Pouchet",
+      "slug": "porte_pouchet",
+      "center": {
+        "lat": 48.8997501,
+        "lon": 2.3189564
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porte Pouchet",
+        "place": "locality",
+        "wikidata": "Q3398937",
+        "wikipedia": "fr:Porte Pouchet"
+      }
+    },
+    {
+      "id": "node/9753986281",
+      "name": "Quartier Bruneseau",
+      "name_local": "Quartier Bruneseau",
+      "slug": "quartier_bruneseau",
+      "center": {
+        "lat": 48.8254428,
+        "lon": 2.3857986
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Quartier Bruneseau",
+        "place": "quarter"
+      }
+    },
+    {
+      "id": "node/9850455219",
+      "name": "Villa des Ternes",
+      "name_local": "Villa des Ternes",
+      "slug": "villa_des_ternes",
+      "center": {
+        "lat": 48.8812821,
+        "lon": 2.2873959
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Villa des Ternes",
+        "place": "neighbourhood",
+        "ref:FR:FANTOIR": "751179205R"
+      }
+    },
+    {
+      "id": "node/11204368978",
+      "name": "Croulebarbe",
+      "name_local": "Croulebarbe",
+      "slug": "croulebarbe",
+      "center": {
+        "lat": 48.8335405,
+        "lon": 2.347913
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Croulebarbe",
+        "place": "quarter",
+        "wikipedia": "fr:Quartier de Croulebarbe"
+      }
+    },
+    {
+      "id": "node/12851237173",
+      "name": "Cité des Frères Voisin",
+      "name_local": "Cité des Frères Voisin",
+      "slug": "cit_des_fr_res_voisin",
+      "center": {
+        "lat": 48.8288912,
+        "lon": 2.2737315
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Cité des Frères Voisin",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/13306769893",
+      "name": "Bel-Air",
+      "name_local": "Bel-Air",
+      "slug": "bel_air",
+      "center": {
+        "lat": 48.8409185,
+        "lon": 2.4046661
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "admin_level": "10",
+        "boundary": "administrative",
+        "name": "Bel-Air",
+        "place": "quarter"
+      }
+    },
+    {
+      "id": "node/13311113603",
+      "name": "Picpus",
+      "name_local": "Picpus",
+      "slug": "picpus",
+      "center": {
+        "lat": 48.8396831,
+        "lon": 2.3954377
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Picpus",
+        "place": "quarter"
+      }
+    },
+    {
+      "id": "node/13311131358",
+      "name": "Quinze-Vingts",
+      "name_local": "Quinze-Vingts",
+      "slug": "quinze_vingts",
+      "center": {
+        "lat": 48.8486547,
+        "lon": 2.3725462
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Quinze-Vingts",
+        "place": "quarter"
+      }
+    },
+    {
+      "id": "way/29065662",
+      "name": "Place des Nations Unies",
+      "name_local": "Place des Nations Unies",
+      "slug": "place_des_nations_unies",
+      "center": {
+        "lat": 48.8969355,
+        "lon": 2.3094873
+      },
+      "bbox": [
+        2.2994873,
+        48.8869355,
+        2.3194872999999996,
+        48.906935499999996
+      ],
+      "source": "osm",
+      "tags": {
+        "area": "yes",
+        "name": "Place des Nations Unies",
+        "place": "locality"
+      }
+    },
+    {
+      "id": "way/64223006",
+      "name": "Les Orgues de Flandre",
+      "name_local": "Les Orgues de Flandre",
+      "slug": "les_orgues_de_flandre",
+      "center": {
+        "lat": 48.8897695,
+        "lon": 2.3738921
+      },
+      "bbox": [
+        2.3638921,
+        48.8797695,
+        2.3838920999999997,
+        48.8997695
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Les Orgues de Flandre",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "way/233418601",
+      "name": "Îlot Saint-Séverin",
+      "name_local": "Îlot Saint-Séverin",
+      "slug": "lot_saint_s_verin",
+      "center": {
+        "lat": 48.8522648,
+        "lon": 2.345033
+      },
+      "bbox": [
+        2.335033,
+        48.8422648,
+        2.3550329999999997,
+        48.8622648
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Îlot Saint-Séverin",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "way/385801588",
+      "name": "Cité Michelet",
+      "name_local": "Cité Michelet",
+      "slug": "cit_michelet",
+      "center": {
+        "lat": 48.8949985,
+        "lon": 2.375654
+      },
+      "bbox": [
+        2.365654,
+        48.8849985,
+        2.3856539999999997,
+        48.9049985
+      ],
+      "source": "osm",
+      "tags": {
+        "alt_name": "Cité Curial;Cité Curial-Cambrai;Résidence Michelet",
+        "name": "Cité Michelet",
+        "place": "neighbourhood",
+        "source": "Connaissance locale"
+      }
+    },
+    {
+      "id": "way/903570094",
+      "name": "Cité Python-Duvernois",
+      "name_local": "Cité Python-Duvernois",
+      "slug": "cit_python_duvernois",
+      "center": {
+        "lat": 48.8622412,
+        "lon": 2.4113144
+      },
+      "bbox": [
+        2.4013144000000004,
+        48.8522412,
+        2.4213144,
+        48.8722412
+      ],
+      "source": "osm",
+      "tags": {
+        "alt_name": "La Cité Python-Duvernois",
+        "landuse": "residential",
+        "name": "Cité Python-Duvernois",
+        "place": "neighbourhood",
+        "source": "knowledge;extrapolation"
+      }
+    },
+    {
+      "id": "way/1343896534",
+      "name": "Le Quartier Dupleix",
+      "name_local": "Le Quartier Dupleix",
+      "slug": "le_quartier_dupleix",
+      "center": {
+        "lat": 48.8518427,
+        "lon": 2.293811
+      },
+      "bbox": [
+        2.283811,
+        48.8418427,
+        2.3038109999999996,
+        48.8618427
+      ],
+      "source": "osm",
+      "tags": {
+        "alt_name": "Dupleix / La Motte Picquet",
+        "check_date": "2024-12-19",
+        "description": "Niché au sein du quartier administratif de Grenelle dans le 15ème arrondissement, Dupleix est un quartier résidentiel qui s'articule autour de la place Dupleix.",
+        "name": "Le Quartier Dupleix",
+        "name:zh": "杜布雷街区",
+        "official_name": "Dupleix",
+        "place": "neighbourhood",
+        "source": "local knowledge;survey;gps;osm notes",
+        "website": "https://mairie15.paris.fr/pages/dupleix-motte-picquet-13555#plan-du-quartier-dupleix-la-motte-picquet"
+      }
+    },
+    {
+      "id": "way/1343896535",
+      "name": "Le Quartier Dupleix",
+      "name_local": "Le Quartier Dupleix",
+      "slug": "le_quartier_dupleix",
+      "center": {
+        "lat": 48.8537672,
+        "lon": 2.2851071
+      },
+      "bbox": [
+        2.2751071,
+        48.8437672,
+        2.2951070999999996,
+        48.8637672
+      ],
+      "source": "osm",
+      "tags": {
+        "alt_name": "Dupleix / La Motte Picquet",
+        "check_date": "2024-12-19",
+        "description": "Niché au sein du quartier administratif de Grenelle dans le 15ème arrondissement, Dupleix est un quartier résidentiel qui s'articule autour de la place Dupleix.",
+        "name": "Le Quartier Dupleix",
+        "official_name": "Dupleix",
+        "place": "neighbourhood",
+        "source": "local knowledge;survey;gps;osm notes",
+        "website": "https://mairie15.paris.fr/pages/dupleix-motte-picquet-13555#plan-du-quartier-dupleix-la-motte-picquet"
+      }
+    },
+    {
+      "id": "relation/7444",
+      "name": "Paris",
+      "name_local": "Paris",
+      "slug": "paris",
+      "center": {
+        "lat": 48.8588657,
+        "lon": 2.3469411
+      },
+      "bbox": [
+        2.3369411,
+        48.848865700000005,
+        2.3569411,
+        48.8688657
+      ],
+      "source": "osm",
+      "tags": {
+        "admin_level": "8",
+        "alt_name:vi": "Ba Lê",
+        "boundary": "administrative",
+        "capital": "yes",
+        "loc_name:fr": "Paname",
+        "name": "Paris",
+        "name:af": "Parys",
+        "name:am": "ፓሪስ",
+        "name:an": "París",
+        "name:ar": "باريس",
+        "name:arc": "ܦܐܪܝܣ",
+        "name:arz": "باريس",
+        "name:ast": "París",
+        "name:ba": "Париж",
+        "name:bat-smg": "Parīžios",
+        "name:be": "Парыж",
+        "name:be-tarask": "Парыж",
+        "name:bg": "Париж",
+        "name:bn": "প্যারিস",
+        "name:bo": "ཕ་རི།",
+        "name:br": "Pariz",
+        "name:bs": "Pariz",
+        "name:ca": "París",
+        "name:cdo": "Bă-là̤",
+        "name:ckb": "پاریس",
+        "name:co": "Parighji",
+        "name:cs": "Paříž",
+        "name:csb": "Pariz",
+        "name:cu": "Парижь",
+        "name:cv": "Парис",
+        "name:de": "Paris",
+        "name:el": "Παρίσι",
+        "name:eml": "Parì",
+        "name:eo": "Parizo",
+        "name:es": "París",
+        "name:et": "Pariis",
+        "name:eu": "Paris",
+        "name:ext": "París",
+        "name:fa": "پاریس",
+        "name:fi": "Pariisi",
+        "name:fr": "Paris",
+        "name:fur": "Parîs",
+        "name:fy": "Parys",
+        "name:ga": "Páras",
+        "name:gan": "巴黎",
+        "name:gl": "París",
+        "name:gn": "Parĩ",
+        "name:gu": "પૅરિસ",
+        "name:gv": "Paarys",
+        "name:ha": "Pariis",
+        "name:hak": "Pâ-lì-sṳ",
+        "name:haw": "Palika",
+        "name:he": "פריז",
+        "name:hi": "पैरिस",
+        "name:hr": "Pariz",
+        "name:ht": "Pari",
+        "name:hu": "Párizs",
+        "name:hy": "Փարիզ",
+        "name:is": "París",
+        "name:it": "Parigi",
+        "name:ja": "パリ",
+        "name:jbo": "paris",
+        "name:ka": "პარიზი",
+        "name:kk": "Париж",
+        "name:km": "ប៉ារីស",
+        "name:kn": "ಪ್ಯಾರಿಸ್",
+        "name:ko": "파리",
+        "name:koi": "Париж",
+        "name:krc": "Париж",
+        "name:ku": "Parîs",
+        "name:kv": "Париж",
+        "name:ky": "Париж",
+        "name:la": "Lutetia",
+        "name:lb": "Paräis",
+        "name:lez": "Париж",
+        "name:li": "Paries",
+        "name:lij": "Pariggi",
+        "name:ln": "Pari",
+        "name:lt": "Paryžius",
+        "name:lv": "Parīze",
+        "name:lzh": "巴黎",
+        "name:mhr": "Париж",
+        "name:mi": "Parī",
+        "name:mk": "Париз",
+        "name:ml": "പാരിസ്",
+        "name:mn": "Парис",
+        "name:mr": "पॅरिस",
+        "name:mrj": "Париж",
+        "name:my": "ပါရီမြို့",
+        "name:myv": "Париж ош",
+        "name:mzn": "پاریس",
+        "name:nan": "Pa-lí",
+        "name:nap": "Parigge",
+        "name:nds": "Paris",
+        "name:nds-nl": "Paries",
+        "name:ne": "पेरिस",
+        "name:nl": "Parijs",
+        "name:no": "Paris",
+        "name:oc": "París",
+        "name:or": "ପ୍ୟାରିସ",
+        "name:os": "Париж",
+        "name:pa": "ਪੈਰਿਸ",
+        "name:pcd": "Paris",
+        "name:pl": "Paryż",
+        "name:pnb": "پیرس",
+        "name:ps": "پاريس",
+        "name:roa-rup": "Parij",
+        "name:roa-tara": "Parigge",
+        "name:ru": "Париж",
+        "name:rue": "Паріж",
+        "name:sah": "Париж",
+        "name:sc": "Parigi",
+        "name:scn": "Pariggi",
+        "name:sh": "Pariz",
+        "name:sk": "Paríž",
+        "name:sl": "Pariz",
+        "name:so": "Baariis",
+        "name:sq": "Parisi",
+        "name:sr": "Париз",
+        "name:sv": "Paris",
+        "name:szl": "Paryż",
+        "name:ta": "பாரிஸ்",
+        "name:te": "పారిస్",
+        "name:tet": "París",
+        "name:tg": "Париж",
+        "name:th": "ปารีส",
+        "name:tk": "Pariž",
+        "name:tl": "Paris",
+        "name:tt": "Париж",
+        "name:tzl": "Parighi",
+        "name:udm": "Париж",
+        "name:ug": "پارىژ",
+        "name:uk": "Париж",
+        "name:ur": "پیرس",
+        "name:uz": "Parij",
+        "name:vec": "Parixe",
+        "name:vep": "Pariž",
+        "name:vi": "Paris",
+        "name:vls": "Parys",
+        "name:vro": "Pariis",
+        "name:wa": "Paris",
+        "name:wo": "Pari",
+        "name:xmf": "პარიზი",
+        "name:yi": "פאריז",
+        "name:yo": "Parisi",
+        "name:yue": "巴黎",
+        "name:za": "Bahliz",
+        "name:zh": "巴黎",
+        "name:zh-Latn-pinyin": "Bālí",
+        "name:zu": "IParisi",
+        "old_name:fr": "Lutèce",
+        "population": "2133111",
+        "population:date": "2021",
+        "postal_code": "75000;75001;75002;75003;75004;75005;75006;75007;75008;75009;75010;75011;75012;75013;75014;75015;75016;75017;75018;75019;75020;75116",
+        "ref:FR:MGP": "T1",
+        "ref:FR:SIREN": "217500016",
+        "ref:INSEE": "75056",
+        "source:population": "INSEE 2024",
+        "type": "boundary",
+        "wikidata": "Q90",
+        "wikipedia": "fr:Paris"
+      }
+    },
+    {
+      "id": "relation/2191005",
+      "name": "Chaillot",
+      "name_local": "Chaillot",
+      "slug": "chaillot",
+      "center": {
+        "lat": 48.8687026,
+        "lon": 2.2924705
+      },
+      "bbox": [
+        2.2824705,
+        48.8587026,
+        2.3024704999999996,
+        48.8787026
+      ],
+      "source": "osm",
+      "tags": {
+        "admin_level": "10",
+        "boundary": "administrative",
+        "name": "Chaillot",
+        "name:zh": "夏约街区",
+        "official_name": "Quartier de Chaillot",
+        "place": "suburb",
+        "postal_code": "75016;75116",
+        "ref:TRIRIS": "7511664",
+        "short_name": "Chaillot",
+        "type": "boundary",
+        "wikidata": "Q3413160",
+        "wikipedia": "fr:Quartier de Chaillot"
+      }
+    },
+    {
+      "id": "relation/7981217",
+      "name": "Nouvelle Athènes",
+      "name_local": "Nouvelle Athènes",
+      "slug": "nouvelle_ath_nes",
+      "center": {
+        "lat": 48.8783808,
+        "lon": 2.3353142
+      },
+      "bbox": [
+        2.3253142,
+        48.868380800000004,
+        2.3453142,
+        48.8883808
+      ],
+      "source": "osm",
+      "tags": {
+        "alt_name": "Nouvelle-Athènes",
+        "name": "Nouvelle Athènes",
+        "place": "neighbourhood",
+        "type": "multipolygon",
+        "wikidata": "Q3345157",
+        "wikipedia": "fr:Nouvelle Athènes"
+      }
+    },
+    {
+      "id": "relation/15537328",
+      "name": "Le Marais",
+      "name_local": "Le Marais",
+      "slug": "le_marais",
+      "center": {
+        "lat": 48.8591928,
+        "lon": 2.3598823
+      },
+      "bbox": [
+        2.3498823000000004,
+        48.849192800000004,
+        2.3698823,
+        48.8691928
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Le Marais",
+        "name:ar": "حي ماريه",
+        "name:ko": "마레 지구",
+        "name:zh": "玛莱",
+        "place": "suburb",
+        "type": "multipolygon",
+        "wikidata": "Q749573",
+        "wikipedia": "fr:Le Marais (quartier parisien)"
+      }
+    }
+  ]
+}

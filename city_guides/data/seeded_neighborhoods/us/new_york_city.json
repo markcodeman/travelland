@@ -1,0 +1,6998 @@
+{
+  "city": "New York City",
+  "country": "US",
+  "source": "overpass",
+  "last_updated": 1770753752,
+  "neighborhoods": [
+    {
+      "id": "node/666",
+      "name": "Hell's Kitchen",
+      "name_local": "Hell's Kitchen",
+      "slug": "hell_s_kitchen",
+      "center": {
+        "lat": 40.7644228,
+        "lon": -73.9923918
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "Clinton",
+        "ele": "9",
+        "gnis:feature_id": "2042281",
+        "name": "Hell's Kitchen",
+        "name:azb": "هلز کیچن",
+        "name:fa": "هلز کیچن",
+        "name:ja": "ヘルズ・キッチン",
+        "name:ko": "헬스 키친",
+        "name:ru": "Хэллс-Китчен",
+        "name:sr": "Хелс кичен",
+        "name:sr-Latn": "Hels kičen",
+        "name:uk": "Гелс-Кітчен",
+        "name:zh": "地獄廚房",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158797645",
+      "name": "Sunnyside",
+      "name_local": "Sunnyside",
+      "slug": "sunnyside",
+      "center": {
+        "lat": 40.7398242,
+        "lon": -73.9354153
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "5",
+        "gnis:feature_id": "966810",
+        "name": "Sunnyside",
+        "place": "neighbourhood",
+        "wikidata": "Q7523819"
+      }
+    },
+    {
+      "id": "node/158798303",
+      "name": "Eastchester Heights",
+      "name_local": "Eastchester Heights",
+      "slug": "eastchester_heights",
+      "center": {
+        "lat": 40.8772222,
+        "lon": -73.8491667
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "42",
+        "gnis:feature_id": "2072383",
+        "name": "Eastchester Heights",
+        "place": "neighbourhood",
+        "wikidata": "Q3709365"
+      }
+    },
+    {
+      "id": "node/158798651",
+      "name": "Oakwood Beach",
+      "name_local": "Oakwood Beach",
+      "slug": "oakwood_beach",
+      "center": {
+        "lat": 40.5526053,
+        "lon": -74.1143087
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "1",
+        "gnis:feature_id": "959188",
+        "name": "Oakwood Beach",
+        "place": "neighbourhood",
+        "wikidata": "Q7074276",
+        "wikipedia": "en:Oakwood, Staten Island"
+      }
+    },
+    {
+      "id": "node/158798812",
+      "name": "Rosedale",
+      "name_local": "Rosedale",
+      "slug": "rosedale",
+      "center": {
+        "lat": 40.6620479,
+        "lon": -73.7354097
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "5",
+        "gnis:feature_id": "962917",
+        "name": "Rosedale",
+        "place": "neighbourhood",
+        "wikidata": "Q62292",
+        "wikipedia": "en:Rosedale, Queens"
+      }
+    },
+    {
+      "id": "node/158800211",
+      "name": "Brooklyn Manor",
+      "name_local": "Brooklyn Manor",
+      "slug": "brooklyn_manor",
+      "center": {
+        "lat": 40.6948252,
+        "lon": -73.8476351
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "14",
+        "gnis:feature_id": "944848",
+        "name": "Brooklyn Manor",
+        "place": "neighbourhood",
+        "wikidata": "Q14706201"
+      }
+    },
+    {
+      "id": "node/158800226",
+      "name": "Canarsie",
+      "name_local": "Canarsie",
+      "slug": "canarsie",
+      "center": {
+        "lat": 40.643715,
+        "lon": -73.9006921
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "6",
+        "gnis:feature_id": "945743",
+        "name": "Canarsie",
+        "place": "neighbourhood",
+        "population": "83693",
+        "population:date": "2010",
+        "source:population": "wikipedia",
+        "wikidata": "Q5031191",
+        "wikipedia": "en:Canarsie, Brooklyn"
+      }
+    },
+    {
+      "id": "node/158800655",
+      "name": "Howard Beach",
+      "name_local": "Howard Beach",
+      "slug": "howard_beach",
+      "center": {
+        "lat": 40.6578815,
+        "lon": -73.8362459
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "1",
+        "gnis:feature_id": "953302",
+        "name": "Howard Beach",
+        "place": "neighbourhood",
+        "wikidata": "Q58981",
+        "wikipedia": "en:Howard Beach, Queens"
+      }
+    },
+    {
+      "id": "node/158801311",
+      "name": "Alphabet City",
+      "name_local": "Alphabet City",
+      "slug": "alphabet_city",
+      "center": {
+        "lat": 40.7251022,
+        "lon": -73.9795833
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "Loisaida",
+        "ele": "4",
+        "gnis:feature_id": "2062665",
+        "name": "Alphabet City",
+        "name:ko": "알파벳 시티",
+        "name:ru": "Алфабет-сити",
+        "name:sr": "Алфабет сити",
+        "name:sr-Latn": "Alfabet siti",
+        "place": "neighbourhood",
+        "tourism": "yes",
+        "wikidata": "Q1156938"
+      }
+    },
+    {
+      "id": "node/158801321",
+      "name": "Tribeca",
+      "name_local": "Tribeca",
+      "slug": "tribeca",
+      "center": {
+        "lat": 40.7153802,
+        "lon": -74.0093063
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "6",
+        "gnis:feature_id": "2062659",
+        "name": "Tribeca",
+        "name:ko": "트라이베카",
+        "name:ru": "Трайбека",
+        "name:sr": "Трајбека",
+        "name:sr-Latn": "Trajbeka",
+        "place": "neighbourhood",
+        "wikidata": "Q766014",
+        "wikipedia": "en:Tribeca"
+      }
+    },
+    {
+      "id": "node/158801775",
+      "name": "East Elmhurst",
+      "name_local": "East Elmhurst",
+      "slug": "east_elmhurst",
+      "center": {
+        "lat": 40.7612123,
+        "lon": -73.8651358
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "23",
+        "gnis:feature_id": "949065",
+        "name": "East Elmhurst",
+        "place": "neighbourhood",
+        "wikidata": "Q5328282",
+        "wikipedia": "en:East Elmhurst, Queens"
+      }
+    },
+    {
+      "id": "node/158802019",
+      "name": "Clinton Hill",
+      "name_local": "Clinton Hill",
+      "slug": "clinton_hill",
+      "center": {
+        "lat": 40.6897222,
+        "lon": -73.9652778
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "24",
+        "gnis:feature_id": "2081555",
+        "name": "Clinton Hill",
+        "place": "neighbourhood",
+        "wikidata": "Q3680818",
+        "wikipedia": "en:Clinton Hill, Brooklyn"
+      }
+    },
+    {
+      "id": "node/158804245",
+      "name": "Little Neck",
+      "name_local": "Little Neck",
+      "slug": "little_neck",
+      "center": {
+        "lat": 40.7620463,
+        "lon": -73.7381874
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "30",
+        "gnis:feature_id": "955608",
+        "name": "Little Neck",
+        "place": "neighbourhood",
+        "wikidata": "Q6651117"
+      }
+    },
+    {
+      "id": "node/158804278",
+      "name": "South Beach",
+      "name_local": "South Beach",
+      "slug": "south_beach",
+      "center": {
+        "lat": 40.5903825,
+        "lon": -74.0668076
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "2",
+        "gnis:feature_id": "965682",
+        "name": "South Beach",
+        "place": "neighbourhood",
+        "wikidata": "Q7566271",
+        "wikipedia": "en:South Beach, Staten Island"
+      }
+    },
+    {
+      "id": "node/158804534",
+      "name": "Hamilton Park",
+      "name_local": "Hamilton Park",
+      "slug": "hamilton_park",
+      "center": {
+        "lat": 40.6417264,
+        "lon": -74.0900718
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "56",
+        "gnis:feature_id": "2079131",
+        "name": "Hamilton Park",
+        "place": "neighbourhood",
+        "wikidata": "Q5645088",
+        "wikipedia": "en:Hamilton Park, Staten Island"
+      }
+    },
+    {
+      "id": "node/158805148",
+      "name": "Clinton",
+      "name_local": "Clinton",
+      "slug": "clinton",
+      "center": {
+        "lat": 40.7652778,
+        "lon": -73.993889
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "8",
+        "gnis:feature_id": "2083187",
+        "name": "Clinton",
+        "name:ko": "클린턴",
+        "name:sr": "Клинтон",
+        "name:sr-Latn": "Klinton",
+        "note": "A previous edit removed the name tagging. If this isn't called this anymore, please delete the node.",
+        "place": "neighbourhood",
+        "wikipedia": "en:Hell's Kitchen, Manhattan"
+      }
+    },
+    {
+      "id": "node/158805374",
+      "name": "Morris Heights",
+      "name_local": "Morris Heights",
+      "slug": "morris_heights",
+      "center": {
+        "lat": 40.8498223,
+        "lon": -73.919859
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "45",
+        "gnis:feature_id": "957689",
+        "name": "Morris Heights",
+        "place": "neighbourhood",
+        "wikidata": "Q6913729",
+        "wikipedia": "en:Morris Heights, Bronx"
+      }
+    },
+    {
+      "id": "node/158805801",
+      "name": "New Brighton",
+      "name_local": "New Brighton",
+      "slug": "new_brighton",
+      "center": {
+        "lat": 40.6423258,
+        "lon": -74.0929195
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "25",
+        "gnis:feature_id": "958396",
+        "name": "New Brighton",
+        "place": "neighbourhood",
+        "wikidata": "Q4822403",
+        "wikipedia": "en:New Brighton, Staten Island"
+      }
+    },
+    {
+      "id": "node/158805869",
+      "name": "Morrisania",
+      "name_local": "Morrisania",
+      "slug": "morrisania",
+      "center": {
+        "lat": 40.8292672,
+        "lon": -73.9065253
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "14",
+        "gnis:feature_id": "957700",
+        "name": "Morrisania",
+        "place": "neighbourhood",
+        "wikidata": "Q6913970",
+        "wikipedia": "en:Morrisania, Bronx"
+      }
+    },
+    {
+      "id": "node/158806204",
+      "name": "Seaside",
+      "name_local": "Seaside",
+      "slug": "seaside",
+      "center": {
+        "lat": 40.5352778,
+        "lon": -74.1788889
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "24",
+        "gnis:feature_id": "2079293",
+        "name": "Seaside",
+        "place": "neighbourhood",
+        "wikidata": "Q62192"
+      }
+    },
+    {
+      "id": "node/158806637",
+      "name": "College Point",
+      "name_local": "College Point",
+      "slug": "college_point",
+      "center": {
+        "lat": 40.7876014,
+        "lon": -73.8459682
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "21",
+        "gnis:feature_id": "947140",
+        "name": "College Point",
+        "place": "neighbourhood",
+        "wikidata": "Q5146517"
+      }
+    },
+    {
+      "id": "node/158807148",
+      "name": "Bellaire",
+      "name_local": "Bellaire",
+      "slug": "bellaire",
+      "center": {
+        "lat": 40.7139917,
+        "lon": -73.7540212
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "19",
+        "gnis:feature_id": "943599",
+        "name": "Bellaire",
+        "place": "neighbourhood",
+        "wikidata": "Q62473"
+      }
+    },
+    {
+      "id": "node/158807229",
+      "name": "Parkchester",
+      "name_local": "Parkchester",
+      "slug": "parkchester",
+      "center": {
+        "lat": 40.8389893,
+        "lon": -73.8604128
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "16",
+        "gnis:feature_id": "959897",
+        "name": "Parkchester",
+        "place": "neighbourhood",
+        "wikidata": "Q7138200",
+        "wikipedia": "en:Parkchester, Bronx"
+      }
+    },
+    {
+      "id": "node/158807290",
+      "name": "Huguenot",
+      "name_local": "Huguenot",
+      "slug": "huguenot",
+      "center": {
+        "lat": 40.5373275,
+        "lon": -74.1945884
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "35",
+        "gnis:feature_id": "953413",
+        "name": "Huguenot",
+        "place": "neighbourhood",
+        "wikidata": "Q3142486",
+        "wikipedia": "en:Huguenot, Staten Island"
+      }
+    },
+    {
+      "id": "node/158807303",
+      "name": "Cedar Manor Houses",
+      "name_local": "Cedar Manor Houses",
+      "slug": "cedar_manor_houses",
+      "center": {
+        "lat": 40.685,
+        "lon": -73.7847222
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "6",
+        "gnis:feature_id": "2080538",
+        "name": "Cedar Manor Houses",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158808479",
+      "name": "Oakwood",
+      "name_local": "Oakwood",
+      "slug": "oakwood",
+      "center": {
+        "lat": 40.5639366,
+        "lon": -74.1163373
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "5",
+        "fixme": "Need correct polygon data",
+        "gnis:feature_id": "959185",
+        "name": "Oakwood",
+        "place": "neighbourhood",
+        "wikidata": "Q7074276",
+        "wikipedia": "en:Oakwood, Staten Island"
+      }
+    },
+    {
+      "id": "node/158808490",
+      "name": "Cypress Hills",
+      "name_local": "Cypress Hills",
+      "slug": "cypress_hills",
+      "center": {
+        "lat": 40.6770477,
+        "lon": -73.8912474
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "14",
+        "gnis:feature_id": "2027081",
+        "name": "Cypress Hills",
+        "place": "neighbourhood",
+        "wikidata": "Q5200337",
+        "wikipedia": "en:East New York, Brooklyn"
+      }
+    },
+    {
+      "id": "node/158808510",
+      "name": "Hollis",
+      "name_local": "Hollis",
+      "slug": "hollis",
+      "center": {
+        "lat": 40.7134361,
+        "lon": -73.7670772
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "18",
+        "gnis:feature_id": "952999",
+        "name": "Hollis",
+        "place": "neighbourhood",
+        "wikidata": "Q62212"
+      }
+    },
+    {
+      "id": "node/158808525",
+      "name": "Great Kills",
+      "name_local": "Great Kills",
+      "slug": "great_kills",
+      "center": {
+        "lat": 40.5542718,
+        "lon": -74.1515318
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "17",
+        "gnis:feature_id": "951632",
+        "name": "Great Kills",
+        "place": "neighbourhood",
+        "wikidata": "Q5599388",
+        "wikipedia": "en:Great Kills, Staten Island"
+      }
+    },
+    {
+      "id": "node/158808613",
+      "name": "Bergen Beach",
+      "name_local": "Bergen Beach",
+      "slug": "bergen_beach",
+      "center": {
+        "lat": 40.6203822,
+        "lon": -73.9068033
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "3",
+        "gnis:feature_id": "943722",
+        "name": "Bergen Beach",
+        "place": "neighbourhood",
+        "wikidata": "Q2842591",
+        "wikipedia": "en:Bergen Beach, Brooklyn"
+      }
+    },
+    {
+      "id": "node/158809081",
+      "name": "Hammels",
+      "name_local": "Hammels",
+      "slug": "hammels",
+      "center": {
+        "lat": 40.588822,
+        "lon": -73.8111511
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "2",
+        "gnis:feature_id": "952117",
+        "name": "Hammels",
+        "place": "neighbourhood",
+        "wikidata": "Q62200",
+        "wikipedia": "en:Hammels, Queens"
+      }
+    },
+    {
+      "id": "node/158809480",
+      "name": "Richmond Valley",
+      "name_local": "Richmond Valley",
+      "slug": "richmond_valley",
+      "center": {
+        "lat": 40.5201055,
+        "lon": -74.2293113
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "7",
+        "gnis:feature_id": "962482",
+        "name": "Richmond Valley",
+        "place": "neighbourhood",
+        "wikidata": "Q7331033",
+        "wikipedia": "en:Richmond Valley, Staten Island"
+      }
+    },
+    {
+      "id": "node/158809488",
+      "name": "Van Nest",
+      "name_local": "Van Nest",
+      "slug": "van_nest",
+      "center": {
+        "lat": 40.8484336,
+        "lon": -73.8637463
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "14",
+        "gnis:feature_id": "968425",
+        "name": "Van Nest",
+        "place": "neighbourhood",
+        "wikidata": "Q7913536",
+        "wikipedia": "en:Van Nest, Bronx"
+      }
+    },
+    {
+      "id": "node/158809643",
+      "name": "Stapleton",
+      "name_local": "Stapleton",
+      "slug": "stapleton",
+      "center": {
+        "lat": 40.6264774,
+        "lon": -74.0776361
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "3",
+        "gnis:feature_id": "966237",
+        "name": "Stapleton",
+        "place": "neighbourhood",
+        "wikidata": "Q7600483",
+        "wikipedia": "en:Stapleton, Staten Island"
+      }
+    },
+    {
+      "id": "node/158809940",
+      "name": "Edgemere",
+      "name_local": "Edgemere",
+      "slug": "edgemere",
+      "center": {
+        "lat": 40.596365,
+        "lon": -73.767905
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "2",
+        "gnis:feature_id": "949371",
+        "name": "Edgemere",
+        "place": "neighbourhood",
+        "wikidata": "Q62190"
+      }
+    },
+    {
+      "id": "node/158809984",
+      "name": "SoHo",
+      "name_local": "SoHo",
+      "slug": "soho",
+      "center": {
+        "lat": 40.72288,
+        "lon": -73.9987505
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "9",
+        "gnis:feature_id": "2045148",
+        "name": "SoHo",
+        "name:ko": "소호",
+        "name:ru": "Сохо",
+        "name:sr": "Сохо",
+        "name:sr-Latn": "Soho",
+        "name:zh": "苏活区",
+        "name:zh-Hant": "蘇活區",
+        "place": "neighbourhood",
+        "tourism": "attraction",
+        "wikidata": "Q461572",
+        "wikipedia": "en:SoHo, Manhattan"
+      }
+    },
+    {
+      "id": "node/158810168",
+      "name": "Corona",
+      "name_local": "Corona",
+      "slug": "corona",
+      "center": {
+        "lat": 40.7469593,
+        "lon": -73.8601456
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "13",
+        "gnis:feature_id": "947488",
+        "name": "Corona",
+        "place": "neighbourhood",
+        "wikidata": "Q5172108",
+        "wikipedia": "en:Corona, Queens"
+      }
+    },
+    {
+      "id": "node/158810593",
+      "name": "Elm Park",
+      "name_local": "Elm Park",
+      "slug": "elm_park",
+      "center": {
+        "lat": 40.6314925,
+        "lon": -74.1487544
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "9",
+        "gnis:feature_id": "949550",
+        "name": "Elm Park",
+        "place": "neighbourhood",
+        "wikidata": "Q5366298",
+        "wikipedia": "en:Elm Park, Staten Island"
+      }
+    },
+    {
+      "id": "node/158810776",
+      "name": "Bayside",
+      "name_local": "Bayside",
+      "slug": "bayside",
+      "center": {
+        "lat": 40.7684351,
+        "lon": -73.7770774
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "24",
+        "gnis:feature_id": "943210",
+        "name": "Bayside",
+        "place": "neighbourhood",
+        "wikidata": "Q2892339"
+      }
+    },
+    {
+      "id": "node/158810843",
+      "name": "Midland Beach",
+      "name_local": "Midland Beach",
+      "slug": "midland_beach",
+      "center": {
+        "lat": 40.5731606,
+        "lon": -74.094586
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "2",
+        "gnis:feature_id": "957162",
+        "name": "Midland Beach",
+        "place": "neighbourhood",
+        "wikidata": "Q6842310",
+        "wikipedia": "en:Midland Beach, Staten Island"
+      }
+    },
+    {
+      "id": "node/158810851",
+      "name": "Grasmere",
+      "name_local": "Grasmere",
+      "slug": "grasmere",
+      "center": {
+        "lat": 40.6042711,
+        "lon": -74.087086
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "25",
+        "gnis:feature_id": "951533",
+        "name": "Grasmere",
+        "place": "neighbourhood",
+        "wikidata": "Q5597394",
+        "wikipedia": "en:Grasmere, Staten Island"
+      }
+    },
+    {
+      "id": "node/158810928",
+      "name": "Fresh Pond Junction",
+      "name_local": "Fresh Pond Junction",
+      "slug": "fresh_pond_junction",
+      "center": {
+        "lat": 40.7040104,
+        "lon": -73.8915251
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "30",
+        "gnis:feature_id": "972513",
+        "name": "Fresh Pond Junction",
+        "place": "neighbourhood",
+        "wikidata": "Q5503007",
+        "wikipedia": "en:Fresh Pond Junction"
+      }
+    },
+    {
+      "id": "node/158811354",
+      "name": "Throggs Neck",
+      "name_local": "Throggs Neck",
+      "slug": "throggs_neck",
+      "center": {
+        "lat": 40.8230305,
+        "lon": -73.8200756
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "6",
+        "gnis:feature_id": "967474",
+        "name": "Throggs Neck",
+        "place": "neighbourhood",
+        "wikidata": "Q1421611",
+        "wikipedia": "en:Throggs Neck"
+      }
+    },
+    {
+      "id": "node/158811504",
+      "name": "Paerdegat",
+      "name_local": "Paerdegat",
+      "slug": "paerdegat",
+      "center": {
+        "lat": 40.6314931,
+        "lon": -73.9181926
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "4",
+        "gnis:feature_id": "974175",
+        "name": "Paerdegat",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158811506",
+      "name": "Utopia",
+      "name_local": "Utopia",
+      "slug": "utopia",
+      "center": {
+        "lat": 40.7273247,
+        "lon": -73.7865221
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "20",
+        "gnis:feature_id": "968329",
+        "name": "Utopia",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158811842",
+      "name": "Tottenville",
+      "name_local": "Tottenville",
+      "slug": "tottenville",
+      "center": {
+        "lat": 40.5090747,
+        "lon": -74.2468867
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "15",
+        "gnis:feature_id": "979681",
+        "name": "Tottenville",
+        "place": "neighbourhood",
+        "wikidata": "Q7828469",
+        "wikipedia": "en:Tottenville, Staten Island"
+      }
+    },
+    {
+      "id": "node/158811979",
+      "name": "Maspeth",
+      "name_local": "Maspeth",
+      "slug": "maspeth",
+      "center": {
+        "lat": 40.723158,
+        "lon": -73.912637
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "9",
+        "gnis:feature_id": "956648",
+        "name": "Maspeth",
+        "place": "neighbourhood",
+        "wikidata": "Q6783909"
+      }
+    },
+    {
+      "id": "node/158811998",
+      "name": "Gerritsen Beach",
+      "name_local": "Gerritsen Beach",
+      "slug": "gerritsen_beach",
+      "center": {
+        "lat": 40.5929879,
+        "lon": -73.9263853
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "3",
+        "gnis:feature_id": "951042",
+        "name": "Gerritsen Beach",
+        "place": "neighbourhood",
+        "wikidata": "Q4137507",
+        "wikipedia": "en:Gerritsen Beach, Brooklyn"
+      }
+    },
+    {
+      "id": "node/158812343",
+      "name": "Schuylerville",
+      "name_local": "Schuylerville",
+      "slug": "schuylerville",
+      "center": {
+        "lat": 40.8288889,
+        "lon": -73.8272222
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "15",
+        "gnis:feature_id": "2074866",
+        "name": "Schuylerville",
+        "place": "neighbourhood",
+        "wikidata": "Q7433085",
+        "wikipedia": "en:Schuylerville, Bronx"
+      }
+    },
+    {
+      "id": "node/158812711",
+      "name": "Spencer Estates",
+      "name_local": "Spencer Estates",
+      "slug": "spencer_estates",
+      "center": {
+        "lat": 40.8452778,
+        "lon": -73.8211111
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "3",
+        "gnis:feature_id": "2074879",
+        "name": "Spencer Estates",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158813217",
+      "name": "Glen Oaks",
+      "name_local": "Glen Oaks",
+      "slug": "glen_oaks",
+      "center": {
+        "lat": 40.7470463,
+        "lon": -73.7115199
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "36",
+        "gnis:feature_id": "951188",
+        "name": "Glen Oaks",
+        "place": "neighbourhood",
+        "wikidata": "Q5567928"
+      }
+    },
+    {
+      "id": "node/158813235",
+      "name": "Linden-Park",
+      "name_local": "Linden-Park",
+      "slug": "linden_park",
+      "center": {
+        "lat": 40.5923268,
+        "lon": -74.0912527
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "9",
+        "gnis:feature_id": "955403",
+        "name": "Linden-Park",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158813304",
+      "name": "Unionport",
+      "name_local": "Unionport",
+      "slug": "unionport",
+      "center": {
+        "lat": 40.8273229,
+        "lon": -73.8501349
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "11",
+        "gnis:feature_id": "968232",
+        "name": "Unionport",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158813419",
+      "name": "Greenpoint",
+      "name_local": "Greenpoint",
+      "slug": "greenpoint",
+      "center": {
+        "lat": 40.7237134,
+        "lon": -73.9509714
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "4",
+        "gnis:feature_id": "951757",
+        "loc_name": "Little Poland",
+        "name": "Greenpoint",
+        "place": "neighbourhood",
+        "wikidata": "Q1544785"
+      }
+    },
+    {
+      "id": "node/158813854",
+      "name": "Lambert Houses",
+      "name_local": "Lambert Houses",
+      "slug": "lambert_houses",
+      "center": {
+        "lat": 40.8427778,
+        "lon": -73.8788889
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "12",
+        "gnis:feature_id": "2072537",
+        "name": "Lambert Houses",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158813973",
+      "name": "Richmond",
+      "name_local": "Richmond",
+      "slug": "richmond",
+      "center": {
+        "lat": 40.5739937,
+        "lon": -74.1304203
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "17",
+        "gnis:feature_id": "962475",
+        "name": "Richmond",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158814599",
+      "name": "Eltingville",
+      "name_local": "Eltingville",
+      "slug": "eltingville",
+      "center": {
+        "lat": 40.5453831,
+        "lon": -74.1656988
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "21",
+        "gnis:feature_id": "949616",
+        "name": "Eltingville",
+        "place": "neighbourhood",
+        "wikidata": "Q5367817",
+        "wikipedia": "en:Eltingville, Staten Island"
+      }
+    },
+    {
+      "id": "node/158814619",
+      "name": "Parkside",
+      "name_local": "Parkside",
+      "slug": "parkside",
+      "center": {
+        "lat": 40.7107396,
+        "lon": -73.850947
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "21",
+        "gnis:feature_id": "959919",
+        "name": "Parkside",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158814773",
+      "name": "Emerson Hill",
+      "name_local": "Emerson Hill",
+      "slug": "emerson_hill",
+      "center": {
+        "lat": 40.6087154,
+        "lon": -74.0959751
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "86",
+        "gnis:feature_id": "949630",
+        "name": "Emerson Hill",
+        "place": "neighbourhood",
+        "wikidata": "Q5370889",
+        "wikipedia": "en:Emerson Hill, Staten Island"
+      }
+    },
+    {
+      "id": "node/158814808",
+      "name": "City Line",
+      "name_local": "City Line",
+      "slug": "city_line",
+      "center": {
+        "lat": 40.6762251,
+        "lon": -73.8869623
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "12",
+        "gnis:feature_id": "2027080",
+        "name": "City Line",
+        "place": "neighbourhood",
+        "wikidata": "Q5123279",
+        "wikipedia": "en:City Line, Brooklyn"
+      }
+    },
+    {
+      "id": "node/158815704",
+      "name": "Malba",
+      "name_local": "Malba",
+      "slug": "malba",
+      "center": {
+        "lat": 40.7906569,
+        "lon": -73.8268009
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "6",
+        "gnis:feature_id": "956297",
+        "name": "Malba",
+        "place": "neighbourhood",
+        "wikidata": "Q6742110"
+      }
+    },
+    {
+      "id": "node/158816079",
+      "name": "Sunnyside",
+      "name_local": "Sunnyside",
+      "slug": "sunnyside",
+      "center": {
+        "lat": 40.6162152,
+        "lon": -74.1037531
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "45",
+        "gnis:feature_id": "966809",
+        "name": "Sunnyside",
+        "place": "neighbourhood",
+        "wikidata": "Q7523819",
+        "wikipedia": "en:Sunnyside, Staten Island"
+      }
+    },
+    {
+      "id": "node/158816547",
+      "name": "Kips Bay",
+      "name_local": "Kips Bay",
+      "slug": "kips_bay",
+      "center": {
+        "lat": 40.7395463,
+        "lon": -73.9770832
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "7",
+        "gnis:feature_id": "2062669",
+        "name": "Kips Bay",
+        "name:ko": "킵스 베이",
+        "name:ru": "Кипс-Бей",
+        "name:sr": "Кипс беј",
+        "name:sr-Latn": "Kips bej",
+        "place": "neighbourhood",
+        "wikidata": "Q1501208",
+        "wikipedia": "en:Kips Bay, Manhattan"
+      }
+    },
+    {
+      "id": "node/158817277",
+      "name": "Kew Gardens",
+      "name_local": "Kew Gardens",
+      "slug": "kew_gardens",
+      "center": {
+        "lat": 40.7139415,
+        "lon": -73.830742
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "28",
+        "gnis:feature_id": "954576",
+        "name": "Kew Gardens",
+        "place": "neighbourhood",
+        "wikidata": "Q6397896"
+      }
+    },
+    {
+      "id": "node/158817466",
+      "name": "Rossville",
+      "name_local": "Rossville",
+      "slug": "rossville",
+      "center": {
+        "lat": 40.5520029,
+        "lon": -74.211993
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "4",
+        "gnis:feature_id": "962956",
+        "name": "Rossville",
+        "place": "neighbourhood",
+        "wikidata": "Q7369935",
+        "wikipedia": "en:Rossville, Staten Island"
+      }
+    },
+    {
+      "id": "node/158817884",
+      "name": "Oakland Gardens",
+      "name_local": "Oakland Gardens",
+      "slug": "oakland_gardens",
+      "center": {
+        "lat": 40.753991,
+        "lon": -73.765966
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "24",
+        "gnis:feature_id": "959172",
+        "name": "Oakland Gardens",
+        "place": "neighbourhood",
+        "wikidata": "Q7073999",
+        "wikipedia": "en:Oakland Gardens, Queens, New York"
+      }
+    },
+    {
+      "id": "node/158818104",
+      "name": "Sheepshead Bay",
+      "name_local": "Sheepshead Bay",
+      "slug": "sheepshead_bay",
+      "center": {
+        "lat": 40.5912161,
+        "lon": -73.9445822
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "3",
+        "gnis:feature_id": "964999",
+        "name": "Sheepshead Bay",
+        "place": "neighbourhood",
+        "wikidata": "Q4524180",
+        "wikipedia": "en:Sheepshead Bay, Brooklyn"
+      }
+    },
+    {
+      "id": "node/158819060",
+      "name": "Cambria Heights",
+      "name_local": "Cambria Heights",
+      "slug": "cambria_heights",
+      "center": {
+        "lat": 40.6945474,
+        "lon": -73.7384653
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "15",
+        "gnis:feature_id": "945508",
+        "name": "Cambria Heights",
+        "place": "neighbourhood",
+        "wikidata": "Q5025262"
+      }
+    },
+    {
+      "id": "node/158819122",
+      "name": "Port Richmond",
+      "name_local": "Port Richmond",
+      "slug": "port_richmond",
+      "center": {
+        "lat": 40.6331592,
+        "lon": -74.1365318
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "13",
+        "gnis:feature_id": "970495",
+        "name": "Port Richmond",
+        "place": "neighbourhood",
+        "wikidata": "Q7230888",
+        "wikipedia": "en:Port Richmond, Staten Island"
+      }
+    },
+    {
+      "id": "node/158820263",
+      "name": "Chelsea",
+      "name_local": "Chelsea",
+      "slug": "chelsea",
+      "center": {
+        "lat": 40.6006596,
+        "lon": -74.1948665
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "2",
+        "gnis:feature_id": "946474",
+        "name": "Chelsea",
+        "place": "neighbourhood",
+        "wikidata": "Q5090026"
+      }
+    },
+    {
+      "id": "node/158820391",
+      "name": "New Dorp Beach",
+      "name_local": "New Dorp Beach",
+      "slug": "new_dorp_beach",
+      "center": {
+        "lat": 40.564356,
+        "lon": -74.1048624
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "3",
+        "gnis:feature_id": "958410",
+        "name": "New Dorp Beach",
+        "place": "neighbourhood",
+        "wikidata": "Q7007017",
+        "wikipedia": "en:New Dorp Beach"
+      }
+    },
+    {
+      "id": "node/158821146",
+      "name": "Springfield Gardens",
+      "name_local": "Springfield Gardens",
+      "slug": "springfield_gardens",
+      "center": {
+        "lat": 40.678159,
+        "lon": -73.746521
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "9",
+        "gnis:feature_id": "973407",
+        "name": "Springfield Gardens",
+        "place": "neighbourhood",
+        "wikidata": "Q62205"
+      }
+    },
+    {
+      "id": "node/158821893",
+      "name": "Blissville",
+      "name_local": "Blissville",
+      "slug": "blissville",
+      "center": {
+        "lat": 40.7347214,
+        "lon": -73.9377798
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "6",
+        "gnis:feature_id": "2080537",
+        "name": "Blissville",
+        "place": "neighbourhood",
+        "wikidata": "Q2906648",
+        "wikipedia": "en:Blissville, Queens"
+      }
+    },
+    {
+      "id": "node/158821983",
+      "name": "Greenridge",
+      "name_local": "Greenridge",
+      "slug": "greenridge",
+      "center": {
+        "lat": 40.5612236,
+        "lon": -74.1698852
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "3",
+        "gnis:feature_id": "951762",
+        "name": "Greenridge",
+        "place": "neighbourhood",
+        "wikidata": "Q5604408",
+        "wikipedia": "en:Greenridge, Staten Island"
+      }
+    },
+    {
+      "id": "node/158822059",
+      "name": "Laurelton",
+      "name_local": "Laurelton",
+      "slug": "laurelton",
+      "center": {
+        "lat": 40.6667703,
+        "lon": -73.7515212
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "5",
+        "gnis:feature_id": "955096",
+        "name": "Laurelton",
+        "place": "neighbourhood",
+        "wikidata": "Q62148"
+      }
+    },
+    {
+      "id": "node/158822210",
+      "name": "Wakefield",
+      "name_local": "Wakefield",
+      "slug": "wakefield",
+      "center": {
+        "lat": 40.8978772,
+        "lon": -73.8523569
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "45",
+        "gnis:feature_id": "968651",
+        "name": "Wakefield",
+        "place": "neighbourhood",
+        "wikidata": "Q7961018",
+        "wikipedia": "en:Wakefield, Bronx"
+      }
+    },
+    {
+      "id": "node/158822897",
+      "name": "Princes Bay",
+      "name_local": "Princes Bay",
+      "slug": "princes_bay",
+      "center": {
+        "lat": 40.5289944,
+        "lon": -74.197644
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "17",
+        "gnis:feature_id": "974243",
+        "name": "Princes Bay",
+        "place": "neighbourhood",
+        "wikidata": "Q7243725",
+        "wikipedia": "en:Prince's Bay, Staten Island"
+      }
+    },
+    {
+      "id": "node/158823151",
+      "name": "Red Hook",
+      "name_local": "Red Hook",
+      "slug": "red_hook",
+      "center": {
+        "lat": 40.6751032,
+        "lon": -74.0095841
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "2",
+        "gnis:feature_id": "962290",
+        "name": "Red Hook",
+        "place": "neighbourhood",
+        "wikidata": "Q1781122"
+      }
+    },
+    {
+      "id": "node/158823233",
+      "name": "Pelham Bay",
+      "name_local": "Pelham Bay",
+      "slug": "pelham_bay",
+      "center": {
+        "lat": 40.8505556,
+        "lon": -73.8333333
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "8",
+        "gnis:feature_id": "2074864",
+        "name": "Pelham Bay",
+        "place": "neighbourhood",
+        "wikidata": "Q958159",
+        "wikipedia": "en:Pelham Bay, Bronx"
+      }
+    },
+    {
+      "id": "node/158823417",
+      "name": "Rose Hill",
+      "name_local": "Rose Hill",
+      "slug": "rose_hill",
+      "center": {
+        "lat": 40.743338,
+        "lon": -73.9841594
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "11",
+        "gnis:feature_id": "2062667",
+        "name": "Rose Hill",
+        "name:ko": "로즈 힐",
+        "name:ru": "Роуз-хилл",
+        "name:sr": "Роуз хил",
+        "name:sr-Latn": "Rouz hil",
+        "place": "neighbourhood",
+        "wikidata": "Q1107182",
+        "wikipedia": "en:Rose Hill, Manhattan"
+      }
+    },
+    {
+      "id": "node/158826289",
+      "name": "Somerville",
+      "name_local": "Somerville",
+      "slug": "somerville",
+      "center": {
+        "lat": 40.5982276,
+        "lon": -73.7979292
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "1",
+        "gnis:feature_id": "2080545",
+        "name": "Somerville",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158826478",
+      "name": "Saint Albans",
+      "name_local": "Saint Albans",
+      "slug": "saint_albans",
+      "center": {
+        "lat": 40.6984364,
+        "lon": -73.7606881
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "15",
+        "gnis:feature_id": "963263",
+        "name": "Saint Albans",
+        "place": "neighbourhood",
+        "wikidata": "Q62295",
+        "wikipedia": "en:St. Albans, Queens"
+      }
+    },
+    {
+      "id": "node/158826707",
+      "name": "City Island",
+      "name_local": "City Island",
+      "slug": "city_island",
+      "center": {
+        "lat": 40.8472968,
+        "lon": -73.7865701
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "6",
+        "gnis:feature_id": "946713",
+        "name": "City Island",
+        "place": "suburb",
+        "wikidata": "Q5123248",
+        "wikipedia": "en:City Island, Bronx"
+      }
+    },
+    {
+      "id": "node/158827061",
+      "name": "Linden Hill",
+      "name_local": "Linden Hill",
+      "slug": "linden_hill",
+      "center": {
+        "lat": 40.7744444,
+        "lon": -73.8230556
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "14",
+        "gnis:feature_id": "2080541",
+        "name": "Linden Hill",
+        "place": "neighbourhood",
+        "wikidata": "Q6552320"
+      }
+    },
+    {
+      "id": "node/158827451",
+      "name": "Broadway Junction",
+      "name_local": "Broadway Junction",
+      "slug": "broadway_junction",
+      "center": {
+        "lat": 40.67677,
+        "lon": -73.9001366
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "21",
+        "gnis:feature_id": "944793",
+        "name": "Broadway Junction",
+        "place": "neighbourhood",
+        "wikidata": "Q4972464",
+        "wikipedia": "en:Broadway Junction (Brooklyn)"
+      }
+    },
+    {
+      "id": "node/158827454",
+      "name": "University Heights",
+      "name_local": "University Heights",
+      "slug": "university_heights",
+      "center": {
+        "lat": 40.8601,
+        "lon": -73.909303
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "52",
+        "gnis:feature_id": "968250",
+        "name": "University Heights",
+        "place": "neighbourhood",
+        "wikidata": "Q3551341",
+        "wikipedia": "en:University Heights, Bronx"
+      }
+    },
+    {
+      "id": "node/158835244",
+      "name": "Eastchester",
+      "name_local": "Eastchester",
+      "slug": "eastchester",
+      "center": {
+        "lat": 40.8884329,
+        "lon": -73.8281895
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "7",
+        "gnis:feature_id": "949284",
+        "name": "Eastchester",
+        "place": "neighbourhood",
+        "wikidata": "Q3461287",
+        "wikipedia": "en:Eastchester, Bronx"
+      }
+    },
+    {
+      "id": "node/158835606",
+      "name": "New Dorp",
+      "name_local": "New Dorp",
+      "slug": "new_dorp",
+      "center": {
+        "lat": 40.5739486,
+        "lon": -74.1162461
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "13",
+        "gnis:feature_id": "958408",
+        "name": "New Dorp",
+        "place": "neighbourhood",
+        "wikidata": "Q1982505",
+        "wikipedia": "en:New Dorp, Staten Island"
+      }
+    },
+    {
+      "id": "node/158836361",
+      "name": "Hillside",
+      "name_local": "Hillside",
+      "slug": "hillside",
+      "center": {
+        "lat": 40.7078807,
+        "lon": -73.7868
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "17",
+        "gnis:feature_id": "952834",
+        "name": "Hillside",
+        "place": "neighbourhood",
+        "wikidata": "Q3460500"
+      }
+    },
+    {
+      "id": "node/158837052",
+      "name": "Grymes Hill",
+      "name_local": "Grymes Hill",
+      "slug": "grymes_hill",
+      "center": {
+        "lat": 40.6187152,
+        "lon": -74.0934751
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "91",
+        "gnis:feature_id": "951882",
+        "name": "Grymes Hill",
+        "place": "neighbourhood",
+        "wikidata": "Q5612424",
+        "wikipedia": "en:Grymes Hill, Staten Island"
+      }
+    },
+    {
+      "id": "node/158837431",
+      "name": "Borough Park",
+      "name_local": "Borough Park",
+      "slug": "borough_park",
+      "center": {
+        "lat": 40.633993,
+        "lon": -73.9968059
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "Boro Park",
+        "ele": "20",
+        "gnis:feature_id": "944466",
+        "name": "Borough Park",
+        "name:ru": "Боро-Парк",
+        "place": "neighbourhood",
+        "population": "153470",
+        "source:population": "wikipedia",
+        "wikidata": "Q2911280",
+        "wikipedia": "en:Borough Park, Brooklyn"
+      }
+    },
+    {
+      "id": "node/158837567",
+      "name": "Terrace Heights",
+      "name_local": "Terrace Heights",
+      "slug": "terrace_heights",
+      "center": {
+        "lat": 40.7214916,
+        "lon": -73.7692994
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "50",
+        "gnis:feature_id": "967167",
+        "name": "Terrace Heights",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158840066",
+      "name": "Gulfport",
+      "name_local": "Gulfport",
+      "slug": "gulfport",
+      "center": {
+        "lat": 40.6291143,
+        "lon": -74.1965105
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "4",
+        "gnis:feature_id": "972578",
+        "name": "Gulfport",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158840166",
+      "name": "Eastern Parkway",
+      "name_local": "Eastern Parkway",
+      "slug": "eastern_parkway",
+      "center": {
+        "lat": 40.66917,
+        "lon": -73.93972
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "32",
+        "gnis:feature_id": "949291",
+        "name": "Eastern Parkway",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158842043",
+      "name": "Bensonhurst",
+      "name_local": "Bensonhurst",
+      "slug": "bensonhurst",
+      "center": {
+        "lat": 40.6049772,
+        "lon": -73.9934061
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "4",
+        "gnis:feature_id": "943699",
+        "name": "Bensonhurst",
+        "place": "neighbourhood",
+        "wikidata": "Q818193"
+      }
+    },
+    {
+      "id": "node/158842082",
+      "name": "Fresh Meadows",
+      "name_local": "Fresh Meadows",
+      "slug": "fresh_meadows",
+      "center": {
+        "lat": 40.7348246,
+        "lon": -73.7934668
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "11",
+        "gnis:feature_id": "950713",
+        "name": "Fresh Meadows",
+        "place": "neighbourhood",
+        "wikidata": "Q3310624"
+      }
+    },
+    {
+      "id": "node/158842637",
+      "name": "Cobble Hill",
+      "name_local": "Cobble Hill",
+      "slug": "cobble_hill",
+      "center": {
+        "lat": 40.687547,
+        "lon": -73.9973352
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "7",
+        "gnis:feature_id": "2081406",
+        "name": "Cobble Hill",
+        "place": "neighbourhood",
+        "wikidata": "Q18977149"
+      }
+    },
+    {
+      "id": "node/158842681",
+      "name": "Riverdale",
+      "name_local": "Riverdale",
+      "slug": "riverdale",
+      "center": {
+        "lat": 40.90056,
+        "lon": -73.90639
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "55",
+        "gnis:feature_id": "962560",
+        "name": "Riverdale",
+        "place": "neighbourhood",
+        "wikidata": "Q3569613",
+        "wikipedia": "en:Riverdale, Bronx"
+      }
+    },
+    {
+      "id": "node/158842820",
+      "name": "Willowbrook",
+      "name_local": "Willowbrook",
+      "slug": "willowbrook",
+      "center": {
+        "lat": 40.6031598,
+        "lon": -74.1384762
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "42",
+        "gnis:feature_id": "971375",
+        "name": "Willowbrook",
+        "place": "neighbourhood",
+        "wikidata": "Q8022399",
+        "wikipedia": "en:Willowbrook, Staten Island"
+      }
+    },
+    {
+      "id": "node/158842996",
+      "name": "East Village",
+      "name_local": "East Village",
+      "slug": "east_village",
+      "center": {
+        "lat": 40.7292688,
+        "lon": -73.9873613
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "10",
+        "gnis:feature_id": "2062664",
+        "name": "East Village",
+        "name:ko": "이스트 빌리지",
+        "name:ru": "Ист-Виллидж",
+        "name:sr": "Ист вилиџ",
+        "name:sr-Latn": "Ist vilidž",
+        "place": "neighbourhood",
+        "wikidata": "Q1043326",
+        "wikipedia": "en:East Village, Manhattan"
+      }
+    },
+    {
+      "id": "node/158843260",
+      "name": "Murray Hill",
+      "name_local": "Murray Hill",
+      "slug": "murray_hill",
+      "center": {
+        "lat": 40.76,
+        "lon": -73.8130556
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "25",
+        "gnis:feature_id": "2080542",
+        "name": "Murray Hill",
+        "place": "neighbourhood",
+        "wikidata": "Q6939295",
+        "wikipedia": "en:Murray Hill, Queens"
+      }
+    },
+    {
+      "id": "node/158843473",
+      "name": "Woods of Arden",
+      "name_local": "Woods of Arden",
+      "slug": "woods_of_arden",
+      "center": {
+        "lat": 40.5413889,
+        "lon": -74.1625
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "19",
+        "gnis:feature_id": "2079294",
+        "name": "Woods of Arden",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158843504",
+      "name": "Manhattanville",
+      "name_local": "Manhattanville",
+      "slug": "manhattanville",
+      "center": {
+        "lat": 40.8157775,
+        "lon": -73.951554
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "14",
+        "gnis:feature_id": "2083649",
+        "name": "Manhattanville",
+        "name:ko": "맨해튼빌",
+        "name:ru": "Манхэттенвилл",
+        "name:sr": "Менхетнвил",
+        "name:sr-Latn": "Menhetnvil",
+        "place": "neighbourhood",
+        "wikidata": "Q1857997"
+      }
+    },
+    {
+      "id": "node/158843513",
+      "name": "Richmond Terrace Houses",
+      "name_local": "Richmond Terrace Houses",
+      "slug": "richmond_terrace_houses",
+      "center": {
+        "lat": 40.6475318,
+        "lon": -74.0842927
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "gnis:feature_id": "2100463",
+        "name": "Richmond Terrace Houses",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158843518",
+      "name": "Rosebank",
+      "name_local": "Rosebank",
+      "slug": "rosebank",
+      "center": {
+        "lat": 40.6139932,
+        "lon": -74.0662521
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "13",
+        "gnis:feature_id": "962914",
+        "name": "Rosebank",
+        "place": "neighbourhood",
+        "wikidata": "Q7368062",
+        "wikipedia": "en:Rosebank, Staten Island"
+      }
+    },
+    {
+      "id": "node/158843902",
+      "name": "Heartland Village",
+      "name_local": "Heartland Village",
+      "slug": "heartland_village",
+      "center": {
+        "lat": 40.5883333,
+        "lon": -74.1577778
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "21",
+        "gnis:feature_id": "2079282",
+        "name": "Heartland Village",
+        "place": "neighbourhood",
+        "wikidata": "Q5692890",
+        "wikipedia": "en:Heartland Village, Staten Island"
+      }
+    },
+    {
+      "id": "node/158843949",
+      "name": "Glendale",
+      "name_local": "Glendale",
+      "slug": "glendale",
+      "center": {
+        "lat": 40.7014917,
+        "lon": -73.8868028
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "27",
+        "gnis:feature_id": "951202",
+        "name": "Glendale",
+        "place": "neighbourhood",
+        "wikidata": "Q5568334"
+      }
+    },
+    {
+      "id": "node/158844029",
+      "name": "Rochdale Village",
+      "name_local": "Rochdale Village",
+      "slug": "rochdale_village",
+      "center": {
+        "lat": 40.6763889,
+        "lon": -73.7738889
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "6",
+        "gnis:feature_id": "2080544",
+        "name": "Rochdale Village",
+        "place": "neighbourhood",
+        "wikidata": "Q62194",
+        "wikipedia": "en:Rochdale Village, Queens"
+      }
+    },
+    {
+      "id": "node/158844044",
+      "name": "West Farms",
+      "name_local": "West Farms",
+      "slug": "west_farms",
+      "center": {
+        "lat": 40.8398226,
+        "lon": -73.8776356
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "5",
+        "gnis:feature_id": "969220",
+        "name": "West Farms",
+        "place": "neighbourhood",
+        "wikidata": "Q7985146",
+        "wikipedia": "en:West Farms, Bronx"
+      }
+    },
+    {
+      "id": "node/158844608",
+      "name": "Fresh Pond",
+      "name_local": "Fresh Pond",
+      "slug": "fresh_pond",
+      "center": {
+        "lat": 40.7070471,
+        "lon": -73.90347
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "34",
+        "gnis:feature_id": "950720",
+        "name": "Fresh Pond",
+        "place": "neighbourhood",
+        "wikidata": "Q5503003",
+        "wikipedia": "en:Fresh Pond, Queens"
+      }
+    },
+    {
+      "id": "node/158844828",
+      "name": "New Springville",
+      "name_local": "New Springville",
+      "slug": "new_springville",
+      "center": {
+        "lat": 40.5934376,
+        "lon": -74.163199
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "8",
+        "gnis:feature_id": "958458",
+        "name": "New Springville",
+        "place": "neighbourhood",
+        "wikidata": "Q7011923",
+        "wikipedia": "en:New Springville, Staten Island"
+      }
+    },
+    {
+      "id": "node/158844866",
+      "name": "Washington Square Village",
+      "name_local": "Washington Square Village",
+      "slug": "washington_square_village",
+      "center": {
+        "lat": 40.7280556,
+        "lon": -73.9977778
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "10",
+        "gnis:feature_id": "2082837",
+        "name": "Washington Square Village",
+        "name:sr": "Вашингтон сквер вилиџ",
+        "name:sr-Latn": "Vašington skver vilidž",
+        "place": "neighbourhood",
+        "wikidata": "Q3566521",
+        "wikipedia": "en:Washington Square Village"
+      }
+    },
+    {
+      "id": "node/158844946",
+      "name": "Belmont",
+      "name_local": "Belmont",
+      "slug": "belmont",
+      "center": {
+        "lat": 40.8552778,
+        "lon": -73.8863889
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "26",
+        "gnis:feature_id": "2072306",
+        "name": "Belmont",
+        "place": "neighbourhood",
+        "wikidata": "Q4884287",
+        "wikipedia": "en:Belmont, Bronx"
+      }
+    },
+    {
+      "id": "node/158845097",
+      "name": "Old Town Station",
+      "name_local": "Old Town Station",
+      "slug": "old_town_station",
+      "center": {
+        "lat": 40.5959378,
+        "lon": -74.0870859
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "13",
+        "gnis:feature_id": "959331",
+        "name": "Old Town Station",
+        "place": "neighbourhood",
+        "wikidata": "Q7085250",
+        "wikipedia": "en:Old Town, Staten Island"
+      }
+    },
+    {
+      "id": "node/158845118",
+      "name": "Saint George",
+      "name_local": "Saint George",
+      "slug": "saint_george",
+      "center": {
+        "lat": 40.644548,
+        "lon": -74.0801415
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "34",
+        "gnis:feature_id": "963518",
+        "name": "Saint George",
+        "place": "neighbourhood",
+        "wikidata": "Q7588180",
+        "wikipedia": "en:St. George, Staten Island"
+      }
+    },
+    {
+      "id": "node/158845305",
+      "name": "Tompkinsville",
+      "name_local": "Tompkinsville",
+      "slug": "tompkinsville",
+      "center": {
+        "lat": 40.6364926,
+        "lon": -74.0854193
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "34",
+        "gnis:feature_id": "967647",
+        "name": "Tompkinsville",
+        "place": "neighbourhood",
+        "wikidata": "Q3992952",
+        "wikipedia": "en:Tompkinsville, Staten Island"
+      }
+    },
+    {
+      "id": "node/158845600",
+      "name": "Bay Terrace",
+      "name_local": "Bay Terrace",
+      "slug": "bay_terrace",
+      "center": {
+        "lat": 40.5552778,
+        "lon": -74.1341667
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "14",
+        "gnis:feature_id": "2079281",
+        "name": "Bay Terrace",
+        "place": "neighbourhood",
+        "wikidata": "Q4874133",
+        "wikipedia": "en:Bay Terrace, Staten Island"
+      }
+    },
+    {
+      "id": "node/158845807",
+      "name": "Kensington",
+      "name_local": "Kensington",
+      "slug": "kensington",
+      "center": {
+        "lat": 40.6462149,
+        "lon": -73.970694
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "14",
+        "gnis:feature_id": "954526",
+        "name": "Kensington",
+        "place": "neighbourhood",
+        "wikidata": "Q6391396"
+      }
+    },
+    {
+      "id": "node/158846270",
+      "name": "Bedford Park",
+      "name_local": "Bedford Park",
+      "slug": "bedford_park",
+      "center": {
+        "lat": 40.8700999,
+        "lon": -73.8856912
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "38",
+        "gnis:feature_id": "943492",
+        "name": "Bedford Park",
+        "place": "neighbourhood",
+        "wikidata": "Q4879175",
+        "wikipedia": "en:Bedford Park, Bronx"
+      }
+    },
+    {
+      "id": "node/158846346",
+      "name": "Mariners Harbor",
+      "name_local": "Mariners Harbor",
+      "slug": "mariners_harbor",
+      "center": {
+        "lat": 40.6367701,
+        "lon": -74.1587547
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "2",
+        "gnis:feature_id": "956523",
+        "name": "Mariners Harbor",
+        "place": "neighbourhood",
+        "wikidata": "Q6764380",
+        "wikipedia": "en:Mariners Harbor, Staten Island"
+      }
+    },
+    {
+      "id": "node/158846355",
+      "name": "Queens Village",
+      "name_local": "Queens Village",
+      "slug": "queens_village",
+      "center": {
+        "lat": 40.7267692,
+        "lon": -73.7415208
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "27",
+        "gnis:feature_id": "962086",
+        "name": "Queens Village",
+        "place": "neighbourhood",
+        "wikidata": "Q62145",
+        "wikipedia": "en:Queens Village, Queens"
+      }
+    },
+    {
+      "id": "node/158846693",
+      "name": "Dongan Hills",
+      "name_local": "Dongan Hills",
+      "slug": "dongan_hills",
+      "center": {
+        "lat": 40.588438,
+        "lon": -74.0962528
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "8",
+        "gnis:feature_id": "948569",
+        "name": "Dongan Hills",
+        "place": "neighbourhood",
+        "wikidata": "Q5295814",
+        "wikipedia": "en:Dongan Hills, Staten Island"
+      }
+    },
+    {
+      "id": "node/158846789",
+      "name": "East Flatbush",
+      "name_local": "East Flatbush",
+      "slug": "east_flatbush",
+      "center": {
+        "lat": 40.6537148,
+        "lon": -73.9304151
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "9",
+        "gnis:feature_id": "949069",
+        "name": "East Flatbush",
+        "place": "neighbourhood",
+        "wikidata": "Q5328357",
+        "wikipedia": "en:East Flatbush, Brooklyn"
+      }
+    },
+    {
+      "id": "node/158851236",
+      "name": "Parkville",
+      "name_local": "Parkville",
+      "slug": "parkville",
+      "center": {
+        "lat": 40.6314281,
+        "lon": -73.9717552
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "16",
+        "gnis:feature_id": "959928",
+        "name": "Parkville",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158851242",
+      "name": "Melrose",
+      "name_local": "Melrose",
+      "slug": "melrose",
+      "center": {
+        "lat": 40.824545,
+        "lon": -73.9104143
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "9",
+        "gnis:feature_id": "956928",
+        "name": "Melrose",
+        "place": "neighbourhood",
+        "wikidata": "Q6813612",
+        "wikipedia": "en:Melrose, Bronx"
+      }
+    },
+    {
+      "id": "node/158851392",
+      "name": "Staten Island",
+      "name_local": "Staten Island",
+      "slug": "staten_island",
+      "center": {
+        "lat": 40.5834557,
+        "lon": -74.1496048
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "49",
+        "gnis:feature_id": "1802959",
+        "name": "Staten Island",
+        "name:de": "Staten Island",
+        "name:en": "Staten Island",
+        "name:hr": "Staten Island",
+        "name:ru": "Статен-Айленд",
+        "name:sr": "Статен Ајланд",
+        "nist:fips_code": "36085",
+        "place": "suburb",
+        "population": "495747",
+        "ref:us:ny:swis": "640000",
+        "source:population": "https://gis.ny.gov/civil-boundaries/ 2020",
+        "wikidata": "Q18432",
+        "wikipedia": "en:Staten Island"
+      }
+    },
+    {
+      "id": "node/158851885",
+      "name": "Graniteville",
+      "name_local": "Graniteville",
+      "slug": "graniteville",
+      "center": {
+        "lat": 40.625092,
+        "lon": -74.1487378
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "14",
+        "gnis:feature_id": "951503",
+        "name": "Graniteville",
+        "place": "neighbourhood",
+        "wikidata": "Q5595956",
+        "wikipedia": "en:Graniteville, Staten Island"
+      }
+    },
+    {
+      "id": "node/158852218",
+      "name": "Castleton Corners",
+      "name_local": "Castleton Corners",
+      "slug": "castleton_corners",
+      "center": {
+        "lat": 40.6131597,
+        "lon": -74.1223647
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "52",
+        "gnis:feature_id": "946000",
+        "name": "Castleton Corners",
+        "place": "neighbourhood",
+        "wikidata": "Q5050631",
+        "wikipedia": "en:Castleton Corners, Staten Island"
+      }
+    },
+    {
+      "id": "node/158852466",
+      "name": "Middletown",
+      "name_local": "Middletown",
+      "slug": "middletown",
+      "center": {
+        "lat": 40.8397222,
+        "lon": -73.8316667
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "8",
+        "gnis:feature_id": "2074862",
+        "name": "Middletown",
+        "place": "neighbourhood",
+        "wikidata": "Q304801"
+      }
+    },
+    {
+      "id": "node/158852867",
+      "name": "Oakwood Heights Station",
+      "name_local": "Oakwood Heights Station",
+      "slug": "oakwood_heights_station",
+      "center": {
+        "lat": 40.5648272,
+        "lon": -74.1270868
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "18",
+        "gnis:feature_id": "959199",
+        "name": "Oakwood Heights Station",
+        "place": "neighbourhood",
+        "wikidata": "Q7074276",
+        "wikipedia": "en:Oakwood, Staten Island"
+      }
+    },
+    {
+      "id": "node/158853178",
+      "name": "Park of Edgewater",
+      "name_local": "Park of Edgewater",
+      "slug": "park_of_edgewater",
+      "center": {
+        "lat": 40.8226008,
+        "lon": -73.8095781
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "5",
+        "gnis:feature_id": "959866",
+        "name": "Park of Edgewater",
+        "place": "neighbourhood",
+        "wikidata": "Q1072743"
+      }
+    },
+    {
+      "id": "node/158853293",
+      "name": "Williams Bridge",
+      "name_local": "Williams Bridge",
+      "slug": "williams_bridge",
+      "center": {
+        "lat": 40.877322,
+        "lon": -73.8662462
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "31",
+        "gnis:feature_id": "971302",
+        "name": "Williams Bridge",
+        "place": "neighbourhood",
+        "wikidata": "Q8021139",
+        "wikipedia": "en:Williamsbridge, Bronx"
+      }
+    },
+    {
+      "id": "node/158853595",
+      "name": "Lower East Side",
+      "name_local": "Lower East Side",
+      "slug": "lower_east_side",
+      "center": {
+        "lat": 40.7159357,
+        "lon": -73.9868057
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "LES",
+        "ele": "10",
+        "gnis:feature_id": "2062661",
+        "name": "Lower East Side",
+        "name:ko": "로워 이스트 사이드",
+        "name:ru": "Лауэр-Ист-Сайд",
+        "name:sr": "Ловер ист сајд",
+        "name:sr-Latn": "Lover ist sajd",
+        "place": "neighbourhood",
+        "wikidata": "Q1511813"
+      }
+    },
+    {
+      "id": "node/158853603",
+      "name": "Fieldston",
+      "name_local": "Fieldston",
+      "slug": "fieldston",
+      "center": {
+        "lat": 40.8944444,
+        "lon": -73.9033333
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "65",
+        "gnis:feature_id": "2072361",
+        "name": "Fieldston",
+        "place": "neighbourhood",
+        "wikidata": "Q5447230",
+        "wikipedia": "en:Fieldston, Bronx"
+      }
+    },
+    {
+      "id": "node/158853967",
+      "name": "Hamilton Heights",
+      "name_local": "Hamilton Heights",
+      "slug": "hamilton_heights",
+      "center": {
+        "lat": 40.8241451,
+        "lon": -73.9500618
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "attraction": "yes",
+        "ele": "36",
+        "gnis:feature_id": "2083655",
+        "name": "Hamilton Heights",
+        "name:ko": "해밀턴 하이츠",
+        "name:ru": "Гамильтон-Хайтс",
+        "name:sr": "Хамилтон хајтс",
+        "name:sr-Latn": "Hamilton hajts",
+        "place": "neighbourhood",
+        "wikidata": "Q1455265"
+      }
+    },
+    {
+      "id": "node/158854064",
+      "name": "Westerleigh",
+      "name_local": "Westerleigh",
+      "slug": "westerleigh",
+      "center": {
+        "lat": 40.621215,
+        "lon": -74.1318094
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "19",
+        "gnis:feature_id": "970910",
+        "name": "Westerleigh",
+        "place": "neighbourhood",
+        "wikidata": "Q7987397",
+        "wikipedia": "en:Westerleigh, Staten Island"
+      }
+    },
+    {
+      "id": "node/158854301",
+      "name": "East Tremont",
+      "name_local": "East Tremont",
+      "slug": "east_tremont",
+      "center": {
+        "lat": 40.8453781,
+        "lon": -73.8909693
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "27",
+        "gnis:feature_id": "949257",
+        "name": "East Tremont",
+        "place": "neighbourhood",
+        "wikidata": "Q5329558",
+        "wikipedia": "en:East Tremont, Bronx"
+      }
+    },
+    {
+      "id": "node/158854317",
+      "name": "Arlington",
+      "name_local": "Arlington",
+      "slug": "arlington",
+      "center": {
+        "lat": 40.6323257,
+        "lon": -74.1651437
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "10",
+        "gnis:feature_id": "942560",
+        "name": "Arlington",
+        "place": "neighbourhood",
+        "wikidata": "Q4792257",
+        "wikipedia": "en:Arlington, Staten Island"
+      }
+    },
+    {
+      "id": "node/158854728",
+      "name": "Locust Manor",
+      "name_local": "Locust Manor",
+      "slug": "locust_manor",
+      "center": {
+        "lat": 40.68427,
+        "lon": -73.7792998
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "6",
+        "gnis:feature_id": "955801",
+        "name": "Locust Manor",
+        "place": "neighbourhood",
+        "wikidata": "Q6666140",
+        "wikipedia": "en:Locust Manor, Queens"
+      }
+    },
+    {
+      "id": "node/158855562",
+      "name": "Bayswater",
+      "name_local": "Bayswater",
+      "slug": "bayswater",
+      "center": {
+        "lat": 40.6102778,
+        "lon": -73.7672222
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "3",
+        "gnis:feature_id": "2080536",
+        "name": "Bayswater",
+        "place": "neighbourhood",
+        "wikidata": "Q62486"
+      }
+    },
+    {
+      "id": "node/158855791",
+      "name": "Morningside Heights",
+      "name_local": "Morningside Heights",
+      "slug": "morningside_heights",
+      "center": {
+        "lat": 40.81,
+        "lon": -73.9625
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "37",
+        "gnis:feature_id": "2083610",
+        "name": "Morningside Heights",
+        "name:ko": "모닝사이드 하이츠",
+        "name:ru": "Морнингсайд-Хайтс",
+        "name:sr": "Морнингсајд хајтс",
+        "name:sr-Latn": "Morningsajd hajts",
+        "place": "neighbourhood",
+        "wikidata": "Q748485",
+        "wikipedia": "en:Morningside Heights"
+      }
+    },
+    {
+      "id": "node/158855831",
+      "name": "Sunnyside Gardens",
+      "name_local": "Sunnyside Gardens",
+      "slug": "sunnyside_gardens",
+      "center": {
+        "lat": 40.7477778,
+        "lon": -73.9183333
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "18",
+        "gnis:feature_id": "2079318",
+        "name": "Sunnyside Gardens",
+        "place": "neighbourhood",
+        "wikidata": "Q7640887",
+        "wikipedia": "en:Sunnyside Gardens, Queens"
+      }
+    },
+    {
+      "id": "node/158855960",
+      "name": "Richmond Hill",
+      "name_local": "Richmond Hill",
+      "slug": "richmond_hill",
+      "center": {
+        "lat": 40.6994253,
+        "lon": -73.8309672
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "18",
+        "gnis:feature_id": "962479",
+        "name": "Richmond Hill",
+        "place": "neighbourhood",
+        "wikidata": "Q59006"
+      }
+    },
+    {
+      "id": "node/158855987",
+      "name": "Kingsbridge Heights",
+      "name_local": "Kingsbridge Heights",
+      "slug": "kingsbridge_heights",
+      "center": {
+        "lat": 40.8725702,
+        "lon": -73.9026619
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "49",
+        "gnis:feature_id": "954656",
+        "name": "Kingsbridge Heights",
+        "place": "neighbourhood",
+        "wikidata": "Q6413137",
+        "wikipedia": "en:Kingsbridge Heights, Bronx"
+      }
+    },
+    {
+      "id": "node/158856118",
+      "name": "Cedar Manor",
+      "name_local": "Cedar Manor",
+      "slug": "cedar_manor",
+      "center": {
+        "lat": 40.6907608,
+        "lon": -73.7901878
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "10",
+        "gnis:feature_id": "946124",
+        "name": "Cedar Manor",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158856492",
+      "name": "Chinatown",
+      "name_local": "Chinatown",
+      "slug": "chinatown",
+      "center": {
+        "lat": 40.7164913,
+        "lon": -73.9962504
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "曼哈頓華埠",
+        "ele": "12",
+        "gnis:feature_id": "946588",
+        "name": "Chinatown",
+        "name:ko": "차이나타운",
+        "name:ru": "Чайнатаун",
+        "name:sr": "Кинеска четврт",
+        "name:sr-Latn": "Kineska četvrt",
+        "name:zh": "唐人街;華埠;中國城",
+        "name:zh-Hans": "唐人街",
+        "name:zh-Hant": "中國城",
+        "place": "neighbourhood",
+        "wikidata": "Q866332",
+        "wikipedia": "en:Chinatown, Manhattan"
+      }
+    },
+    {
+      "id": "node/158856524",
+      "name": "Eastchester Bay",
+      "name_local": "Eastchester Bay",
+      "slug": "eastchester_bay",
+      "center": {
+        "lat": 40.8325,
+        "lon": -73.8191667
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "7",
+        "gnis:feature_id": "2074857",
+        "name": "Eastchester Bay",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158856995",
+      "name": "Jackson Heights",
+      "name_local": "Jackson Heights",
+      "slug": "jackson_heights",
+      "center": {
+        "lat": 40.7556561,
+        "lon": -73.8857755
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "24",
+        "gnis:feature_id": "970240",
+        "name": "Jackson Heights",
+        "place": "neighbourhood",
+        "wikidata": "Q1145574"
+      }
+    },
+    {
+      "id": "node/158857284",
+      "name": "Tremont",
+      "name_local": "Tremont",
+      "slug": "tremont",
+      "center": {
+        "lat": 40.8495446,
+        "lon": -73.9056919
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "31",
+        "gnis:feature_id": "967786",
+        "name": "Tremont",
+        "place": "neighbourhood",
+        "wikidata": "Q10701869",
+        "wikipedia": "en:Tremont, Bronx"
+      }
+    },
+    {
+      "id": "node/158857828",
+      "name": "Brooklyn",
+      "name_local": "Brooklyn",
+      "slug": "brooklyn",
+      "center": {
+        "lat": 40.6526006,
+        "lon": -73.9497211
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "15",
+        "gnis:feature_id": "1783503",
+        "name": "Brooklyn",
+        "name:de": "Brooklyn",
+        "name:el": "Μπρούκλιν",
+        "name:en": "Brooklyn",
+        "name:hr": "Brooklyn",
+        "name:ru": "Бруклин",
+        "name:sr": "Бруклин",
+        "name:sr-Latn": "Bruklin",
+        "name:zh-Hans": "布鲁克林区",
+        "name:zh-Hant": "布魯克林區",
+        "nist:fips_code": "36047",
+        "place": "suburb",
+        "population": "2736074",
+        "ref:us:ny:swis": "610000",
+        "short_name": "BK",
+        "source:population": "https://gis.ny.gov/civil-boundaries/ 2020",
+        "wikidata": "Q18419",
+        "wikipedia": "en:Brooklyn"
+      }
+    },
+    {
+      "id": "node/158858046",
+      "name": "Annadale",
+      "name_local": "Annadale",
+      "slug": "annadale",
+      "center": {
+        "lat": 40.5445496,
+        "lon": -74.1765324
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "30",
+        "gnis:feature_id": "942490",
+        "name": "Annadale",
+        "place": "neighbourhood",
+        "wikidata": "Q4767756",
+        "wikipedia": "en:Annadale, Staten Island"
+      }
+    },
+    {
+      "id": "node/158858271",
+      "name": "Mott Haven",
+      "name_local": "Mott Haven",
+      "slug": "mott_haven",
+      "center": {
+        "lat": 40.8089897,
+        "lon": -73.9229147
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "11",
+        "gnis:feature_id": "957785",
+        "name": "Mott Haven",
+        "place": "neighbourhood",
+        "wikidata": "Q6918623",
+        "wikipedia": "en:Mott Haven, Bronx"
+      }
+    },
+    {
+      "id": "node/158858414",
+      "name": "Bronxdale",
+      "name_local": "Bronxdale",
+      "slug": "bronxdale",
+      "center": {
+        "lat": 40.8506558,
+        "lon": -73.8665241
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "15",
+        "gnis:feature_id": "944823",
+        "name": "Bronxdale",
+        "place": "neighbourhood",
+        "wikidata": "Q18426"
+      }
+    },
+    {
+      "id": "node/158858751",
+      "name": "Bulls Head",
+      "name_local": "Bulls Head",
+      "slug": "bulls_head",
+      "center": {
+        "lat": 40.6070484,
+        "lon": -74.1620879
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "9",
+        "gnis:feature_id": "945167",
+        "name": "Bulls Head",
+        "place": "neighbourhood",
+        "wikidata": "Q4997036",
+        "wikipedia": "en:Bulls Head, Staten Island"
+      }
+    },
+    {
+      "id": "node/158859324",
+      "name": "Charlotte Gardens",
+      "name_local": "Charlotte Gardens",
+      "slug": "charlotte_gardens",
+      "center": {
+        "lat": 40.8348227,
+        "lon": -73.8923583
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "23",
+        "gnis:feature_id": "2062171",
+        "name": "Charlotte Gardens",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158859601",
+      "name": "Woodlawn",
+      "name_local": "Woodlawn",
+      "slug": "woodlawn",
+      "center": {
+        "lat": 40.898155,
+        "lon": -73.8673573
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "43",
+        "gnis:feature_id": "971661",
+        "name": "Woodlawn",
+        "place": "neighbourhood",
+        "wikidata": "Q8032975",
+        "wikipedia": "en:Woodlawn Heights, Bronx"
+      }
+    },
+    {
+      "id": "node/158859791",
+      "name": "Concord",
+      "name_local": "Concord",
+      "slug": "concord",
+      "center": {
+        "lat": 40.6081599,
+        "lon": -74.0843081
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "24",
+        "gnis:feature_id": "947254",
+        "name": "Concord",
+        "place": "neighbourhood",
+        "wikidata": "Q5158755",
+        "wikipedia": "en:Concord, Staten Island"
+      }
+    },
+    {
+      "id": "node/158860074",
+      "name": "Murray Hill",
+      "name_local": "Murray Hill",
+      "slug": "murray_hill",
+      "center": {
+        "lat": 40.7481574,
+        "lon": -73.97875
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "20",
+        "gnis:feature_id": "2062670",
+        "name": "Murray Hill",
+        "name:ko": "머레이 힐",
+        "name:ru": "Мюррей-Хилл",
+        "name:sr": "Мереј хил",
+        "name:sr-Latn": "Merej hil",
+        "place": "neighbourhood",
+        "wikidata": "Q602140",
+        "wikipedia": "en:Murray Hill, Manhattan"
+      }
+    },
+    {
+      "id": "node/158860994",
+      "name": "Meadowmere Park",
+      "name_local": "Meadowmere Park",
+      "slug": "meadowmere_park",
+      "center": {
+        "lat": 40.6363912,
+        "lon": -73.7419733
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "description": "The neighbourhood of Meadowmere Park encompasses the portion of Woodmere west of Rockaway Boulevard and the adjoining portion of Jamaica west of Rockaway Boulevard up to and including the buildings on Bayview Avenue and Broad Street.",
+        "ele": "0",
+        "gnis:feature_id": "956890",
+        "name": "Meadowmere Park",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158861011",
+      "name": "Brownsville",
+      "name_local": "Brownsville",
+      "slug": "brownsville",
+      "center": {
+        "lat": 40.665306,
+        "lon": -73.9124755
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "9",
+        "gnis:feature_id": "944963",
+        "name": "Brownsville",
+        "place": "neighbourhood",
+        "population": "58300",
+        "population:date": "2010",
+        "source:population": "https://www.nyc.gov/assets/planning/download/pdf/data-maps/nyc-population/census2010/t_pl_p5_nta.pdf",
+        "wikidata": "Q991279",
+        "wikipedia": "en:Brownsville, Brooklyn"
+      }
+    },
+    {
+      "id": "node/158861414",
+      "name": "Clifton",
+      "name_local": "Clifton",
+      "slug": "clifton",
+      "center": {
+        "lat": 40.6201041,
+        "lon": -74.0770857
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "16",
+        "gnis:feature_id": "946874",
+        "name": "Clifton",
+        "place": "neighbourhood",
+        "wikidata": "Q254428",
+        "wikipedia": "en:Clifton, Staten Island"
+      }
+    },
+    {
+      "id": "node/158861717",
+      "name": "Greenwich Village",
+      "name_local": "Greenwich Village",
+      "slug": "greenwich_village",
+      "center": {
+        "lat": 40.7319802,
+        "lon": -73.9965658
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "6",
+        "gnis:feature_id": "951781",
+        "name": "Greenwich Village",
+        "name:ko": "그리니치 빌리지",
+        "name:ru": "Гринвич-Виллидж",
+        "name:sr": "Гринич вилиџ",
+        "name:sr-Latn": "Grinič vilidž",
+        "place": "neighbourhood",
+        "wikidata": "Q205380",
+        "wikipedia": "en:Greenwich Village"
+      }
+    },
+    {
+      "id": "node/158861876",
+      "name": "Inwood",
+      "name_local": "Inwood",
+      "slug": "inwood",
+      "center": {
+        "lat": 40.8692579,
+        "lon": -73.9204949
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "9",
+        "gnis:feature_id": "953740",
+        "name": "Inwood",
+        "name:ko": "인우드",
+        "name:ru": "Инвуд",
+        "name:sr": "Инвуд",
+        "name:sr-Latn": "Invud",
+        "place": "neighbourhood",
+        "wikidata": "Q3476971"
+      }
+    },
+    {
+      "id": "node/158862353",
+      "name": "Morris Park",
+      "name_local": "Morris Park",
+      "slug": "morris_park",
+      "center": {
+        "lat": 40.6903809,
+        "lon": -73.8159675
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "14",
+        "gnis:feature_id": "957694",
+        "name": "Morris Park",
+        "place": "neighbourhood",
+        "wikidata": "Q6913846"
+      }
+    },
+    {
+      "id": "node/158862484",
+      "name": "Tudor City",
+      "name_local": "Tudor City",
+      "slug": "tudor_city",
+      "center": {
+        "lat": 40.7486231,
+        "lon": -73.9713889
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "18",
+        "gnis:feature_id": "2083304",
+        "name": "Tudor City",
+        "name:ko": "튜더 시티",
+        "name:ru": "Тьюдор-сити",
+        "name:sr": "Тудор сити",
+        "name:sr-Latn": "Tudor siti",
+        "place": "neighbourhood",
+        "tourism": "yes",
+        "wikidata": "Q549206"
+      }
+    },
+    {
+      "id": "node/158862559",
+      "name": "Astoria",
+      "name_local": "Astoria",
+      "slug": "astoria",
+      "center": {
+        "lat": 40.7720145,
+        "lon": -73.9302673
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "7",
+        "gnis:feature_id": "942661",
+        "name": "Astoria",
+        "place": "neighbourhood",
+        "wikidata": "Q121765"
+      }
+    },
+    {
+      "id": "node/158863323",
+      "name": "Travis",
+      "name_local": "Travis",
+      "slug": "travis",
+      "center": {
+        "lat": 40.5931598,
+        "lon": -74.1879218
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "10",
+        "gnis:feature_id": "967767",
+        "name": "Travis",
+        "name:etymology": "Captain Jacob Travis",
+        "place": "neighbourhood",
+        "wikidata": "Q26962091",
+        "wikipedia": "en:Travis, Staten Island"
+      }
+    },
+    {
+      "id": "node/158863443",
+      "name": "Queens",
+      "name_local": "Queens",
+      "slug": "queens",
+      "center": {
+        "lat": 40.7135078,
+        "lon": -73.8283132
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "13",
+        "gnis:feature_id": "971983",
+        "name": "Queens",
+        "name:de": "Queens",
+        "name:en": "Queens",
+        "name:he": "קווינס",
+        "name:hr": "Queens",
+        "name:ru": "Куинс",
+        "name:sr": "Квинс",
+        "name:sr-Latn": "Kvins",
+        "name:zh-Hans": "皇后区",
+        "name:zh-Hant": "皇后區",
+        "nist:fips_code": "36081",
+        "place": "suburb",
+        "population": "2405464",
+        "ref:us:ny:swis": "630000",
+        "source:population": "https://gis.ny.gov/civil-boundaries/ 2020",
+        "wikidata": "Q18424",
+        "wikipedia": "en:Queens"
+      }
+    },
+    {
+      "id": "node/158863810",
+      "name": "Charleston",
+      "name_local": "Charleston",
+      "slug": "charleston",
+      "center": {
+        "lat": 40.5367719,
+        "lon": -74.2373672
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "22",
+        "gnis:feature_id": "946403",
+        "name": "Charleston",
+        "place": "neighbourhood",
+        "wikidata": "Q19460938",
+        "wikipedia": "en:Charleston, Staten Island"
+      }
+    },
+    {
+      "id": "node/158863822",
+      "name": "Ridgewood",
+      "name_local": "Ridgewood",
+      "slug": "ridgewood",
+      "center": {
+        "lat": 40.7080556,
+        "lon": -73.9141667
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "27",
+        "gnis:feature_id": "2079375",
+        "name": "Ridgewood",
+        "old_name": "Old Germania Heights",
+        "place": "neighbourhood",
+        "wikidata": "Q7332840",
+        "wikipedia": "en:Ridgwood, Queens"
+      }
+    },
+    {
+      "id": "node/158865684",
+      "name": "Park Slope",
+      "name_local": "Park Slope",
+      "slug": "park_slope",
+      "center": {
+        "lat": 40.6701033,
+        "lon": -73.9859723
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "15",
+        "gnis:feature_id": "959887",
+        "name": "Park Slope",
+        "place": "neighbourhood",
+        "population": "65047",
+        "wikidata": "Q2607610"
+      }
+    },
+    {
+      "id": "node/158866133",
+      "name": "Locust Point",
+      "name_local": "Locust Point",
+      "slug": "locust_point",
+      "center": {
+        "lat": 40.8159342,
+        "lon": -73.802078
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "3",
+        "gnis:feature_id": "955803",
+        "name": "Locust Point",
+        "place": "neighbourhood",
+        "wikidata": "Q6666147",
+        "wikipedia": "en:Locust Point, Bronx"
+      }
+    },
+    {
+      "id": "node/158866216",
+      "name": "Parsons Beach",
+      "name_local": "Parsons Beach",
+      "slug": "parsons_beach",
+      "center": {
+        "lat": 40.7720462,
+        "lon": -73.7512433
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "11",
+        "gnis:feature_id": "959946",
+        "name": "Parsons Beach",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158866393",
+      "name": "Fort Wadsworth",
+      "name_local": "Fort Wadsworth",
+      "slug": "fort_wadsworth",
+      "center": {
+        "lat": 40.6089933,
+        "lon": -74.0626409
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "11",
+        "gnis:feature_id": "950503",
+        "name": "Fort Wadsworth",
+        "name:etymology:wikidata": "Q2339186",
+        "place": "neighbourhood",
+        "wikidata": "Q5472233"
+      }
+    },
+    {
+      "id": "node/158866724",
+      "name": "Ozone Park",
+      "name_local": "Ozone Park",
+      "slug": "ozone_park",
+      "center": {
+        "lat": 40.67677,
+        "lon": -73.8437461
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "10",
+        "gnis:feature_id": "959723",
+        "name": "Ozone Park",
+        "place": "neighbourhood",
+        "wikidata": "Q59030"
+      }
+    },
+    {
+      "id": "node/158867123",
+      "name": "Port Morris",
+      "name_local": "Port Morris",
+      "slug": "port_morris",
+      "center": {
+        "lat": 40.8015147,
+        "lon": -73.9095811
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "10454",
+        "ele": "5",
+        "gnis:feature_id": "960976",
+        "name": "Port Morris",
+        "place": "neighbourhood",
+        "wikidata": "Q15267565",
+        "wikipedia": "en:Port Morris, Bronx"
+      }
+    },
+    {
+      "id": "node/158867187",
+      "name": "Spuyten Duyvil",
+      "name_local": "Spuyten Duyvil",
+      "slug": "spuyten_duyvil",
+      "center": {
+        "lat": 40.8811676,
+        "lon": -73.917279
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "59",
+        "gnis:feature_id": "966152",
+        "name": "Spuyten Duyvil",
+        "place": "neighbourhood",
+        "wikidata": "Q7581636",
+        "wikipedia": "en:Spuyten Duyvil, Bronx"
+      }
+    },
+    {
+      "id": "node/158868324",
+      "name": "Hunts Point",
+      "name_local": "Hunts Point",
+      "slug": "hunts_point",
+      "center": {
+        "lat": 40.8126008,
+        "lon": -73.8840247
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "6",
+        "gnis:feature_id": "953512",
+        "name": "Hunts Point",
+        "place": "neighbourhood",
+        "wikidata": "Q5945764",
+        "wikipedia": "en:Hunts Point, Bronx"
+      }
+    },
+    {
+      "id": "node/158868503",
+      "name": "Whitestone",
+      "name_local": "Whitestone",
+      "slug": "whitestone",
+      "center": {
+        "lat": 40.7945457,
+        "lon": -73.8184674
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "15",
+        "gnis:feature_id": "971164",
+        "name": "Whitestone",
+        "place": "neighbourhood",
+        "wikidata": "Q7996274"
+      }
+    },
+    {
+      "id": "node/158868807",
+      "name": "Douglaston",
+      "name_local": "Douglaston",
+      "slug": "douglaston",
+      "center": {
+        "lat": 40.768713,
+        "lon": -73.7470765
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "25",
+        "gnis:feature_id": "948610",
+        "name": "Douglaston",
+        "place": "neighbourhood",
+        "wikidata": "Q5302197",
+        "wikipedia": "en:Douglaston–Little Neck, Queens"
+      }
+    },
+    {
+      "id": "node/158868994",
+      "name": "University Village",
+      "name_local": "University Village",
+      "slug": "university_village",
+      "center": {
+        "lat": 40.7269444,
+        "lon": -73.9988889
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "8",
+        "gnis:feature_id": "2082838",
+        "name": "University Village",
+        "name:sr": "Јуниверсити вилиџ",
+        "name:sr-Latn": "Juniversiti vilidž",
+        "place": "neighbourhood",
+        "wikidata": "Q3551347",
+        "wikipedia": "en:University Village (Manhattan)"
+      }
+    },
+    {
+      "id": "node/158869428",
+      "name": "Pleasant Plains",
+      "name_local": "Pleasant Plains",
+      "slug": "pleasant_plains",
+      "center": {
+        "lat": 40.5239944,
+        "lon": -74.2156999
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "11",
+        "gnis:feature_id": "960716",
+        "name": "Pleasant Plains",
+        "place": "neighbourhood",
+        "wikidata": "Q7203916",
+        "wikipedia": "en:Pleasant Plains, Staten Island"
+      }
+    },
+    {
+      "id": "node/158869539",
+      "name": "Chelsea",
+      "name_local": "Chelsea",
+      "slug": "chelsea",
+      "center": {
+        "lat": 40.7464906,
+        "lon": -74.0015283
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "5",
+        "gnis:feature_id": "2042282",
+        "name": "Chelsea",
+        "name:ko": "첼시",
+        "name:ru": "Челси",
+        "name:sr": "Челси",
+        "name:sr-Latn": "Čelsi",
+        "place": "neighbourhood",
+        "wikidata": "Q1069129"
+      }
+    },
+    {
+      "id": "node/158870741",
+      "name": "Kingsbridge",
+      "name_local": "Kingsbridge",
+      "slug": "kingsbridge",
+      "center": {
+        "lat": 40.8787051,
+        "lon": -73.9051408
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "8",
+        "gnis:feature_id": "954655",
+        "name": "Kingsbridge",
+        "place": "neighbourhood",
+        "wikidata": "Q6413127",
+        "wikipedia": "en:Kingsbridge, Bronx"
+      }
+    },
+    {
+      "id": "node/158871955",
+      "name": "East Harlem",
+      "name_local": "East Harlem",
+      "slug": "east_harlem",
+      "center": {
+        "lat": 40.7947222,
+        "lon": -73.9425
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "5",
+        "gnis:feature_id": "2083753",
+        "name": "East Harlem",
+        "name:ko": "이스트 할렘",
+        "name:ru": "Ист-Гарлем",
+        "name:sr": "Источни Харлем",
+        "name:sr-Latn": "Istočni Harlem",
+        "place": "neighbourhood",
+        "wikidata": "Q1069687"
+      }
+    },
+    {
+      "id": "node/158874096",
+      "name": "Hamilton Beach",
+      "name_local": "Hamilton Beach",
+      "slug": "hamilton_beach",
+      "center": {
+        "lat": 40.6523479,
+        "lon": -73.827787
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "1",
+        "gnis:feature_id": "952092",
+        "name": "Hamilton Beach",
+        "place": "neighbourhood",
+        "wikidata": "Q59022",
+        "wikipedia": "en:Hamilton Beach, Queens"
+      }
+    },
+    {
+      "id": "node/158874315",
+      "name": "Battery Park City",
+      "name_local": "Battery Park City",
+      "slug": "battery_park_city",
+      "center": {
+        "lat": 40.7110166,
+        "lon": -74.0169369
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "gnis:feature_id": "2062658",
+        "name": "Battery Park City",
+        "name:ko": "배터리 파크 시티",
+        "name:ru": "Бэттери-Парк-сити",
+        "name:sr": "Батери парк сити",
+        "name:sr-Latn": "Bateri park siti",
+        "place": "neighbourhood",
+        "website": "http://gatewayny.com/",
+        "wikidata": "Q810961",
+        "wikipedia": "en:Battery Park City"
+      }
+    },
+    {
+      "id": "node/158875971",
+      "name": "Country Club",
+      "name_local": "Country Club",
+      "slug": "country_club",
+      "center": {
+        "lat": 40.8391667,
+        "lon": -73.8197222
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "7",
+        "gnis:feature_id": "2074855",
+        "name": "Country Club",
+        "place": "neighbourhood",
+        "wikidata": "Q5177226",
+        "wikipedia": "en:Country Club, Bronx"
+      }
+    },
+    {
+      "id": "node/158876393",
+      "name": "Bedford-Stuyvesant",
+      "name_local": "Bedford-Stuyvesant",
+      "slug": "bedford_stuyvesant",
+      "center": {
+        "lat": 40.6834364,
+        "lon": -73.9412488
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "15",
+        "gnis:feature_id": "943484",
+        "name": "Bedford-Stuyvesant",
+        "place": "neighbourhood",
+        "short_name": "Bed-Stuy",
+        "wikidata": "Q1156982",
+        "wikipedia": "en:Bedford–Stuyvesant, Brooklyn"
+      }
+    },
+    {
+      "id": "node/158876947",
+      "name": "Fordham",
+      "name_local": "Fordham",
+      "slug": "fordham",
+      "center": {
+        "lat": 40.8592667,
+        "lon": -73.8984694
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "38",
+        "gnis:feature_id": "950375",
+        "name": "Fordham",
+        "place": "neighbourhood",
+        "wikidata": "Q966071",
+        "wikipedia": "en:Fordham, Bronx"
+      }
+    },
+    {
+      "id": "node/158877715",
+      "name": "High Bridge",
+      "name_local": "High Bridge",
+      "slug": "high_bridge",
+      "center": {
+        "lat": 40.8367671,
+        "lon": -73.9268036
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "25",
+        "gnis:feature_id": "952724",
+        "name": "High Bridge",
+        "place": "neighbourhood",
+        "wikidata": "Q5757835",
+        "wikipedia": "en:Highbridge, Bronx"
+      }
+    },
+    {
+      "id": "node/158892044",
+      "name": "Fresh Kills",
+      "name_local": "Fresh Kills",
+      "slug": "fresh_kills",
+      "center": {
+        "lat": 40.5642715,
+        "lon": -74.186255
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "11",
+        "gnis:feature_id": "950710",
+        "name": "Fresh Kills",
+        "place": "neighbourhood",
+        "wikidata": "Q1455686"
+      }
+    },
+    {
+      "id": "node/158893998",
+      "name": "Grant City",
+      "name_local": "Grant City",
+      "slug": "grant_city",
+      "center": {
+        "lat": 40.5820492,
+        "lon": -74.1048641
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "9",
+        "gnis:feature_id": "951511",
+        "name": "Grant City",
+        "place": "neighbourhood",
+        "wikidata": "Q5596142",
+        "wikipedia": "en:Grant City, Staten Island"
+      }
+    },
+    {
+      "id": "node/158896539",
+      "name": "Wave Crest",
+      "name_local": "Wave Crest",
+      "slug": "wave_crest",
+      "center": {
+        "lat": 40.597985,
+        "lon": -73.7609973
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "3",
+        "gnis:feature_id": "968938",
+        "name": "Wave Crest",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158897238",
+      "name": "Woodrow",
+      "name_local": "Woodrow",
+      "slug": "woodrow",
+      "center": {
+        "lat": 40.5434385,
+        "lon": -74.1976441
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "40",
+        "gnis:feature_id": "971690",
+        "name": "Woodrow",
+        "place": "neighbourhood",
+        "wikidata": "Q8033164",
+        "wikipedia": "en:Woodrow, Staten Island"
+      }
+    },
+    {
+      "id": "node/158898535",
+      "name": "West New Brighton",
+      "name_local": "West New Brighton",
+      "slug": "west_new_brighton",
+      "center": {
+        "lat": 40.6345481,
+        "lon": -74.1120867
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "23",
+        "gnis:feature_id": "970826",
+        "name": "West New Brighton",
+        "place": "neighbourhood",
+        "wikidata": "Q7986057",
+        "wikipedia": "en:West New Brighton, Staten Island"
+      }
+    },
+    {
+      "id": "node/158899828",
+      "name": "Woodhaven",
+      "name_local": "Woodhaven",
+      "slug": "woodhaven",
+      "center": {
+        "lat": 40.6892698,
+        "lon": -73.8579131
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "13",
+        "gnis:feature_id": "971633",
+        "name": "Woodhaven",
+        "place": "neighbourhood",
+        "wikidata": "Q58994"
+      }
+    },
+    {
+      "id": "node/158900763",
+      "name": "Co-Op City",
+      "name_local": "Co-Op City",
+      "slug": "co_op_city",
+      "center": {
+        "lat": 40.8738889,
+        "lon": -73.8294444
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "4",
+        "gnis:feature_id": "2074856",
+        "name": "Co-Op City",
+        "place": "neighbourhood",
+        "wikidata": "Q1104022",
+        "wikipedia": "en:Co-op City, Bronx"
+      }
+    },
+    {
+      "id": "node/158902686",
+      "name": "Bloomfield",
+      "name_local": "Bloomfield",
+      "slug": "bloomfield",
+      "center": {
+        "lat": 40.6125891,
+        "lon": -74.17799
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "3",
+        "gnis:feature_id": "944285",
+        "name": "Bloomfield",
+        "place": "neighbourhood",
+        "wikidata": "Q648622",
+        "wikipedia": "en:Bloomfield, Staten Island"
+      }
+    },
+    {
+      "id": "node/158903369",
+      "name": "The Bronx",
+      "name_local": "The Bronx",
+      "slug": "the_bronx",
+      "center": {
+        "lat": 40.8466508,
+        "lon": -73.8785937
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "15",
+        "gnis:feature_id": "971944",
+        "name": "The Bronx",
+        "name:de": "Bronx",
+        "name:en": "The Bronx",
+        "name:hr": "Bronx",
+        "name:ru": "Бронкс",
+        "name:sr": "Бронкс",
+        "name:sr-Latn": "Bronks",
+        "name:zh-Hans": "布朗克斯",
+        "name:zh-Hant": "布朗克斯",
+        "place": "suburb",
+        "population": "1472654",
+        "source:population": "2020 US census",
+        "wikidata": "Q18426",
+        "wikipedia": "en:The Bronx"
+      }
+    },
+    {
+      "id": "node/158905191",
+      "name": "Fox Hills",
+      "name_local": "Fox Hills",
+      "slug": "fox_hills",
+      "center": {
+        "lat": 40.6151042,
+        "lon": -74.0845859
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "20",
+        "gnis:feature_id": "950568",
+        "name": "Fox Hills",
+        "place": "neighbourhood",
+        "wikidata": "Q5476734"
+      }
+    },
+    {
+      "id": "node/158905875",
+      "name": "Arrochar",
+      "name_local": "Arrochar",
+      "slug": "arrochar",
+      "center": {
+        "lat": 40.5984379,
+        "lon": -74.0726412
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "16",
+        "gnis:feature_id": "942586",
+        "name": "Arrochar",
+        "place": "neighbourhood",
+        "wikidata": "Q4796041",
+        "wikipedia": "en:Arrochar, Staten Island"
+      }
+    },
+    {
+      "id": "node/158905979",
+      "name": "Fort Hamilton",
+      "name_local": "Fort Hamilton",
+      "slug": "fort_hamilton",
+      "center": {
+        "lat": 40.6187154,
+        "lon": -74.0331957
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "20",
+        "gnis:feature_id": "972492",
+        "name": "Fort Hamilton",
+        "place": "neighbourhood",
+        "wikidata": "Q5471278",
+        "wikipedia": "en:Fort Hamilton, Brooklyn"
+      }
+    },
+    {
+      "id": "node/158906829",
+      "name": "Clason Point",
+      "name_local": "Clason Point",
+      "slug": "clason_point",
+      "center": {
+        "lat": 40.8147164,
+        "lon": -73.8599648
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "8",
+        "gnis:feature_id": "974196",
+        "name": "Clason Point",
+        "place": "neighbourhood",
+        "wikidata": "Q5127836"
+      }
+    },
+    {
+      "id": "node/158907763",
+      "name": "Old Place",
+      "name_local": "Old Place",
+      "slug": "old_place",
+      "center": {
+        "lat": 40.6303813,
+        "lon": -74.1859776
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "3",
+        "gnis:feature_id": "972892",
+        "name": "Old Place",
+        "place": "neighbourhood",
+        "wikidata": "Q7084739"
+      }
+    },
+    {
+      "id": "node/158908302",
+      "name": "Morris Park",
+      "name_local": "Morris Park",
+      "slug": "morris_park",
+      "center": {
+        "lat": 40.8523224,
+        "lon": -73.8534682
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "24",
+        "gnis:feature_id": "957695",
+        "name": "Morris Park",
+        "place": "neighbourhood",
+        "wikidata": "Q6913846",
+        "wikipedia": "en:Morris Park, Bronx"
+      }
+    },
+    {
+      "id": "node/158910289",
+      "name": "Little Italy",
+      "name_local": "Little Italy",
+      "slug": "little_italy",
+      "center": {
+        "lat": 40.7192728,
+        "lon": -73.9982152
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name:ru": "Маленькая Италия",
+        "ele": "11",
+        "gnis:feature_id": "2062660",
+        "name": "Little Italy",
+        "name:ko": "리틀 이탈리아",
+        "name:ru": "Литл-Итали",
+        "name:sr": "Мала Италија",
+        "name:sr-Latn": "Mala Italija",
+        "place": "neighbourhood",
+        "wikidata": "Q201462",
+        "wikipedia": "en:Little Italy, Manhattan"
+      }
+    },
+    {
+      "id": "node/158913422",
+      "name": "Linden Hill",
+      "name_local": "Linden Hill",
+      "slug": "linden_hill",
+      "center": {
+        "lat": 40.7156581,
+        "lon": -73.9234706
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "gnis:feature_id": "973583",
+        "name": "Linden Hill",
+        "note": "This Linden Hill in Ridgewood is different from the one in Flushing, Queens.",
+        "place": "neighbourhood",
+        "wikidata": "Q7332840",
+        "wikipedia": "en:Ridgewood, Queens"
+      }
+    },
+    {
+      "id": "node/158915716",
+      "name": "Silver Beach",
+      "name_local": "Silver Beach",
+      "slug": "silver_beach",
+      "center": {
+        "lat": 40.8116667,
+        "lon": -73.8063889
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "7",
+        "gnis:feature_id": "2074867",
+        "name": "Silver Beach",
+        "place": "neighbourhood",
+        "wikidata": "Q7515836"
+      }
+    },
+    {
+      "id": "node/158918368",
+      "name": "South Ozone Park",
+      "name_local": "South Ozone Park",
+      "slug": "south_ozone_park",
+      "center": {
+        "lat": 40.6701035,
+        "lon": -73.8190231
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "8",
+        "gnis:feature_id": "965836",
+        "name": "South Ozone Park",
+        "place": "neighbourhood",
+        "wikidata": "Q58987",
+        "wikipedia": "en:South Ozone Park, Queens"
+      }
+    },
+    {
+      "id": "node/158918828",
+      "name": "Port Ivory",
+      "name_local": "Port Ivory",
+      "slug": "port_ivory",
+      "center": {
+        "lat": 40.6409366,
+        "lon": -74.1801442
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "5",
+        "gnis:feature_id": "972961",
+        "name": "Port Ivory",
+        "place": "neighbourhood",
+        "wikidata": "Q7230712"
+      }
+    },
+    {
+      "id": "node/158919216",
+      "name": "Beechhurst",
+      "name_local": "Beechhurst",
+      "slug": "beechhurst",
+      "center": {
+        "lat": 40.7914903,
+        "lon": -73.8045781
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "14",
+        "gnis:feature_id": "943532",
+        "name": "Beechhurst",
+        "place": "neighbourhood",
+        "wikidata": "Q2893642"
+      }
+    },
+    {
+      "id": "node/158919369",
+      "name": "Steinway",
+      "name_local": "Steinway",
+      "slug": "steinway",
+      "center": {
+        "lat": 40.7745459,
+        "lon": -73.9037477
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "12",
+        "gnis:feature_id": "966342",
+        "name": "Steinway",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/158919378",
+      "name": "Bay Ridge",
+      "name_local": "Bay Ridge",
+      "slug": "bay_ridge",
+      "center": {
+        "lat": 40.6320062,
+        "lon": -74.0232101
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "26",
+        "gnis:feature_id": "943187",
+        "name": "Bay Ridge",
+        "place": "neighbourhood",
+        "wikidata": "Q2892166"
+      }
+    },
+    {
+      "id": "node/248606480",
+      "name": "Prospect Heights",
+      "name_local": "Prospect Heights",
+      "slug": "prospect_heights",
+      "center": {
+        "lat": 40.6778708,
+        "lon": -73.9684725
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Prospect Heights",
+        "place": "neighbourhood",
+        "wikidata": "Q2159619"
+      }
+    },
+    {
+      "id": "node/357644127",
+      "name": "Manhattan",
+      "name_local": "Manhattan",
+      "slug": "manhattan",
+      "center": {
+        "lat": 40.7579554,
+        "lon": -73.9855319
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name:ru": "Манхаттан",
+        "alt_name:vi": "Mã Nhật Tân",
+        "ele": "26",
+        "gnis:feature_id": "2432105",
+        "int_name": "Manhattan",
+        "name": "Manhattan",
+        "name:be": "Манхэтэн",
+        "name:de": "Manhattan",
+        "name:en": "Manhattan",
+        "name:fa": "منهتن",
+        "name:fr": "Manhattan",
+        "name:he": "מנהטן",
+        "name:hr": "Manhattan",
+        "name:it": "Manhattan",
+        "name:ko": "맨해튼",
+        "name:lt": "Manhatanas",
+        "name:pl": "Manhattan",
+        "name:ru": "Манхэттен",
+        "name:sr": "Менхетн",
+        "name:sr-Latn": "Menhetn",
+        "name:uk": "Мангеттен",
+        "name:vi": "Manhattan",
+        "name:zh-Hans": "曼哈顿",
+        "name:zh-Hant": "曼哈頓",
+        "place": "suburb",
+        "population": "1694251",
+        "source:population": "2020 US census",
+        "start_date": "1624",
+        "wikidata": "Q11299",
+        "wikipedia": "en:Manhattan"
+      }
+    },
+    {
+      "id": "node/380047831",
+      "name": "Brooklyn Navy Yard",
+      "name_local": "Brooklyn Navy Yard",
+      "slug": "brooklyn_navy_yard",
+      "center": {
+        "lat": 40.6997716,
+        "lon": -73.9753359
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Brooklyn Navy Yard",
+        "place": "neighbourhood",
+        "wikidata": "Q524435"
+      }
+    },
+    {
+      "id": "node/418992826",
+      "name": "Todt Hill",
+      "name_local": "Todt Hill",
+      "slug": "todt_hill",
+      "center": {
+        "lat": 40.5979271,
+        "lon": -74.0980274
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "is_in": "Richmond,New York,N.Y.,NY,USA",
+        "name": "Todt Hill",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/1705297068",
+      "name": "Arverne By The Sea",
+      "name_local": "Arverne By The Sea",
+      "slug": "arverne_by_the_sea",
+      "center": {
+        "lat": 40.5900257,
+        "lon": -73.7964478
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Arverne By The Sea",
+        "place": "neighbourhood",
+        "population": "18540",
+        "wikidata": "Q62475"
+      }
+    },
+    {
+      "id": "node/2019020144",
+      "name": "Dumbo",
+      "name_local": "Dumbo",
+      "slug": "dumbo",
+      "center": {
+        "lat": 40.7029052,
+        "lon": -73.990118
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "Down Under the Manhattan Bridge Overpass",
+        "name": "Dumbo",
+        "name:zh": "灯波",
+        "place": "neighbourhood",
+        "wikidata": "Q1264951",
+        "wikipedia": "en:Dumbo, Brooklyn"
+      }
+    },
+    {
+      "id": "node/2045637952",
+      "name": "The Dunes",
+      "name_local": "The Dunes",
+      "slug": "the_dunes",
+      "center": {
+        "lat": 40.5897739,
+        "lon": -73.7937063
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "The Dunes",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/2045637954",
+      "name": "Palmer's Landing",
+      "name_local": "Palmer's Landing",
+      "slug": "palmer_s_landing",
+      "center": {
+        "lat": 40.5893908,
+        "lon": -73.8040117
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Palmer's Landing",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/2045637955",
+      "name": "The Tides",
+      "name_local": "The Tides",
+      "slug": "the_tides",
+      "center": {
+        "lat": 40.5887512,
+        "lon": -73.7970057
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "The Tides",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/2045637956",
+      "name": "The Sands",
+      "name_local": "The Sands",
+      "slug": "the_sands",
+      "center": {
+        "lat": 40.5879691,
+        "lon": -73.8012973
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "The Sands",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/2045637957",
+      "name": "Ocean Breeze",
+      "name_local": "Ocean Breeze",
+      "slug": "ocean_breeze",
+      "center": {
+        "lat": 40.5884292,
+        "lon": -73.8066888
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Ocean Breeze",
+        "place": "neighbourhood",
+        "wikidata": "Q7075950"
+      }
+    },
+    {
+      "id": "node/2095743704",
+      "name": "The Breakers",
+      "name_local": "The Breakers",
+      "slug": "the_breakers",
+      "center": {
+        "lat": 40.5888933,
+        "lon": -73.7989397
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "The Breakers",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/2095767773",
+      "name": "Arverne View",
+      "name_local": "Arverne View",
+      "slug": "arverne_view",
+      "center": {
+        "lat": 40.5907289,
+        "lon": -73.7874734
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Arverne View",
+        "place": "neighbourhood",
+        "wikidata": "Q62475"
+      }
+    },
+    {
+      "id": "node/2131546597",
+      "name": "Rockaway Beach",
+      "name_local": "Rockaway Beach",
+      "slug": "rockaway_beach",
+      "center": {
+        "lat": 40.5845085,
+        "lon": -73.81679
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Rockaway Beach",
+        "place": "neighbourhood",
+        "wikidata": "Q62289",
+        "wikipedia": "en:Rockaway Beach, Queens"
+      }
+    },
+    {
+      "id": "node/2510992904",
+      "name": "Columbia Street Waterfront District",
+      "name_local": "Columbia Street Waterfront District",
+      "slug": "columbia_street_waterfront_district",
+      "center": {
+        "lat": 40.6872869,
+        "lon": -74.0019197
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Columbia Street Waterfront District",
+        "place": "neighbourhood",
+        "wikidata": "Q16950150"
+      }
+    },
+    {
+      "id": "node/2511002283",
+      "name": "Gowanus",
+      "name_local": "Gowanus",
+      "slug": "gowanus",
+      "center": {
+        "lat": 40.6791695,
+        "lon": -73.9885041
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Gowanus",
+        "place": "neighbourhood",
+        "wikidata": "Q5589993",
+        "wikipedia": "en:Gowanus, Brooklyn"
+      }
+    },
+    {
+      "id": "node/2511020426",
+      "name": "Crown Heights",
+      "name_local": "Crown Heights",
+      "slug": "crown_heights",
+      "center": {
+        "lat": 40.667471,
+        "lon": -73.9435662
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Crown Heights",
+        "name:he": "קראון הייטס",
+        "place": "neighbourhood",
+        "wikidata": "Q2354222"
+      }
+    },
+    {
+      "id": "node/2511022055",
+      "name": "Midwood",
+      "name_local": "Midwood",
+      "slug": "midwood",
+      "center": {
+        "lat": 40.6188823,
+        "lon": -73.9654889
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Midwood",
+        "place": "neighbourhood",
+        "wikidata": "Q13856437"
+      }
+    },
+    {
+      "id": "node/2511053877",
+      "name": "Koreatown",
+      "name_local": "Koreatown",
+      "slug": "koreatown",
+      "center": {
+        "lat": 40.7476419,
+        "lon": -73.9865157
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Koreatown",
+        "name:ko": "코리아타운",
+        "name:ru": "Кориатаун",
+        "name:sr": "Корејска четврт",
+        "name:sr-Latn": "Korejska četvrt",
+        "place": "neighbourhood",
+        "tourism": "yes",
+        "wikidata": "Q1321501",
+        "wikipedia": "en:Koreatown, Manhattan"
+      }
+    },
+    {
+      "id": "node/2517056822",
+      "name": "Flatiron District",
+      "name_local": "Flatiron District",
+      "slug": "flatiron_district",
+      "center": {
+        "lat": 40.7410722,
+        "lon": -73.9896534
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "addr:postcode": "10010",
+        "name": "Flatiron District",
+        "name:en": "Flatiron District",
+        "name:ko": "플랫아이언 디스트릭트",
+        "name:ru": "Флэтайрон",
+        "name:zh-Hans": "熨斗区",
+        "name:zh-Hant": "熨斗區",
+        "place": "neighbourhood",
+        "tourism": "attraction",
+        "wikidata": "Q1427377"
+      }
+    },
+    {
+      "id": "node/2517057358",
+      "name": "NoHo",
+      "name_local": "NoHo",
+      "slug": "noho",
+      "center": {
+        "lat": 40.7258746,
+        "lon": -73.9939566
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "NoHo",
+        "name:ru": "Нохо",
+        "name:sr": "Нохо",
+        "name:sr-Latn": "Noho",
+        "place": "neighbourhood",
+        "wikidata": "Q513254",
+        "wikipedia": "en:NoHo, Manhattan"
+      }
+    },
+    {
+      "id": "node/2760923528",
+      "name": "Douglas Manor",
+      "name_local": "Douglas Manor",
+      "slug": "douglas_manor",
+      "center": {
+        "lat": 40.7762205,
+        "lon": -73.7507289
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Douglas Manor",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/2946313743",
+      "name": "South Slope",
+      "name_local": "South Slope",
+      "slug": "south_slope",
+      "center": {
+        "lat": 40.6604004,
+        "lon": -73.9944088
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "South Slope",
+        "place": "neighbourhood",
+        "wikidata": "Q7568512",
+        "wikipedia": "en:South Slope, Brooklyn"
+      }
+    },
+    {
+      "id": "node/3343148003",
+      "name": "Sunset Park",
+      "name_local": "Sunset Park",
+      "slug": "sunset_park",
+      "center": {
+        "lat": 40.6442221,
+        "lon": -74.0075907
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Sunset Park",
+        "place": "neighbourhood",
+        "wikidata": "Q2270906",
+        "wikipedia": "en:Sunset Park, Brooklyn"
+      }
+    },
+    {
+      "id": "node/3453379318",
+      "name": "Carroll Gardens",
+      "name_local": "Carroll Gardens",
+      "slug": "carroll_gardens",
+      "center": {
+        "lat": 40.6784201,
+        "lon": -73.9948021
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Carroll Gardens",
+        "place": "neighbourhood",
+        "wikidata": "Q5046569"
+      }
+    },
+    {
+      "id": "node/3932391515",
+      "name": "Castle Hill",
+      "name_local": "Castle Hill",
+      "slug": "castle_hill",
+      "center": {
+        "lat": 40.8189076,
+        "lon": -73.8499209
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "is_in": "Bronx,New York,N.Y.,NY,USA",
+        "name": "Castle Hill",
+        "place": "neighbourhood",
+        "population": "8079",
+        "wikidata": "Q3663079"
+      }
+    },
+    {
+      "id": "node/4080383997",
+      "name": "Nolan Park",
+      "name_local": "Nolan Park",
+      "slug": "nolan_park",
+      "center": {
+        "lat": 40.6898707,
+        "lon": -74.0140597
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Nolan Park",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/4330096221",
+      "name": "Marble Hill",
+      "name_local": "Marble Hill",
+      "slug": "marble_hill",
+      "center": {
+        "lat": 40.8762983,
+        "lon": -73.9104292
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Marble Hill",
+        "place": "neighbourhood",
+        "wikidata": "Q1373472"
+      }
+    },
+    {
+      "id": "node/4354977229",
+      "name": "Ocean Hill",
+      "name_local": "Ocean Hill",
+      "slug": "ocean_hill",
+      "center": {
+        "lat": 40.6757317,
+        "lon": -73.9124338
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Ocean Hill",
+        "place": "neighbourhood",
+        "wikidata": "Q7076016"
+      }
+    },
+    {
+      "id": "node/4367197907",
+      "name": "Norwood",
+      "name_local": "Norwood",
+      "slug": "norwood",
+      "center": {
+        "lat": 40.8772593,
+        "lon": -73.8768626
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Norwood",
+        "place": "neighbourhood",
+        "wikidata": "Q14707120"
+      }
+    },
+    {
+      "id": "node/5155536442",
+      "name": "Windsor Oak",
+      "name_local": "Windsor Oak",
+      "slug": "windsor_oak",
+      "center": {
+        "lat": 40.7388956,
+        "lon": -73.7561046
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Windsor Oak",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5491295893",
+      "name": "Silverpointe Estates",
+      "name_local": "Silverpointe Estates",
+      "slug": "silverpointe_estates",
+      "center": {
+        "lat": 40.792513,
+        "lon": -73.8395723
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Silverpointe Estates",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568321",
+      "name": "Manhattan Valley",
+      "name_local": "Manhattan Valley",
+      "slug": "manhattan_valley",
+      "center": {
+        "lat": 40.7997764,
+        "lon": -73.9677716
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "Bloomingdale",
+        "name": "Manhattan Valley",
+        "name:ko": "맨해튼 밸리",
+        "name:ru": "Манхэттен-Валли",
+        "name:sr": "Блумингдејл",
+        "name:sr-Latn": "Blumingdejl",
+        "place": "neighbourhood",
+        "wikidata": "Q1670850"
+      }
+    },
+    {
+      "id": "node/5706568322",
+      "name": "Fort George",
+      "name_local": "Fort George",
+      "slug": "fort_george",
+      "center": {
+        "lat": 40.8599472,
+        "lon": -73.9282251
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Fort George",
+        "name:ko": "포트 조지",
+        "name:sr": "Форт Џорџ",
+        "name:sr-Latn": "Fort Džordž",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568323",
+      "name": "Hudson Heights",
+      "name_local": "Hudson Heights",
+      "slug": "hudson_heights",
+      "center": {
+        "lat": 40.8531308,
+        "lon": -73.9393187
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Hudson Heights",
+        "name:ko": "허드슨 하이츠",
+        "name:ru": "Хадсон-Хайтс",
+        "name:sr": "Хадсон хајтс",
+        "name:sr-Latn": "Hadson hajts",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568324",
+      "name": "Sugar Hill",
+      "name_local": "Sugar Hill",
+      "slug": "sugar_hill",
+      "center": {
+        "lat": 40.8275469,
+        "lon": -73.9436102
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Sugar Hill",
+        "name:ko": "슈가 힐",
+        "name:ru": "Шугар-Хилл",
+        "name:sr": "Шугар хил",
+        "name:sr-Latn": "Šugar hil",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568325",
+      "name": "Carnegie Hill",
+      "name_local": "Carnegie Hill",
+      "slug": "carnegie_hill",
+      "center": {
+        "lat": 40.7841972,
+        "lon": -73.954339
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Carnegie Hill",
+        "name:ko": "카네기 힐",
+        "name:ru": "Каренги-Хилл",
+        "name:sr": "Карнеги хил",
+        "name:sr-Latn": "Karnegi hil",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568326",
+      "name": "Yorkville",
+      "name_local": "Yorkville",
+      "slug": "yorkville",
+      "center": {
+        "lat": 40.7780067,
+        "lon": -73.9482022
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Yorkville",
+        "name:ko": "요크빌",
+        "name:ru": "Йорквилл",
+        "name:sr": "Јорквил",
+        "name:sr-Latn": "Jorkvil",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568327",
+      "name": "Lenox Hill",
+      "name_local": "Lenox Hill",
+      "slug": "lenox_hill",
+      "center": {
+        "lat": 40.7664366,
+        "lon": -73.9590168
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Lenox Hill",
+        "name:ko": "레녹스 힐",
+        "name:ru": "Ленокс-Хилл",
+        "name:sr": "Ленокс хил",
+        "name:sr-Latn": "Lenoks hil",
+        "place": "neighbourhood",
+        "wikidata": "Q1190605",
+        "wikipedia": "en:Lenox Hill"
+      }
+    },
+    {
+      "id": "node/5706568328",
+      "name": "Lincoln Square",
+      "name_local": "Lincoln Square",
+      "slug": "lincoln_square",
+      "center": {
+        "lat": 40.7723194,
+        "lon": -73.9844012
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "gnis:feature_id": "2062671",
+        "name": "Lincoln Square",
+        "name:ko": "링컨 스퀘어",
+        "name:ru": "Линкольн-сквер",
+        "name:sr": "Линколн сквер",
+        "name:sr-Latn": "Linkoln skver",
+        "place": "neighbourhood",
+        "wikidata": "Q1139313"
+      }
+    },
+    {
+      "id": "node/5706568329",
+      "name": "Columbus Circle",
+      "name_local": "Columbus Circle",
+      "slug": "columbus_circle",
+      "center": {
+        "lat": 40.7680943,
+        "lon": -73.9818907
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Columbus Circle",
+        "name:he": "כיכר קולומבוס",
+        "name:ko": "콜롬버스 서클",
+        "name:ru": "Коламбус-сёркл",
+        "name:sr": "Коламбус серкл",
+        "name:sr-Latn": "Kolambus serkl",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568330",
+      "name": "Turtle Bay",
+      "name_local": "Turtle Bay",
+      "slug": "turtle_bay",
+      "center": {
+        "lat": 40.7534666,
+        "lon": -73.9688659
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Turtle Bay",
+        "name:ko": "터틀 베이",
+        "name:ru": "Тёртл-Бей",
+        "name:sr": "Туртл беј",
+        "name:sr-Latn": "Turtl bej",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568331",
+      "name": "Midtown East",
+      "name_local": "Midtown East",
+      "slug": "midtown_east",
+      "center": {
+        "lat": 40.7598219,
+        "lon": -73.9724708
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Midtown East",
+        "name:ko": "미드타운 이스트",
+        "name:ru": "Мидтаун-Ист",
+        "name:sr": "Источни Средњи Менхетн",
+        "name:sr-Latn": "Istočni Srednji Menhetn",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568332",
+      "name": "Theater District",
+      "name_local": "Theater District",
+      "slug": "theater_district",
+      "center": {
+        "lat": 40.7579801,
+        "lon": -73.9855452
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Theater District",
+        "name:en": "Theater District",
+        "name:ru": "Театр",
+        "name:sr": "Тијетер дистрикт",
+        "name:sr-Latn": "Tijeter distrikt",
+        "official_name": "Theater Subdistrict",
+        "place": "neighbourhood",
+        "wikidata": "Q2662015"
+      }
+    },
+    {
+      "id": "node/5706568334",
+      "name": "Hudson Yards",
+      "name_local": "Hudson Yards",
+      "slug": "hudson_yards",
+      "center": {
+        "lat": 40.7559064,
+        "lon": -74.0005322
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Hudson Yards",
+        "name:ko": "허드슨 야드",
+        "name:ru": "Хадсон-Ярдс",
+        "name:sr": "Хадсон јардс",
+        "place": "neighbourhood",
+        "wikidata": "Q1633867",
+        "wikipedia": "en:Hudson Yards, Manhattan"
+      }
+    },
+    {
+      "id": "node/5706568335",
+      "name": "Garment District",
+      "name_local": "Garment District",
+      "slug": "garment_district",
+      "center": {
+        "lat": 40.7536941,
+        "lon": -73.9905167
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Garment District",
+        "name:ko": "가먼트 디스트릭트",
+        "name:ru": "Гармент",
+        "name:sr": "Гармент дистрикт",
+        "name:sr-Latn": "Garment distrikt",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568337",
+      "name": "Gramercy",
+      "name_local": "Gramercy",
+      "slug": "gramercy",
+      "center": {
+        "lat": 40.7355189,
+        "lon": -73.9840794
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Gramercy",
+        "name:ko": "그래머시",
+        "name:ru": "Грамерси",
+        "name:sr": "Грамерси",
+        "name:sr-Latn": "Gramersi",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568338",
+      "name": "Union Square",
+      "name_local": "Union Square",
+      "slug": "union_square",
+      "center": {
+        "lat": 40.7360717,
+        "lon": -73.9901888
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Union Square",
+        "name:ko": "유니언 스퀘어",
+        "name:ru": "Юнион-сквер",
+        "name:sr": "Јунион сквер",
+        "name:sr-Latn": "Junion skver",
+        "place": "neighbourhood",
+        "wikidata": "Q110007"
+      }
+    },
+    {
+      "id": "node/5706568339",
+      "name": "NoMad",
+      "name_local": "NoMad",
+      "slug": "nomad",
+      "center": {
+        "lat": 40.7446884,
+        "lon": -73.9882851
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "NoMad",
+        "name:ko": "노마드",
+        "name:ru": "Номад",
+        "name:sr": "Номад",
+        "name:sr-Latn": "Nomad",
+        "place": "neighbourhood",
+        "wikidata": "Q1274032",
+        "wikipedia": "en:NoMad, Manhattan"
+      }
+    },
+    {
+      "id": "node/5706568340",
+      "name": "Midtown South",
+      "name_local": "Midtown South",
+      "slug": "midtown_south",
+      "center": {
+        "lat": 40.7498417,
+        "lon": -73.984251
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Midtown South",
+        "name:ko": "미드타운 사우스",
+        "name:ru": "Мидтаун-Саут",
+        "name:sr": "Јужни Средњи Менхетн",
+        "name:sr-Latn": "Južni Srednji Menhetn",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568342",
+      "name": "Meatpacking District",
+      "name_local": "Meatpacking District",
+      "slug": "meatpacking_district",
+      "center": {
+        "lat": 40.7408029,
+        "lon": -74.0080691
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Meatpacking District",
+        "name:ko": "미트패킹 디스트릭트",
+        "name:ru": "Митпэкинг",
+        "name:sr": "Митпакинг дистрикт",
+        "name:sr-Latn": "Mitpaking distrikt",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568343",
+      "name": "West Village",
+      "name_local": "West Village",
+      "slug": "west_village",
+      "center": {
+        "lat": 40.7341857,
+        "lon": -74.00558
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "West Village",
+        "name:ko": "웨스트 빌리지",
+        "name:ru": "Вест-Виллидж",
+        "name:sr": "Вест вилиџ",
+        "name:sr-Latn": "Vest vilidž",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568344",
+      "name": "Hudson Square",
+      "name_local": "Hudson Square",
+      "slug": "hudson_square",
+      "center": {
+        "lat": 40.7268035,
+        "lon": -74.0079833
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Hudson Square",
+        "name:ko": "허드슨 스퀘어",
+        "name:ru": "Хадсон-сквер",
+        "name:sr": "Хадсон сквер",
+        "name:sr-Latn": "Hadson skver",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568345",
+      "name": "Two Bridges",
+      "name_local": "Two Bridges",
+      "slug": "two_bridges",
+      "center": {
+        "lat": 40.7112884,
+        "lon": -73.9922333
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Two Bridges",
+        "name:ru": "Ту-Бриджес",
+        "name:sr": "Ту бриџес",
+        "name:sr-Latn": "Tu bridžes",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568346",
+      "name": "Civic Center",
+      "name_local": "Civic Center",
+      "slug": "civic_center",
+      "center": {
+        "lat": 40.7136793,
+        "lon": -74.0024042
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "0",
+        "name": "Civic Center",
+        "name:ru": "Сивик-сентр",
+        "name:sr": "Сивик сентр",
+        "name:sr-Latn": "Sivik sentr",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5706568347",
+      "name": "Financial District",
+      "name_local": "Financial District",
+      "slug": "financial_district",
+      "center": {
+        "lat": 40.7076681,
+        "lon": -74.009271
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Financial District",
+        "name:es": "Distrito financiero",
+        "name:ko": "파이낸셜 디스트릭트",
+        "name:ru": "Файненшл",
+        "name:sr": "Фајненшл дистрикт",
+        "name:sr-Latn": "Fajnenšl distrikt",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5740099570",
+      "name": "Dyker Heights",
+      "name_local": "Dyker Heights",
+      "slug": "dyker_heights",
+      "center": {
+        "lat": 40.6204716,
+        "lon": -74.0116668
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Dyker Heights",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5740099571",
+      "name": "Bath Beach",
+      "name_local": "Bath Beach",
+      "slug": "bath_beach",
+      "center": {
+        "lat": 40.6018495,
+        "lon": -74.000501
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Bath Beach",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/5740104941",
+      "name": "Gravesend",
+      "name_local": "Gravesend",
+      "slug": "gravesend",
+      "center": {
+        "lat": 40.5961338,
+        "lon": -73.9739426
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Gravesend",
+        "place": "neighbourhood",
+        "population": "29436",
+        "wikidata": "Q3238884",
+        "wikipedia": "en:Gravesend, Brooklyn"
+      }
+    },
+    {
+      "id": "node/5759670105",
+      "name": "Fort Greene",
+      "name_local": "Fort Greene",
+      "slug": "fort_greene",
+      "center": {
+        "lat": 40.6907711,
+        "lon": -73.9766245
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Fort Greene",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/7748115089",
+      "name": "Sunset Hill",
+      "name_local": "Sunset Hill",
+      "slug": "sunset_hill",
+      "center": {
+        "lat": 40.6263406,
+        "lon": -74.1080312
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Sunset Hill",
+        "note": "subset neighborhood on Staten Island, New York",
+        "place": "neighbourhood",
+        "source": "http://www.gillanihomes.com/sunset-hill.php;http://www.realestatesiny.com/Sunset-Hill-Homes-for-Sale.php;https://www.tomcrimminsrealty.com/sunset-hill-real-estate.php"
+      }
+    },
+    {
+      "id": "node/8680776067",
+      "name": "New Lots",
+      "name_local": "New Lots",
+      "slug": "new_lots",
+      "center": {
+        "lat": 40.6606524,
+        "lon": -73.891511
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "New Lots",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/8680776068",
+      "name": "Court Square",
+      "name_local": "Court Square",
+      "slug": "court_square",
+      "center": {
+        "lat": 40.7470782,
+        "lon": -73.943181
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Court Square",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/8680776069",
+      "name": "Hunters Point",
+      "name_local": "Hunters Point",
+      "slug": "hunters_point",
+      "center": {
+        "lat": 40.7425425,
+        "lon": -73.956635
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Hunters Point",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/8680776070",
+      "name": "Ravenswood",
+      "name_local": "Ravenswood",
+      "slug": "ravenswood",
+      "center": {
+        "lat": 40.7610409,
+        "lon": -73.9379883
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Ravenswood",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/8680776071",
+      "name": "Queensbridge",
+      "name_local": "Queensbridge",
+      "slug": "queensbridge",
+      "center": {
+        "lat": 40.7554496,
+        "lon": -73.9433957
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Queensbridge",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/9173379599",
+      "name": "Flushing Chinatown",
+      "name_local": "Flushing Chinatown",
+      "slug": "flushing_chinatown",
+      "center": {
+        "lat": 40.7595978,
+        "lon": -73.8301514
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Flushing Chinatown",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/9254774992",
+      "name": "Koreatown",
+      "name_local": "Koreatown",
+      "slug": "koreatown",
+      "center": {
+        "lat": 40.763792,
+        "lon": -73.8082364
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "Long Island Koreatown",
+        "name": "Koreatown",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/9423354112",
+      "name": "Roosevelt Island",
+      "name_local": "Roosevelt Island",
+      "slug": "roosevelt_island",
+      "center": {
+        "lat": 40.7586767,
+        "lon": -73.9526842
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Roosevelt Island",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/9973509976",
+      "name": "Mill Basin",
+      "name_local": "Mill Basin",
+      "slug": "mill_basin",
+      "center": {
+        "lat": 40.6098325,
+        "lon": -73.9075848
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "is_in": "Kings,New York,N.Y.,NY,USA",
+        "name": "Mill Basin",
+        "place": "neighbourhood",
+        "wikidata": "Q6858171",
+        "wikipedia": "en:Mill Basin, Brooklyn"
+      }
+    },
+    {
+      "id": "node/10316226097",
+      "name": "Whitehall",
+      "name_local": "Whitehall",
+      "slug": "whitehall",
+      "center": {
+        "lat": 40.7056227,
+        "lon": -74.0133391
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Whitehall",
+        "name:ko": "화이트홀",
+        "name:sr": "Вајтхол",
+        "name:sr-Latn": "Vajthol",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/11676529765",
+      "name": "Sutton",
+      "name_local": "Sutton",
+      "slug": "sutton",
+      "center": {
+        "lat": 40.7566109,
+        "lon": -73.9618757
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Sutton",
+        "name:ko": "서턴",
+        "name:sr": "Сутон",
+        "name:sr-Latn": "Suton",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/11676529766",
+      "name": "Beekman",
+      "name_local": "Beekman",
+      "slug": "beekman",
+      "center": {
+        "lat": 40.7537176,
+        "lon": -73.9650085
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Beekman",
+        "name:ko": "비크먼",
+        "name:sr": "Бикман",
+        "name:sr-Latn": "Bikman",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "node/12235944511",
+      "name": "Manhattan Beach",
+      "name_local": "Manhattan Beach",
+      "slug": "manhattan_beach",
+      "center": {
+        "lat": 40.5779176,
+        "lon": -73.9440833
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Manhattan Beach",
+        "place": "neighbourhood",
+        "wikidata": "Q2599635",
+        "wikipedia": "en:Manhattan Beach, Brooklyn"
+      }
+    },
+    {
+      "id": "node/12839141477",
+      "name": "Sea Gate",
+      "name_local": "Sea Gate",
+      "slug": "sea_gate",
+      "center": {
+        "lat": 40.5768409,
+        "lon": -74.0073409
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Sea Gate",
+        "place": "neighbourhood",
+        "wikidata": "Q3569695",
+        "wikipedia": "en:Sea Gate, Brooklyn"
+      }
+    },
+    {
+      "id": "way/220786553",
+      "name": "Breezy Point",
+      "name_local": "Breezy Point",
+      "slug": "breezy_point",
+      "center": {
+        "lat": 40.5561885,
+        "lon": -73.9224127
+      },
+      "bbox": [
+        -73.9324127,
+        40.5461885,
+        -73.91241269999999,
+        40.566188499999996
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "2",
+        "gnis:feature_id": "944686",
+        "landuse": "residential",
+        "name": "Breezy Point",
+        "place": "neighbourhood",
+        "wikidata": "Q62394"
+      }
+    },
+    {
+      "id": "way/220786554",
+      "name": "Rockaway Point",
+      "name_local": "Rockaway Point",
+      "slug": "rockaway_point",
+      "center": {
+        "lat": 40.5607186,
+        "lon": -73.9182014
+      },
+      "bbox": [
+        -73.9282014,
+        40.5507186,
+        -73.9082014,
+        40.5707186
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "2",
+        "gnis:feature_id": "962745",
+        "landuse": "residential",
+        "name": "Rockaway Point",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "way/220786960",
+      "name": "Neponsit",
+      "name_local": "Neponsit",
+      "slug": "neponsit",
+      "center": {
+        "lat": 40.5730825,
+        "lon": -73.8598705
+      },
+      "bbox": [
+        -73.8698705,
+        40.5630825,
+        -73.8498705,
+        40.583082499999996
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "2",
+        "gnis:feature_id": "958369",
+        "landuse": "residential",
+        "name": "Neponsit",
+        "place": "neighbourhood",
+        "wikidata": "Q62146"
+      }
+    },
+    {
+      "id": "way/220788404",
+      "name": "Seaside",
+      "name_local": "Seaside",
+      "slug": "seaside",
+      "center": {
+        "lat": 40.5829612,
+        "lon": -73.826026
+      },
+      "bbox": [
+        -73.836026,
+        40.5729612,
+        -73.816026,
+        40.5929612
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "3",
+        "gnis:feature_id": "964751",
+        "landuse": "residential",
+        "name": "Seaside",
+        "place": "neighbourhood",
+        "wikidata": "Q62192",
+        "wikipedia": "en:Seaside, Queens"
+      }
+    },
+    {
+      "id": "way/220788405",
+      "name": "Belle Harbor",
+      "name_local": "Belle Harbor",
+      "slug": "belle_harbor",
+      "center": {
+        "lat": 40.5767455,
+        "lon": -73.847809
+      },
+      "bbox": [
+        -73.857809,
+        40.5667455,
+        -73.837809,
+        40.5867455
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "2",
+        "gnis:feature_id": "943603",
+        "landuse": "residential",
+        "name": "Belle Harbor",
+        "place": "neighbourhood",
+        "wikidata": "Q2894717"
+      }
+    },
+    {
+      "id": "way/220797934",
+      "name": "Roxbury",
+      "name_local": "Roxbury",
+      "slug": "roxbury",
+      "center": {
+        "lat": 40.5662288,
+        "lon": -73.8904487
+      },
+      "bbox": [
+        -73.9004487,
+        40.5562288,
+        -73.88044869999999,
+        40.576228799999996
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "2",
+        "gnis:feature_id": "963057",
+        "landuse": "residential",
+        "name": "Roxbury",
+        "place": "neighbourhood",
+        "wikidata": "Q62151"
+      }
+    },
+    {
+      "id": "way/220798925",
+      "name": "Broad Channel",
+      "name_local": "Broad Channel",
+      "slug": "broad_channel",
+      "center": {
+        "lat": 40.6061969,
+        "lon": -73.8198596
+      },
+      "bbox": [
+        -73.8298596,
+        40.5961969,
+        -73.8098596,
+        40.6161969
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "1",
+        "gnis:feature_id": "944781",
+        "name": "Broad Channel",
+        "place": "neighbourhood",
+        "wikidata": "Q62484",
+        "wikipedia": "en:Broad Channel, Queens"
+      }
+    },
+    {
+      "id": "way/244581129",
+      "name": "Brooklyn Heights",
+      "name_local": "Brooklyn Heights",
+      "slug": "brooklyn_heights",
+      "center": {
+        "lat": 40.6955775,
+        "lon": -73.9952814
+      },
+      "bbox": [
+        -74.0052814,
+        40.6855775,
+        -73.98528139999999,
+        40.7055775
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "26",
+        "gnis:feature_id": "944845",
+        "name": "Brooklyn Heights",
+        "place": "neighbourhood",
+        "wikipedia": "en:Brooklyn Heights"
+      }
+    },
+    {
+      "id": "way/244585094",
+      "name": "Cobble Hill Historic District",
+      "name_local": "Cobble Hill Historic District",
+      "slug": "cobble_hill_historic_district",
+      "center": {
+        "lat": 40.6873697,
+        "lon": -73.9965045
+      },
+      "bbox": [
+        -74.0065045,
+        40.6773697,
+        -73.9865045,
+        40.697369699999996
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "8",
+        "gnis:feature_id": "2418050",
+        "name": "Cobble Hill Historic District",
+        "place": "neighbourhood",
+        "wikidata": "Q5138803",
+        "wikipedia": "en:Cobble Hill Historic District"
+      }
+    },
+    {
+      "id": "way/244645482",
+      "name": "Carroll Gardens Historic District",
+      "name_local": "Carroll Gardens Historic District",
+      "slug": "carroll_gardens_historic_district",
+      "center": {
+        "lat": 40.6800528,
+        "lon": -73.9934464
+      },
+      "bbox": [
+        -74.0034464,
+        40.6700528,
+        -73.98344639999999,
+        40.6900528
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "14",
+        "gnis:feature_id": "2418048",
+        "name": "Carroll Gardens Historic District",
+        "place": "neighbourhood",
+        "website": "https://www1.nyc.gov/assets/lpc/downloads/pdf/maps/HistoricDistrictMaps/Brooklyn/carroll_gardens.pdf",
+        "wikidata": "Q5046564"
+      }
+    },
+    {
+      "id": "way/244646119",
+      "name": "Boerum Hill Historic District",
+      "name_local": "Boerum Hill Historic District",
+      "slug": "boerum_hill_historic_district",
+      "center": {
+        "lat": 40.6855404,
+        "lon": -73.9859521
+      },
+      "bbox": [
+        -73.99595210000001,
+        40.6755404,
+        -73.9759521,
+        40.6955404
+      ],
+      "source": "osm",
+      "tags": {
+        "area": "yes",
+        "boundary": "protected_area",
+        "ele": "8",
+        "gnis:feature_id": "2418045",
+        "name": "Boerum Hill Historic District",
+        "place": "neighbourhood",
+        "protect_class": "22",
+        "protected_area": "historic_district",
+        "protection_title": "National Register of Historic Places",
+        "wikidata": "Q4937227",
+        "wikipedia": "en:Boerum Hill Historic District"
+      }
+    },
+    {
+      "id": "way/249533411",
+      "name": "Sea Gate",
+      "name_local": "Sea Gate",
+      "slug": "sea_gate",
+      "center": {
+        "lat": 40.5767475,
+        "lon": -74.0074554
+      },
+      "bbox": [
+        -74.0174554,
+        40.566747500000005,
+        -73.99745539999999,
+        40.5867475
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "3",
+        "gated_community": "yes",
+        "gnis:feature_id": "964729",
+        "landuse": "residential",
+        "name": "Sea Gate",
+        "name:ru": "Сигейт",
+        "place": "neighbourhood",
+        "residential": "gated",
+        "source": "bing;knowledge",
+        "website": "https://seagatebrooklyn.com/",
+        "wikidata": "Q3569695",
+        "wikipedia": "en:Sea Gate, Brooklyn"
+      }
+    },
+    {
+      "id": "way/271286173",
+      "name": "Bushwick",
+      "name_local": "Bushwick",
+      "slug": "bushwick",
+      "center": {
+        "lat": 40.6964385,
+        "lon": -73.9192219
+      },
+      "bbox": [
+        -73.9292219,
+        40.6864385,
+        -73.90922189999999,
+        40.7064385
+      ],
+      "source": "osm",
+      "tags": {
+        "fixme": "Needs update to geometry",
+        "name": "Bushwick",
+        "name:ru": "Бушуик",
+        "place": "neighbourhood",
+        "wikidata": "Q2288728",
+        "wikipedia": "en:Bushwick, Brooklyn"
+      }
+    },
+    {
+      "id": "way/325838827",
+      "name": "Middle Village",
+      "name_local": "Middle Village",
+      "slug": "middle_village",
+      "center": {
+        "lat": 40.7183976,
+        "lon": -73.8822833
+      },
+      "bbox": [
+        -73.8922833,
+        40.708397600000005,
+        -73.87228329999999,
+        40.7283976
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "30",
+        "gnis:feature_id": "957143",
+        "name": "Middle Village",
+        "place": "neighbourhood",
+        "wikidata": "Q6841642"
+      }
+    },
+    {
+      "id": "way/325838828",
+      "name": "Rego Park",
+      "name_local": "Rego Park",
+      "slug": "rego_park",
+      "center": {
+        "lat": 40.723409,
+        "lon": -73.8627982
+      },
+      "bbox": [
+        -73.8727982,
+        40.713409,
+        -73.8527982,
+        40.733408999999995
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "28",
+        "gnis:feature_id": "962366",
+        "name": "Rego Park",
+        "place": "neighbourhood",
+        "wikidata": "Q391577"
+      }
+    },
+    {
+      "id": "way/325838829",
+      "name": "Forest Hills",
+      "name_local": "Forest Hills",
+      "slug": "forest_hills",
+      "center": {
+        "lat": 40.7225377,
+        "lon": -73.8437289
+      },
+      "bbox": [
+        -73.85372890000001,
+        40.7125377,
+        -73.8337289,
+        40.732537699999995
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "18",
+        "gnis:feature_id": "950394",
+        "name": "Forest Hills",
+        "place": "neighbourhood",
+        "wikidata": "Q1202211"
+      }
+    },
+    {
+      "id": "way/325838830",
+      "name": "Forest Hills Gardens",
+      "name_local": "Forest Hills Gardens",
+      "slug": "forest_hills_gardens",
+      "center": {
+        "lat": 40.715612,
+        "lon": -73.8426271
+      },
+      "bbox": [
+        -73.8526271,
+        40.705612,
+        -73.8326271,
+        40.725612
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "25",
+        "gnis:feature_id": "2079380",
+        "landuse": "residential",
+        "name": "Forest Hills Gardens",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "way/325933623",
+      "name": "Ridgewood",
+      "name_local": "Ridgewood",
+      "slug": "ridgewood",
+      "center": {
+        "lat": 40.7028453,
+        "lon": -73.9070643
+      },
+      "bbox": [
+        -73.9170643,
+        40.6928453,
+        -73.8970643,
+        40.7128453
+      ],
+      "source": "osm",
+      "tags": {
+        "crossing:signals": "yes",
+        "ele": "23",
+        "gnis:feature_id": "962511",
+        "name": "Ridgewood",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "way/326004461",
+      "name": "Pomonok",
+      "name_local": "Pomonok",
+      "slug": "pomonok",
+      "center": {
+        "lat": 40.7323476,
+        "lon": -73.8080451
+      },
+      "bbox": [
+        -73.8180451,
+        40.7223476,
+        -73.7980451,
+        40.742347599999995
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Pomonok",
+        "place": "neighbourhood",
+        "wikidata": "Q7227413",
+        "wikipedia": "en:Pomonok, Queens"
+      }
+    },
+    {
+      "id": "way/326004476",
+      "name": "Fresh Meadows",
+      "name_local": "Fresh Meadows",
+      "slug": "fresh_meadows",
+      "center": {
+        "lat": 40.7352499,
+        "lon": -73.7793805
+      },
+      "bbox": [
+        -73.78938050000001,
+        40.7252499,
+        -73.7693805,
+        40.7452499
+      ],
+      "source": "osm",
+      "tags": {
+        "is_in": "Queens, NY",
+        "name": "Fresh Meadows",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "way/326983525",
+      "name": "Sunset Park",
+      "name_local": "Sunset Park",
+      "slug": "sunset_park",
+      "center": {
+        "lat": 40.6506714,
+        "lon": -74.0096643
+      },
+      "bbox": [
+        -74.0196643,
+        40.6406714,
+        -73.99966429999999,
+        40.6606714
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Sunset Park",
+        "place": "neighbourhood",
+        "population": "126000",
+        "sidewalk:both": "separate",
+        "wikidata": "Q2270906",
+        "wikipedia": "en:Sunset Park, Brooklyn"
+      }
+    },
+    {
+      "id": "way/338075742",
+      "name": "LeFrak City",
+      "name_local": "LeFrak City",
+      "slug": "lefrak_city",
+      "center": {
+        "lat": 40.7363212,
+        "lon": -73.8623147
+      },
+      "bbox": [
+        -73.8723147,
+        40.7263212,
+        -73.8523147,
+        40.7463212
+      ],
+      "source": "osm",
+      "tags": {
+        "landuse": "residential",
+        "name": "LeFrak City",
+        "place": "neighbourhood",
+        "wikidata": "Q6506353"
+      }
+    },
+    {
+      "id": "way/351304122",
+      "name": "Park Slope",
+      "name_local": "Park Slope",
+      "slug": "park_slope",
+      "center": {
+        "lat": 40.6707289,
+        "lon": -73.9813338
+      },
+      "bbox": [
+        -73.9913338,
+        40.6607289,
+        -73.9713338,
+        40.6807289
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Park Slope",
+        "place": "neighbourhood",
+        "wikidata": "Q2607610",
+        "wikipedia": "en:Park Slope"
+      }
+    },
+    {
+      "id": "way/399256097",
+      "name": "Chelsea District",
+      "name_local": "Chelsea District",
+      "slug": "chelsea_district",
+      "center": {
+        "lat": 40.7471381,
+        "lon": -73.9980827
+      },
+      "bbox": [
+        -74.0080827,
+        40.7371381,
+        -73.98808269999999,
+        40.7571381
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Chelsea District",
+        "name:ja": "チェルシー",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "way/435231484",
+      "name": "Fort Greene",
+      "name_local": "Fort Greene",
+      "slug": "fort_greene",
+      "center": {
+        "lat": 40.6901112,
+        "lon": -73.9747704
+      },
+      "bbox": [
+        -73.9847704,
+        40.6801112,
+        -73.96477039999999,
+        40.700111199999995
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "18",
+        "gnis:feature_id": "950468",
+        "name": "Fort Greene",
+        "place": "neighbourhood",
+        "wikidata": "Q5471250",
+        "wikipedia": "en:Fort Greene, Brooklyn"
+      }
+    },
+    {
+      "id": "way/501004935",
+      "name": "Boerum Hill",
+      "name_local": "Boerum Hill",
+      "slug": "boerum_hill",
+      "center": {
+        "lat": 40.6857934,
+        "lon": -73.9852945
+      },
+      "bbox": [
+        -73.9952945,
+        40.6757934,
+        -73.97529449999999,
+        40.6957934
+      ],
+      "source": "osm",
+      "tags": {
+        "area": "yes",
+        "name": "Boerum Hill",
+        "place": "neighbourhood",
+        "wikidata": "Q4937230",
+        "wikipedia": "en:Boerum Hill"
+      }
+    },
+    {
+      "id": "way/501082581",
+      "name": "Downtown Brooklyn",
+      "name_local": "Downtown Brooklyn",
+      "slug": "downtown_brooklyn",
+      "center": {
+        "lat": 40.6914533,
+        "lon": -73.9855931
+      },
+      "bbox": [
+        -73.99559310000001,
+        40.6814533,
+        -73.9755931,
+        40.7014533
+      ],
+      "source": "osm",
+      "tags": {
+        "area": "yes",
+        "name": "Downtown Brooklyn",
+        "place": "neighbourhood",
+        "wikidata": "Q2900913",
+        "wikipedia": "en:Downtown Brooklyn"
+      }
+    },
+    {
+      "id": "way/504453593",
+      "name": "Ditmas Park",
+      "name_local": "Ditmas Park",
+      "slug": "ditmas_park",
+      "center": {
+        "lat": 40.6375991,
+        "lon": -73.9634042
+      },
+      "bbox": [
+        -73.9734042,
+        40.627599100000005,
+        -73.9534042,
+        40.6475991
+      ],
+      "source": "osm",
+      "tags": {
+        "area": "yes",
+        "name": "Ditmas Park",
+        "place": "neighbourhood",
+        "wikidata": "Q5283687",
+        "wikipedia": "en:Ditmas Park, Brooklyn"
+      }
+    },
+    {
+      "id": "way/517502994",
+      "name": "Bath Beach",
+      "name_local": "Bath Beach",
+      "slug": "bath_beach",
+      "center": {
+        "lat": 40.5966991,
+        "lon": -74.0012952
+      },
+      "bbox": [
+        -74.0112952,
+        40.586699100000004,
+        -73.9912952,
+        40.6066991
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "8",
+        "gnis:feature_id": "943163",
+        "name": "Bath Beach",
+        "place": "neighbourhood",
+        "population": "30000",
+        "wikidata": "Q4868889",
+        "wikipedia": "en:Bath Beach, Brooklyn"
+      }
+    },
+    {
+      "id": "way/517506075",
+      "name": "Gravesend",
+      "name_local": "Gravesend",
+      "slug": "gravesend",
+      "center": {
+        "lat": 40.5951016,
+        "lon": -73.9736515
+      },
+      "bbox": [
+        -73.98365150000001,
+        40.5851016,
+        -73.9636515,
+        40.6051016
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "4",
+        "gnis:feature_id": "951597",
+        "name": "Gravesend",
+        "place": "neighbourhood",
+        "population": "30000",
+        "wikidata": "Q3238884",
+        "wikipedia": "en:Gravesend, Brooklyn"
+      }
+    },
+    {
+      "id": "way/531365233",
+      "name": "West Brighton",
+      "name_local": "West Brighton",
+      "slug": "west_brighton",
+      "center": {
+        "lat": 40.5784666,
+        "lon": -73.9747463
+      },
+      "bbox": [
+        -73.98474630000001,
+        40.5684666,
+        -73.9647463,
+        40.5884666
+      ],
+      "source": "osm",
+      "tags": {
+        "gnis:feature_id": "2099961",
+        "name": "West Brighton",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "way/570563993",
+      "name": "Brighton Beach",
+      "name_local": "Brighton Beach",
+      "slug": "brighton_beach",
+      "center": {
+        "lat": 40.5796494,
+        "lon": -73.9613543
+      },
+      "bbox": [
+        -73.9713543,
+        40.5696494,
+        -73.95135429999999,
+        40.5896494
+      ],
+      "source": "osm",
+      "tags": {
+        "gnis:feature_id": "944747",
+        "name": "Brighton Beach",
+        "name:ru": "Брайтон-Бич",
+        "name:uk": "Брайтон-Біч",
+        "place": "neighbourhood",
+        "population": "35547",
+        "population:date": "2010",
+        "source:population": "2010 United States Census",
+        "wikidata": "Q915813",
+        "wikipedia": "en:Brighton Beach"
+      }
+    },
+    {
+      "id": "way/581339815",
+      "name": "Dyker Heights",
+      "name_local": "Dyker Heights",
+      "slug": "dyker_heights",
+      "center": {
+        "lat": 40.6215675,
+        "lon": -74.010811
+      },
+      "bbox": [
+        -74.02081100000001,
+        40.6115675,
+        -74.000811,
+        40.631567499999996
+      ],
+      "source": "osm",
+      "tags": {
+        "gnis:feature_id": "948899",
+        "name": "Dyker Heights",
+        "place": "neighbourhood",
+        "population": "45000",
+        "wikidata": "Q5318679",
+        "wikipedia": "en:Dyker Heights, Brooklyn"
+      }
+    },
+    {
+      "id": "way/702492597",
+      "name": "Diamond District",
+      "name_local": "Diamond District",
+      "slug": "diamond_district",
+      "center": {
+        "lat": 40.7573718,
+        "lon": -73.9801578
+      },
+      "bbox": [
+        -73.9901578,
+        40.7473718,
+        -73.9701578,
+        40.7673718
+      ],
+      "source": "osm",
+      "tags": {
+        "landuse": "commercial",
+        "name": "Diamond District",
+        "name:en": "Diamond District",
+        "name:ru": "Дайамонд",
+        "place": "neighbourhood",
+        "tourism": "attraction",
+        "wikidata": "Q1208691"
+      }
+    },
+    {
+      "id": "way/736935895",
+      "name": "Flower District",
+      "name_local": "Flower District",
+      "slug": "flower_district",
+      "center": {
+        "lat": 40.7465957,
+        "lon": -73.9920009
+      },
+      "bbox": [
+        -74.0020009,
+        40.7365957,
+        -73.98200089999999,
+        40.7565957
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Flower District",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "way/752911539",
+      "name": "Coney Island",
+      "name_local": "Coney Island",
+      "slug": "coney_island",
+      "center": {
+        "lat": 40.5772214,
+        "lon": -73.9937278
+      },
+      "bbox": [
+        -74.00372780000001,
+        40.5672214,
+        -73.9837278,
+        40.5872214
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Coney Island",
+        "name:ru": "Кони-Айленд",
+        "place": "neighbourhood",
+        "population": "32259",
+        "population:date": "2020",
+        "source:population": "https://www.nyc.gov/assets/dfta/downloads/pdf/reports/Demographics_by_NTA.pdf",
+        "wikidata": "Q628201",
+        "wikipedia": "en:Coney Island"
+      }
+    },
+    {
+      "id": "way/753583267",
+      "name": "Greenpoint Landing",
+      "name_local": "Greenpoint Landing",
+      "slug": "greenpoint_landing",
+      "center": {
+        "lat": 40.7355201,
+        "lon": -73.9604997
+      },
+      "bbox": [
+        -73.9704997,
+        40.725520100000004,
+        -73.9504997,
+        40.7455201
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Greenpoint Landing",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "way/940880817",
+      "name": "Windsor Terrace",
+      "name_local": "Windsor Terrace",
+      "slug": "windsor_terrace",
+      "center": {
+        "lat": 40.6524221,
+        "lon": -73.9796415
+      },
+      "bbox": [
+        -73.9896415,
+        40.642422100000005,
+        -73.9696415,
+        40.6624221
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Windsor Terrace",
+        "place": "neighbourhood",
+        "population": "20988",
+        "wikidata": "Q8024714",
+        "wikipedia": "en:Windsor Terrace, Brooklyn"
+      }
+    },
+    {
+      "id": "way/1017947714",
+      "name": "Prospect Park South",
+      "name_local": "Prospect Park South",
+      "slug": "prospect_park_south",
+      "center": {
+        "lat": 40.6464967,
+        "lon": -73.967125
+      },
+      "bbox": [
+        -73.977125,
+        40.6364967,
+        -73.95712499999999,
+        40.6564967
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "13",
+        "gnis:feature_id": "2418056",
+        "heritage": "2",
+        "historic": "district",
+        "name": "Prospect Park South",
+        "place": "neighbourhood",
+        "ref:nrhp": "83001699",
+        "wikidata": "Q7250806",
+        "wikipedia": "en:Prospect Park South"
+      }
+    },
+    {
+      "id": "way/1017949432",
+      "name": "Albemarle-Kenmore Terraces Historic District",
+      "name_local": "Albemarle-Kenmore Terraces Historic District",
+      "slug": "albemarle_kenmore_terraces_historic_district",
+      "center": {
+        "lat": 40.6487867,
+        "lon": -73.9592283
+      },
+      "bbox": [
+        -73.96922830000001,
+        40.638786700000004,
+        -73.9492283,
+        40.6587867
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "14",
+        "gnis:feature_id": "2418044",
+        "historic": "district",
+        "name": "Albemarle-Kenmore Terraces Historic District",
+        "place": "neighbourhood",
+        "ref:nrhp": "83001685",
+        "wikidata": "Q4709486",
+        "wikipedia": "en:Albemarle–Kenmore Terraces Historic District"
+      }
+    },
+    {
+      "id": "way/1112122343",
+      "name": "Westchester Square",
+      "name_local": "Westchester Square",
+      "slug": "westchester_square",
+      "center": {
+        "lat": 40.8391782,
+        "lon": -73.8463661
+      },
+      "bbox": [
+        -73.8563661,
+        40.8291782,
+        -73.83636609999999,
+        40.8491782
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Westchester Square",
+        "place": "neighbourhood",
+        "wikidata": "Q17091379",
+        "wikipedia": "en:Westchester Square, Bronx"
+      }
+    },
+    {
+      "id": "way/1254164495",
+      "name": "Baychester",
+      "name_local": "Baychester",
+      "slug": "baychester",
+      "center": {
+        "lat": 40.8707565,
+        "lon": -73.8417711
+      },
+      "bbox": [
+        -73.85177110000001,
+        40.8607565,
+        -73.8317711,
+        40.8807565
+      ],
+      "source": "osm",
+      "tags": {
+        "ele": "24",
+        "gnis:feature_id": "943205",
+        "name": "Baychester",
+        "place": "neighbourhood",
+        "population": "63345",
+        "population:date": "2000",
+        "source:population": "wikipedia",
+        "wikidata": "Q4874397",
+        "wikipedia": "en:Baychester, Bronx"
+      }
+    },
+    {
+      "id": "way/1280967989",
+      "name": "Greenpoint",
+      "name_local": "Greenpoint",
+      "slug": "greenpoint",
+      "center": {
+        "lat": 40.7289732,
+        "lon": -73.9460045
+      },
+      "bbox": [
+        -73.9560045,
+        40.7189732,
+        -73.9360045,
+        40.7389732
+      ],
+      "source": "osm",
+      "tags": {
+        "description": "generally accepted neighborhood boundary",
+        "loc_name": "Little Poland",
+        "name": "Greenpoint",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "way/1373161887",
+      "name": "Brownsville",
+      "name_local": "Brownsville",
+      "slug": "brownsville",
+      "center": {
+        "lat": 40.6638219,
+        "lon": -73.9128351
+      },
+      "bbox": [
+        -73.9228351,
+        40.653821900000004,
+        -73.90283509999999,
+        40.6738219
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Brownsville",
+        "place": "neighbourhood",
+        "population": "58300",
+        "population:date": "2010",
+        "source:population": "https://www.nyc.gov/assets/planning/download/pdf/data-maps/nyc-population/census2010/t_pl_p5_nta.pdf",
+        "wikidata": "Q991279",
+        "wikipedia": "en:Brownsville, Brooklyn"
+      }
+    },
+    {
+      "id": "way/1374261673",
+      "name": "Parkville",
+      "name_local": "Parkville",
+      "slug": "parkville",
+      "center": {
+        "lat": 40.6314328,
+        "lon": -73.9719682
+      },
+      "bbox": [
+        -73.98196820000001,
+        40.6214328,
+        -73.9619682,
+        40.6414328
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Parkville",
+        "place": "neighbourhood"
+      }
+    },
+    {
+      "id": "relation/8398073",
+      "name": "Fort George",
+      "name_local": "Fort George",
+      "slug": "fort_george",
+      "center": {
+        "lat": 40.85844,
+        "lon": -73.9298867
+      },
+      "bbox": [
+        -73.9398867,
+        40.848440000000004,
+        -73.91988669999999,
+        40.86844
+      ],
+      "source": "osm",
+      "tags": {
+        "boundary": "place",
+        "name": "Fort George",
+        "name:ko": "포트 조지",
+        "name:ru": "Форт-Джордж",
+        "place": "neighbourhood",
+        "type": "boundary",
+        "wikidata": "Q1438535",
+        "wikipedia": "en:Fort George (New York)"
+      }
+    },
+    {
+      "id": "relation/8398098",
+      "name": "Herald Square",
+      "name_local": "Herald Square",
+      "slug": "herald_square",
+      "center": {
+        "lat": 40.7495406,
+        "lon": -73.9879779
+      },
+      "bbox": [
+        -73.99797790000001,
+        40.739540600000005,
+        -73.9779779,
+        40.7595406
+      ],
+      "source": "osm",
+      "tags": {
+        "boundary": "place",
+        "name": "Herald Square",
+        "name:ko": "헤럴드 스퀘어",
+        "name:ru": "Геральд-сквер",
+        "place": "neighbourhood",
+        "type": "boundary",
+        "wikidata": "Q109982"
+      }
+    },
+    {
+      "id": "relation/8398104",
+      "name": "Stuy Town",
+      "name_local": "Stuy Town",
+      "slug": "stuy_town",
+      "center": {
+        "lat": 40.7317364,
+        "lon": -73.976883
+      },
+      "bbox": [
+        -73.986883,
+        40.721736400000005,
+        -73.966883,
+        40.7417364
+      ],
+      "source": "osm",
+      "tags": {
+        "boundary": "place",
+        "name": "Stuy Town",
+        "name:ko": "스튜이 타운",
+        "name:ru": "Стай-таун",
+        "place": "neighbourhood",
+        "type": "boundary",
+        "wikidata": "Q1588578"
+      }
+    },
+    {
+      "id": "relation/12520114",
+      "name": "Greenwood Heights",
+      "name_local": "Greenwood Heights",
+      "slug": "greenwood_heights",
+      "center": {
+        "lat": 40.6567288,
+        "lon": -73.9980719
+      },
+      "bbox": [
+        -74.0080719,
+        40.646728800000005,
+        -73.9880719,
+        40.6667288
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Greenwood Heights",
+        "place": "neighbourhood",
+        "type": "multipolygon",
+        "wikidata": "Q5605028",
+        "wikipedia": "en:Greenwood Heights, Brooklyn"
+      }
+    }
+  ]
+}

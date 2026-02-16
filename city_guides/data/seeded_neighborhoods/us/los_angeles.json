@@ -1,0 +1,1249 @@
+{
+  "city": "Los Angeles",
+  "country": "US",
+  "source": "overpass",
+  "last_updated": 1770753967,
+  "neighborhoods": [
+    {
+      "id": "node/26427725",
+      "name": "Venice",
+      "name_local": "Venice",
+      "slug": "venice",
+      "center": {
+        "lat": 33.995044,
+        "lon": -118.4668875
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Venice",
+        "place": "suburb",
+        "population": "40885",
+        "wikidata": "Q773853",
+        "wikipedia": "en:Venice, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150933406",
+      "name": "Lincoln Heights",
+      "name_local": "Lincoln Heights",
+      "slug": "lincoln_heights",
+      "center": {
+        "lat": 34.0726552,
+        "lon": -118.2111954
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "110",
+        "gnis:feature_id": "1660915",
+        "name": "Lincoln Heights",
+        "place": "suburb",
+        "wikidata": "Q1825736",
+        "wikipedia": "en:Lincoln Heights, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150933823",
+      "name": "Tujunga",
+      "name_local": "Tujunga",
+      "slug": "tujunga",
+      "center": {
+        "lat": 34.252225,
+        "lon": -118.2884105
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "540",
+        "gnis:feature_id": "250657",
+        "name": "Tujunga",
+        "place": "suburb",
+        "population": "26527",
+        "wikidata": "Q3503914",
+        "wikipedia": "en:Sunland-Tujunga, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150941753",
+      "name": "San Pedro",
+      "name_local": "San Pedro",
+      "slug": "san_pedro",
+      "center": {
+        "lat": 33.7358518,
+        "lon": -118.2922934
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "admin_level": "9",
+        "ele": "34",
+        "gnis:feature_id": "1661392",
+        "name": "San Pedro",
+        "place": "suburb",
+        "wikidata": "Q290356"
+      }
+    },
+    {
+      "id": "node/150941903",
+      "name": "Granada Hills",
+      "name_local": "Granada Hills",
+      "slug": "granada_hills",
+      "center": {
+        "lat": 34.2661558,
+        "lon": -118.5174342
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "315",
+        "gnis:feature_id": "271389",
+        "name": "Granada Hills",
+        "place": "suburb",
+        "wikidata": "Q3113415"
+      }
+    },
+    {
+      "id": "node/150941906",
+      "name": "Westchester",
+      "name_local": "Westchester",
+      "slug": "westchester",
+      "center": {
+        "lat": 33.9597349,
+        "lon": -118.400632
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "38",
+        "gnis:feature_id": "251391",
+        "name": "Westchester",
+        "place": "suburb",
+        "wikidata": "Q4272085",
+        "wikipedia": "en:Westchester, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150943581",
+      "name": "Pacific Palisades",
+      "name_local": "Pacific Palisades",
+      "slug": "pacific_palisades",
+      "center": {
+        "lat": 34.0480643,
+        "lon": -118.5264706
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "100",
+        "gnis:feature_id": "1661169",
+        "name": "Pacific Palisades",
+        "place": "suburb",
+        "wikidata": "Q1370207",
+        "wikipedia": "en:Pacific Palisades, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150946719",
+      "name": "Woodland Hills",
+      "name_local": "Woodland Hills",
+      "slug": "woodland_hills",
+      "center": {
+        "lat": 34.1684364,
+        "lon": -118.6058382
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "273",
+        "name": "Woodland Hills",
+        "name:ru": "Вудленд-Хиллз",
+        "place": "suburb",
+        "wikidata": "Q1337818",
+        "wikipedia": "en:Woodland Hills, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150949523",
+      "name": "Eagle Rock",
+      "name_local": "Eagle Rock",
+      "slug": "eagle_rock",
+      "center": {
+        "lat": 34.1390325,
+        "lon": -118.2140958
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "173",
+        "gnis:feature_id": "241718",
+        "name": "Eagle Rock",
+        "place": "suburb",
+        "wikidata": "Q4120016",
+        "wikipedia": "en:Eagle Rock, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150951503",
+      "name": "Panorama City",
+      "name_local": "Panorama City",
+      "slug": "panorama_city",
+      "center": {
+        "lat": 34.2242902,
+        "lon": -118.4453745
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "249",
+        "gnis:feature_id": "1661187",
+        "name": "Panorama City",
+        "place": "suburb",
+        "wikidata": "Q7131498",
+        "wikipedia": "en:Panorama City, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150952705",
+      "name": "Sylmar",
+      "name_local": "Sylmar",
+      "slug": "sylmar",
+      "center": {
+        "lat": 34.3076252,
+        "lon": -118.4492148
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "382",
+        "gnis:feature_id": "1661539",
+        "name": "Sylmar",
+        "place": "suburb",
+        "wikidata": "Q3506894"
+      }
+    },
+    {
+      "id": "node/150952736",
+      "name": "Sherman Oaks",
+      "name_local": "Sherman Oaks",
+      "slug": "sherman_oaks",
+      "center": {
+        "lat": 34.1508718,
+        "lon": -118.448986
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "202",
+        "gnis:feature_id": "249397",
+        "name": "Sherman Oaks",
+        "place": "suburb",
+        "wikidata": "Q1015874"
+      }
+    },
+    {
+      "id": "node/150953869",
+      "name": "Winnetka",
+      "name_local": "Winnetka",
+      "slug": "winnetka",
+      "center": {
+        "lat": 34.2013207,
+        "lon": -118.5711037
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "244",
+        "gnis:feature_id": "1661701",
+        "name": "Winnetka",
+        "place": "suburb",
+        "wikidata": "Q8025633"
+      }
+    },
+    {
+      "id": "node/150954344",
+      "name": "Reseda",
+      "name_local": "Reseda",
+      "slug": "reseda",
+      "center": {
+        "lat": 34.200768,
+        "lon": -118.5356869
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "admin_level": "10",
+        "ele": "225",
+        "gnis:feature_id": "1661302",
+        "name": "Reseda",
+        "place": "suburb",
+        "population": "80000",
+        "wikidata": "Q7315195"
+      }
+    },
+    {
+      "id": "node/150956150",
+      "name": "Van Nuys",
+      "name_local": "Van Nuys",
+      "slug": "van_nuys",
+      "center": {
+        "lat": 34.1866193,
+        "lon": -118.4486675
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "217",
+        "gnis:feature_id": "250945",
+        "name": "Van Nuys",
+        "place": "suburb",
+        "population": "136443",
+        "source:population": "DBpedia",
+        "wikidata": "Q769446",
+        "wikipedia": "en:Van Nuys"
+      }
+    },
+    {
+      "id": "node/150957981",
+      "name": "Northridge",
+      "name_local": "Northridge",
+      "slug": "northridge",
+      "center": {
+        "lat": 34.2345615,
+        "lon": -118.5369316
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "246",
+        "gnis:feature_id": "246661",
+        "name": "Northridge",
+        "place": "suburb",
+        "population": "68469",
+        "wikidata": "Q2050326"
+      }
+    },
+    {
+      "id": "node/150959732",
+      "name": "Boyle Heights",
+      "name_local": "Boyle Heights",
+      "slug": "boyle_heights",
+      "center": {
+        "lat": 34.0436892,
+        "lon": -118.2097684
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "gnis:feature_id": "1669828",
+        "name": "Boyle Heights",
+        "place": "suburb",
+        "wikidata": "Q2923029",
+        "wikipedia": "en:Boyle Heights, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150959930",
+      "name": "Wilmington",
+      "name_local": "Wilmington",
+      "slug": "wilmington",
+      "center": {
+        "lat": 33.7800164,
+        "lon": -118.262509
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "7",
+        "name": "Wilmington",
+        "place": "suburb",
+        "wikidata": "Q8022724"
+      }
+    },
+    {
+      "id": "node/150961611",
+      "name": "Sun Valley",
+      "name_local": "Sun Valley",
+      "slug": "sun_valley",
+      "center": {
+        "lat": 34.2204227,
+        "lon": -118.3878945
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "247",
+        "gnis:feature_id": "1661523",
+        "name": "Sun Valley",
+        "place": "suburb",
+        "wikidata": "Q14684044",
+        "wikipedia": "en:Sun Valley, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150962405",
+      "name": "Encino",
+      "name_local": "Encino",
+      "slug": "encino",
+      "center": {
+        "lat": 34.1591324,
+        "lon": -118.5016166
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "236",
+        "gnis:feature_id": "1660620",
+        "name": "Encino",
+        "place": "suburb",
+        "population": "44581",
+        "wikidata": "Q1190590"
+      }
+    },
+    {
+      "id": "node/150963606",
+      "name": "Highland Park",
+      "name_local": "Highland Park",
+      "slug": "highland_park",
+      "center": {
+        "lat": 34.1099469,
+        "lon": -118.1969828
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "171",
+        "gnis:feature_id": "1660746",
+        "name": "Highland Park",
+        "place": "suburb",
+        "population": "57566",
+        "wikidata": "Q3135438",
+        "wikipedia": "en:Highland Park, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150964813",
+      "name": "Sunland",
+      "name_local": "Sunland",
+      "slug": "sunland",
+      "center": {
+        "lat": 34.2669466,
+        "lon": -118.3023
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "461",
+        "gnis:feature_id": "250100",
+        "name": "Sunland",
+        "place": "suburb",
+        "population": "15316",
+        "wikidata": "Q3503914",
+        "wikipedia": "en:Sunland-Tujunga, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150965864",
+      "name": "Canoga Park",
+      "name_local": "Canoga Park",
+      "slug": "canoga_park",
+      "center": {
+        "lat": 34.2011078,
+        "lon": -118.5978087
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Canoga Park",
+        "place": "suburb",
+        "population": "60578",
+        "wikidata": "Q2457268"
+      }
+    },
+    {
+      "id": "node/150966677",
+      "name": "Mar Vista",
+      "name_local": "Mar Vista",
+      "slug": "mar_vista",
+      "center": {
+        "lat": 34.0037605,
+        "lon": -118.4391641
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "22",
+        "gnis:feature_id": "245482",
+        "name": "Mar Vista",
+        "name:ar": "مار فيستا",
+        "place": "suburb",
+        "wikidata": "Q2783491"
+      }
+    },
+    {
+      "id": "node/150966715",
+      "name": "Brentwood",
+      "name_local": "Brentwood",
+      "slug": "brentwood",
+      "center": {
+        "lat": 34.0521403,
+        "lon": -118.4740699
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "97",
+        "gnis:feature_id": "1660377",
+        "name": "Brentwood",
+        "place": "suburb",
+        "wikidata": "Q909975"
+      }
+    },
+    {
+      "id": "node/150968103",
+      "name": "Koreatown",
+      "name_local": "Koreatown",
+      "slug": "koreatown",
+      "center": {
+        "lat": 34.0617936,
+        "lon": -118.305447
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "alt_name": "Ktown",
+        "ele": "61",
+        "gnis:feature_id": "1732794",
+        "name": "Koreatown",
+        "name:en": "Koreatown",
+        "name:ko": "코리아타운",
+        "place": "suburb",
+        "population": "124281",
+        "tourism": "attraction",
+        "wikidata": "Q872664",
+        "wikipedia": "en:Koreatown, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150968514",
+      "name": "Pacoima",
+      "name_local": "Pacoima",
+      "slug": "pacoima",
+      "center": {
+        "lat": 34.2625025,
+        "lon": -118.427027
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "302",
+        "gnis:feature_id": "1661171",
+        "name": "Pacoima",
+        "place": "suburb",
+        "wikidata": "Q4994419"
+      }
+    },
+    {
+      "id": "node/150979023",
+      "name": "Chatsworth",
+      "name_local": "Chatsworth",
+      "slug": "chatsworth",
+      "center": {
+        "lat": 34.2572499,
+        "lon": -118.6017022
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "298",
+        "gnis:feature_id": "1660473",
+        "name": "Chatsworth",
+        "place": "suburb",
+        "population": "41255",
+        "wikidata": "Q1020942",
+        "wikipedia": "en:Chatsworth, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150979181",
+      "name": "Studio City",
+      "name_local": "Studio City",
+      "slug": "studio_city",
+      "center": {
+        "lat": 34.1483989,
+        "lon": -118.3961877
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "186",
+        "gnis:feature_id": "1661516",
+        "name": "Studio City",
+        "place": "suburb",
+        "wikidata": "Q3143067"
+      }
+    },
+    {
+      "id": "node/150981601",
+      "name": "Hyde Park",
+      "name_local": "Hyde Park",
+      "slug": "hyde_park",
+      "center": {
+        "lat": 33.9854024,
+        "lon": -118.330861
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "50",
+        "gnis:feature_id": "1660780",
+        "name": "Hyde Park",
+        "place": "suburb",
+        "wikidata": "Q5953596",
+        "wikipedia": "en:Hyde Park, Los Angeles"
+      }
+    },
+    {
+      "id": "node/150981982",
+      "name": "Sawtelle",
+      "name_local": "Sawtelle",
+      "slug": "sawtelle",
+      "center": {
+        "lat": 34.039893,
+        "lon": -118.4507991
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "48",
+        "gnis:feature_id": "253298",
+        "name": "Sawtelle",
+        "place": "suburb",
+        "wikidata": "Q7428691",
+        "wikipedia": "en:Sawtelle, Los Angeles"
+      }
+    },
+    {
+      "id": "node/1441057586",
+      "name": "West Hills",
+      "name_local": "West Hills",
+      "slug": "west_hills",
+      "center": {
+        "lat": 34.2032325,
+        "lon": -118.645476
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "West Hills",
+        "place": "suburb",
+        "population": "41426",
+        "wikidata": "Q7985390"
+      }
+    },
+    {
+      "id": "node/1510476348",
+      "name": "Warner Center",
+      "name_local": "Warner Center",
+      "slug": "warner_center",
+      "center": {
+        "lat": 34.1797349,
+        "lon": -118.5978693
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Warner Center",
+        "place": "suburb",
+        "wikidata": "Q3566344"
+      }
+    },
+    {
+      "id": "node/1830174596",
+      "name": "North Hollywood",
+      "name_local": "North Hollywood",
+      "slug": "north_hollywood",
+      "center": {
+        "lat": 34.1649502,
+        "lon": -118.374752
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "North Hollywood",
+        "name:de": "North Hollywood",
+        "name:en": "North Hollywood",
+        "name:es": "North Hollywood",
+        "name:fr": "North Hollywood",
+        "name:it": "North Hollywood",
+        "name:ko": "노스할리우드",
+        "name:nl": "North Hollywood",
+        "name:pl": "North Hollywood",
+        "name:pt": "North Hollywood",
+        "name:ru": "Северный Голливуд",
+        "place": "suburb",
+        "short_name": "NoHo",
+        "wikidata": "Q1319697"
+      }
+    },
+    {
+      "id": "node/1830231415",
+      "name": "Hollywood",
+      "name_local": "Hollywood",
+      "slug": "hollywood",
+      "center": {
+        "lat": 34.0980031,
+        "lon": -118.329523
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Hollywood",
+        "name:ar": "هوليوود",
+        "name:hi": "हॉलीवुड साइन",
+        "name:zh": "好莱坞",
+        "place": "suburb",
+        "wikidata": "Q34006",
+        "wikipedia": "en:Hollywood, Los Angeles"
+      }
+    },
+    {
+      "id": "node/2646082358",
+      "name": "Tarzana",
+      "name_local": "Tarzana",
+      "slug": "tarzana",
+      "center": {
+        "lat": 34.1689262,
+        "lon": -118.5365791
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Tarzana",
+        "place": "suburb",
+        "population": "37778",
+        "wikidata": "Q2708222",
+        "wikipedia": "en:Tarzana, Los Angeles"
+      }
+    },
+    {
+      "id": "node/2770492362",
+      "name": "Echo Park",
+      "name_local": "Echo Park",
+      "slug": "echo_park",
+      "center": {
+        "lat": 34.0779819,
+        "lon": -118.2567824
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Echo Park",
+        "place": "suburb",
+        "wikidata": "Q3047014",
+        "wikipedia": "en:Echo Park"
+      }
+    },
+    {
+      "id": "node/3833103042",
+      "name": "Westwood",
+      "name_local": "Westwood",
+      "slug": "westwood",
+      "center": {
+        "lat": 34.0668947,
+        "lon": -118.439944
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "ele": "82",
+        "gnis:feature_id": "1661676",
+        "name": "Westwood",
+        "place": "suburb",
+        "wikidata": "Q1199774",
+        "wikipedia": "en:Westwood, Los Angeles"
+      }
+    },
+    {
+      "id": "node/3958697006",
+      "name": "Porter Ranch",
+      "name_local": "Porter Ranch",
+      "slug": "porter_ranch",
+      "center": {
+        "lat": 34.2818164,
+        "lon": -118.5612714
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Porter Ranch",
+        "place": "suburb",
+        "wikidata": "Q7231645"
+      }
+    },
+    {
+      "id": "node/4487849512",
+      "name": "North Hills",
+      "name_local": "North Hills",
+      "slug": "north_hills",
+      "center": {
+        "lat": 34.2429575,
+        "lon": -118.4854081
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "North Hills",
+        "place": "suburb",
+        "wikidata": "Q7055628",
+        "wikipedia": "en:North Hills, Los Angeles"
+      }
+    },
+    {
+      "id": "node/4613230295",
+      "name": "Arleta",
+      "name_local": "Arleta",
+      "slug": "arleta",
+      "center": {
+        "lat": 34.2413266,
+        "lon": -118.4322047
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Arleta",
+        "place": "suburb",
+        "wikidata": "Q2841135",
+        "wikipedia": "en:Arleta, Los Angeles"
+      }
+    },
+    {
+      "id": "node/6810008086",
+      "name": "Valley Glen",
+      "name_local": "Valley Glen",
+      "slug": "valley_glen",
+      "center": {
+        "lat": 34.1826379,
+        "lon": -118.4138666
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Valley Glen",
+        "place": "suburb",
+        "wikidata": "Q7912076",
+        "wikipedia": "en:Valley Glen, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7300497598",
+      "name": "Vermont Knolls",
+      "name_local": "Vermont Knolls",
+      "slug": "vermont_knolls",
+      "center": {
+        "lat": 33.9668188,
+        "lon": -118.29167
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Vermont Knolls",
+        "place": "suburb",
+        "wikidata": "Q7921730",
+        "wikipedia": "en:Vermont Knolls, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7304587961",
+      "name": "Palms",
+      "name_local": "Palms",
+      "slug": "palms",
+      "center": {
+        "lat": 34.0247328,
+        "lon": -118.4116152
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Palms",
+        "place": "suburb",
+        "wikidata": "Q7128429",
+        "wikipedia": "en:Palms, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7304588000",
+      "name": "Pico-Robertson",
+      "name_local": "Pico-Robertson",
+      "slug": "pico_robertson",
+      "center": {
+        "lat": 34.053269,
+        "lon": -118.3869832
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Pico-Robertson",
+        "place": "suburb",
+        "wikidata": "Q7568344",
+        "wikipedia": "en:South Robertson, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7304675778",
+      "name": "West Adams",
+      "name_local": "West Adams",
+      "slug": "west_adams",
+      "center": {
+        "lat": 34.0294356,
+        "lon": -118.3524833
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "West Adams",
+        "place": "suburb",
+        "wikidata": "Q12072699",
+        "wikipedia": "en:West Adams, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7307200482",
+      "name": "Fairfax",
+      "name_local": "Fairfax",
+      "slug": "fairfax",
+      "center": {
+        "lat": 34.0791555,
+        "lon": -118.3522844
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Fairfax",
+        "place": "suburb",
+        "wikidata": "Q5430171",
+        "wikipedia": "en:Fairfax District, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7310117254",
+      "name": "Downtown",
+      "name_local": "Downtown",
+      "slug": "downtown",
+      "center": {
+        "lat": 34.047996,
+        "lon": -118.2521002
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Downtown",
+        "place": "suburb",
+        "wikidata": "Q995043",
+        "wikipedia": "en:Downtown Los Angeles"
+      }
+    },
+    {
+      "id": "node/7310117324",
+      "name": "Chinatown",
+      "name_local": "Chinatown",
+      "slug": "chinatown",
+      "center": {
+        "lat": 34.0638402,
+        "lon": -118.2358676
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Chinatown",
+        "place": "suburb",
+        "wikidata": "Q2555601",
+        "wikipedia": "en:Chinatown, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7314759182",
+      "name": "Westlake",
+      "name_local": "Westlake",
+      "slug": "westlake",
+      "center": {
+        "lat": 34.0629226,
+        "lon": -118.2728204
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Westlake",
+        "name:etymology": "Henricus Wallace Westlake",
+        "name:etymology:wikidata": "Q23621408",
+        "name:etymology:wikipedia": "en: Henricus Wallace Westlake",
+        "place": "suburb",
+        "wikidata": "Q7988959",
+        "wikipedia": "en:Westlake, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7317540604",
+      "name": "Harbor Gateway",
+      "name_local": "Harbor Gateway",
+      "slug": "harbor_gateway",
+      "center": {
+        "lat": 33.8512597,
+        "lon": -118.3027904
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Harbor Gateway",
+        "note": "different from (https://www.openstreetmap.org/node/10980541087) which is a CDP separate from LA",
+        "place": "suburb",
+        "wikidata": "Q5654598",
+        "wikipedia": "en:Harbor Gateway, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7360410768",
+      "name": "Exposition Park",
+      "name_local": "Exposition Park",
+      "slug": "exposition_park",
+      "center": {
+        "lat": 34.0183415,
+        "lon": -118.3002033
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Exposition Park",
+        "place": "suburb",
+        "wikidata": "Q6411548",
+        "wikipedia": "en:Exposition Park, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7360410808",
+      "name": "Vermont Square",
+      "name_local": "Vermont Square",
+      "slug": "vermont_square",
+      "center": {
+        "lat": 34.0019449,
+        "lon": -118.3002125
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Vermont Square",
+        "place": "suburb",
+        "wikidata": "Q2517109",
+        "wikipedia": "en:Vermont Square, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7360424710",
+      "name": "Historic South-Central",
+      "name_local": "Historic South-Central",
+      "slug": "historic_south_central",
+      "center": {
+        "lat": 34.0162304,
+        "lon": -118.2673085
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Historic South-Central",
+        "place": "suburb",
+        "wikidata": "Q16995502",
+        "wikipedia": "en:Historic South Central Los Angeles"
+      }
+    },
+    {
+      "id": "node/7360424723",
+      "name": "South Park",
+      "name_local": "South Park",
+      "slug": "south_park",
+      "center": {
+        "lat": 33.9959381,
+        "lon": -118.2697608
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "South Park",
+        "place": "suburb",
+        "wikidata": "Q4540147",
+        "wikipedia": "en:South Park, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7360566572",
+      "name": "Florence",
+      "name_local": "Florence",
+      "slug": "florence",
+      "center": {
+        "lat": 33.9747477,
+        "lon": -118.2695842
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Florence",
+        "place": "suburb",
+        "wikidata": "Q16993506",
+        "wikipedia": "en:Florence, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7360901787",
+      "name": "Central-Alameda",
+      "name_local": "Central-Alameda",
+      "slug": "central_alameda",
+      "center": {
+        "lat": 34.004015,
+        "lon": -118.2477844
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Central-Alameda",
+        "place": "suburb",
+        "wikidata": "Q16256906",
+        "wikipedia": "en:Central-Alameda, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7365224038",
+      "name": "Montecito Heights",
+      "name_local": "Montecito Heights",
+      "slug": "montecito_heights",
+      "center": {
+        "lat": 34.0895404,
+        "lon": -118.1942792
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Montecito Heights",
+        "place": "suburb",
+        "wikidata": "Q5285400",
+        "wikipedia": "en:Montecito Heights, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7365301427",
+      "name": "Pico-Union",
+      "name_local": "Pico-Union",
+      "slug": "pico_union",
+      "center": {
+        "lat": 34.0465669,
+        "lon": -118.2878942
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Pico-Union",
+        "place": "suburb",
+        "wikidata": "Q7190998",
+        "wikipedia": "en:Pico-Union, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7365301464",
+      "name": "Mid-City",
+      "name_local": "Mid-City",
+      "slug": "mid_city",
+      "center": {
+        "lat": 34.0415271,
+        "lon": -118.3603703
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Mid-City",
+        "place": "suburb",
+        "wikidata": "Q6840673",
+        "wikipedia": "en:Mid City, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7365301515",
+      "name": "Mid-Wilshire",
+      "name_local": "Mid-Wilshire",
+      "slug": "mid_wilshire",
+      "center": {
+        "lat": 34.0568616,
+        "lon": -118.3458032
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Mid-Wilshire",
+        "place": "suburb",
+        "wikidata": "Q3312605",
+        "wikipedia": "en:Mid-Wilshire, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7391589105",
+      "name": "Los Feliz",
+      "name_local": "Los Feliz",
+      "slug": "los_feliz",
+      "center": {
+        "lat": 34.1076561,
+        "lon": -118.2875062
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Los Feliz",
+        "place": "suburb",
+        "wikidata": "Q6682727",
+        "wikipedia": "en:Los Feliz, Los Angeles"
+      }
+    },
+    {
+      "id": "node/7797686871",
+      "name": "Lake Balboa",
+      "name_local": "Lake Balboa",
+      "slug": "lake_balboa",
+      "center": {
+        "lat": 34.1938237,
+        "lon": -118.5010456
+      },
+      "bbox": null,
+      "source": "osm",
+      "tags": {
+        "name": "Lake Balboa",
+        "place": "suburb",
+        "population": "26195",
+        "wikidata": "Q6474890",
+        "wikipedia": "en:Lake Balboa, Los Angeles"
+      }
+    },
+    {
+      "id": "way/174893052",
+      "name": "Harbor City",
+      "name_local": "Harbor City",
+      "slug": "harbor_city",
+      "center": {
+        "lat": 33.7977986,
+        "lon": -118.2951841
+      },
+      "bbox": [
+        -118.3051841,
+        33.7877986,
+        -118.2851841,
+        33.8077986
+      ],
+      "source": "osm",
+      "tags": {
+        "name": "Harbor City",
+        "name:en": "Harbor City",
+        "name:ur": "ہاربر سٹی، لاس اینجلس",
+        "place": "suburb",
+        "postal_code": "90710",
+        "source": "http://navigatela.lacity.org/common/mapgallery/pdf/neighborhood/92.pdf",
+        "wikidata": "Q739011",
+        "wikipedia": "en:Harbor City, Los Angeles"
+      }
+    }
+  ]
+}
