@@ -34,6 +34,22 @@ services:
           name: travelland-redis
           type: redis
           property: connectionString
+      - key: GROQ_API_KEY
+        value: "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"
+      - key: UNSPLASH_KEY
+        value: "Wo8diilNVCHsZlM1Su2UHYoFnvnuYdKFQO97r9r5FS4"
+      - key: PIXABAY_KEY
+        value: "27171318-aadb87eb8030ba7d7bdded460"
+      - key: GEOAPIFY_API_KEY
+        value: "5d90553d6720416690c7d082cfaa8387"
+      - key: GEONAMES_USERNAME
+        value: "markcodeman"
+      - key: TOMTOM_API_KEY
+        value: "tzSuxUGO0tDE3ZIxMgi3Ow4huPqNXpn3"
+      - key: LOCATIONIQ_KEY
+        value: "pk.7b8c38fca1e7004cf1fde3fbf7b24ac9"
+      - key: MAPILLARY_TOKEN
+        value: "MLY|25805412652454371|52611adbd100113de48cf4f20ec3e0b7"
     startCommand: |
       bash start_server.sh
     healthCheckPath: /healthz

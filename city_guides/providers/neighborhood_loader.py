@@ -21,6 +21,11 @@ def load_seeded_neighborhoods(city: str) -> Optional[List[Dict]]:
     base_city = city.split(',')[0].strip() if city else ''
     city_slug = base_city.lower().replace(' ', '_')
     seed_dir = Path(__file__).parent.parent / 'data' / 'seeded_neighborhoods'
+    
+    if not seed_dir.exists() or not seed_dir.is_dir():
+        logging.warning(f"Seeded neighborhood directory not found: {seed_dir}")
+        return None
+        
     # Try to find by country, but for now, search all subdirs
     for country_dir in seed_dir.iterdir():
         if country_dir.is_dir():
