@@ -1,0 +1,9 @@
+{
+  "CATEGORY_FALLBACKS": {},
+  "HERO_FALLBACKS": {
+    "bran-castle-romania": "https://r2-worker.travelland-images.workers.dev/bran-castle-romania.png",
+    "natal-brazil": "https://images.unsplash.com/photo-1590717052724-8d037065f913?w=1600&q=80",
+    "natal": "https://images.unsplash.com/photo-1590717052724-8d037065f913?w=1600&q=80"
+  },
+  "VENUE_FALLBACKS": {}
+}
