@@ -118,6 +118,8 @@ city_guides/static/img.bak*/
 city_guides/static/js.bak*/
 city_guides/static/webfonts.bak*/
 city_guides/static/*.bak
+city_guides/static/assets/
+city_guides/static/index.html
 venv_new/
 .venv_precommit/
 .venv_async/
