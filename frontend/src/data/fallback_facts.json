@@ -1,0 +1,30 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-02-13",
+  "cities": {
+    "paris": [
+      "Paris was originally a Roman city called 'Lutetia'.",
+      "The Eiffel Tower was supposed to be dismantled after 20 years.",
+      "There is only one stop sign in the entire city of Paris."
+    ],
+    "london": [
+      "Big Ben is actually the name of the bell, not the clock tower.",
+      "London has been inhabited for over 2,000 years.",
+      "The London Underground is the oldest underground railway in the world."
+    ],
+    "new york": [
+      "New York City was originally called New Amsterdam.",
+      "There are over 800 languages spoken in NYC.",
+      "The Statue of Liberty was a gift from France in 1886."
+    ],
+    "tokyo": [
+      "Tokyo was formerly known as Edo.",
+      "Shibuya Crossing is the busiest pedestrian crossing in the world.",
+      "Tokyo has the most Michelin-starred restaurants of any city."
+    ],
+    "default": [
+      "Cities are layered with history, architecture, and people—always changing.",
+      "Each urban center has a distinct footprint shaped by its landscape and culture."
+    ]
+  }
+}
