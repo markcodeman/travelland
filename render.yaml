@@ -11,12 +11,21 @@ services:
     region: oregon
     plan: free
     buildCommand: |
+      echo "Starting build..."
       pip install --no-cache-dir -r requirements.txt && \
+      echo "Python dependencies installed" && \
       cd frontend && \
+      echo "In frontend directory" && \
       npm ci && \
+      echo "npm ci completed" && \
       npm run build && \
+      echo "Frontend build completed" && \
+      mkdir -p ../city_guides/static && \
+      echo "Static directory created" && \
       cp -R dist/. ../city_guides/static/ && \
-      cp public/marcos.png ../city_guides/static/ || true
+      cp public/marcos.png ../city_guides/static/ || true && \
+      echo "Files copied to static" && \
+      ls -la ../city_guides/static/
     envVars:
       - key: NODE_VERSION
         value: "22"
