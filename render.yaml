@@ -27,7 +27,7 @@ services:
           property: connectionString
     startCommand: |
       bash start_server.sh
-    healthCheckPath: /health
+    healthCheckPath: /healthz
     services:
       - name: web
         protocol: http
