@@ -142,3 +142,4 @@ instance/
 env
 city_guides/data/banner_cache.json
 city_guides/data/city_poi_cache/bucharest_romania_pois.json
+city_guides/data/city_poi_cache/*.json
